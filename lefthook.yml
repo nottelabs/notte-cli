@@ -1,0 +1,34 @@
+# lefthook.yml
+# Pre-commit and pre-push hooks for notte-cli
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --new-from-rev=HEAD~1
+      stage_fixed: true
+
+    build:
+      glob: "*.go"
+      run: go build ./cmd/notte
+
+    fmt-check:
+      glob: "*.go"
+      run: |
+        if ! goimports -l . | grep -q .; then
+          exit 0
+        else
+          echo "Run 'make fmt' to fix formatting"
+          goimports -l .
+          exit 1
+        fi
+
+pre-push:
+  parallel: true
+  commands:
+    test:
+      run: go test -short ./...
+
+    lint-full:
+      run: golangci-lint run
