@@ -46,17 +46,3 @@ changelog:
       - Merge pull request
       - Merge branch
 
-brews:
-  - name: notte-cli
-    repository:
-      owner: salmonumbrella
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
-    homepage: "https://github.com/salmonumbrella/notte-cli"
-    description: "CLI for Notte to automate browsers, extract data, and run tasks"
-    license: "MIT"
-    install: |
-      bin.install "notte"
-    test: |
-      system "#{bin}/notte", "--help"
