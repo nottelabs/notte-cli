@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/salmonumbrella/notte-cli/internal/auth"
 	"github.com/spf13/cobra"
+
+	"github.com/salmonumbrella/notte-cli/internal/auth"
 )
 
 var authCmd = &cobra.Command{
