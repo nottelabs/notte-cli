@@ -15,10 +15,10 @@ formatters:
   enable:
     - gofumpt
     - goimports
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/salmonumbrella/notte-cli
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/salmonumbrella/notte-cli
 
 issues:
   exclude-dirs:
