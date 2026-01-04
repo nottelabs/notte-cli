@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/salmonumbrella/notte-cli/internal/api"
 	"github.com/salmonumbrella/notte-cli/internal/auth"
 	"github.com/salmonumbrella/notte-cli/internal/output"
-	"github.com/spf13/cobra"
 )
 
 var (

@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/salmonumbrella/notte-cli/internal/api"
 	"github.com/spf13/cobra"
+
+	"github.com/salmonumbrella/notte-cli/internal/api"
 )
 
 var (
