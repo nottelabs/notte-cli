@@ -22,19 +22,28 @@ var output = termenv.NewOutput(os.Stdout)
 func (f *TextFormatter) Print(data any) error {
 	v := reflect.ValueOf(data)
 
+	// Handle pointers by dereferencing
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			_, err := fmt.Fprintln(f.Writer, "<nil>")
+			return err
+		}
+		v = v.Elem()
+	}
+
 	// Handle maps as key-value display
 	if v.Kind() == reflect.Map {
-		return f.printKeyValue(data)
+		return f.printKeyValue(v.Interface())
 	}
 
 	// Handle slices as tables
 	if v.Kind() == reflect.Slice {
-		return f.printSlice(data)
+		return f.printSlice(v.Interface())
 	}
 
 	// Handle structs as key-value
 	if v.Kind() == reflect.Struct {
-		return f.printStruct(data)
+		return f.printStruct(v.Interface())
 	}
 
 	// Default: just print
@@ -66,7 +75,22 @@ func (f *TextFormatter) printStruct(data any) error {
 			continue
 		}
 		label := f.colorize(field.Name+":", termenv.ANSICyan)
-		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, v.Field(i).Interface())
+		
+		fieldValue := v.Field(i)
+		var displayValue any
+		
+		// Handle pointer fields
+		if fieldValue.Kind() == reflect.Ptr {
+			if fieldValue.IsNil() {
+				displayValue = "<nil>"
+			} else {
+				displayValue = fieldValue.Elem().Interface()
+			}
+		} else {
+			displayValue = fieldValue.Interface()
+		}
+		
+		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, displayValue)
 	}
 
 	return w.Flush()
