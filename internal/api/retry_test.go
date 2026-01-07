@@ -3,13 +3,22 @@ package api
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/salmonumbrella/notte-cli/internal/testutil"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
 
 func TestRetryConfig_ShouldRetry(t *testing.T) {
 	cfg := DefaultRetryConfig()
@@ -157,5 +166,124 @@ func TestSleepWithContext_Cancellation(t *testing.T) {
 
 	if elapsed > 100*time.Millisecond {
 		t.Errorf("sleep should have been cancelled, took %v", elapsed)
+	}
+}
+
+func TestDoWithRetry_RetriesOnServerError(t *testing.T) {
+	callCount := 0
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			status := http.StatusInternalServerError
+			if callCount > 2 {
+				status = http.StatusOK
+			}
+			return &http.Response{
+				StatusCode: status,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	cfg := &RetryConfig{MaxRetries: 2, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
+	req, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
+
+	resp, err := DoWithRetry(context.Background(), client, req, cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if callCount != 3 {
+		t.Errorf("expected 3 calls, got %d", callCount)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestDoWithRetry_RetriesOnRateLimit(t *testing.T) {
+	callCount := 0
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			status := http.StatusTooManyRequests
+			if callCount > 1 {
+				status = http.StatusOK
+			}
+			return &http.Response{
+				StatusCode: status,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	cfg := &RetryConfig{MaxRetries: 1, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
+	req, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
+
+	resp, err := DoWithRetry(context.Background(), client, req, cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if callCount != 2 {
+		t.Errorf("expected 2 calls, got %d", callCount)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestDoWithRetry_RetriesOnNetworkError(t *testing.T) {
+	callCount := 0
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			if callCount == 1 {
+				return nil, errors.New("network error")
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	cfg := &RetryConfig{MaxRetries: 1, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
+	req, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
+
+	resp, err := DoWithRetry(context.Background(), client, req, cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if callCount != 2 {
+		t.Errorf("expected 2 calls, got %d", callCount)
+	}
+}
+
+func TestDoWithRetry_NonIdempotentNetworkErrorNoRetry(t *testing.T) {
+	callCount := 0
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			return nil, errors.New("network error")
+		}),
+	}
+
+	cfg := &RetryConfig{MaxRetries: 2, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
+	req, _ := http.NewRequest(http.MethodPost, "http://example.com", nil)
+
+	_, err := DoWithRetry(context.Background(), client, req, cfg)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if callCount != 1 {
+		t.Errorf("expected 1 call, got %d", callCount)
 	}
 }

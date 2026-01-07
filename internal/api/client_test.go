@@ -2,11 +2,20 @@ package api
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
+
+type transportFunc func(*http.Request) (*http.Response, error)
+
+func (f transportFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
 
 func TestNewClient_RequiresAPIKey(t *testing.T) {
 	_, err := NewClient("")
@@ -110,6 +119,192 @@ func TestResilientTransport_RecordsFailureOn5xx(t *testing.T) {
 	// Circuit should be open now
 	if cb.Allow() {
 		t.Error("circuit breaker should be open after failures")
+	}
+}
+
+func TestResilientTransport_RoundTrip_CircuitOpen(t *testing.T) {
+	cb := NewCircuitBreaker(1, time.Hour)
+	cb.RecordFailure()
+
+	rt := &resilientTransport{
+		apiKey:         "test-key",
+		retryConfig:    &RetryConfig{MaxRetries: 0},
+		circuitBreaker: cb,
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			t.Fatal("base RoundTrip should not be called when circuit is open")
+			return nil, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	resp, err := rt.RoundTrip(req)
+	if err == nil {
+		t.Fatal("expected circuit breaker error")
+	}
+	if resp != nil {
+		t.Errorf("expected nil response, got %#v", resp)
+	}
+}
+
+func TestResilientTransport_RoundTrip_AddsIdempotencyKey(t *testing.T) {
+	cb := NewCircuitBreaker(5, time.Minute)
+	rt := &resilientTransport{
+		apiKey:         "test-key",
+		retryConfig:    &RetryConfig{MaxRetries: 0, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: cb,
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			if got := req.Header.Get("Authorization"); got != "Bearer test-key" {
+				t.Fatalf("Authorization header = %q", got)
+			}
+			if req.Method == http.MethodPost {
+				key := req.Header.Get(IdempotencyKeyHeader)
+				if key == "" {
+					t.Fatal("expected idempotency key for POST")
+				}
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+	resp, err := rt.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+}
+
+func TestResilientTransport_RoundTrip_RecordsFailureOnError(t *testing.T) {
+	cb := NewCircuitBreaker(1, time.Hour)
+	rt := &resilientTransport{
+		apiKey:         "test-key",
+		retryConfig:    &RetryConfig{MaxRetries: 0, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: cb,
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			return nil, errors.New("network error")
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+	_, err := rt.RoundTrip(req)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if cb.Allow() {
+		t.Error("expected circuit breaker to record failure")
+	}
+}
+
+func TestResilientTransport_RoundTrip_RecordsFailureOn5xx(t *testing.T) {
+	cb := NewCircuitBreaker(1, time.Hour)
+	rt := &resilientTransport{
+		apiKey:         "test-key",
+		retryConfig:    &RetryConfig{MaxRetries: 0, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: cb,
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	resp, err := rt.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if cb.Allow() {
+		t.Error("expected circuit breaker to open after 5xx")
+	}
+}
+
+func TestResilientTransport_DoWithRetry_RetriesOnStatus(t *testing.T) {
+	callCount := 0
+	rt := &resilientTransport{
+		retryConfig:    &RetryConfig{MaxRetries: 1, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: NewCircuitBreaker(5, time.Minute),
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			status := http.StatusBadGateway
+			if callCount > 1 {
+				status = http.StatusOK
+			}
+			return &http.Response{
+				StatusCode: status,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	resp, err := rt.doWithRetry(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if callCount != 2 {
+		t.Errorf("expected 2 calls, got %d", callCount)
+	}
+}
+
+func TestResilientTransport_DoWithRetry_RetriesOnNetworkError(t *testing.T) {
+	callCount := 0
+	rt := &resilientTransport{
+		retryConfig:    &RetryConfig{MaxRetries: 1, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: NewCircuitBreaker(5, time.Minute),
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			if callCount == 1 {
+				return nil, errors.New("network error")
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+	resp, err := rt.doWithRetry(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if callCount != 2 {
+		t.Errorf("expected 2 calls, got %d", callCount)
+	}
+}
+
+func TestResilientTransport_DoWithRetry_NonIdempotentError(t *testing.T) {
+	callCount := 0
+	rt := &resilientTransport{
+		retryConfig:    &RetryConfig{MaxRetries: 2, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false},
+		circuitBreaker: NewCircuitBreaker(5, time.Minute),
+		base: transportFunc(func(req *http.Request) (*http.Response, error) {
+			callCount++
+			return nil, errors.New("network error")
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+	_, err := rt.doWithRetry(req)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if callCount != 1 {
+		t.Errorf("expected 1 call, got %d", callCount)
 	}
 }
 
