@@ -102,3 +102,20 @@ func TestRunScrapeHtml(t *testing.T) {
 		t.Error("expected output, got empty string")
 	}
 }
+
+func TestRunScrapeHtmlMissingFile(t *testing.T) {
+	origFile := scrapeHtmlFile
+	t.Cleanup(func() { scrapeHtmlFile = origFile })
+	scrapeHtmlFile = "does-not-exist.html"
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runScrapeHtml(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error for missing file")
+	}
+	if !strings.Contains(err.Error(), "failed to read HTML file") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -88,6 +88,31 @@ func TestRunFilesListDownloads(t *testing.T) {
 	}
 }
 
+func TestRunFilesListDownloadsMissingSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	origDownloadsFlag := filesListDownloadsFlag
+	origSession := filesDownloadSession
+	t.Cleanup(func() {
+		filesListDownloadsFlag = origDownloadsFlag
+		filesDownloadSession = origSession
+	})
+	filesListDownloadsFlag = true
+	filesDownloadSession = ""
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runFilesList(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error for missing session")
+	}
+	if !strings.Contains(err.Error(), "--session is required") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestRunFilesUpload(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
@@ -126,6 +151,20 @@ func TestRunFilesUpload(t *testing.T) {
 
 	if !strings.Contains(stdout, "File uploaded successfully") {
 		t.Fatalf("expected upload message, got %q", stdout)
+	}
+}
+
+func TestRunFilesUploadDirectory(t *testing.T) {
+	dir := t.TempDir()
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runFilesUpload(cmd, []string{dir})
+	if err == nil {
+		t.Fatal("expected error for directory path")
+	}
+	if !strings.Contains(err.Error(), "path is a directory") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -176,5 +215,22 @@ func TestRunFilesDownload(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "File downloaded successfully") {
 		t.Fatalf("expected download message, got %q", stdout)
+	}
+}
+
+func TestRunFilesDownloadMissingSession(t *testing.T) {
+	origSession := filesDownloadSession
+	t.Cleanup(func() { filesDownloadSession = origSession })
+	filesDownloadSession = ""
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runFilesDownload(cmd, []string{"file.txt"})
+	if err == nil {
+		t.Fatal("expected error for missing session")
+	}
+	if !strings.Contains(err.Error(), "--session is required") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
