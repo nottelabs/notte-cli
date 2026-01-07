@@ -91,3 +91,23 @@ func TestCircuitBreaker_State(t *testing.T) {
 		t.Errorf("state should be HalfOpen after reset period, got %v", cb.State())
 	}
 }
+
+func TestCircuitState_String(t *testing.T) {
+	tests := []struct {
+		state CircuitState
+		want  string
+	}{
+		{CircuitClosed, "closed"},
+		{CircuitOpen, "open"},
+		{CircuitHalfOpen, "half-open"},
+		{CircuitState(99), "unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			if got := tt.state.String(); got != tt.want {
+				t.Errorf("CircuitState(%d).String() = %q, want %q", tt.state, got, tt.want)
+			}
+		})
+	}
+}
