@@ -3,6 +3,8 @@ package auth
 import (
 	"os"
 	"testing"
+
+	"github.com/salmonumbrella/notte-cli/internal/testutil"
 )
 
 func TestKeyringServiceName(t *testing.T) {
@@ -45,5 +47,64 @@ func TestKeyring_SetGetDelete(t *testing.T) {
 	_, err = GetKeyringAPIKey()
 	if err == nil {
 		t.Error("expected error after delete, got nil")
+	}
+}
+
+func TestKeyring_SetAndGet(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// Test Set
+	err := SetKeyringAPIKey("test-key-123")
+	if err != nil {
+		t.Fatalf("SetKeyringAPIKey failed: %v", err)
+	}
+
+	// Test Get
+	key, err := GetKeyringAPIKey()
+	if err != nil {
+		t.Fatalf("GetKeyringAPIKey failed: %v", err)
+	}
+	if key != "test-key-123" {
+		t.Errorf("got %q, want %q", key, "test-key-123")
+	}
+}
+
+func TestKeyring_Delete(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// Set then delete
+	if err := SetKeyringAPIKey("test-key"); err != nil {
+		t.Fatalf("SetKeyringAPIKey failed: %v", err)
+	}
+	err := DeleteKeyringAPIKey()
+	if err != nil {
+		t.Fatalf("DeleteKeyringAPIKey failed: %v", err)
+	}
+
+	// Should be gone
+	key, err := GetKeyringAPIKey()
+	if err == nil {
+		t.Error("expected error after delete, got nil")
+	}
+	if key != "" {
+		t.Errorf("expected empty key after delete, got %q", key)
+	}
+}
+
+func TestKeyring_GetWhenEmpty(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	key, err := GetKeyringAPIKey()
+	if err == nil {
+		t.Error("expected error for empty keyring, got nil")
+	}
+	if key != "" {
+		t.Errorf("expected empty key, got %q", key)
 	}
 }
