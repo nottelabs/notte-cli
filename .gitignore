@@ -6,3 +6,4 @@ dist/
 notte
 .worktrees/
 coverage.out
+coverage.html
