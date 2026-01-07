@@ -75,10 +75,10 @@ func (f *TextFormatter) printStruct(data any) error {
 			continue
 		}
 		label := f.colorize(field.Name+":", termenv.ANSICyan)
-		
+
 		fieldValue := v.Field(i)
 		var displayValue any
-		
+
 		// Handle pointer fields
 		if fieldValue.Kind() == reflect.Ptr {
 			if fieldValue.IsNil() {
@@ -89,7 +89,7 @@ func (f *TextFormatter) printStruct(data any) error {
 		} else {
 			displayValue = fieldValue.Interface()
 		}
-		
+
 		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, displayValue)
 	}
 
