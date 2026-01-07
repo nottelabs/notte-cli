@@ -46,6 +46,49 @@ func TestRunAuthStatus(t *testing.T) {
 	}
 }
 
+func TestRunAuthStatusShortKey(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "short")
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runAuthStatus(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "****") {
+		t.Fatalf("expected masked key, got %q", stdout)
+	}
+}
+
+func TestRunAuthStatusNotAuthenticated(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("HOME", t.TempDir())
+
+	k := &stubKeyring{}
+	auth.SetKeyring(k)
+	t.Cleanup(func() { auth.ResetKeyring() })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runAuthStatus(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error when not authenticated")
+	}
+	if !strings.Contains(err.Error(), "not authenticated") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestRunAuthLogout(t *testing.T) {
 	k := &stubKeyring{}
 	auth.SetKeyring(k)
@@ -70,5 +113,30 @@ func TestRunAuthLogout(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "API key removed") {
 		t.Fatalf("expected logout message, got %q", stdout)
+	}
+}
+
+func TestRunAuthLogin_ContextCanceled(t *testing.T) {
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cmd.SetContext(ctx)
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runAuthLogin(cmd, nil)
+		if err == nil {
+			t.Fatal("expected error for canceled context")
+		}
+		if !strings.Contains(err.Error(), "context") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Fatal("expected informational output")
 	}
 }

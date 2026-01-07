@@ -50,6 +50,44 @@ func TestRunFilesListUploads(t *testing.T) {
 	}
 }
 
+func TestRunFilesListUploadsEmpty(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	server.AddResponse("/storage/uploads", 200, `{"files":[]}`)
+
+	origDownloadsFlag := filesListDownloadsFlag
+	origSession := filesDownloadSession
+	t.Cleanup(func() {
+		filesListDownloadsFlag = origDownloadsFlag
+		filesDownloadSession = origSession
+	})
+	filesListDownloadsFlag = false
+	filesDownloadSession = ""
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runFilesList(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "No uploaded files.") {
+		t.Fatalf("expected empty message, got %q", stdout)
+	}
+}
+
 func TestRunFilesListDownloads(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")

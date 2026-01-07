@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"strings"
@@ -190,6 +191,51 @@ func TestPrintResult(t *testing.T) {
 		err := PrintResult("", nil)
 		if err != nil {
 			t.Errorf("expected nil for empty message, got %v", err)
+		}
+	})
+
+	t.Run("json mode prints structured output", func(t *testing.T) {
+		orig := outputFormat
+		outputFormat = "json"
+		t.Cleanup(func() { outputFormat = orig })
+
+		stdout, _ := testutil.CaptureOutput(func() {
+			err := PrintResult("all good", map[string]any{"ok": true})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		var got map[string]any
+		if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+			t.Fatalf("failed to parse json: %v", err)
+		}
+		if got["message"] != "all good" {
+			t.Fatalf("expected message to be preserved, got %v", got["message"])
+		}
+		if got["ok"] != true {
+			t.Fatalf("expected ok=true, got %v", got["ok"])
+		}
+	})
+
+	t.Run("json mode preserves existing message", func(t *testing.T) {
+		orig := outputFormat
+		outputFormat = "json"
+		t.Cleanup(func() { outputFormat = orig })
+
+		stdout, _ := testutil.CaptureOutput(func() {
+			err := PrintResult("ignored", map[string]any{"message": "custom"})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		var got map[string]any
+		if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+			t.Fatalf("failed to parse json: %v", err)
+		}
+		if got["message"] != "custom" {
+			t.Fatalf("expected custom message, got %v", got["message"])
 		}
 	})
 }

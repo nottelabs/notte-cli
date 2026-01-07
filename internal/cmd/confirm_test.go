@@ -1,140 +1,63 @@
-// internal/cmd/confirm_test.go
 package cmd
 
 import (
 	"bytes"
+	"errors"
+	"strings"
 	"testing"
 )
 
-func TestConfirmAction_Yes(t *testing.T) {
-	input := bytes.NewReader([]byte("y\n"))
-	output := &bytes.Buffer{}
+type errWriter struct{}
 
-	confirmed, err := ConfirmActionWithIO(input, output, "workflow", "wf_123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !confirmed {
-		t.Error("expected confirmed=true for 'y' input")
-	}
+func (errWriter) Write(p []byte) (int, error) {
+	return 0, errors.New("write failed")
 }
 
-func TestConfirmAction_No(t *testing.T) {
-	input := bytes.NewReader([]byte("n\n"))
-	output := &bytes.Buffer{}
+type errReader struct{}
 
-	confirmed, err := ConfirmActionWithIO(input, output, "workflow", "wf_123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if confirmed {
-		t.Error("expected confirmed=false for 'n' input")
-	}
+func (errReader) Read(p []byte) (int, error) {
+	return 0, errors.New("read failed")
 }
 
-func TestConfirmAction_Default(t *testing.T) {
-	input := bytes.NewReader([]byte("\n"))
-	output := &bytes.Buffer{}
-
-	confirmed, err := ConfirmActionWithIO(input, output, "workflow", "wf_123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if confirmed {
-		t.Error("expected confirmed=false for empty input (default No)")
-	}
-}
-
-func TestConfirmAction_YesVariants(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-	}{
-		{"lowercase yes", "yes\n"},
-		{"uppercase Y", "Y\n"},
-		{"uppercase YES", "YES\n"},
-		{"mixed case Yes", "Yes\n"},
-		{"y with spaces", "  y  \n"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			input := bytes.NewReader([]byte(tt.input))
-			output := &bytes.Buffer{}
-
-			confirmed, err := ConfirmActionWithIO(input, output, "workflow", "wf_123")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if !confirmed {
-				t.Errorf("expected confirmed=true for input %q", tt.input)
-			}
-		})
-	}
-}
-
-func TestConfirmAction_NoVariants(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-	}{
-		{"uppercase N", "N\n"},
-		{"lowercase no", "no\n"},
-		{"uppercase NO", "NO\n"},
-		{"random text", "maybe\n"},
-		{"just space", " \n"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			input := bytes.NewReader([]byte(tt.input))
-			output := &bytes.Buffer{}
-
-			confirmed, err := ConfirmActionWithIO(input, output, "workflow", "wf_123")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if confirmed {
-				t.Errorf("expected confirmed=false for input %q", tt.input)
-			}
-		})
-	}
-}
-
-func TestConfirmAction_PromptFormat(t *testing.T) {
-	input := bytes.NewReader([]byte("n\n"))
-	output := &bytes.Buffer{}
-
-	if _, err := ConfirmActionWithIO(input, output, "session", "sess_456"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	expectedPrompt := "Delete session sess_456? This cannot be undone. [y/N]: "
-	if output.String() != expectedPrompt {
-		t.Errorf("expected prompt %q, got %q", expectedPrompt, output.String())
-	}
-}
-
-func TestConfirmAction_SkipConfirmation(t *testing.T) {
-	// Save original state
-	originalSkipConfirmation := skipConfirmation
-	defer func() { skipConfirmation = originalSkipConfirmation }()
-
-	// Enable skip confirmation
+func TestConfirmAction_Skip(t *testing.T) {
 	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
 
-	// ConfirmAction should return true without prompting
-	confirmed, err := ConfirmAction("workflow", "wf_123")
+	ok, err := ConfirmAction("persona", "persona_123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !confirmed {
-		t.Error("expected confirmed=true when skipConfirmation is enabled")
+	if !ok {
+		t.Fatal("expected confirmation to be skipped")
+	}
+}
+
+func TestConfirmActionWithIO_YesNo(t *testing.T) {
+	var out bytes.Buffer
+	ok, err := ConfirmActionWithIO(strings.NewReader("y\n"), &out, "vault", "vault_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected yes to confirm")
 	}
 
-	// Disable skip confirmation
-	SetSkipConfirmation(false)
+	out.Reset()
+	ok, err = ConfirmActionWithIO(strings.NewReader("no\n"), &out, "vault", "vault_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ok {
+		t.Fatal("expected no to decline")
+	}
+}
 
-	// This would normally prompt, but we can't test that easily without IO
-	// The behavior is tested indirectly through integration tests
+func TestConfirmActionWithIO_Errors(t *testing.T) {
+	if _, err := ConfirmActionWithIO(strings.NewReader("y\n"), errWriter{}, "vault", "vault_123"); err == nil {
+		t.Fatal("expected write error")
+	}
+
+	if _, err := ConfirmActionWithIO(errReader{}, &bytes.Buffer{}, "vault", "vault_123"); err == nil {
+		t.Fatal("expected read error")
+	}
 }

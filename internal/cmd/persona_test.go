@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -78,6 +79,46 @@ func TestRunPersonaDelete(t *testing.T) {
 
 	if !strings.Contains(stdout, "deleted") {
 		t.Errorf("expected delete message, got %q", stdout)
+	}
+}
+
+func TestRunPersonaDeleteCancelled(t *testing.T) {
+	_ = setupPersonaTest(t)
+
+	origSkip := skipConfirmation
+	t.Cleanup(func() { skipConfirmation = origSkip })
+	skipConfirmation = false
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	_, _ = w.WriteString("n\n")
+	_ = w.Close()
+
+	origStdin := os.Stdin
+	os.Stdin = r
+	t.Cleanup(func() {
+		os.Stdin = origStdin
+		_ = r.Close()
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runPersonaDelete(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "Cancelled.") {
+		t.Errorf("expected cancel message, got %q", stdout)
 	}
 }
 
