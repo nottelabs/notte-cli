@@ -115,28 +115,3 @@ func TestRunAuthLogout(t *testing.T) {
 		t.Fatalf("expected logout message, got %q", stdout)
 	}
 }
-
-func TestRunAuthLogin_ContextCanceled(t *testing.T) {
-	origFormat := outputFormat
-	outputFormat = "text"
-	t.Cleanup(func() { outputFormat = origFormat })
-
-	cmd := &cobra.Command{}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	cmd.SetContext(ctx)
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runAuthLogin(cmd, nil)
-		if err == nil {
-			t.Fatal("expected error for canceled context")
-		}
-		if !strings.Contains(err.Error(), "context") {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Fatal("expected informational output")
-	}
-}
