@@ -5,3 +5,4 @@ docs/plans/
 dist/
 notte
 .worktrees/
+coverage.out
