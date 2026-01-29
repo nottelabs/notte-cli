@@ -376,6 +376,47 @@ notte workflow run-metadata-update --id $WORKFLOW_ID --run-id $RUN_ID --data - <
 EOF
 ```
 
+## Usage with AI Agents
+
+### Just Ask the Agent
+
+The simplest approach - just tell your agent to use it:
+
+> Use notte to test the login flow. Run `notte --help` to see available commands.
+
+The `--help` output is comprehensive and most agents can figure it out from there.
+
+### AI Coding Assistants
+
+Add the skill to your AI coding assistant for richer context:
+
+```bash
+npx @anthropic-ai/claude-code-mcp add nottelabs/notte-cli
+```
+
+This works with Claude Code, Cursor, Windsurf, and other MCP-compatible assistants.
+
+### AGENTS.md / CLAUDE.md
+
+For more consistent results, add to your project or global instructions file:
+
+```markdown
+## Browser Automation
+
+Use `notte` for web automation. Run `notte --help` for all commands.
+
+Core workflow:
+1. `notte sessions start` - Start a browser session
+2. `notte sessions observe --url <url>` - Navigate and get interactive elements with IDs (@B1, @B2)
+3. `notte page click @B1` / `notte page fill @B2 "text"` - Interact using element IDs
+4. `notte sessions scrape --instructions "..."` - Extract structured data
+5. `notte sessions stop` - Clean up when done
+```
+
+### Skills Documentation
+
+For comprehensive documentation including templates and reference guides, see the [skills/notte-browser](skills/notte-browser/SKILL.md) folder.
+
 ## Global Flags
 
 All commands support these flags:
