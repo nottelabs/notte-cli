@@ -2,7 +2,6 @@ package errors
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,28 +9,25 @@ import (
 )
 
 // apiErrorResponse represents the JSON error format from the API
+// Supports both nested format {"error": {"message": "..."}} and flat format {"message": "..."}
 type apiErrorResponse struct {
+	// Nested error format
 	Error struct {
 		Code    string `json:"code"`
 		Message string `json:"message"`
 		Source  string `json:"source,omitempty"`
 	} `json:"error"`
+	// Flat error format (used by validation errors)
+	Message    string `json:"message"`
+	StatusCode int    `json:"status_code"`
 }
 
-// ParseAPIError parses an HTTP response into an appropriate error type
-func ParseAPIError(resp *http.Response) error {
+// ParseAPIError parses an HTTP response into an appropriate error type.
+// The body parameter should contain the already-read response body bytes
+// (from the generated client's resp.Body field).
+func ParseAPIError(resp *http.Response, body []byte) error {
 	if resp == nil {
 		return &APIError{Message: "nil response"}
-	}
-
-	// Read body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &APIError{
-			StatusCode: resp.StatusCode,
-			Message:    "failed to read response body",
-			Cause:      err,
-		}
 	}
 
 	// Handle specific status codes
@@ -55,10 +51,20 @@ func ParseAPIError(resp *http.Response) error {
 		}
 	}
 
+	// Check nested error format first, then flat format
+	message := apiResp.Error.Message
+	if message == "" {
+		message = apiResp.Message
+	}
+	code := apiResp.Error.Code
+	if code == "" {
+		code = http.StatusText(resp.StatusCode)
+	}
+
 	return &APIError{
 		StatusCode: resp.StatusCode,
-		Code:       apiResp.Error.Code,
-		Message:    SanitizeMessage(apiResp.Error.Message),
+		Code:       code,
+		Message:    SanitizeMessage(message),
 		Source:     apiResp.Error.Source,
 	}
 }

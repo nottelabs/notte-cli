@@ -71,7 +71,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -115,7 +115,7 @@ func runScrapeHtml(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 

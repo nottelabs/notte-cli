@@ -79,7 +79,7 @@ func runProfilesList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -118,7 +118,7 @@ func runProfilesCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ func runProfileShow(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -171,7 +171,7 @@ func runProfileDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 

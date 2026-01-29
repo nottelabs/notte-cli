@@ -295,7 +295,7 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -390,7 +390,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -423,7 +423,7 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -457,7 +457,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -500,7 +500,7 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -537,7 +537,7 @@ func runSessionExecute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -571,7 +571,7 @@ func runSessionScrape(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -597,7 +597,7 @@ func runSessionCookies(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -635,7 +635,7 @@ func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -661,7 +661,7 @@ func runSessionDebug(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -687,7 +687,7 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -713,7 +713,7 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -744,7 +744,7 @@ func runSessionOffset(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -772,7 +772,7 @@ func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 

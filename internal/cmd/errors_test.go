@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 	"testing"
 )
@@ -21,9 +19,8 @@ func TestHandleAPIResponse_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resp := &http.Response{
 				StatusCode: tt.statusCode,
-				Body:       io.NopCloser(bytes.NewReader(nil)),
 			}
-			err := HandleAPIResponse(resp)
+			err := HandleAPIResponse(resp, nil)
 			if err != nil {
 				t.Errorf("expected nil error for %d, got %v", tt.statusCode, err)
 			}
@@ -44,13 +41,12 @@ func TestHandleAPIResponse_Error(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			body := `{"error": "test error"}`
+			body := []byte(`{"error": "test error"}`)
 			resp := &http.Response{
 				StatusCode: tt.statusCode,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}
 
-			err := HandleAPIResponse(resp)
+			err := HandleAPIResponse(resp, body)
 			if err == nil {
 				t.Errorf("expected error for %d, got nil", tt.statusCode)
 			}

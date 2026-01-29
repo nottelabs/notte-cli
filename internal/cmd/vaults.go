@@ -202,7 +202,7 @@ func runVaultsList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -244,7 +244,7 @@ func runVaultsCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func runVaultUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -302,7 +302,7 @@ func runVaultDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -327,7 +327,7 @@ func runVaultCredentialsList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -400,7 +400,7 @@ func runVaultCredentialsAdd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -425,7 +425,7 @@ func runVaultCredentialsGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -458,7 +458,7 @@ func runVaultCredentialsDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -483,7 +483,7 @@ func runVaultCard(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -528,7 +528,7 @@ func runVaultCardSet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -558,7 +558,7 @@ func runVaultCardDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 

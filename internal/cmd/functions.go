@@ -226,7 +226,7 @@ func runFunctionsList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -304,7 +304,7 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -327,7 +327,7 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -377,7 +377,7 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -407,7 +407,7 @@ func runFunctionDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -432,7 +432,7 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -454,7 +454,7 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -486,7 +486,7 @@ func runFunctionFork(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -508,7 +508,7 @@ func runFunctionRunStop(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -530,7 +530,7 @@ func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -563,7 +563,7 @@ func runFunctionRunMetadataUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -589,7 +589,7 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 
@@ -614,7 +614,7 @@ func runFunctionUnschedule(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse); err != nil {
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
 

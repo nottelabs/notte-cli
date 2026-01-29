@@ -1,25 +1,23 @@
 package errors
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
 )
 
 func TestParseAPIError_400(t *testing.T) {
+	body := []byte(`{
+		"error": {
+			"code": "INVALID_REQUEST",
+			"message": "Invalid session ID format"
+		}
+	}`)
 	resp := &http.Response{
 		StatusCode: 400,
-		Body: io.NopCloser(bytes.NewBufferString(`{
-			"error": {
-				"code": "INVALID_REQUEST",
-				"message": "Invalid session ID format"
-			}
-		}`)),
 	}
 
-	err := ParseAPIError(resp)
+	err := ParseAPIError(resp, body)
 
 	apiErr, ok := err.(*APIError)
 	if !ok {
@@ -38,17 +36,17 @@ func TestParseAPIError_400(t *testing.T) {
 }
 
 func TestParseAPIError_401(t *testing.T) {
+	body := []byte(`{
+		"error": {
+			"code": "UNAUTHORIZED",
+			"message": "Invalid API key"
+		}
+	}`)
 	resp := &http.Response{
 		StatusCode: 401,
-		Body: io.NopCloser(bytes.NewBufferString(`{
-			"error": {
-				"code": "UNAUTHORIZED",
-				"message": "Invalid API key"
-			}
-		}`)),
 	}
 
-	err := ParseAPIError(resp)
+	err := ParseAPIError(resp, body)
 
 	authErr, ok := err.(*AuthError)
 	if !ok {
@@ -61,13 +59,13 @@ func TestParseAPIError_401(t *testing.T) {
 }
 
 func TestParseAPIError_429(t *testing.T) {
+	body := []byte(`{"error": {"code": "RATE_LIMITED"}}`)
 	resp := &http.Response{
 		StatusCode: 429,
 		Header:     http.Header{"Retry-After": []string{"30"}},
-		Body:       io.NopCloser(bytes.NewBufferString(`{"error": {"code": "RATE_LIMITED"}}`)),
 	}
 
-	err := ParseAPIError(resp)
+	err := ParseAPIError(resp, body)
 
 	rateLimitErr, ok := err.(*RateLimitError)
 	if !ok {
@@ -80,12 +78,12 @@ func TestParseAPIError_429(t *testing.T) {
 }
 
 func TestParseAPIError_500(t *testing.T) {
+	body := []byte(`{"error": {"message": "Internal server error"}}`)
 	resp := &http.Response{
 		StatusCode: 500,
-		Body:       io.NopCloser(bytes.NewBufferString(`{"error": {"message": "Internal server error"}}`)),
 	}
 
-	err := ParseAPIError(resp)
+	err := ParseAPIError(resp, body)
 
 	apiErr, ok := err.(*APIError)
 	if !ok {
@@ -98,12 +96,12 @@ func TestParseAPIError_500(t *testing.T) {
 }
 
 func TestParseAPIError_MalformedJSON(t *testing.T) {
+	body := []byte(`not json`)
 	resp := &http.Response{
 		StatusCode: 500,
-		Body:       io.NopCloser(bytes.NewBufferString(`not json`)),
 	}
 
-	err := ParseAPIError(resp)
+	err := ParseAPIError(resp, body)
 
 	// Should still return an APIError with status code
 	apiErr, ok := err.(*APIError)

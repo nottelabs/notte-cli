@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"testing"
 
@@ -36,11 +34,10 @@ func TestRunAPICommand_Success(t *testing.T) {
 
 	// Capture stdout to verify output
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, error) {
+		err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, []byte, error) {
 			return &TestResult{Status: "ok"}, &http.Response{
 				StatusCode: 200,
-				Body:       io.NopCloser(bytes.NewReader(nil)),
-			}, nil
+			}, nil, nil
 		})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
@@ -63,8 +60,8 @@ func TestRunAPICommand_APIError(t *testing.T) {
 		Status string `json:"status"`
 	}
 
-	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, error) {
-		return nil, nil, errors.New("network error")
+	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, []byte, error) {
+		return nil, nil, nil, errors.New("network error")
 	})
 
 	if err == nil {
@@ -86,11 +83,11 @@ func TestRunAPICommand_HTTPError(t *testing.T) {
 		Status string `json:"status"`
 	}
 
-	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, error) {
+	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, []byte, error) {
+		body := []byte(`{"error": "server error"}`)
 		return nil, &http.Response{
 			StatusCode: 500,
-			Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": "server error"}`))),
-		}, nil
+		}, body, nil
 	})
 
 	if err == nil {
@@ -111,9 +108,9 @@ func TestRunAPICommand_NoAPIKey(t *testing.T) {
 		Status string `json:"status"`
 	}
 
-	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, error) {
+	err := RunAPICommand(cmd, func(ctx context.Context, client *api.ClientWithResponses) (*TestResult, *http.Response, []byte, error) {
 		t.Error("API function should not be called without API key")
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	})
 
 	if err == nil {
