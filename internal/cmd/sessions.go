@@ -455,8 +455,12 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 	}
 
 	// Clear current session only if it matches the stopped session
-	if getCurrentSessionID() == sessionID {
-		_ = clearCurrentSession()
+	configDir, _ := config.Dir()
+	if configDir != "" {
+		data, _ := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
+		if strings.TrimSpace(string(data)) == sessionID {
+			_ = clearCurrentSession()
+		}
 	}
 
 	return PrintResult(fmt.Sprintf("Session %s stopped.", sessionID), map[string]any{
