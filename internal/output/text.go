@@ -9,6 +9,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/muesli/termenv"
+
+	apierrors "github.com/salmonumbrella/notte-cli/internal/errors"
 )
 
 // TextFormatter outputs human-readable text
@@ -136,6 +138,12 @@ func (f *TextFormatter) PrintTable(headers []string, data []map[string]any) erro
 }
 
 func (f *TextFormatter) PrintError(err error) {
+	// For API errors, display "Error <status>: <message>"
+	if apiErr, ok := err.(*apierrors.APIError); ok && apiErr.Message != "" {
+		errText := f.colorize(fmt.Sprintf("Error %d:", apiErr.StatusCode), termenv.ANSIRed)
+		fmt.Fprintf(os.Stderr, "%s %s\n", errText, apiErr.Message)
+		return
+	}
 	errText := f.colorize("Error:", termenv.ANSIRed)
 	fmt.Fprintf(os.Stderr, "%s %s\n", errText, err.Error())
 }

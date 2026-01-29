@@ -7,3 +7,4 @@ notte
 .worktrees/
 coverage.out
 coverage.html
+.env

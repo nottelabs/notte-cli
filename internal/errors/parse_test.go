@@ -114,6 +114,128 @@ func TestParseAPIError_MalformedJSON(t *testing.T) {
 	}
 }
 
+// TestParseAPIError_FastAPIDetailString tests that the detail field (string format)
+// is parsed correctly for any status code, not just 422
+func TestParseAPIError_FastAPIDetailString(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		wantCode   string
+	}{
+		{"400 Bad Request", 400, "Bad Request"},
+		{"404 Not Found", 404, "Not Found"},
+		{"422 Unprocessable Entity", 422, "Unprocessable Entity"},
+		{"500 Internal Server Error", 500, "Internal Server Error"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := []byte(`{"detail": "something went wrong"}`)
+			resp := &http.Response{
+				StatusCode: tt.statusCode,
+			}
+
+			err := ParseAPIError(resp, body)
+
+			apiErr, ok := err.(*APIError)
+			if !ok {
+				t.Fatalf("expected *APIError, got %T", err)
+			}
+
+			if apiErr.StatusCode != tt.statusCode {
+				t.Errorf("StatusCode = %d, want %d", apiErr.StatusCode, tt.statusCode)
+			}
+			if apiErr.Code != tt.wantCode {
+				t.Errorf("Code = %q, want %q", apiErr.Code, tt.wantCode)
+			}
+			if apiErr.Message != "something went wrong" {
+				t.Errorf("Message = %q, want 'something went wrong'", apiErr.Message)
+			}
+		})
+	}
+}
+
+// TestParseAPIError_FastAPIDetailArray tests that the detail field (array format)
+// is parsed correctly for any status code
+func TestParseAPIError_FastAPIDetailArray(t *testing.T) {
+	body := []byte(`{
+		"detail": [
+			{"loc": ["body", "url"], "msg": "field required", "type": "value_error.missing"},
+			{"loc": ["body", "action"], "msg": "invalid action type", "type": "value_error"}
+		]
+	}`)
+	resp := &http.Response{
+		StatusCode: 422,
+	}
+
+	err := ParseAPIError(resp, body)
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+
+	if apiErr.StatusCode != 422 {
+		t.Errorf("StatusCode = %d, want 422", apiErr.StatusCode)
+	}
+	// Should contain both error messages
+	if !strings.Contains(apiErr.Message, "field required") {
+		t.Errorf("Message = %q, should contain 'field required'", apiErr.Message)
+	}
+	if !strings.Contains(apiErr.Message, "invalid action type") {
+		t.Errorf("Message = %q, should contain 'invalid action type'", apiErr.Message)
+	}
+}
+
+func TestParseAPIError_FastAPISingleError(t *testing.T) {
+	body := []byte(`{
+		"detail": [
+			{"loc": ["body"], "msg": "Invalid URL format", "type": "value_error"}
+		]
+	}`)
+	resp := &http.Response{
+		StatusCode: 400,
+	}
+
+	err := ParseAPIError(resp, body)
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+
+	if apiErr.Message != "Invalid URL format" {
+		t.Errorf("Message = %q, want 'Invalid URL format'", apiErr.Message)
+	}
+}
+
+// TestParseAPIError_ErrorAsString tests the case where "error" is a string, not an object
+func TestParseAPIError_ErrorAsString(t *testing.T) {
+	body := []byte(`{
+		"detail": "No snapshot is available",
+		"error": "No snapshot is available",
+		"message": "No snapshot is available",
+		"status": 500
+	}`)
+	resp := &http.Response{
+		StatusCode: 500,
+	}
+
+	err := ParseAPIError(resp, body)
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+
+	if apiErr.StatusCode != 500 {
+		t.Errorf("StatusCode = %d, want 500", apiErr.StatusCode)
+	}
+	if apiErr.Message != "No snapshot is available" {
+		t.Errorf("Message = %q, want 'No snapshot is available'", apiErr.Message)
+	}
+}
+
 func TestSanitizeMessage(t *testing.T) {
 	tests := []struct {
 		input string
