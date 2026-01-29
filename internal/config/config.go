@@ -9,10 +9,12 @@ import (
 
 const (
 	DefaultAPIURL      = "https://api.notte.cc"
+	DefaultConsoleURL  = "https://console.notte.cc"
 	ConfigDirName      = "notte"
 	ConfigFileName     = "config.json"
 	CurrentSessionFile = "current_session"
 	EnvAPIURL          = "NOTTE_API_URL"
+	EnvConsoleURL      = "NOTTE_CONSOLE_URL"
 	EnvSessionID       = "NOTTE_SESSION_ID"
 )
 
@@ -111,4 +113,12 @@ func (c *Config) SaveToPath(path string) error {
 	}
 
 	return os.WriteFile(path, data, 0o600)
+}
+
+// GetConsoleURL returns the console URL from env var or default
+func GetConsoleURL() string {
+	if url := os.Getenv(EnvConsoleURL); url != "" {
+		return url
+	}
+	return DefaultConsoleURL
 }

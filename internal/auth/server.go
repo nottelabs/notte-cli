@@ -9,11 +9,14 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/salmonumbrella/notte-cli/internal/config"
 )
 
 // SetupResult contains the result of a browser-based setup
@@ -27,18 +30,25 @@ type SetupServer struct {
 	result        chan SetupResult
 	shutdown      chan struct{}
 	pendingResult *SetupResult
+	mu            sync.Mutex
 	csrfToken     string
+	oauthState    string
+	baseURL       string
 }
 
 // NewSetupServer creates a new setup server
 func NewSetupServer() *SetupServer {
-	tokenBytes := make([]byte, 32)
-	_, _ = rand.Read(tokenBytes)
+	csrfBytes := make([]byte, 32)
+	_, _ = rand.Read(csrfBytes)
+
+	stateBytes := make([]byte, 32)
+	_, _ = rand.Read(stateBytes)
 
 	return &SetupServer{
-		result:    make(chan SetupResult, 1),
-		shutdown:  make(chan struct{}),
-		csrfToken: hex.EncodeToString(tokenBytes),
+		result:     make(chan SetupResult, 1),
+		shutdown:   make(chan struct{}),
+		csrfToken:  hex.EncodeToString(csrfBytes),
+		oauthState: hex.EncodeToString(stateBytes),
 	}
 }
 
@@ -50,7 +60,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	}
 
 	port := listener.Addr().(*net.TCPAddr).Port
-	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
+	s.baseURL = fmt.Sprintf("http://127.0.0.1:%d", port)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleSetup)
@@ -58,6 +68,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	mux.HandleFunc("/submit", s.handleSubmit)
 	mux.HandleFunc("/success", s.handleSuccess)
 	mux.HandleFunc("/complete", s.handleComplete)
+	mux.HandleFunc("/callback", s.handleCallback)
 
 	server := &http.Server{
 		Handler:      mux,
@@ -70,7 +81,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	}()
 
 	go func() {
-		_ = openBrowser(baseURL)
+		_ = openBrowser(s.baseURL)
 	}()
 
 	select {
@@ -82,8 +93,11 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 		return nil, ctx.Err()
 	case <-s.shutdown:
 		_ = server.Shutdown(context.Background())
-		if s.pendingResult != nil {
-			return s.pendingResult, nil
+		s.mu.Lock()
+		result := s.pendingResult
+		s.mu.Unlock()
+		if result != nil {
+			return result, nil
 		}
 		return nil, fmt.Errorf("setup cancelled")
 	}
@@ -102,11 +116,32 @@ func (s *SetupServer) handleSetup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]string{
-		"CSRFToken": s.csrfToken,
+		"CSRFToken":      s.csrfToken,
+		"ConsoleAuthURL": s.GetConsoleAuthURL(),
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, data)
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// GetConsoleAuthURL builds the console authentication URL with callback and state
+func (s *SetupServer) GetConsoleAuthURL() string {
+	consoleURL := config.GetConsoleURL()
+	callbackURL := s.baseURL + "/callback"
+
+	authURL, err := url.Parse(consoleURL + "/auth/cli")
+	if err != nil {
+		return consoleURL + "/apikeys" // Fallback to manual key page
+	}
+	q := authURL.Query()
+	q.Set("callback", callbackURL)
+	q.Set("state", s.oauthState)
+	authURL.RawQuery = q.Encode()
+
+	return authURL.String()
 }
 
 func (s *SetupServer) handleValidate(w http.ResponseWriter, r *http.Request) {
@@ -230,9 +265,11 @@ func (s *SetupServer) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.mu.Lock()
 	s.pendingResult = &SetupResult{
 		APIKey: req.APIKey,
 	}
+	s.mu.Unlock()
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"success": true,
@@ -247,15 +284,126 @@ func (s *SetupServer) handleSuccess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, nil)
+	if err := tmpl.Execute(w, nil); err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *SetupServer) handleComplete(w http.ResponseWriter, r *http.Request) {
-	if s.pendingResult != nil {
-		s.result <- *s.pendingResult
+	s.mu.Lock()
+	result := s.pendingResult
+	s.mu.Unlock()
+	if result != nil {
+		s.result <- *result
 	}
 	close(s.shutdown)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+}
+
+func (s *SetupServer) handleCallback(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// Serve HTML page that extracts token from URL fragment
+		// Fragments (#token=xxx) are never sent to server, so we need JS to extract and POST it
+		tmpl, err := template.New("callback").Parse(callbackTemplate)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := tmpl.Execute(w, map[string]string{
+			"ExpectedState": s.oauthState,
+		}); err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+
+	case http.MethodPost:
+		// Receive token from the fragment extractor page
+		var req struct {
+			Token string `json:"token"`
+			State string `json:"state"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"success": false,
+				"error":   "Invalid request body",
+			})
+			return
+		}
+
+		// Verify state parameter for CSRF protection
+		if req.State != s.oauthState {
+			writeJSON(w, http.StatusForbidden, map[string]any{
+				"success": false,
+				"error":   "Invalid state parameter",
+			})
+			return
+		}
+
+		if req.Token == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"success": false,
+				"error":   "No token received",
+			})
+			return
+		}
+
+		// Validate the API key
+		client, err := api.NewClient(req.Token)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"success": false,
+				"error":   fmt.Sprintf("Invalid API key: %v", err),
+			})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		resp, err := client.Client().HealthCheckWithResponse(ctx)
+		if err != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]any{
+				"success": false,
+				"error":   fmt.Sprintf("Connection failed: %v", err),
+			})
+			return
+		}
+
+		if resp.StatusCode() != 200 {
+			writeJSON(w, http.StatusBadGateway, map[string]any{
+				"success": false,
+				"error":   fmt.Sprintf("API error: %s", resp.Status()),
+			})
+			return
+		}
+
+		// Save to keyring
+		if err := SetKeyringAPIKey(req.Token); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]any{
+				"success": false,
+				"error":   fmt.Sprintf("Failed to save credentials: %v", err),
+			})
+			return
+		}
+
+		// Set pending result
+		s.mu.Lock()
+		s.pendingResult = &SetupResult{
+			APIKey: req.Token,
+		}
+		s.mu.Unlock()
+
+		writeJSON(w, http.StatusOK, map[string]any{
+			"success": true,
+		})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
