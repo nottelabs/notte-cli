@@ -9,7 +9,7 @@ import (
 
 const (
 	DefaultAPIURL      = "https://api.notte.cc"
-	DefaultConsoleURL  = "http://localhost:3000"
+	DefaultConsoleURL  = "https://console.notte.cc"
 	ConfigDirName      = "notte"
 	ConfigFileName     = "config.json"
 	CurrentSessionFile = "current_session"
