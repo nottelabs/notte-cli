@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	apierrors "github.com/salmonumbrella/notte-cli/internal/errors"
 )
 
 // JSONFormatter outputs data as JSON
@@ -18,10 +20,21 @@ func (f *JSONFormatter) Print(data any) error {
 }
 
 func (f *JSONFormatter) PrintError(err error) {
+	// For API errors, include status code and message
+	if apiErr, ok := err.(*apierrors.APIError); ok && apiErr.Message != "" {
+		errObj := map[string]any{
+			"error":       apiErr.Message,
+			"status_code": apiErr.StatusCode,
+		}
+		enc := json.NewEncoder(os.Stderr)
+		if encErr := enc.Encode(errObj); encErr != nil {
+			fmt.Fprintf(os.Stderr, "Error %d: %s\n", apiErr.StatusCode, apiErr.Message)
+		}
+		return
+	}
 	errObj := map[string]string{"error": err.Error()}
 	enc := json.NewEncoder(os.Stderr)
 	if encErr := enc.Encode(errObj); encErr != nil {
-		// Fallback to plain text if JSON encoding fails
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	}
 }

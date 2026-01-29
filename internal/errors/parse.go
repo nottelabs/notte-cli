@@ -9,17 +9,34 @@ import (
 )
 
 // apiErrorResponse represents the JSON error format from the API
-// Supports both nested format {"error": {"message": "..."}} and flat format {"message": "..."}
+// Supports multiple formats:
+// - Nested: {"error": {"code": "...", "message": "..."}}
+// - Flat error string: {"error": "..."}
+// - Flat message: {"message": "..."}
+// - FastAPI detail string: {"detail": "..."}
+// - FastAPI detail array: {"detail": [{"loc": [...], "msg": "...", "type": "..."}]}
 type apiErrorResponse struct {
-	// Nested error format
-	Error struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-		Source  string `json:"source,omitempty"`
-	} `json:"error"`
-	// Flat error format (used by validation errors)
+	// Error can be a string or an object, so use RawMessage
+	Error json.RawMessage `json:"error,omitempty"`
+	// Flat error format
 	Message    string `json:"message"`
 	StatusCode int    `json:"status_code"`
+	// FastAPI validation error format (can be string or array)
+	Detail json.RawMessage `json:"detail,omitempty"`
+}
+
+// nestedError represents the nested error object format
+type nestedError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Source  string `json:"source,omitempty"`
+}
+
+// fastAPIValidationError represents a single validation error from FastAPI
+type fastAPIValidationError struct {
+	Loc  []any  `json:"loc"`
+	Msg  string `json:"msg"`
+	Type string `json:"type"`
 }
 
 // ParseAPIError parses an HTTP response into an appropriate error type.
@@ -51,12 +68,34 @@ func ParseAPIError(resp *http.Response, body []byte) error {
 		}
 	}
 
-	// Check nested error format first, then flat format
-	message := apiResp.Error.Message
+	// Parse the error field (can be string or object)
+	var message, code, source string
+	if len(apiResp.Error) > 0 {
+		// Try as nested object first
+		var nested nestedError
+		if err := json.Unmarshal(apiResp.Error, &nested); err == nil {
+			message = nested.Message
+			code = nested.Code
+			source = nested.Source
+		} else {
+			// Try as string
+			var errStr string
+			if err := json.Unmarshal(apiResp.Error, &errStr); err == nil {
+				message = errStr
+			}
+		}
+	}
+
+	// Fall back to flat message field
 	if message == "" {
 		message = apiResp.Message
 	}
-	code := apiResp.Error.Code
+
+	// Fall back to detail field
+	if message == "" {
+		message = parseDetailMessage(apiResp.Detail)
+	}
+
 	if code == "" {
 		code = http.StatusText(resp.StatusCode)
 	}
@@ -65,8 +104,38 @@ func ParseAPIError(resp *http.Response, body []byte) error {
 		StatusCode: resp.StatusCode,
 		Code:       code,
 		Message:    SanitizeMessage(message),
-		Source:     apiResp.Error.Source,
+		Source:     source,
 	}
+}
+
+// parseDetailMessage extracts a message from FastAPI's detail field
+// which can be either a string or an array of validation errors
+func parseDetailMessage(detail json.RawMessage) string {
+	if len(detail) == 0 {
+		return ""
+	}
+
+	// Try parsing as a simple string first
+	var detailStr string
+	if err := json.Unmarshal(detail, &detailStr); err == nil {
+		return detailStr
+	}
+
+	// Try parsing as an array of validation errors
+	var validationErrors []fastAPIValidationError
+	if err := json.Unmarshal(detail, &validationErrors); err == nil && len(validationErrors) > 0 {
+		// Combine all error messages
+		var messages []string
+		for _, ve := range validationErrors {
+			if ve.Msg != "" {
+				messages = append(messages, ve.Msg)
+			}
+		}
+		return strings.Join(messages, "; ")
+	}
+
+	// Fallback: return the raw detail as string
+	return string(detail)
 }
 
 func parseRateLimitError(resp *http.Response) *RateLimitError {
