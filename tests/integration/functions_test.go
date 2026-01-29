@@ -14,8 +14,9 @@ import (
 )
 
 // validFunctionContent returns valid Python function code for testing
+// Must contain a notte session to pass API validation
 func validFunctionContent() string {
-	return "def run(test: str = 'test'):\n\tprint(f'Hello, World! {test}')\n"
+	return "def run(test: str = 'test'):\n\tprint(f'Hello, World! {test}')\n\tnotte.Session()\n"
 }
 
 // createTempFunctionFile creates a temporary file with valid function content
@@ -39,21 +40,28 @@ func TestFunctionsList(t *testing.T) {
 	requireSuccess(t, result)
 	t.Log("Successfully listed functions")
 
-	// Validate response structure
-	var listResp struct {
-		Items []struct {
-			FunctionID    string `json:"function_id"`
-			LatestVersion string `json:"latest_version"`
-			Status        string `json:"status"`
-		} `json:"items"`
-		Page     int  `json:"page"`
-		PageSize int  `json:"page_size"`
-		HasNext  bool `json:"has_next"`
+	// The API may return either a paginated response or an array directly
+	// Try to parse as array first (common case)
+	var items []struct {
+		FunctionID    string `json:"function_id"`
+		LatestVersion string `json:"latest_version"`
+		Status        string `json:"status"`
 	}
-	if err := json.Unmarshal([]byte(result.Stdout), &listResp); err != nil {
-		t.Fatalf("Failed to parse list response: %v", err)
+	if err := json.Unmarshal([]byte(result.Stdout), &items); err != nil {
+		// Try paginated response format
+		var listResp struct {
+			Items []struct {
+				FunctionID    string `json:"function_id"`
+				LatestVersion string `json:"latest_version"`
+				Status        string `json:"status"`
+			} `json:"items"`
+		}
+		if err := json.Unmarshal([]byte(result.Stdout), &listResp); err != nil {
+			t.Fatalf("Failed to parse list response: %v", err)
+		}
+		items = listResp.Items
 	}
-	t.Logf("Found %d functions", len(listResp.Items))
+	t.Logf("Found %d functions", len(items))
 }
 
 func TestFunctionsCreateThenDelete(t *testing.T) {
