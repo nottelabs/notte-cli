@@ -32,4 +32,8 @@ jobs:
           NOTTE_API_KEY: ${{ secrets.NOTTE_API_KEY }}
           NOTTE_API_URL: https://us-staging.notte.cc
         run: |
+          if [ -z "$NOTTE_API_KEY" ]; then
+            echo "::warning::Skipping integration tests - NOTTE_API_KEY secret not configured"
+            exit 0
+          fi
           go test -v -tags=integration -timeout=20m ./tests/integration/...
