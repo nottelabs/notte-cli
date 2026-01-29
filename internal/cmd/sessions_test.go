@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 
+	"github.com/salmonumbrella/notte-cli/internal/config"
 	"github.com/salmonumbrella/notte-cli/internal/testutil"
 )
 
@@ -696,6 +698,359 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 
 	stdout, _ := testutil.CaptureOutput(func() {
 		err := runSessionWorkflowCode(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+// Tests for session ID resolution (file-based tracking)
+
+func setupSessionFileTest(t *testing.T) string {
+	t.Helper()
+
+	// Create a temporary config directory
+	tmpDir := t.TempDir()
+	config.SetTestConfigDir(tmpDir)
+	t.Cleanup(func() { config.SetTestConfigDir("") })
+
+	return tmpDir
+}
+
+func TestGetCurrentSessionID_FromFlag(t *testing.T) {
+	origID := sessionID
+	sessionID = "flag_session"
+	t.Cleanup(func() { sessionID = origID })
+
+	got := getCurrentSessionID()
+	if got != "flag_session" {
+		t.Errorf("getCurrentSessionID() = %q, want %q", got, "flag_session")
+	}
+}
+
+func TestGetCurrentSessionID_FromEnvVar(t *testing.T) {
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_SESSION_ID", "env_session")
+
+	got := getCurrentSessionID()
+	if got != "env_session" {
+		t.Errorf("getCurrentSessionID() = %q, want %q", got, "env_session")
+	}
+}
+
+func TestGetCurrentSessionID_FromFile(t *testing.T) {
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_SESSION_ID", "") // Ensure env var is empty
+
+	// Create temp config dir
+	tmpDir := setupSessionFileTest(t)
+
+	// Write session file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("file_session"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	got := getCurrentSessionID()
+	if got != "file_session" {
+		t.Errorf("getCurrentSessionID() = %q, want %q", got, "file_session")
+	}
+}
+
+func TestGetCurrentSessionID_Priority(t *testing.T) {
+	origID := sessionID
+	t.Cleanup(func() { sessionID = origID })
+
+	env := testutil.SetupTestEnv(t)
+	tmpDir := setupSessionFileTest(t)
+
+	// Create session file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("file_session"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	// Test: flag > env > file
+	sessionID = "flag_session"
+	env.SetEnv("NOTTE_SESSION_ID", "env_session")
+
+	got := getCurrentSessionID()
+	if got != "flag_session" {
+		t.Errorf("flag should have highest priority: got %q, want %q", got, "flag_session")
+	}
+
+	// Test: env > file
+	sessionID = ""
+	got = getCurrentSessionID()
+	if got != "env_session" {
+		t.Errorf("env should have priority over file: got %q, want %q", got, "env_session")
+	}
+
+	// Test: file as fallback
+	env.SetEnv("NOTTE_SESSION_ID", "")
+	got = getCurrentSessionID()
+	if got != "file_session" {
+		t.Errorf("file should be fallback: got %q, want %q", got, "file_session")
+	}
+}
+
+func TestSetCurrentSession(t *testing.T) {
+	tmpDir := setupSessionFileTest(t)
+
+	err := setCurrentSession("test_session_id")
+	if err != nil {
+		t.Fatalf("setCurrentSession() error = %v", err)
+	}
+
+	// Verify file was created
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("failed to read session file: %v", err)
+	}
+
+	if string(data) != "test_session_id" {
+		t.Errorf("session file content = %q, want %q", string(data), "test_session_id")
+	}
+}
+
+func TestClearCurrentSession(t *testing.T) {
+	tmpDir := setupSessionFileTest(t)
+
+	// First create a session file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("test_session"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	// Clear it
+	err := clearCurrentSession()
+	if err != nil {
+		t.Fatalf("clearCurrentSession() error = %v", err)
+	}
+
+	// Verify file was removed
+	if _, err := os.Stat(sessionFile); !os.IsNotExist(err) {
+		t.Error("session file should have been removed")
+	}
+}
+
+func TestClearCurrentSession_NoFile(t *testing.T) {
+	_ = setupSessionFileTest(t)
+
+	// Should not error when file doesn't exist
+	err := clearCurrentSession()
+	if err != nil {
+		t.Errorf("clearCurrentSession() should not error when file doesn't exist: %v", err)
+	}
+}
+
+func TestRequireSessionID_NoSession(t *testing.T) {
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_SESSION_ID", "")
+	_ = setupSessionFileTest(t)
+
+	err := requireSessionID()
+	if err == nil {
+		t.Fatal("requireSessionID() should error when no session ID available")
+	}
+
+	expectedMsg := "session ID required"
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Errorf("error message should contain %q, got %q", expectedMsg, err.Error())
+	}
+}
+
+func TestRequireSessionID_FromFile(t *testing.T) {
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_SESSION_ID", "")
+	tmpDir := setupSessionFileTest(t)
+
+	// Create session file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("file_session"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	err := requireSessionID()
+	if err != nil {
+		t.Fatalf("requireSessionID() error = %v", err)
+	}
+
+	if sessionID != "file_session" {
+		t.Errorf("sessionID = %q, want %q", sessionID, "file_session")
+	}
+}
+
+func TestSessionsStart_SetsCurrentSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new_123","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
+	cmd.Flags().BoolVar(&sessionsStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.SetContext(context.Background())
+
+	testutil.CaptureOutput(func() {
+		err := runSessionsStart(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// Verify session was saved to file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("failed to read session file: %v", err)
+	}
+
+	if string(data) != "sess_new_123" {
+		t.Errorf("session file content = %q, want %q", string(data), "sess_new_123")
+	}
+}
+
+func TestSessionStop_ClearsCurrentSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	// Create session file first
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte(sessionIDTest), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	server.AddResponse("/sessions/"+sessionIDTest+"/stop", 200, sessionJSON())
+
+	origID := sessionID
+	sessionID = sessionIDTest
+	t.Cleanup(func() { sessionID = origID })
+
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	testutil.CaptureOutput(func() {
+		err := runSessionStop(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// Verify session file was cleared
+	if _, err := os.Stat(sessionFile); !os.IsNotExist(err) {
+		t.Error("session file should have been removed after stop")
+	}
+}
+
+func TestSessionStatus_UsesCurrentSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	// Create session file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte(sessionIDTest), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	server.AddResponse("/sessions/"+sessionIDTest, 200, sessionJSON())
+
+	// Clear sessionID to test file-based resolution
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	// Clear env var too
+	env.SetEnv("NOTTE_SESSION_ID", "")
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runSessionStatus(cmd, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

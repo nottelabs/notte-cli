@@ -3,12 +3,16 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/salmonumbrella/notte-cli/internal/config"
 )
 
 var (
@@ -32,6 +36,65 @@ var (
 	sessionScrapeOnlyMain     bool
 	sessionCookiesSetFile     string
 )
+
+// getCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
+func getCurrentSessionID() string {
+	// 1. Check --id flag (already in sessionID variable if set)
+	if sessionID != "" {
+		return sessionID
+	}
+
+	// 2. Check NOTTE_SESSION_ID env var
+	if envID := os.Getenv(config.EnvSessionID); envID != "" {
+		return envID
+	}
+
+	// 3. Check current_session file
+	configDir, err := config.Dir()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+// setCurrentSession saves the session ID to the current_session file
+func setCurrentSession(id string) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	// Ensure directory exists
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionFile), []byte(id), 0o600)
+}
+
+// clearCurrentSession removes the current_session file
+func clearCurrentSession() error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// requireSessionID ensures a session ID is available from flag, env, or file
+func requireSessionID() error {
+	sessionID = getCurrentSessionID()
+	if sessionID == "" {
+		return errors.New("session ID required: use --id flag, set NOTTE_SESSION_ID env var, or start a session first")
+	}
+	return nil
+}
 
 var sessionsCmd = &cobra.Command{
 	Use:   "sessions",
@@ -173,58 +236,46 @@ func init() {
 	sessionsStartCmd.Flags().StringVar(&sessionsStartCdpURL, "cdp-url", "", "CDP URL of remote session provider")
 
 	// Status command flags
-	sessionsStatusCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsStatusCmd.MarkFlagRequired("id")
+	sessionsStatusCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Stop command flags
-	sessionsStopCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsStopCmd.MarkFlagRequired("id")
+	sessionsStopCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Observe command flags
-	sessionsObserveCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsObserveCmd.MarkFlagRequired("id")
+	sessionsObserveCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 	sessionsObserveCmd.Flags().StringVar(&sessionObserveURL, "url", "", "Navigate to URL before observing")
 
 	// Execute command flags
-	sessionsExecuteCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsExecuteCmd.MarkFlagRequired("id")
+	sessionsExecuteCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 	sessionsExecuteCmd.Flags().StringVar(&sessionExecuteAction, "action", "", "Action JSON, @file, or '-' for stdin")
 
 	// Scrape command flags
-	sessionsScrapeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsScrapeCmd.MarkFlagRequired("id")
+	sessionsScrapeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 	sessionsScrapeCmd.Flags().StringVar(&sessionScrapeInstructions, "instructions", "", "Extraction instructions")
 	sessionsScrapeCmd.Flags().BoolVar(&sessionScrapeOnlyMain, "only-main-content", false, "Only scrape main content")
 
 	// Cookies command flags
-	sessionsCookiesCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsCookiesCmd.MarkFlagRequired("id")
+	sessionsCookiesCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Cookies-set command flags
-	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsCookiesSetCmd.MarkFlagRequired("id")
+	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", "JSON file containing cookies array (required)")
 	_ = sessionsCookiesSetCmd.MarkFlagRequired("file")
 
 	// Debug command flags
-	sessionsDebugCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsDebugCmd.MarkFlagRequired("id")
+	sessionsDebugCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Network command flags
-	sessionsNetworkCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsNetworkCmd.MarkFlagRequired("id")
+	sessionsNetworkCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Replay command flags
-	sessionsReplayCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsReplayCmd.MarkFlagRequired("id")
+	sessionsReplayCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Offset command flags
-	sessionsOffsetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsOffsetCmd.MarkFlagRequired("id")
+	sessionsOffsetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 
 	// Workflow-code command flags
-	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (required)")
-	_ = sessionsWorkflowCodeCmd.MarkFlagRequired("id")
+	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 }
 
 func runSessionsList(cmd *cobra.Command, args []string) error {
@@ -336,11 +387,21 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Save session ID as current session
+	if resp.JSON200 != nil {
+		if err := setCurrentSession(resp.JSON200.SessionId); err != nil {
+			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
+		}
+	}
+
 	formatter := GetFormatter()
 	return formatter.Print(resp.JSON200)
 }
 
 func runSessionStatus(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -363,6 +424,10 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionStop(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	confirmed, err := ConfirmAction("session", sessionID)
 	if err != nil {
 		return err
@@ -389,6 +454,9 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Clear current session if it matches the stopped session
+	_ = clearCurrentSession()
+
 	return PrintResult(fmt.Sprintf("Session %s stopped.", sessionID), map[string]any{
 		"id":     sessionID,
 		"status": "stopped",
@@ -396,6 +464,10 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionObserve(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -423,6 +495,10 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionExecute(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -456,6 +532,10 @@ func runSessionExecute(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionScrape(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -486,6 +566,10 @@ func runSessionScrape(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionCookies(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -508,6 +592,10 @@ func runSessionCookies(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -542,6 +630,10 @@ func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionDebug(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -564,6 +656,10 @@ func runSessionDebug(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionNetwork(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -586,6 +682,10 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionReplay(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -613,6 +713,10 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionOffset(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -635,6 +739,10 @@ func runSessionOffset(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
+	if err := requireSessionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
