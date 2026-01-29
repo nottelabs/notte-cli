@@ -58,7 +58,7 @@ func TestStorageDownloadFromSession(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// List downloads from session (likely empty)
-	result = runCLI(t, "files", "list", "--downloads", "--session", sessionID)
+	result = runCLI(t, "files", "list", "--downloads", "--id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully listed session downloads")
 
@@ -89,7 +89,7 @@ func TestStorageDownloadNonexistent(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Try to download a non-existent file
-	result = runCLI(t, "files", "download", "nonexistent-file-12345.txt", "--session", sessionID)
+	result = runCLI(t, "files", "download", "nonexistent-file-12345.txt", "--id", sessionID)
 	requireFailure(t, result)
 	t.Log("Correctly failed to download non-existent file")
 

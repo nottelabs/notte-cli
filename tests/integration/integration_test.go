@@ -168,15 +168,3 @@ func cleanupProfile(t *testing.T, profileID string) {
 		t.Logf("Warning: failed to cleanup profile %s: %s", profileID, result.Stderr)
 	}
 }
-
-// cleanupFunction deletes a function, ignoring errors (for deferred cleanup)
-func cleanupFunction(t *testing.T, functionID string) {
-	t.Helper()
-	if functionID == "" {
-		return
-	}
-	result := runCLI(t, "functions", "delete", "--id", functionID)
-	if result.ExitCode != 0 {
-		t.Logf("Warning: failed to cleanup function %s: %s", functionID, result.Stderr)
-	}
-}
