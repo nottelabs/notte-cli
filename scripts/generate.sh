@@ -11,13 +11,25 @@ if ! curl -f -s https://api.notte.cc/openapi.json -o /tmp/notte-openapi.json; th
   exit 1
 fi
 
+# Read excluded endpoints and build regex pattern
+EXCLUDED_ENDPOINTS_FILE="$SCRIPT_DIR/excluded-endpoints.txt"
+if [[ -f "$EXCLUDED_ENDPOINTS_FILE" ]]; then
+  EXCLUDED_PATHS=$(grep -v '^#' "$EXCLUDED_ENDPOINTS_FILE" | grep -v '^$' | tr '\n' '|' | sed 's/|$//')
+  echo "Excluding endpoints: $EXCLUDED_PATHS"
+else
+  EXCLUDED_PATHS=""
+fi
+
 echo "Converting OpenAPI 3.1 to 3.0 format..."
 # Convert OpenAPI 3.1 to 3.0:
-# 1. exclusiveMinimum from number to boolean
-# 2. anyOf with null to nullable type
-# 3. Remove null from type arrays
-# 4. Add missing path parameters
-jq '
+# 1. Filter out excluded endpoints
+# 2. exclusiveMinimum from number to boolean
+# 3. anyOf with null to nullable type
+# 4. Remove null from type arrays
+# 5. Add missing path parameters
+jq --arg excluded "$EXCLUDED_PATHS" '
+  # Filter out excluded paths
+  (if $excluded != "" then .paths |= with_entries(select(.key | test($excluded) | not)) else . end) |
   # First pass: fix schema types
   walk(
     if type == "object" then
