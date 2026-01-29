@@ -8,11 +8,23 @@ import (
 )
 
 const (
-	DefaultAPIURL  = "https://api.notte.cc"
-	ConfigDirName  = "notte"
-	ConfigFileName = "config.json"
-	EnvAPIURL      = "NOTTE_API_URL"
+	DefaultAPIURL      = "https://api.notte.cc"
+	ConfigDirName      = "notte"
+	ConfigFileName     = "config.json"
+	CurrentSessionFile = "current_session"
+	EnvAPIURL          = "NOTTE_API_URL"
+	EnvSessionID       = "NOTTE_SESSION_ID"
 )
+
+// testConfigDir allows overriding the config directory for testing.
+// If empty, the default os.UserConfigDir() path is used.
+var testConfigDir string
+
+// SetTestConfigDir sets a custom config directory for testing.
+// Pass empty string to restore default behavior.
+func SetTestConfigDir(dir string) {
+	testConfigDir = dir
+}
 
 // Config holds CLI configuration
 type Config struct {
@@ -20,13 +32,25 @@ type Config struct {
 	APIURL string `json:"api_url,omitempty"`
 }
 
-// DefaultConfigPath returns ~/.config/notte/config.json
-func DefaultConfigPath() (string, error) {
+// Dir returns the notte config directory path (~/.config/notte or ~/Library/Application Support/notte on macOS)
+func Dir() (string, error) {
+	if testConfigDir != "" {
+		return filepath.Join(testConfigDir, ConfigDirName), nil
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, ConfigDirName, ConfigFileName), nil
+	return filepath.Join(configDir, ConfigDirName), nil
+}
+
+// DefaultConfigPath returns ~/.config/notte/config.json
+func DefaultConfigPath() (string, error) {
+	dir, err := Dir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, ConfigFileName), nil
 }
 
 // Load loads config from default path
