@@ -1,0 +1,6 @@
+# Endpoints to exclude from OpenAPI code generation
+# One endpoint path per line (supports regex patterns)
+# Lines starting with # are comments
+
+/prompts/improve
+/prompts/nudge
