@@ -50,6 +50,9 @@ func Execute() {
 }
 
 func init() {
+	// Hide completion command from help output (still accessible via `notte completion`)
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "text", "Output format (text, json)")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
