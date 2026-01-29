@@ -200,8 +200,9 @@ func TestTextFormatter_Print_PointerField(t *testing.T) {
 		}
 
 		output := buf.String()
-		if !strings.Contains(output, "<nil>") {
-			t.Errorf("expected <nil> for nil pointer fields, got %q", output)
+		// Nil pointer fields should be skipped entirely
+		if strings.Contains(output, "Name:") || strings.Contains(output, "Value:") {
+			t.Errorf("expected nil fields to be hidden, got %q", output)
 		}
 	})
 

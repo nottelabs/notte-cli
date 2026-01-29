@@ -59,7 +59,8 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		Url: url,
 	}
 
-	if scrapeInstructions != "" {
+	hasInstructions := scrapeInstructions != ""
+	if hasInstructions {
 		body.Instructions = &scrapeInstructions
 	}
 	if scrapeOnlyMain {
@@ -75,7 +76,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return PrintScrapeResponse(resp.JSON200, hasInstructions)
 }
 
 func runScrapeHtml(cmd *cobra.Command, args []string) error {
@@ -119,5 +120,10 @@ func runScrapeHtml(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	// ScrapeFromHtml returns ScrapeSchemaResponse which has a different structure
+	// Just print the Scrape field which contains the extracted data
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp.JSON200)
+	}
+	return GetFormatter().Print(resp.JSON200.Scrape)
 }

@@ -76,18 +76,24 @@ func (f *TextFormatter) printStruct(data any) error {
 		if !field.IsExported() {
 			continue
 		}
-		label := f.colorize(field.Name+":", termenv.ANSICyan)
 
 		fieldValue := v.Field(i)
+
+		// Skip nil pointers, nil slices, nil maps, and nil interfaces
+		switch fieldValue.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface:
+			if fieldValue.IsNil() {
+				continue
+			}
+		}
+
+		label := f.colorize(field.Name+":", termenv.ANSICyan)
+
 		var displayValue any
 
-		// Handle pointer fields
+		// Handle pointer fields by dereferencing
 		if fieldValue.Kind() == reflect.Ptr {
-			if fieldValue.IsNil() {
-				displayValue = "<nil>"
-			} else {
-				displayValue = fieldValue.Elem().Interface()
-			}
+			displayValue = fieldValue.Elem().Interface()
 		} else {
 			displayValue = fieldValue.Interface()
 		}

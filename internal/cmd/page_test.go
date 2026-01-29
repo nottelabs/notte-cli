@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/salmonumbrella/notte-cli/internal/config"
 	"github.com/salmonumbrella/notte-cli/internal/testutil"
 )
 
@@ -34,6 +35,10 @@ func setupPageTest(t *testing.T) *testutil.MockServer {
 
 func pageExecResponse() string {
 	return `{"action":{"type":"click"},"data":{},"message":"ok","session":{"session_id":"` + pageSessionIDTest + `","status":"ACTIVE"},"success":true}`
+}
+
+func pageScrapeResponse() string {
+	return `{"markdown":"# Test","session":{"session_id":"` + pageSessionIDTest + `","status":"ACTIVE"},"structured":{"success":true,"data":{"title":"Test"}}}`
 }
 
 // Test parseSelector helper
@@ -555,7 +560,7 @@ func TestRunPageWait_InvalidTime(t *testing.T) {
 
 func TestRunPageScrape(t *testing.T) {
 	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
@@ -574,7 +579,7 @@ func TestRunPageScrape(t *testing.T) {
 
 func TestRunPageScrape_MainOnly(t *testing.T) {
 	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
 
 	origMainOnly := pageScrapeMainOnly
 	pageScrapeMainOnly = true
@@ -585,6 +590,73 @@ func TestRunPageScrape_MainOnly(t *testing.T) {
 
 	stdout, _ := testutil.CaptureOutput(func() {
 		err := runPageScrape(cmd, []string{"Extract main content"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunPageScrape_NoInstructions(t *testing.T) {
+	server := setupPageTest(t)
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runPageScrape(cmd, []string{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+// Page Observe Tests
+
+func pageObserveResponse() string {
+	return `{"metadata":{"url":"https://example.com"},"screenshot":{},"session":{"session_id":"` + pageSessionIDTest + `","status":"ACTIVE"},"space":{"description":"A test page with example content","interaction_actions":[]}}`
+}
+
+func TestRunPageObserve(t *testing.T) {
+	server := setupPageTest(t)
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/observe", 200, pageObserveResponse())
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runPageObserve(cmd, []string{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunPageObserve_WithURL(t *testing.T) {
+	server := setupPageTest(t)
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/observe", 200, pageObserveResponse())
+
+	origURL := pageObserveURL
+	pageObserveURL = "https://example.com"
+	t.Cleanup(func() { pageObserveURL = origURL })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runPageObserve(cmd, []string{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -691,6 +763,10 @@ func TestPageCommand_NoSessionID(t *testing.T) {
 	server := testutil.NewMockServer()
 	t.Cleanup(func() { server.Close() })
 	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	// Use isolated config directory so no current_session file is found
+	config.SetTestConfigDir(env.TempDir)
+	t.Cleanup(func() { config.SetTestConfigDir("") })
 
 	// Clear sessionID
 	origID := sessionID

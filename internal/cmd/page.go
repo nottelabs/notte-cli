@@ -36,7 +36,36 @@ var (
 
 	// form-fill flags
 	pageFormFillData string
+
+	// observe flags
+	pageObserveURL string
 )
+
+// printExecuteResponse formats execute response output.
+// In JSON mode, returns the full response. In text mode, prints
+// only the message and data fields, hiding the Session field.
+func printExecuteResponse(resp *api.ApiExecutionResponse) error {
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp)
+	}
+
+	if !resp.Success {
+		if resp.Exception != nil {
+			return fmt.Errorf("%s", *resp.Exception)
+		}
+		return fmt.Errorf("action failed")
+	}
+
+	// Print message
+	fmt.Println(resp.Message)
+
+	// Print data if non-nil
+	if resp.Data != nil {
+		return GetFormatter().Print(resp.Data)
+	}
+	return nil
+}
 
 // parseSelector returns (id, selector, error) based on @ prefix
 // @B3 -> element ID (id: "B3")
@@ -84,7 +113,7 @@ func executePageAction(cmd *cobra.Command, action map[string]any) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return printExecuteResponse(resp.JSON200)
 }
 
 var pageCmd = &cobra.Command{
@@ -449,26 +478,95 @@ func runPageWait(cmd *cobra.Command, args []string) error {
 	return executePageAction(cmd, action)
 }
 
+// Page State
+
+var pageObserveCmd = &cobra.Command{
+	Use:   "observe",
+	Short: "Observe the current page state",
+	Args:  cobra.NoArgs,
+	RunE:  runPageObserve,
+}
+
+func runPageObserve(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	body := api.PageObserveJSONRequestBody{}
+	if pageObserveURL != "" {
+		body.Url = &pageObserveURL
+	}
+
+	params := &api.PageObserveParams{}
+	resp, err := client.Client().PageObserveWithResponse(ctx, sessionID, params, body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp.JSON200)
+	}
+
+	// Text mode: return only the page description
+	fmt.Println(resp.JSON200.Space.Description)
+	return nil
+}
+
 // Data Extraction
 
 var pageScrapeCmd = &cobra.Command{
-	Use:   "scrape <instructions>",
+	Use:   "scrape [instructions]",
 	Short: "Scrape content from the page",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runPageScrape,
 }
 
 func runPageScrape(cmd *cobra.Command, args []string) error {
-	action := map[string]any{
-		"type":         "scrape",
-		"instructions": args[0],
+	if err := RequireSessionID(); err != nil {
+		return err
 	}
 
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	body := api.PageScrapeJSONRequestBody{}
+	hasInstructions := len(args) > 0
+	if hasInstructions {
+		body.Instructions = &args[0]
+	}
 	if pageScrapeMainOnly {
-		action["only_main_content"] = true
+		body.OnlyMainContent = &pageScrapeMainOnly
 	}
 
-	return executePageAction(cmd, action)
+	params := &api.PageScrapeParams{}
+	resp, err := client.Client().PageScrapeWithResponse(ctx, sessionID, params, body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return PrintScrapeResponse(resp.JSON200, hasInstructions)
 }
 
 // Other Actions
@@ -545,6 +643,7 @@ func init() {
 	pageCmd.AddCommand(pageSwitchTabCmd)
 	pageCmd.AddCommand(pageCloseTabCmd)
 	pageCmd.AddCommand(pageWaitCmd)
+	pageCmd.AddCommand(pageObserveCmd)
 	pageCmd.AddCommand(pageScrapeCmd)
 	pageCmd.AddCommand(pageCaptchaSolveCmd)
 	pageCmd.AddCommand(pageCompleteCmd)
@@ -567,6 +666,9 @@ func init() {
 	// upload flags
 	pageUploadCmd.Flags().StringVar(&pageUploadFile, "file", "", "Path to the file to upload (required)")
 	_ = pageUploadCmd.MarkFlagRequired("file")
+
+	// observe flags
+	pageObserveCmd.Flags().StringVar(&pageObserveURL, "url", "", "Navigate to URL before observing")
 
 	// scrape flags
 	pageScrapeCmd.Flags().BoolVar(&pageScrapeMainOnly, "main-only", false, "Only scrape main content")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+
+	"github.com/salmonumbrella/notte-cli/internal/api"
 )
 
 // IsJSONOutput returns true if the global output format is set to JSON.
@@ -73,4 +75,35 @@ func PrintListOrEmpty(items any, emptyMsg string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// PrintScrapeResponse formats scrape output consistently across all scrape commands.
+// In JSON mode, returns the full response. In text mode without instructions,
+// returns just the markdown. With instructions, checks data.success and returns
+// the extracted data or an error message.
+func PrintScrapeResponse(resp *api.ScrapeResponse, hasInstructions bool) error {
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp)
+	}
+
+	if !hasInstructions {
+		// Simple mode: just return markdown
+		fmt.Println(resp.Markdown)
+		return nil
+	}
+
+	// Structured mode: check data.success
+	if data, ok := resp.Structured.(map[string]any); ok {
+		if success, ok := data["success"].(bool); ok && !success {
+			if errMsg, ok := data["error"].(string); ok {
+				return fmt.Errorf("%s", errMsg)
+			}
+			return fmt.Errorf("scrape failed")
+		}
+		if resultData, ok := data["data"]; ok {
+			return GetFormatter().Print(resultData)
+		}
+	}
+	return GetFormatter().Print(resp.Structured)
 }

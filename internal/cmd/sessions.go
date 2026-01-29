@@ -569,7 +569,8 @@ func runSessionScrape(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	body := api.PageScrapeJSONRequestBody{}
-	if sessionScrapeInstructions != "" {
+	hasInstructions := sessionScrapeInstructions != ""
+	if hasInstructions {
 		body.Instructions = &sessionScrapeInstructions
 	}
 	if sessionScrapeOnlyMain {
@@ -586,7 +587,7 @@ func runSessionScrape(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return PrintScrapeResponse(resp.JSON200, hasInstructions)
 }
 
 func runSessionCookies(cmd *cobra.Command, args []string) error {
