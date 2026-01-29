@@ -7,12 +7,14 @@ import (
 const (
 	KeyringService = "notte-cli"
 	KeyringKey     = "api_key"
+	KeychainName   = "notte-api-key"
 )
 
 // getFromSystemKeyring reads from the real OS keyring
 func getFromSystemKeyring(key string) (string, error) {
 	ring, err := keyring.Open(keyring.Config{
-		ServiceName: KeyringService,
+		ServiceName:  KeyringService,
+		KeychainName: KeychainName,
 	})
 	if err != nil {
 		return "", err
@@ -29,7 +31,8 @@ func getFromSystemKeyring(key string) (string, error) {
 // setInSystemKeyring writes to the real OS keyring
 func setInSystemKeyring(key, value string) error {
 	ring, err := keyring.Open(keyring.Config{
-		ServiceName: KeyringService,
+		ServiceName:  KeyringService,
+		KeychainName: KeychainName,
 	})
 	if err != nil {
 		return err
@@ -44,7 +47,8 @@ func setInSystemKeyring(key, value string) error {
 // deleteFromSystemKeyring removes from the real OS keyring
 func deleteFromSystemKeyring(key string) error {
 	ring, err := keyring.Open(keyring.Config{
-		ServiceName: KeyringService,
+		ServiceName:  KeyringService,
+		KeychainName: KeychainName,
 	})
 	if err != nil {
 		return err
