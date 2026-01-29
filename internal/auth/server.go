@@ -131,7 +131,7 @@ func (s *SetupServer) GetConsoleAuthURL() string {
 
 	authURL, err := url.Parse(consoleURL + "/auth/cli")
 	if err != nil {
-		return ""
+		return consoleURL + "/apikeys" // Fallback to manual key page
 	}
 	q := authURL.Query()
 	q.Set("callback", callbackURL)
