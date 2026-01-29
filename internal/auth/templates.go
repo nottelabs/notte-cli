@@ -1225,9 +1225,9 @@ const callbackTemplate = `<!DOCTYPE html>
                 statusIcon.className = 'status-icon success';
                 statusIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                 title.textContent = "You're connected!";
-                message.textContent = 'You can close this window and return to your terminal.';
-                // Trigger completion
-                fetch('/complete', { method: 'POST' }).catch(() => {});
+                message.textContent = 'Redirecting...';
+                // Redirect to full success page
+                window.location.href = '/success';
             }
 
             function showError(err) {
