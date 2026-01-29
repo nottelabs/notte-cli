@@ -9,11 +9,13 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"time"
 
 	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/salmonumbrella/notte-cli/internal/config"
 )
 
 // SetupResult contains the result of a browser-based setup
@@ -28,17 +30,23 @@ type SetupServer struct {
 	shutdown      chan struct{}
 	pendingResult *SetupResult
 	csrfToken     string
+	oauthState    string
+	baseURL       string
 }
 
 // NewSetupServer creates a new setup server
 func NewSetupServer() *SetupServer {
-	tokenBytes := make([]byte, 32)
-	_, _ = rand.Read(tokenBytes)
+	csrfBytes := make([]byte, 32)
+	_, _ = rand.Read(csrfBytes)
+
+	stateBytes := make([]byte, 32)
+	_, _ = rand.Read(stateBytes)
 
 	return &SetupServer{
-		result:    make(chan SetupResult, 1),
-		shutdown:  make(chan struct{}),
-		csrfToken: hex.EncodeToString(tokenBytes),
+		result:     make(chan SetupResult, 1),
+		shutdown:   make(chan struct{}),
+		csrfToken:  hex.EncodeToString(csrfBytes),
+		oauthState: hex.EncodeToString(stateBytes),
 	}
 }
 
@@ -50,7 +58,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	}
 
 	port := listener.Addr().(*net.TCPAddr).Port
-	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
+	s.baseURL = fmt.Sprintf("http://127.0.0.1:%d", port)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleSetup)
@@ -58,6 +66,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	mux.HandleFunc("/submit", s.handleSubmit)
 	mux.HandleFunc("/success", s.handleSuccess)
 	mux.HandleFunc("/complete", s.handleComplete)
+	mux.HandleFunc("/callback", s.handleCallback)
 
 	server := &http.Server{
 		Handler:      mux,
@@ -70,7 +79,7 @@ func (s *SetupServer) Start(ctx context.Context) (*SetupResult, error) {
 	}()
 
 	go func() {
-		_ = openBrowser(baseURL)
+		_ = openBrowser(s.baseURL)
 	}()
 
 	select {
@@ -102,11 +111,26 @@ func (s *SetupServer) handleSetup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]string{
-		"CSRFToken": s.csrfToken,
+		"CSRFToken":      s.csrfToken,
+		"ConsoleAuthURL": s.GetConsoleAuthURL(),
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.Execute(w, data)
+}
+
+// GetConsoleAuthURL builds the console authentication URL with callback and state
+func (s *SetupServer) GetConsoleAuthURL() string {
+	consoleURL := config.GetConsoleURL()
+	callbackURL := s.baseURL + "/callback"
+
+	authURL, _ := url.Parse(consoleURL + "/auth/cli")
+	q := authURL.Query()
+	q.Set("callback", callbackURL)
+	q.Set("state", s.oauthState)
+	authURL.RawQuery = q.Encode()
+
+	return authURL.String()
 }
 
 func (s *SetupServer) handleValidate(w http.ResponseWriter, r *http.Request) {
@@ -256,6 +280,94 @@ func (s *SetupServer) handleComplete(w http.ResponseWriter, r *http.Request) {
 	}
 	close(s.shutdown)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+}
+
+func (s *SetupServer) handleCallback(w http.ResponseWriter, r *http.Request) {
+	// Verify state parameter for CSRF protection
+	state := r.URL.Query().Get("state")
+	if state != s.oauthState {
+		tmpl, err := template.New("callback_error").Parse(callbackErrorTemplate)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": "Invalid state parameter. This may be a security issue. Please try again.",
+		})
+		return
+	}
+
+	// Get token from query parameter
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		tmpl, err := template.New("callback_error").Parse(callbackErrorTemplate)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": "No API key received from console. Please try again.",
+		})
+		return
+	}
+
+	// Validate the API key
+	client, err := api.NewClient(token)
+	if err != nil {
+		tmpl, _ := template.New("callback_error").Parse(callbackErrorTemplate)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": fmt.Sprintf("Invalid API key: %v", err),
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Client().HealthCheckWithResponse(ctx)
+	if err != nil {
+		tmpl, _ := template.New("callback_error").Parse(callbackErrorTemplate)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusBadGateway)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": fmt.Sprintf("Connection failed: %v", err),
+		})
+		return
+	}
+
+	if resp.StatusCode() != 200 {
+		tmpl, _ := template.New("callback_error").Parse(callbackErrorTemplate)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusBadGateway)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": fmt.Sprintf("API error: %s", resp.Status()),
+		})
+		return
+	}
+
+	// Save to keyring
+	if err := SetKeyringAPIKey(token); err != nil {
+		tmpl, _ := template.New("callback_error").Parse(callbackErrorTemplate)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = tmpl.Execute(w, map[string]string{
+			"Error": fmt.Sprintf("Failed to save credentials: %v", err),
+		})
+		return
+	}
+
+	// Set pending result and redirect to success page
+	s.pendingResult = &SetupResult{
+		APIKey: token,
+	}
+
+	http.Redirect(w, r, "/success", http.StatusFound)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
