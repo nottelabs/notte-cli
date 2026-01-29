@@ -129,7 +129,8 @@ func TestRunFilesListDownloads(t *testing.T) {
 
 func TestRunFilesListDownloadsMissingSession(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
-	env.SetEnv("NOTTE_SESSION_ID", "") // Clear session env var
+	env.SetEnv("NOTTE_API_KEY", "test-key") // Need API key for GetClient()
+	env.SetEnv("NOTTE_SESSION_ID", "")      // Clear session env var
 
 	// Set up empty config dir (no session file)
 	tmpDir := t.TempDir()
