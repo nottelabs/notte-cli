@@ -157,6 +157,7 @@ handle_mfa() {
     # This is a placeholder for manual handling if needed
 
     log_info "Waiting for MFA auto-fill from vault..."
+    log_info "MFA input selector: $MFA_SELECTOR"
     notte page wait 3000
 
     # Check if still on MFA page
@@ -165,7 +166,7 @@ handle_mfa() {
 
     if echo "$current_url" | grep -qiE "(mfa|verify|2fa)"; then
         log_warn "MFA may require manual intervention"
-        log_warn "If vault has --mfa-secret, TOTP should auto-fill"
+        log_warn "If vault has --mfa-secret, TOTP should auto-fill to $MFA_SELECTOR"
     fi
 }
 
