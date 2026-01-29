@@ -8,14 +8,16 @@ import (
 )
 
 const (
-	DefaultAPIURL      = "https://api.notte.cc"
-	DefaultConsoleURL  = "https://console.notte.cc"
-	ConfigDirName      = "notte"
-	ConfigFileName     = "config.json"
-	CurrentSessionFile = "current_session"
-	EnvAPIURL          = "NOTTE_API_URL"
-	EnvConsoleURL      = "NOTTE_CONSOLE_URL"
-	EnvSessionID       = "NOTTE_SESSION_ID"
+	DefaultAPIURL       = "https://api.notte.cc"
+	DefaultConsoleURL   = "https://console.notte.cc"
+	ConfigDirName       = "notte"
+	ConfigFileName      = "config.json"
+	CurrentSessionFile  = "current_session"
+	CurrentFunctionFile = "current_function"
+	EnvAPIURL           = "NOTTE_API_URL"
+	EnvConsoleURL       = "NOTTE_CONSOLE_URL"
+	EnvSessionID        = "NOTTE_SESSION_ID"
+	EnvFunctionID       = "NOTTE_FUNCTION_ID"
 )
 
 // testConfigDir allows overriding the config directory for testing.

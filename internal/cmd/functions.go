@@ -3,15 +3,18 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/salmonumbrella/notte-cli/internal/config"
 )
 
 var (
@@ -28,6 +31,65 @@ var (
 	functionMetadataJSON   string
 	functionCronExpression string
 )
+
+// GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
+func GetCurrentFunctionID() string {
+	// 1. Check --id flag (already in functionID variable if set)
+	if functionID != "" {
+		return functionID
+	}
+
+	// 2. Check NOTTE_FUNCTION_ID env var
+	if envID := os.Getenv(config.EnvFunctionID); envID != "" {
+		return envID
+	}
+
+	// 3. Check current_function file
+	configDir, err := config.Dir()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentFunctionFile))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+// setCurrentFunction saves the function ID to the current_function file
+func setCurrentFunction(id string) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	// Ensure directory exists
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(configDir, config.CurrentFunctionFile), []byte(id), 0o600)
+}
+
+// clearCurrentFunction removes the current_function file
+func clearCurrentFunction() error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentFunctionFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// RequireFunctionID ensures a function ID is available from flag, env, or file
+func RequireFunctionID() error {
+	functionID = GetCurrentFunctionID()
+	if functionID == "" {
+		return errors.New("function ID required: use --id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
+	}
+	return nil
+}
 
 var functionsCmd = &cobra.Command{
 	Use:   "functions",
@@ -156,59 +218,48 @@ func init() {
 	functionsCreateCmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "Make function public")
 
 	// Show command flags
-	functionsShowCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsShowCmd.MarkFlagRequired("id")
+	functionsShowCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 
 	// Update command flags
-	functionsUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsUpdateCmd.MarkFlagRequired("id")
+	functionsUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 	functionsUpdateCmd.Flags().StringVar(&functionUpdateFile, "file", "", "Path to updated function file (required)")
 	_ = functionsUpdateCmd.MarkFlagRequired("file")
 
 	// Delete command flags
-	functionsDeleteCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsDeleteCmd.MarkFlagRequired("id")
+	functionsDeleteCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 
 	// Run command flags
-	functionsRunCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsRunCmd.MarkFlagRequired("id")
+	functionsRunCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 
 	// Runs command flags
-	functionsRunsCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsRunsCmd.MarkFlagRequired("id")
+	functionsRunsCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 
 	// Fork command flags
-	functionsForkCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsForkCmd.MarkFlagRequired("id")
+	functionsForkCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 
 	// Run-stop command flags
-	functionsRunStopCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsRunStopCmd.MarkFlagRequired("id")
+	functionsRunStopCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 	functionsRunStopCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunStopCmd.MarkFlagRequired("run-id")
 
 	// Run-metadata command flags
-	functionsRunMetadataCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsRunMetadataCmd.MarkFlagRequired("id")
+	functionsRunMetadataCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 	functionsRunMetadataCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunMetadataCmd.MarkFlagRequired("run-id")
 
 	// Run-metadata-update command flags
-	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsRunMetadataUpdateCmd.MarkFlagRequired("id")
+	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunMetadataUpdateCmd.MarkFlagRequired("run-id")
 	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionMetadataJSON, "data", "", "JSON metadata, @file, or '-' for stdin")
 
 	// Schedule command flags
-	functionsScheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsScheduleCmd.MarkFlagRequired("id")
+	functionsScheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 	functionsScheduleCmd.Flags().StringVar(&functionCronExpression, "cron", "", "Cron expression (required)")
 	_ = functionsScheduleCmd.MarkFlagRequired("cron")
 
 	// Unschedule command flags
-	functionsUnscheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (required)")
-	_ = functionsUnscheduleCmd.MarkFlagRequired("id")
+	functionsUnscheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
 }
 
 func runFunctionsList(cmd *cobra.Command, args []string) error {
@@ -308,11 +359,22 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Save function ID as current function
+	if resp.JSON200 != nil && resp.JSON200.FunctionId != "" {
+		if err := setCurrentFunction(resp.JSON200.FunctionId); err != nil {
+			PrintInfo(fmt.Sprintf("Warning: could not save current function: %v", err))
+		}
+	}
+
 	formatter := GetFormatter()
 	return formatter.Print(resp.JSON200)
 }
 
 func runFunctionShow(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -335,6 +397,10 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionUpdate(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -385,6 +451,10 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionDelete(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	confirmed, err := ConfirmAction("function", functionID)
 	if err != nil {
 		return err
@@ -411,6 +481,15 @@ func runFunctionDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Clear current function only if it matches the deleted function
+	configDir, _ := config.Dir()
+	if configDir != "" {
+		data, _ := os.ReadFile(filepath.Join(configDir, config.CurrentFunctionFile))
+		if strings.TrimSpace(string(data)) == functionID {
+			_ = clearCurrentFunction()
+		}
+	}
+
 	return PrintResult(fmt.Sprintf("Function %s deleted.", functionID), map[string]any{
 		"id":     functionID,
 		"status": "deleted",
@@ -418,6 +497,10 @@ func runFunctionDelete(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRun(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -440,6 +523,10 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRuns(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -472,6 +559,10 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionFork(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -494,6 +585,10 @@ func runFunctionFork(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRunStop(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -516,6 +611,10 @@ func runFunctionRunStop(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -538,6 +637,10 @@ func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRunMetadataUpdate(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -571,6 +674,10 @@ func runFunctionRunMetadataUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionSchedule(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -600,6 +707,10 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionUnschedule(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
