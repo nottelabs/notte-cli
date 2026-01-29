@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/salmonumbrella/notte-cli/internal/auth"
 	"github.com/salmonumbrella/notte-cli/internal/testutil"
 )
 
@@ -98,8 +99,11 @@ func TestRunAPICommand_HTTPError(t *testing.T) {
 }
 
 func TestRunAPICommand_NoAPIKey(t *testing.T) {
-	// Ensure clean environment
-	_ = testutil.SetupTestEnv(t)
+	// Ensure clean environment (clears env vars)
+	env := testutil.SetupTestEnv(t)
+	// Use mock keyring to prevent reading from real system keyring
+	auth.SetKeyring(env.MockStore)
+	defer auth.ResetKeyring()
 
 	cmd := newTestCommand()
 
