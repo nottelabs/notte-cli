@@ -207,6 +207,13 @@ var sessionsWorkflowCodeCmd = &cobra.Command{
 	RunE:  runSessionWorkflowCode,
 }
 
+var sessionsCodeCmd = &cobra.Command{
+	Use:   "code",
+	Short: "Get Python script for session steps",
+	Args:  cobra.NoArgs,
+	RunE:  runSessionCode,
+}
+
 func init() {
 	rootCmd.AddCommand(sessionsCmd)
 	sessionsCmd.AddCommand(sessionsListCmd)
@@ -223,6 +230,7 @@ func init() {
 	sessionsCmd.AddCommand(sessionsReplayCmd)
 	sessionsCmd.AddCommand(sessionsOffsetCmd)
 	sessionsCmd.AddCommand(sessionsWorkflowCodeCmd)
+	sessionsCmd.AddCommand(sessionsCodeCmd)
 
 	// Start command flags
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "Run session in headless mode")
@@ -278,6 +286,9 @@ func init() {
 
 	// Workflow-code command flags
 	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+
+	// Code command flags
+	sessionsCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
 }
 
 func runSessionsList(cmd *cobra.Command, args []string) error {
@@ -777,4 +788,34 @@ func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
 	}
 
 	return GetFormatter().Print(resp.JSON200)
+}
+
+func runSessionCode(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.GetSessionScriptParams{}
+	resp, err := client.Client().GetSessionScriptWithResponse(ctx, sessionID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	if resp.JSON200 != nil {
+		fmt.Println(resp.JSON200.PythonScript)
+	}
+
+	return nil
 }
