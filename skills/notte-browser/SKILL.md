@@ -12,7 +12,8 @@ notte auth login
 notte sessions start
 
 # 3. Navigate and observe
-notte page observe --url "https://example.com"
+notte page goto "https://example.com"
+notte page observe
 
 # 4. Execute actions
 notte page click "@B3"
@@ -147,7 +148,7 @@ notte page close-tab
 notte page observe [--url <url>]
 
 # Scrape content with instructions
-notte page scrape "Extract all links" [--main-only]
+notte page scrape "Extract all links" [only-main-content]
 ```
 
 **Utilities:**
@@ -208,7 +209,6 @@ notte functions run-stop --id <function-id> --run-id <run-id>
 
 # Get/update run metadata
 notte functions run-metadata --id <function-id> --run-id <run-id>
-{"key": "value"}'
 
 # Schedule with cron expression
 notte functions schedule --id <function-id> --cron "0 9 * * *"
@@ -312,7 +312,8 @@ notte scrape "https://news.ycombinator.com" --instructions "Extract top 10 story
 
 # With session for multi-page scraping
 notte sessions start --headless
-notte page observe --url "https://example.com/products"
+notte page goto "https://example.com/products"
+notte page observe
 notte page scrape "Extract product names and prices"
 notte page click "@next-page"
 notte page scrape "Extract product names and prices"

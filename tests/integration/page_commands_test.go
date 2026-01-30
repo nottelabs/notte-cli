@@ -241,7 +241,7 @@ func TestPageScrape(t *testing.T) {
 	t.Log("Successfully executed page scrape")
 }
 
-// TestPageScrapeMainOnly tests the page scrape --main-only flag
+// TestPageScrapeMainOnly tests the page scrape only-main-content flag
 func TestPageScrapeMainOnly(t *testing.T) {
 	sessionID := startTestSession(t)
 	defer cleanupSession(t, sessionID)
@@ -251,9 +251,9 @@ func TestPageScrapeMainOnly(t *testing.T) {
 	requireSuccess(t, result)
 
 	// Scrape with main-only flag
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "Extract the main content", "--main-only", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "Extract the main content", "only-main-content", "--id", sessionID)
 	requireSuccess(t, result)
-	t.Log("Successfully executed page scrape with --main-only")
+	t.Log("Successfully executed page scrape with only-main-content")
 }
 
 // TestPageCommandsWorkflow tests a complete workflow using page commands

@@ -168,7 +168,7 @@ notte page scrape
 notte page scrape "Extract all product names and prices as JSON"
 
 # Only main content (skip headers, footers, ads)
-notte page scrape --main-only
+notte page scrape only-main-content
 ```
 
 ### Structured Extraction
@@ -330,7 +330,8 @@ notte sessions start --idle-timeout 15 --max-duration 120
 Always observe to get current element IDs:
 
 ```bash
-notte page observe --url "https://example.com"
+notte page goto "https://example.com"
+notte page observe
 # Now you know the element IDs
 notte page click "@B3"
 ```
