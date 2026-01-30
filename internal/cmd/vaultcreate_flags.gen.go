@@ -11,7 +11,6 @@ import (
 var (
 	// Name of the vault
 	VaultCreateName string
-
 )
 
 // RegisterVaultCreateFlags registers all flags for VaultCreate command

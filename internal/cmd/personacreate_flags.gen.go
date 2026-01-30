@@ -14,7 +14,6 @@ var (
 
 	// Whether to create a phone number for the persona
 	PersonaCreateCreatePhoneNumber bool
-
 )
 
 // RegisterPersonaCreateFlags registers all flags for PersonaCreate command

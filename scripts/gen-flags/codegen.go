@@ -384,28 +384,70 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 
 	fmt.Fprintf(buf, "\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name)
 	fmt.Fprintf(buf, "\tif %s {\n", condition)
-	// Optional flattened fields are pointers in the API, required ones are not
-	if fc.Field.Required {
-		fmt.Fprintf(buf, "\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName)
-	} else {
-		fmt.Fprintf(buf, "\t\tbody.%s = &api.%s{\n", apiFieldName, structTypeName)
-	}
 
+	// Separate required and optional subfields
+	var requiredSubFields, optionalSubFields []*FieldConfig
 	for _, subFC := range fc.SubFields {
-		subAPIFieldName := toCamelCase(subFC.Field.JSONName)
-		if subAPIFieldName == "" {
-			subAPIFieldName = toCamelCase(subFC.Field.Name)
-		}
-
-		// For required fields in API, assign directly; for optional fields, take address
 		if subFC.Field.Required {
-			fmt.Fprintf(buf, "\t\t\t%s: %s,\n", subAPIFieldName, subFC.VarName)
+			requiredSubFields = append(requiredSubFields, subFC)
 		} else {
-			fmt.Fprintf(buf, "\t\t\t%s: &%s,\n", subAPIFieldName, subFC.VarName)
+			optionalSubFields = append(optionalSubFields, subFC)
 		}
 	}
 
-	buf.WriteString("\t\t}\n")
+	// If no optional fields, use struct literal directly
+	if len(optionalSubFields) == 0 {
+		if fc.Field.Required {
+			fmt.Fprintf(buf, "\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName)
+		} else {
+			fmt.Fprintf(buf, "\t\tbody.%s = &api.%s{\n", apiFieldName, structTypeName)
+		}
+		for _, subFC := range requiredSubFields {
+			subAPIFieldName := toCamelCase(subFC.Field.JSONName)
+			if subAPIFieldName == "" {
+				subAPIFieldName = toCamelCase(subFC.Field.Name)
+			}
+			fmt.Fprintf(buf, "\t\t\t%s: %s,\n", subAPIFieldName, subFC.VarName)
+		}
+		buf.WriteString("\t\t}\n")
+	} else {
+		// Create struct and conditionally set optional fields
+		varName := strings.ToLower(string(apiFieldName[0])) + apiFieldName[1:]
+		fmt.Fprintf(buf, "\t\t%s := api.%s{\n", varName, structTypeName)
+		for _, subFC := range requiredSubFields {
+			subAPIFieldName := toCamelCase(subFC.Field.JSONName)
+			if subAPIFieldName == "" {
+				subAPIFieldName = toCamelCase(subFC.Field.Name)
+			}
+			fmt.Fprintf(buf, "\t\t\t%s: %s,\n", subAPIFieldName, subFC.VarName)
+		}
+		buf.WriteString("\t\t}\n")
+
+		// Conditionally set optional fields only when non-empty
+		for _, subFC := range optionalSubFields {
+			subAPIFieldName := toCamelCase(subFC.Field.JSONName)
+			if subAPIFieldName == "" {
+				subAPIFieldName = toCamelCase(subFC.Field.Name)
+			}
+			if subFC.Field.Type == "string" {
+				fmt.Fprintf(buf, "\t\tif %s != \"\" {\n", subFC.VarName)
+				fmt.Fprintf(buf, "\t\t\t%s.%s = &%s\n", varName, subAPIFieldName, subFC.VarName)
+				buf.WriteString("\t\t}\n")
+			} else {
+				fmt.Fprintf(buf, "\t\tif cmd.Flags().Changed(\"%s\") {\n", subFC.FlagName)
+				fmt.Fprintf(buf, "\t\t\t%s.%s = &%s\n", varName, subAPIFieldName, subFC.VarName)
+				buf.WriteString("\t\t}\n")
+			}
+		}
+
+		// Assign to body
+		if fc.Field.Required {
+			fmt.Fprintf(buf, "\t\tbody.%s = %s\n", apiFieldName, varName)
+		} else {
+			fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, varName)
+		}
+	}
+
 	buf.WriteString("\t}\n\n")
 }
 
