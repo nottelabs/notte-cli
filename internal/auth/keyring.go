@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/99designs/keyring"
 
@@ -15,6 +16,11 @@ const (
 	KeychainName   = "notte-api-key"
 )
 
+var (
+	onceMkdir sync.Once
+	mkdirErr  error
+)
+
 // openKeyring initializes and returns a keyring instance
 func openKeyring() (keyring.Keyring, error) {
 	dir, err := config.Dir()
@@ -22,8 +28,11 @@ func openKeyring() (keyring.Keyring, error) {
 		return nil, fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
+	onceMkdir.Do(func() {
+		mkdirErr = os.MkdirAll(dir, 0o700)
+	})
+	if mkdirErr != nil {
+		return nil, fmt.Errorf("failed to create config directory: %w", mkdirErr)
 	}
 
 	// Note: FixedStringPrompt is used for the file backend fallback (when no system keyring is available).
