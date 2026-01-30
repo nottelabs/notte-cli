@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/nottelabs/notte-cli/internal/api"
 )
@@ -102,8 +103,86 @@ func PrintScrapeResponse(resp *api.ScrapeResponse, hasInstructions bool) error {
 			return fmt.Errorf("scrape failed")
 		}
 		if resultData, ok := data["data"]; ok {
+			// Print with a nice header for scrape results
+			fmt.Println("Scraped content from the current page:")
+			fmt.Println()
 			return GetFormatter().Print(resultData)
 		}
 	}
+	fmt.Println("Scraped content from the current page:")
+	fmt.Println()
 	return GetFormatter().Print(resp.Structured)
+}
+
+// printSessionStatus formats session status output with simplified Steps display.
+// In JSON mode, returns the full response. In text mode, formats Steps as a simple list.
+func printSessionStatus(resp *api.SessionResponse) error {
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp)
+	}
+
+	// Create a copy of the response data without Steps
+	v := reflect.ValueOf(resp).Elem()
+	t := v.Type()
+
+	// Print all fields except Steps using the standard formatter
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+
+		// Skip Steps field - we'll handle it separately
+		if field.Name == "Steps" {
+			continue
+		}
+
+		fieldValue := v.Field(i)
+
+		// Skip nil pointers, nil slices, nil maps, and nil interfaces
+		switch fieldValue.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface:
+			if fieldValue.IsNil() {
+				continue
+			}
+		}
+
+		var displayValue any
+		if fieldValue.Kind() == reflect.Ptr {
+			displayValue = fieldValue.Elem().Interface()
+		} else {
+			displayValue = fieldValue.Interface()
+		}
+
+		fmt.Printf("%-23s %v\n", field.Name+":", displayValue)
+	}
+
+	// Now handle Steps specially
+	if resp.Steps != nil && len(*resp.Steps) > 0 {
+		fmt.Printf("%-23s ", "Steps:")
+		var stepSummaries []string
+		for _, step := range *resp.Steps {
+			stepType, _ := step["type"].(string)
+			switch stepType {
+			case "execution_result":
+				// For execution results, show only the action type
+				if value, ok := step["value"].(map[string]any); ok {
+					if action, ok := value["action"].(map[string]any); ok {
+						if actionType, ok := action["type"].(string); ok {
+							stepSummaries = append(stepSummaries, actionType)
+						}
+					}
+				}
+			case "observation":
+				// For observations, just say "observation"
+				stepSummaries = append(stepSummaries, "observation")
+			default:
+				// For other types, show the type
+				stepSummaries = append(stepSummaries, stepType)
+			}
+		}
+		fmt.Printf("[%s]\n", strings.Join(stepSummaries, " "))
+	}
+
+	return nil
 }

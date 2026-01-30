@@ -459,7 +459,7 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return printSessionStatus(resp.JSON200)
 }
 
 func runSessionStop(cmd *cobra.Command, args []string) error {
@@ -816,7 +816,17 @@ func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp.JSON200)
+	}
+
+	// Text mode: just print the Python script
+	if resp.JSON200 != nil {
+		fmt.Println(resp.JSON200.PythonScript)
+	}
+
+	return nil
 }
 
 func runSessionCode(cmd *cobra.Command, args []string) error {
