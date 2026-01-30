@@ -32,6 +32,23 @@ func (f *JSONFormatter) PrintError(err error) {
 		}
 		return
 	}
+
+	// For auth errors, include status code, reason, and message
+	if authErr, ok := err.(*apierrors.AuthError); ok {
+		errObj := map[string]any{
+			"error":       authErr.Reason,
+			"status_code": authErr.StatusCode,
+		}
+		if authErr.Message != "" {
+			errObj["message"] = authErr.Message
+		}
+		enc := json.NewEncoder(os.Stderr)
+		if encErr := enc.Encode(errObj); encErr != nil {
+			fmt.Fprintf(os.Stderr, "Error %d: %s\n", authErr.StatusCode, err.Error())
+		}
+		return
+	}
+
 	errObj := map[string]string{"error": err.Error()}
 	enc := json.NewEncoder(os.Stderr)
 	if encErr := enc.Encode(errObj); encErr != nil {
