@@ -49,9 +49,9 @@ func TestSessionsStartWithOptions(t *testing.T) {
 	// Start session with custom options
 	result := runCLI(t, "sessions", "start",
 		"--headless",
-		"--browser", "chromium",
-		"--idle-timeout", "5",
-		"--max-duration", "10",
+		"--browser-type", "chromium",
+		"--idle-timeout-minutes", "5",
+		"--max-duration-minutes", "10",
 	)
 	requireSuccess(t, result)
 

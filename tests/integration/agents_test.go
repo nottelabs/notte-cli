@@ -35,7 +35,7 @@ func TestAgentsStartWithSession(t *testing.T) {
 	// Start an agent on the existing session
 	result = runCLIWithTimeout(t, 120*time.Second, "agents", "start",
 		"--task", "Report the current page URL",
-		"--session", sessionID,
+		"--session-id", sessionID,
 		"--max-steps", "3",
 	)
 	requireSuccess(t, result)
