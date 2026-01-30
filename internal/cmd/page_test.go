@@ -45,12 +45,37 @@ func TestParseSelector(t *testing.T) {
 		wantSelector string
 		wantErr      bool
 	}{
+		// Legacy @-prefix format (backwards compatibility)
 		{"@B3", "B3", "", false},
 		{"@submit-btn", "submit-btn", "", false},
+
+		// New auto-detected ID format (letter + digits)
+		{"B1", "B1", "", false},
+		{"B3", "B3", "", false},
+		{"I5", "I5", "", false},
+		{"L10", "L10", "", false},
+		{"F2", "F2", "", false},
+		{"O3", "O3", "", false},
+		{"M1", "M1", "", false},
+		{"B999", "B999", "", false},
+
+		// CSS selectors (not IDs)
 		{"#btn", "", "#btn", false},
 		{".class", "", ".class", false},
 		{"button[type=submit]", "", "button[type=submit]", false},
-		{"@", "", "", true}, // edge case: @ with nothing after
+		{"div > span", "", "div > span", false},
+
+		// Edge cases that should be treated as selectors, not IDs
+		{"b1", "", "b1", false},                 // lowercase - not an ID
+		{"B", "", "B", false},                   // no digits - not an ID
+		{"X1", "", "X1", false},                 // invalid letter - not an ID
+		{"BB1", "", "BB1", false},               // two letters - not an ID
+		{"B1a", "", "B1a", false},               // ends with letter - not an ID
+		{"1B", "", "1B", false},                 // starts with digit - not an ID
+		{"submit-btn", "", "submit-btn", false}, // contains hyphen - not an ID
+
+		// Error cases
+		{"@", "", "", true}, // @ with nothing after
 		{"", "", "", true},  // empty string
 	}
 
@@ -96,6 +121,25 @@ func TestRunPageClick_WithSelector(t *testing.T) {
 }
 
 func TestRunPageClick_WithID(t *testing.T) {
+	server := setupPageTest(t)
+	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runPageClick(cmd, []string{"B3"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunPageClick_WithIDLegacyPrefix(t *testing.T) {
 	server := setupPageTest(t)
 	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
 
@@ -150,7 +194,7 @@ func TestRunPageFill(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageFill(cmd, []string{"@input", "hello world"})
+		err := runPageFill(cmd, []string{"I1", "hello world"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -197,7 +241,7 @@ func TestRunPageCheck(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageCheck(cmd, []string{"@checkbox"})
+		err := runPageCheck(cmd, []string{"I2"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -235,7 +279,7 @@ func TestRunPageDownload(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageDownload(cmd, []string{"@download-link"})
+		err := runPageDownload(cmd, []string{"L5"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

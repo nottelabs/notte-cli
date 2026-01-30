@@ -80,8 +80,8 @@ notte sessions stop
 ### Explicit Session ID
 
 ```bash
-# Via --id flag
-notte page observe --id sess_abc123
+# Via --session-id flag
+notte page observe --session-id sess_abc123
 
 # Via environment variable
 export NOTTE_SESSION_ID=sess_abc123
@@ -90,7 +90,7 @@ notte page observe
 
 ### Priority Order
 
-1. `--id` flag (highest)
+1. `--session-id` flag (highest)
 2. `NOTTE_SESSION_ID` environment variable
 3. Current session file (set by `sessions start`)
 
@@ -296,7 +296,7 @@ notte sessions list
 notte sessions stop
 
 # Stop specific session
-notte sessions stop --id sess_abc123
+notte sessions stop --session-id sess_abc123
 
 # Skip confirmation prompt
 notte sessions stop --yes

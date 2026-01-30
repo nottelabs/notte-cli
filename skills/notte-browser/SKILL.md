@@ -16,8 +16,8 @@ notte page goto "https://example.com"
 notte page observe
 
 # 4. Execute actions
-notte page click "@B3"
-notte page fill "@input" "hello world"
+notte page click "B3"
+notte page fill "I1" "hello world"
 
 # 5. Scrape content
 notte page scrape --instructions "Extract all product names and prices"
@@ -57,7 +57,7 @@ notte sessions stop
 notte sessions list
 ```
 
-**Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
+**Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 Session debugging and export:
 
@@ -91,29 +91,29 @@ Simplified commands for page interactions:
 
 **Element Interactions:**
 ```bash
-# Click an element (use @ prefix for element IDs from observe)
-notte page click "@B3"
+# Click an element (use either the ids from an observe, or a selector)
+notte page click "B3"
 notte page click "#submit-button"
   --timeout     Timeout in milliseconds
   --enter       Press Enter after clicking
 
 # Fill an input field
-notte page fill "@input" "hello world"
+notte page fill "I1" "hello world"
   --clear       Clear field before filling
   --enter       Press Enter after filling
 
 # Check/uncheck a checkbox
-notte page check "@checkbox"
+notte page check "#my-checkbox"
   --value       true to check, false to uncheck (default: true)
 
 # Select dropdown option
-notte page select "@dropdown" "Option 1"
+notte page select "#dropdown-element" "Option 1"
 
 # Download file by clicking element
-notte page download "@download-link"
+notte page download "L5"
 
 # Upload file to input
-notte page upload "@file-input" --file /path/to/file
+notte page upload "#file-input" --file /path/to/file
 ```
 
 **Navigation:**
@@ -224,6 +224,29 @@ notte functions fork --id <shared-function-id>
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
 
+### Low-Level Session Commands
+
+For advanced use cases, you can use low-level session commands:
+
+```bash
+# Execute actions with raw JSON (alternative to notte page commands)
+# Direct JSON
+notte sessions execute --session-id <session-id> --action '{"type": "goto", "url": "https://example.com"}'
+
+# From file
+notte sessions execute --session-id <session-id> --action @action.json
+
+# From stdin (heredoc)
+notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
+{"type": "fill", "id": "I1", "value": "my text"}
+EOF
+
+# Multiple actions
+notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
+{"type": "click", "id": "B5"}
+EOF
+```
+
 ### Account Management
 
 **Personas** - Auto-generated identities with email/phone:
@@ -302,7 +325,7 @@ Available on all commands:
 ## Session ID Resolution
 
 Session ID is resolved in this order:
-1. `--id` flag
+1. `--session-id` flag
 2. `NOTTE_SESSION_ID` environment variable
 3. Current session file (set automatically by `sessions start`)
 
@@ -319,7 +342,7 @@ notte sessions start --headless
 notte page goto "https://example.com/products"
 notte page observe
 notte page scrape --instructions "Extract product names and prices"
-notte page click "@next-page"
+notte page click "L3"
 notte page scrape --instructions "Extract product names and prices"
 notte sessions stop
 ```
@@ -329,9 +352,9 @@ notte sessions stop
 ```bash
 notte sessions start
 notte page goto "https://example.com/signup"
-notte page fill "@email" "user@example.com"
-notte page fill "@password" "securepassword"
-notte page click "@submit"
+notte page fill "#email-field" "user@example.com"
+notte page fill "#password-field" "securepassword"
+notte page click "#submit-button"
 notte sessions stop
 ```
 

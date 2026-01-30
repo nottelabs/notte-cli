@@ -30,7 +30,7 @@ func TestErrorParsing_InvalidBrowserType(t *testing.T) {
 // TestErrorParsing_NonexistentSession tests that 404 errors show proper messages
 func TestErrorParsing_NonexistentSession(t *testing.T) {
 	// Try to get status of a non-existent session
-	result := runCLI(t, "sessions", "status", "--id", "nonexistent-session-id-xyz789")
+	result := runCLI(t, "sessions", "status", "--session-id", "nonexistent-session-id-xyz789")
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")
@@ -121,7 +121,7 @@ func TestErrorParsing_InvalidSessionExecuteAction(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Try to execute an invalid action
-	result = runCLI(t, "sessions", "execute", "--id", sessionID, "--action", `{"type": "invalid_action_type"}`)
+	result = runCLI(t, "sessions", "execute", "--session-id", sessionID, "--action", `{"type": "invalid_action_type"}`)
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")

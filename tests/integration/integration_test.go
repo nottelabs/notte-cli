@@ -115,7 +115,7 @@ func cleanupSession(t *testing.T, sessionID string) {
 	if sessionID == "" {
 		return
 	}
-	result := runCLI(t, "sessions", "stop", "--id", sessionID)
+	result := runCLI(t, "sessions", "stop", "--session-id", sessionID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup session %s: %s", sessionID, result.Stderr)
 	}
