@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -61,13 +62,19 @@ func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 	return nil
 }
 
-// parseSelector returns (id, selector, error) based on @ prefix
-// @B3 -> element ID (id: "B3")
+// idPattern matches element IDs: single letter (I, B, L, F, O, M) followed by digits
+// Examples: B1, I5, L10, F2, O3, M1
+var idPattern = regexp.MustCompile(`^[IBLMFO]\d+$`)
+
+// parseSelector returns (id, selector, error) based on pattern matching
+// B3 or @B3 -> element ID (id: "B3")
 // #btn or any other string -> CSS selector (selector: "#btn")
 func parseSelector(arg string) (string, string, error) {
 	if arg == "" {
 		return "", "", fmt.Errorf("selector cannot be empty")
 	}
+
+	// Support legacy @-prefix format for backwards compatibility
 	if strings.HasPrefix(arg, "@") {
 		id := strings.TrimPrefix(arg, "@")
 		if id == "" {
@@ -75,6 +82,13 @@ func parseSelector(arg string) (string, string, error) {
 		}
 		return id, "", nil
 	}
+
+	// Auto-detect ID format: single letter [IBLMFO] followed by digits
+	if idPattern.MatchString(arg) {
+		return arg, "", nil
+	}
+
+	// Otherwise treat as CSS selector
 	return "", arg, nil
 }
 
@@ -117,15 +131,16 @@ var pageCmd = &cobra.Command{
 
 Use:
   notte page click "#btn"
-  notte page click @B3        # @-prefixed = element ID
-  notte page fill @input "hello"
+  notte page click B3         # element ID (auto-detected)
+  notte page click @B3        # @-prefix also works (legacy)
+  notte page fill I1 "hello"
   notte page goto "https://example.com"`,
 }
 
 // Element Actions (selector-based)
 
 var pageClickCmd = &cobra.Command{
-	Use:   "click <@id|selector>",
+	Use:   "click <id|selector>",
 	Short: "Click an element",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runPageClick,
@@ -155,7 +170,7 @@ func runPageClick(cmd *cobra.Command, args []string) error {
 }
 
 var pageFillCmd = &cobra.Command{
-	Use:   "fill <@id|selector> <value>",
+	Use:   "fill <id|selector> <value>",
 	Short: "Fill an input field with a value",
 	Args:  cobra.ExactArgs(2),
 	RunE:  runPageFill,
@@ -187,7 +202,7 @@ func runPageFill(cmd *cobra.Command, args []string) error {
 }
 
 var pageCheckCmd = &cobra.Command{
-	Use:   "check <@id|selector>",
+	Use:   "check <id|selector>",
 	Short: "Check or uncheck a checkbox",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runPageCheck,
@@ -212,7 +227,7 @@ func runPageCheck(cmd *cobra.Command, args []string) error {
 }
 
 var pageSelectCmd = &cobra.Command{
-	Use:   "select <@id|selector> <value>",
+	Use:   "select <id|selector> <value>",
 	Short: "Select a dropdown option",
 	Args:  cobra.ExactArgs(2),
 	RunE:  runPageSelect,
@@ -237,7 +252,7 @@ func runPageSelect(cmd *cobra.Command, args []string) error {
 }
 
 var pageDownloadCmd = &cobra.Command{
-	Use:   "download <@id|selector>",
+	Use:   "download <id|selector>",
 	Short: "Download a file by clicking an element",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runPageDownload,
@@ -260,7 +275,7 @@ func runPageDownload(cmd *cobra.Command, args []string) error {
 }
 
 var pageUploadCmd = &cobra.Command{
-	Use:   "upload <@id|selector> --file <path>",
+	Use:   "upload <id|selector> --file <path>",
 	Short: "Upload a file to an input element",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runPageUpload,
