@@ -232,7 +232,7 @@ func TestPageScrape(t *testing.T) {
 	requireSuccess(t, result)
 
 	// Scrape with instructions
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "Extract the page title", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the page title", "--id", sessionID)
 	requireSuccess(t, result)
 
 	if result.Stdout == "" {
@@ -251,7 +251,7 @@ func TestPageScrapeMainOnly(t *testing.T) {
 	requireSuccess(t, result)
 
 	// Scrape with main-only flag
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "Extract the main content", "only-main-content", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the main content", "--only-main-content", "--id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page scrape with only-main-content")
 }
@@ -277,7 +277,7 @@ func TestPageCommandsWorkflow(t *testing.T) {
 	t.Log("Step 3: Scrolled down")
 
 	// Step 4: Scrape content
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "Extract all text content", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract all text content", "--id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 4: Scraped content")
 

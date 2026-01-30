@@ -168,7 +168,7 @@ notte page scrape
 notte page scrape --instructions "Extract all product names and prices as JSON"
 
 # Only main content (skip headers, footers, ads)
-notte page scrape only-main-content
+notte page scrape --only-main-content
 ```
 
 ### Structured Extraction

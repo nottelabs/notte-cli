@@ -93,7 +93,7 @@ session_scrape() {
 
         local flags=""
         if [[ "$ONLY_MAIN_CONTENT" == "true" ]]; then
-            flags="only-main-content"
+            flags="--only-main-content"
         fi
 
         local page_result
@@ -145,7 +145,7 @@ batch_scrape() {
 
         local flags=""
         if [[ "$ONLY_MAIN_CONTENT" == "true" ]]; then
-            flags="only-main-content"
+            flags="--only-main-content"
         fi
 
         local result
