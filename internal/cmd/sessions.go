@@ -40,7 +40,7 @@ var (
 
 // GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
 func GetCurrentSessionID() string {
-	// 1. Check --id flag (already in sessionID variable if set)
+	// 1. Check --session-id flag (already in sessionID variable if set)
 	if sessionID != "" {
 		return sessionID
 	}
@@ -92,7 +92,7 @@ func clearCurrentSession() error {
 func RequireSessionID() error {
 	sessionID = GetCurrentSessionID()
 	if sessionID == "" {
-		return errors.New("session ID required: use --id flag, set NOTTE_SESSION_ID env var, or start a session first")
+		return errors.New("session ID required: use --session-id flag, set NOTTE_SESSION_ID env var, or start a session first")
 	}
 	return nil
 }
@@ -142,13 +142,18 @@ var sessionsExecuteCmd = &cobra.Command{
 	Short: "Execute an action on the page",
 	Args:  cobra.NoArgs,
 	Example: `  # Direct JSON
-  notte sessions execute --id <session-id> --action '{"type": "goto", "url": "https://example.com"}'
+  notte sessions execute --session-id <session-id> --action '{"type": "goto", "url": "https://example.com"}'
 
   # From file
-  notte sessions execute --id <session-id> --action @action.json
+  notte sessions execute --session-id <session-id> --action @action.json
 
   # From stdin
-  echo '{"type": "goto", "url": "https://example.com"}' | notte sessions execute --id <session-id>`,
+  echo '{"type": "goto", "url": "https://example.com"}' | notte sessions execute --session-id <session-id>
+
+  # Using heredoc
+  notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
+  {"type": "fill", "id": "I1", "value": "my text"}
+  EOF`,
 	RunE:   runSessionExecute,
 	Hidden: true, // Use "notte page <action>" instead
 }
@@ -249,49 +254,49 @@ func init() {
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartFileStorage, "file-storage", false, "Enable file storage for the session")
 
 	// Status command flags
-	sessionsStatusCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Stop command flags
-	sessionsStopCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsStopCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Observe command flags
-	sessionsObserveCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsObserveCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsObserveCmd.Flags().StringVar(&sessionObserveURL, "url", "", "Navigate to URL before observing")
 
 	// Execute command flags
-	sessionsExecuteCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsExecuteCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsExecuteCmd.Flags().StringVar(&sessionExecuteAction, "action", "", "Action JSON, @file, or '-' for stdin")
 
 	// Scrape command flags
-	sessionsScrapeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsScrapeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsScrapeCmd.Flags().StringVar(&sessionScrapeInstructions, "instructions", "", "Extraction instructions")
 	sessionsScrapeCmd.Flags().BoolVar(&sessionScrapeOnlyMain, "only-main-content", false, "Only scrape main content")
 
 	// Cookies command flags
-	sessionsCookiesCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsCookiesCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Cookies-set command flags
-	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", "JSON file containing cookies array (required)")
 	_ = sessionsCookiesSetCmd.MarkFlagRequired("file")
 
 	// Debug command flags
-	sessionsDebugCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsDebugCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Network command flags
-	sessionsNetworkCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsNetworkCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Replay command flags
-	sessionsReplayCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsReplayCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Offset command flags
-	sessionsOffsetCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsOffsetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Workflow-code command flags
-	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Code command flags
-	sessionsCodeCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	sessionsCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 }
 
 func runSessionsList(cmd *cobra.Command, args []string) error {

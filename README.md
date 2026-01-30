@@ -125,7 +125,7 @@ notte sessions replay                 # Get session replay data
 notte sessions workflow-code          # Export session steps as Python code
 ```
 
-**Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
+**Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 ### Page Actions
 

@@ -57,7 +57,7 @@ notte sessions stop
 notte sessions list
 ```
 
-**Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
+**Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 Session debugging and export:
 
@@ -224,6 +224,29 @@ notte functions fork --id <shared-function-id>
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
 
+### Low-Level Session Commands
+
+For advanced use cases, you can use low-level session commands:
+
+```bash
+# Execute actions with raw JSON (alternative to notte page commands)
+# Direct JSON
+notte sessions execute --session-id <session-id> --action '{"type": "goto", "url": "https://example.com"}'
+
+# From file
+notte sessions execute --session-id <session-id> --action @action.json
+
+# From stdin (heredoc)
+notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
+{"type": "fill", "id": "I1", "value": "my text"}
+EOF
+
+# Multiple actions
+notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
+{"type": "click", "id": "B5"}
+EOF
+```
+
 ### Account Management
 
 **Personas** - Auto-generated identities with email/phone:
@@ -302,7 +325,7 @@ Available on all commands:
 ## Session ID Resolution
 
 Session ID is resolved in this order:
-1. `--id` flag
+1. `--session-id` flag
 2. `NOTTE_SESSION_ID` environment variable
 3. Current session file (set automatically by `sessions start`)
 

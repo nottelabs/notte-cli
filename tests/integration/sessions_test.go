@@ -30,7 +30,7 @@ func TestSessionsLifecycle(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Get session status
-	result = runCLI(t, "sessions", "status", "--id", sessionID)
+	result = runCLI(t, "sessions", "status", "--session-id", sessionID)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, sessionID) {
 		t.Error("Session status did not contain session ID")
@@ -50,7 +50,7 @@ func TestSessionsStartWithOptions(t *testing.T) {
 	result := runCLI(t, "sessions", "start",
 		"--headless",
 		"--browser", "chromium",
-		"--idle-timeout", "5",
+		"--session-idle-timeout", "5",
 		"--max-duration", "10",
 	)
 	requireSuccess(t, result)
@@ -70,7 +70,7 @@ func TestSessionsStartWithOptions(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Verify session is running
-	result = runCLI(t, "sessions", "status", "--id", sessionID)
+	result = runCLI(t, "sessions", "status", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Session with options test completed successfully")
 }
@@ -90,7 +90,7 @@ func TestSessionsCookies(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Get cookies (should be empty or minimal initially)
-	result = runCLI(t, "sessions", "cookies", "--id", sessionID)
+	result = runCLI(t, "sessions", "cookies", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully retrieved session cookies")
 }
@@ -113,7 +113,7 @@ func TestSessionsObserve(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Observe the page (navigate to a URL)
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
 	requireSuccess(t, result)
 	t.Log("Successfully observed page")
 }
@@ -136,11 +136,11 @@ func TestSessionsScrape(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// First navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
 	requireSuccess(t, result)
 
 	// Scrape the page content
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "scrape", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "scrape", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully scraped page content")
 }
@@ -163,11 +163,11 @@ func TestSessionsNetwork(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Navigate to generate some network activity
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
 	requireSuccess(t, result)
 
 	// Get network logs
-	result = runCLI(t, "sessions", "network", "--id", sessionID)
+	result = runCLI(t, "sessions", "network", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully retrieved network logs")
 }
@@ -181,7 +181,7 @@ func TestSessionsList(t *testing.T) {
 
 func TestSessionsStatusNonexistent(t *testing.T) {
 	// Try to get status of a non-existent session
-	result := runCLI(t, "sessions", "status", "--id", "nonexistent-session-id-12345")
+	result := runCLI(t, "sessions", "status", "--session-id", "nonexistent-session-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to get status of non-existent session")
 }
