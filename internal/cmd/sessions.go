@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -890,6 +891,9 @@ func runSessionViewer(cmd *cobra.Command, args []string) error {
 
 	// Construct viewer URL
 	// Based on Python SDK: base_url/sessions/viewer/index.html?ws={recording_ws_url}
+	if resp.JSON200.Ws.Recording == "" {
+		return fmt.Errorf("no recording WebSocket URL available for this session")
+	}
 	viewerURL, err := constructViewerURL(baseURL, resp.JSON200.Ws.Recording)
 	if err != nil {
 		return fmt.Errorf("failed to construct viewer URL: %w", err)
@@ -914,8 +918,8 @@ func constructViewerURL(baseURL, recordingWS string) (string, error) {
 
 	// Construct viewer path
 	// Pattern: /sessions/viewer/index.html?ws={recording_ws_url}
-	viewerPath := "/sessions/viewer/index.html"
-	parsedBase.Path = viewerPath
+	viewerPath := "sessions/viewer/index.html"
+	parsedBase.Path = path.Join(parsedBase.Path, viewerPath)
 
 	// Add recording WebSocket URL as query parameter
 	query := parsedBase.Query()
