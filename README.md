@@ -1,4 +1,6 @@
-# 🤖 Notte CLI — Browser automation in your terminal.
+# Notte CLI
+
+Browser automation in your terminal.
 
 Control browser sessions, AI agents, and web scraping through intuitive resource-based commands.
 
@@ -11,7 +13,7 @@ Control browser sessions, AI agents, and web scraping through intuitive resource
 - **Personas** - create and manage digital identities with email, phone, and SMS
 - **Secure credentials** - system keyring for API keys, vaults for website passwords
 - **Web scraping** - structured data extraction with custom schemas
-- **functions** - schedule and execute repeatable automation tasks
+- **Functions** - schedule and execute repeatable automation tasks
 
 ## Installation
 
@@ -116,25 +118,11 @@ notte sessions cookies-set --file cookies.json  # Set cookies in current session
 notte sessions network                # View network activity logs
 notte sessions replay                 # Get session replay data
 notte sessions workflow-code          # Export session steps as Python code
+notte sessions viewer                 # Open session viewer in browser
+notte sessions code                   # Get Python script for session steps
 ```
 
 **Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
-
-### Page Actions
-
-Interact with pages using simplified commands (requires an active session):
-
-```bash
-notte page observe                    # Get page state and available actions
-notte page scrape --instructions "..." # Scrape content from the page 
-notte page click B3                # Click an element by ID
-notte page fill I1 "text"       # Fill an input field
-notte page goto "https://example.com" # Navigate to a URL
-notte page back                       # Go back in history
-notte page forward                    # Go forward in history
-notte page scroll-down [amount]       # Scroll down the page
-notte page press "Enter"              # Press a key
-```
 
 #### Session Start Options
 
@@ -151,6 +139,38 @@ notte sessions start \
   --solve-captchas                        # Automatically solve captchas
   --use-file-storage                      # Enable file storage for downloads
   --cdp-url <url>                         # CDP URL of remote session provider
+  --profile-id <id>                       # Profile ID to use for session
+  --profile-persist                       # Save browser state to profile on close
+  --screenshot-type <type>                # Screenshot type (raw, full, last_action)
+  --chrome-args <args>                    # Chrome instance arguments (repeatable)
+```
+
+### Page Actions
+
+Interact with pages using simplified commands (requires an active session):
+
+```bash
+notte page observe                    # Get page state and available actions
+notte page scrape --instructions "..." # Scrape content from the page 
+notte page click B3                # Click an element by ID
+notte page fill I1 "text"       # Fill an input field
+notte page goto "https://example.com" # Navigate to a URL
+notte page back                       # Go back in history
+notte page forward                    # Go forward in history
+notte page scroll-down [amount]       # Scroll down the page
+notte page scroll-up [amount]         # Scroll up
+notte page press "Enter"              # Press a key
+notte page screenshot                 # Take a screenshot
+notte page select <id> "option"       # Select dropdown option
+notte page check <id>                 # Check/uncheck checkbox
+notte page upload <id> <file>         # Upload a file
+notte page download <id>              # Download file by clicking element
+notte page new-tab <url>              # Open URL in new tab
+notte page switch-tab <index>         # Switch to tab by index
+notte page close-tab                  # Close current tab
+notte page reload                     # Reload page
+notte page wait <seconds>             # Wait for duration
+notte page captcha-solve              # Solve captcha
 ```
 
 ### AI Agents
@@ -164,7 +184,7 @@ notte agents workflow-code --id <id>  # Get agent's workflow code
 notte agents replay --id <id>         # Get agent execution replay
 ```
 
-### functions
+### Functions
 
 ```bash
 notte functions list                  # List all functions
@@ -207,6 +227,15 @@ notte personas delete --id <id>       # Delete a persona
 notte personas emails --id <id>       # Manage email addresses
 notte personas sms --id <id>          # Manage SMS numbers
 notte personas phone --id <id>        # Manage phone numbers
+```
+
+### Profiles
+
+```bash
+notte profiles list                   # List all profiles
+notte profiles create                 # Create a new profile
+notte profiles show --id <id>         # View profile details
+notte profiles delete --id <id>       # Delete a profile
 ```
 
 ### Files
@@ -283,7 +312,7 @@ notte sessions stop
 notte functions list
 
 # Run workflow
-notte functions run --id wfl_abc123
+notte functions run --id func_abc123
 ```
 
 ### Managing Credentials Securely
@@ -400,6 +429,7 @@ All commands support these flags:
 - `--no-color` - Disable colored output
 - `-v, --verbose` - Enable verbose logging
 - `--timeout <seconds>` - API request timeout (default: 30)
+- `-y, --yes` - Skip confirmation prompts
 - `-h, --help` - Show help for any command
 
 ## Shell Completions
