@@ -130,7 +130,7 @@ Interact with pages using simplified commands (requires an active session):
 
 ```bash
 notte page observe                    # Get page state and available actions
-notte page scrape [instructions]      # Scrape content from the page 
+notte page scrape --instructions "..." # Scrape content from the page 
 notte page click "@B3"                # Click an element by ID
 notte page fill "@input" "text"       # Fill an input field
 notte page goto "https://example.com" # Navigate to a URL
@@ -401,7 +401,7 @@ Core workflow:
 2. `notte page goto <url>` - Navigate to a URL
 3. `notte page observe` - Get interactive elements with IDs (@B1, @B2)
 4. `notte page click @B1` / `notte page fill @B2 "text"` - Interact using element IDs
-5. `notte page scrape "..."` - Extract structured data
+5. `notte page scrape --instructions "..."` - Extract structured data
 6. `notte sessions stop` - Clean up when done
 ```
 
