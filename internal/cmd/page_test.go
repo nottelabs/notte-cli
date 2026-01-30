@@ -66,12 +66,12 @@ func TestParseSelector(t *testing.T) {
 		{"div > span", "", "div > span", false},
 
 		// Edge cases that should be treated as selectors, not IDs
-		{"b1", "", "b1", false},      // lowercase - not an ID
-		{"B", "", "B", false},        // no digits - not an ID
-		{"X1", "", "X1", false},      // invalid letter - not an ID
-		{"BB1", "", "BB1", false},    // two letters - not an ID
-		{"B1a", "", "B1a", false},    // ends with letter - not an ID
-		{"1B", "", "1B", false},      // starts with digit - not an ID
+		{"b1", "", "b1", false},                 // lowercase - not an ID
+		{"B", "", "B", false},                   // no digits - not an ID
+		{"X1", "", "X1", false},                 // invalid letter - not an ID
+		{"BB1", "", "BB1", false},               // two letters - not an ID
+		{"B1a", "", "B1a", false},               // ends with letter - not an ID
+		{"1B", "", "1B", false},                 // starts with digit - not an ID
 		{"submit-btn", "", "submit-btn", false}, // contains hyphen - not an ID
 
 		// Error cases
