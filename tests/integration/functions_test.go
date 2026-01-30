@@ -191,11 +191,11 @@ func TestFunctionIDResolution(t *testing.T) {
 	}()
 
 	// Step 2: Verify current_function file was created
-	configDir, err := os.UserConfigDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		t.Fatalf("Failed to get config dir: %v", err)
+		t.Fatalf("Failed to get home dir: %v", err)
 	}
-	currentFunctionFile := filepath.Join(configDir, "notte", "current_function")
+	currentFunctionFile := filepath.Join(homeDir, ".notte", "cli", "current_function")
 	data, err := os.ReadFile(currentFunctionFile)
 	if err != nil {
 		t.Fatalf("Failed to read current_function file: %v", err)
@@ -452,9 +452,9 @@ func TestFunctionsScheduleAndUnschedule(t *testing.T) {
 
 func TestFunctionsNoIDProvided(t *testing.T) {
 	// Clear any existing current_function file
-	configDir, err := os.UserConfigDir()
+	homeDir, err := os.UserHomeDir()
 	if err == nil {
-		currentFunctionFile := filepath.Join(configDir, "notte", "current_function")
+		currentFunctionFile := filepath.Join(homeDir, ".notte", "cli", "current_function")
 		os.Remove(currentFunctionFile)
 	}
 

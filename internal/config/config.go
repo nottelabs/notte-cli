@@ -10,7 +10,7 @@ import (
 const (
 	DefaultAPIURL       = "https://api.notte.cc"
 	DefaultConsoleURL   = "https://console.notte.cc"
-	ConfigDirName       = "notte"
+	ConfigDirName       = ".notte/cli"
 	ConfigFileName      = "config.json"
 	CurrentSessionFile  = "current_session"
 	CurrentFunctionFile = "current_function"
@@ -21,7 +21,7 @@ const (
 )
 
 // testConfigDir allows overriding the config directory for testing.
-// If empty, the default os.UserConfigDir() path is used.
+// If empty, the default os.UserHomeDir() path is used.
 var testConfigDir string
 
 // SetTestConfigDir sets a custom config directory for testing.
@@ -36,19 +36,19 @@ type Config struct {
 	APIURL string `json:"api_url,omitempty"`
 }
 
-// Dir returns the notte config directory path (~/.config/notte or ~/Library/Application Support/notte on macOS)
+// Dir returns the notte config directory path (~/.notte/cli)
 func Dir() (string, error) {
 	if testConfigDir != "" {
 		return filepath.Join(testConfigDir, ConfigDirName), nil
 	}
-	configDir, err := os.UserConfigDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, ConfigDirName), nil
+	return filepath.Join(homeDir, ConfigDirName), nil
 }
 
-// DefaultConfigPath returns ~/.config/notte/config.json
+// DefaultConfigPath returns ~/.notte/cli/config.json
 func DefaultConfigPath() (string, error) {
 	dir, err := Dir()
 	if err != nil {

@@ -76,7 +76,7 @@ notte sessions list
 # Via system keyring (recommended for local development)
 notte auth login
 
-# Via config file (~/.config/notte/config.json)
+# Via config file (~/.notte/cli/config.json)
 ```
 
 ### Environment Variables

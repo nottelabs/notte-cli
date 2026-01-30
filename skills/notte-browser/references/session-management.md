@@ -68,7 +68,7 @@ When you start a session, it becomes the "current session" automatically:
 
 ```bash
 notte sessions start
-# Session ID saved to ~/.config/notte/current_session
+# Session ID saved to ~/.notte/cli/current_session
 
 # These commands use the current session automatically:
 notte sessions observe
