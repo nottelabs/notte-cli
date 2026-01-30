@@ -1,3 +1,8 @@
+---
+name: account-management
+description: Guide to managing personas and vaults for authentication
+---
+
 # Account Management Reference
 
 Complete guide to managing personas and vaults for authentication and identity management.

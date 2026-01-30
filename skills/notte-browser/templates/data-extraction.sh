@@ -63,7 +63,8 @@ session_scrape() {
     notte sessions start > /dev/null
 
     log_step "Navigating to: $url"
-    notte page observe --url "$url" > /dev/null
+    notte page goto "$url"
+    notte page observe > /dev/null
     notte page wait 1500
 
     local all_results="[]"
@@ -121,7 +122,8 @@ batch_scrape() {
 
     for url in "${urls[@]}"; do
         log_step "Scraping: $url"
-        notte page observe --url "$url" > /dev/null
+        notte page goto "$url"
+        notte page observe > /dev/null
         notte page wait 1500
 
         local flags=""

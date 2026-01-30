@@ -120,7 +120,8 @@ save_cookies() {
 
 perform_login() {
     log_step "Navigating to login page..."
-    notte page observe --url "$LOGIN_URL" > /dev/null
+    notte page goto "$LOGIN_URL"
+    notte page observe > /dev/null
     notte page wait 1000
 
     # Fill email/username
