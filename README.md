@@ -175,6 +175,7 @@ notte agents replay --id <id>         # Get agent execution replay
 notte functions list                  # List all functions
 notte functions create --file workflow.py  # Create a new function
 notte functions show                  # View current function details
+notte functions show --id <id>        # View specific function details (different from current function)
 notte functions update --file workflow.py  # Update current function code
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
