@@ -56,6 +56,12 @@ func TestParseAPIError_401(t *testing.T) {
 	if authErr.Reason != "invalid" {
 		t.Errorf("Reason = %q, want 'invalid'", authErr.Reason)
 	}
+	if authErr.Message != "Invalid API key" {
+		t.Errorf("Message = %q, want 'Invalid API key'", authErr.Message)
+	}
+	if authErr.StatusCode != 401 {
+		t.Errorf("StatusCode = %d, want 401", authErr.StatusCode)
+	}
 }
 
 func TestParseAPIError_429(t *testing.T) {
