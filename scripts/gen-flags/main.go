@@ -61,7 +61,7 @@ func run(specFile, outputDir string) error {
 		// Collect errors but continue if there's partial code
 		if len(errors) > 0 {
 			allErrors = append(allErrors, errors...)
-			
+
 			// Count supported fields
 			supportedFields := 0
 			for _, fc := range config.Fields {
@@ -69,13 +69,13 @@ func run(specFile, outputDir string) error {
 					supportedFields++
 				}
 			}
-			
+
 			// If NO fields are supported, skip this command entirely
 			if supportedFields == 0 {
 				fmt.Printf("    ⚠ Skipped %s (no supported fields)\n", config.Name)
 				continue
 			}
-			
+
 			// Write partial file with warning comments
 			partialFiles = append(partialFiles, config.Name)
 		}
@@ -84,7 +84,7 @@ func run(specFile, outputDir string) error {
 		filename := fmt.Sprintf("%s_flags.gen.go", toSnakeCase(strings.ToLower(config.Name)))
 		outputPath := filepath.Join(outputDir, filename)
 
-		if err := os.WriteFile(outputPath, []byte(code), 0644); err != nil {
+		if err := os.WriteFile(outputPath, []byte(code), 0o644); err != nil {
 			return fmt.Errorf("failed to write %s: %w", outputPath, err)
 		}
 

@@ -9,9 +9,9 @@ import (
 
 // OpenAPISpec represents a simplified OpenAPI 3.0 specification
 type OpenAPISpec struct {
-	OpenAPI    string                `json:"openapi"`
-	Paths      map[string]PathItem   `json:"paths"`
-	Components Components            `json:"components"`
+	OpenAPI    string              `json:"openapi"`
+	Paths      map[string]PathItem `json:"paths"`
+	Components Components          `json:"components"`
 }
 
 type PathItem struct {
@@ -37,15 +37,15 @@ type MediaType struct {
 }
 
 type SchemaRef struct {
-	Ref         string              `json:"$ref,omitempty"`
-	Type        string              `json:"type,omitempty"`
+	Ref         string               `json:"$ref,omitempty"`
+	Type        string               `json:"type,omitempty"`
 	Properties  map[string]SchemaRef `json:"properties,omitempty"`
-	Items       *SchemaRef          `json:"items,omitempty"`
-	Enum        []interface{}       `json:"enum,omitempty"`
-	Required    []string            `json:"required,omitempty"`
-	Nullable    bool                `json:"nullable,omitempty"`
-	AnyOf       []SchemaRef         `json:"anyOf,omitempty"`
-	Description string              `json:"description,omitempty"`
+	Items       *SchemaRef           `json:"items,omitempty"`
+	Enum        []interface{}        `json:"enum,omitempty"`
+	Required    []string             `json:"required,omitempty"`
+	Nullable    bool                 `json:"nullable,omitempty"`
+	AnyOf       []SchemaRef          `json:"anyOf,omitempty"`
+	Description string               `json:"description,omitempty"`
 }
 
 type Components struct {
@@ -74,18 +74,18 @@ func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 
 	// Map of endpoints to command names
 	endpointMap := map[string]string{
-		"/sessions/start":     "SessionStart",
-		"/agents/start":       "AgentStart",
-		"/personas/create":    "PersonaCreate",
-		"/profiles/create":    "ProfileCreate",
-		"/vaults/create":      "VaultCreate",
-		"/vaults/{vault_id}":  "VaultUpdate",
-		"/vaults/{vault_id}/credentials": "VaultCredentialsAdd",
-		"/vaults/{vault_id}/credit-card": "VaultCreditCardSet",
-		"/functions/schedule": "FunctionScheduleSet",
+		"/sessions/start":                                 "SessionStart",
+		"/agents/start":                                   "AgentStart",
+		"/personas/create":                                "PersonaCreate",
+		"/profiles/create":                                "ProfileCreate",
+		"/vaults/create":                                  "VaultCreate",
+		"/vaults/{vault_id}":                              "VaultUpdate",
+		"/vaults/{vault_id}/credentials":                  "VaultCredentialsAdd",
+		"/vaults/{vault_id}/credit-card":                  "VaultCreditCardSet",
+		"/functions/schedule":                             "FunctionScheduleSet",
 		"/functions/{function_id}/runs/{run_id}/metadata": "FunctionRunUpdateMetadata",
-		"/scrape":             "ScrapeWebpage",
-		"/scrape-html":        "ScrapeFromHtml",
+		"/scrape":                                         "ScrapeWebpage",
+		"/scrape-html":                                    "ScrapeFromHtml",
 	}
 
 	for path, pathItem := range spec.Paths {

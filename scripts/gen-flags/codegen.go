@@ -63,7 +63,7 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 	}
 
 	// Generate flag variables
-	buf.WriteString(fmt.Sprintf("// %s command flags\n", config.Name))
+	fmt.Fprintf(&buf, "// %s command flags\n", config.Name)
 	buf.WriteString("var (\n")
 
 	for _, fc := range config.Fields {
@@ -80,22 +80,23 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 			continue
 		}
 
-		if fc.Category == CategoryFlattenedFlags {
+		switch fc.Category {
+		case CategoryFlattenedFlags:
 			// Generate variables for sub-fields
-			buf.WriteString(fmt.Sprintf("\t// Flattened: %s object\n", fc.FlagName))
+			fmt.Fprintf(&buf, "\t// Flattened: %s object\n", fc.FlagName)
 			for _, subFC := range fc.SubFields {
-				buf.WriteString(fmt.Sprintf("\t%s %s\n", subFC.VarName, subFC.GoType))
+				fmt.Fprintf(&buf, "\t%s %s\n", subFC.VarName, subFC.GoType)
 			}
-		} else if fc.Category == CategoryJSONFileInput {
+		case CategoryJSONFileInput:
 			// Generate string variable for JSON file path
-			buf.WriteString(fmt.Sprintf("\t// JSON file input: %s\n", fc.FlagName))
-			buf.WriteString(fmt.Sprintf("\t%s string\n", fc.VarName))
-		} else {
+			fmt.Fprintf(&buf, "\t// JSON file input: %s\n", fc.FlagName)
+			fmt.Fprintf(&buf, "\t%s string\n", fc.VarName)
+		default:
 			// Generate variable
 			if fc.Field.Description != "" {
-				buf.WriteString(fmt.Sprintf("\t// %s\n", fc.Field.Description))
+				fmt.Fprintf(&buf, "\t// %s\n", fc.Field.Description)
 			}
-			buf.WriteString(fmt.Sprintf("\t%s %s\n", fc.VarName, fc.GoType))
+			fmt.Fprintf(&buf, "\t%s %s\n", fc.VarName, fc.GoType)
 		}
 		buf.WriteString("\n")
 	}
@@ -116,25 +117,26 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 }
 
 func generateRegisterFunction(buf *bytes.Buffer, config *CommandConfig) error {
-	buf.WriteString(fmt.Sprintf("// Register%sFlags registers all flags for %s command\n", config.Name, config.Name))
-	buf.WriteString(fmt.Sprintf("func Register%sFlags(cmd *cobra.Command) {\n", config.Name))
+	fmt.Fprintf(buf, "// Register%sFlags registers all flags for %s command\n", config.Name, config.Name)
+	fmt.Fprintf(buf, "func Register%sFlags(cmd *cobra.Command) {\n", config.Name)
 
 	for _, fc := range config.Fields {
 		if fc.Category == CategoryUnsupported || fc.Category == CategorySkipped {
 			continue
 		}
 
-		if fc.Category == CategoryFlattenedFlags {
+		switch fc.Category {
+		case CategoryFlattenedFlags:
 			// Register sub-fields
-			buf.WriteString(fmt.Sprintf("\t// %s (flattened object)\n", fc.Field.Name))
+			fmt.Fprintf(buf, "\t// %s (flattened object)\n", fc.Field.Name)
 			for _, subFC := range fc.SubFields {
 				generateFlagRegistration(buf, subFC)
 			}
-		} else if fc.Category == CategoryJSONFileInput {
+		case CategoryJSONFileInput:
 			// Register as string flag for JSON file path
-			buf.WriteString(fmt.Sprintf("\tcmd.Flags().StringVar(&%s, \"%s-json\", \"\", \"%s configuration (JSON file path, e.g., @config.json)\")\n",
-				fc.VarName, fc.FlagName, fc.FlagName))
-		} else {
+			fmt.Fprintf(buf, "\tcmd.Flags().StringVar(&%s, \"%s-json\", \"\", \"%s configuration (JSON file path, e.g., @config.json)\")\n",
+				fc.VarName, fc.FlagName, fc.FlagName)
+		default:
 			generateFlagRegistration(buf, fc)
 		}
 	}
@@ -157,20 +159,20 @@ func generateFlagRegistration(buf *bytes.Buffer, fc *FieldConfig) {
 
 	switch fc.FlagType {
 	case "StringVar":
-		buf.WriteString(fmt.Sprintf("\tcmd.Flags().StringVar(&%s, \"%s\", \"%s\", \"%s\")\n",
-			fc.VarName, fc.FlagName, defaultValue, description))
+		fmt.Fprintf(buf, "\tcmd.Flags().StringVar(&%s, \"%s\", \"%s\", \"%s\")\n",
+			fc.VarName, fc.FlagName, defaultValue, description)
 	case "IntVar":
-		buf.WriteString(fmt.Sprintf("\tcmd.Flags().IntVar(&%s, \"%s\", %s, \"%s\")\n",
-			fc.VarName, fc.FlagName, defaultValue, description))
+		fmt.Fprintf(buf, "\tcmd.Flags().IntVar(&%s, \"%s\", %s, \"%s\")\n",
+			fc.VarName, fc.FlagName, defaultValue, description)
 	case "BoolVar":
-		buf.WriteString(fmt.Sprintf("\tcmd.Flags().BoolVar(&%s, \"%s\", %s, \"%s\")\n",
-			fc.VarName, fc.FlagName, defaultValue, description))
+		fmt.Fprintf(buf, "\tcmd.Flags().BoolVar(&%s, \"%s\", %s, \"%s\")\n",
+			fc.VarName, fc.FlagName, defaultValue, description)
 	case "Float64Var":
-		buf.WriteString(fmt.Sprintf("\tcmd.Flags().Float64Var(&%s, \"%s\", %s, \"%s\")\n",
-			fc.VarName, fc.FlagName, defaultValue, description))
+		fmt.Fprintf(buf, "\tcmd.Flags().Float64Var(&%s, \"%s\", %s, \"%s\")\n",
+			fc.VarName, fc.FlagName, defaultValue, description)
 	case "StringSliceVar":
-		buf.WriteString(fmt.Sprintf("\tcmd.Flags().StringSliceVar(&%s, \"%s\", []string{}, \"%s (repeatable)\")\n",
-			fc.VarName, fc.FlagName, description))
+		fmt.Fprintf(buf, "\tcmd.Flags().StringSliceVar(&%s, \"%s\", []string{}, \"%s (repeatable)\")\n",
+			fc.VarName, fc.FlagName, description)
 	}
 }
 
@@ -194,9 +196,9 @@ func getDefaultValue(fc *FieldConfig) string {
 }
 
 func generateBuildFunction(buf *bytes.Buffer, config *CommandConfig, schemas map[string]*Field) error {
-	buf.WriteString(fmt.Sprintf("// Build%sRequest builds the API request from CLI flags\n", config.Name))
-	buf.WriteString(fmt.Sprintf("func Build%sRequest(cmd *cobra.Command) (*api.%s, error) {\n", config.Name, config.RequestBodyType))
-	buf.WriteString(fmt.Sprintf("\tbody := &api.%s{}\n\n", config.RequestBodyType))
+	fmt.Fprintf(buf, "// Build%sRequest builds the API request from CLI flags\n", config.Name)
+	fmt.Fprintf(buf, "func Build%sRequest(cmd *cobra.Command) (*api.%s, error) {\n", config.Name, config.RequestBodyType)
+	fmt.Fprintf(buf, "\tbody := &api.%s{}\n\n", config.RequestBodyType)
 
 	for _, fc := range config.Fields {
 		if fc.Category == CategoryUnsupported || fc.Category == CategorySkipped {
@@ -229,13 +231,13 @@ func generateJSONFileInputMapping(buf *bytes.Buffer, fc *FieldConfig) {
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
-	buf.WriteString(fmt.Sprintf("\t// %s (JSON file input)\n", fc.Field.Name))
-	buf.WriteString(fmt.Sprintf("\tif %s != \"\" {\n", fc.VarName))
-	buf.WriteString(fmt.Sprintf("\t\tdata, err := readJSONFile(%s)\n", fc.VarName))
+	fmt.Fprintf(buf, "\t// %s (JSON file input)\n", fc.Field.Name)
+	fmt.Fprintf(buf, "\tif %s != \"\" {\n", fc.VarName)
+	fmt.Fprintf(buf, "\t\tdata, err := readJSONFile(%s)\n", fc.VarName)
 	buf.WriteString("\t\tif err != nil {\n")
-	buf.WriteString(fmt.Sprintf("\t\t\treturn nil, fmt.Errorf(\"failed to read %s: %%w\", err)\n", fc.FlagName))
+	fmt.Fprintf(buf, "\t\t\treturn nil, fmt.Errorf(\"failed to read %s: %%w\", err)\n", fc.FlagName)
 	buf.WriteString("\t\t}\n")
-	buf.WriteString(fmt.Sprintf("\t\tbody.%s = data\n", apiFieldName))
+	fmt.Fprintf(buf, "\t\tbody.%s = data\n", apiFieldName)
 	buf.WriteString("\t}\n\n")
 }
 
@@ -254,19 +256,19 @@ func generateSimpleFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
 
 	if fc.Field.Type == "boolean" || fc.Field.Required {
 		// For booleans and required fields, check if flag was changed
-		buf.WriteString(fmt.Sprintf("\tif cmd.Flags().Changed(\"%s\") {\n", fc.FlagName))
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = %s\n", apiFieldName, assignOp))
+		fmt.Fprintf(buf, "\tif cmd.Flags().Changed(\"%s\") {\n", fc.FlagName)
+		fmt.Fprintf(buf, "\t\tbody.%s = %s\n", apiFieldName, assignOp)
 		buf.WriteString("\t}\n\n")
 	} else {
 		// For optional fields, check if non-zero
 		switch fc.Field.Type {
 		case "string":
-			buf.WriteString(fmt.Sprintf("\tif %s != \"\" {\n", fc.VarName))
-			buf.WriteString(fmt.Sprintf("\t\tbody.%s = &%s\n", apiFieldName, fc.VarName))
+			fmt.Fprintf(buf, "\tif %s != \"\" {\n", fc.VarName)
+			fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
 			buf.WriteString("\t}\n\n")
 		case "integer", "number":
-			buf.WriteString(fmt.Sprintf("\tif %s > 0 {\n", fc.VarName))
-			buf.WriteString(fmt.Sprintf("\t\tbody.%s = &%s\n", apiFieldName, fc.VarName))
+			fmt.Fprintf(buf, "\tif %s > 0 {\n", fc.VarName)
+			fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
 			buf.WriteString("\t}\n\n")
 		}
 	}
@@ -282,22 +284,22 @@ func generateEnumFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *Comman
 	// In this case, we need to use the From*1 method
 	isUnionType := fc.Field.Description != "" && len(fc.Field.Enum) > 0
 
-	buf.WriteString(fmt.Sprintf("\tif %s != \"\" {\n", fc.VarName))
+	fmt.Fprintf(buf, "\tif %s != \"\" {\n", fc.VarName)
 
 	if isUnionType {
 		// Union type - use From*1 method to set string value
 		unionTypeName := fmt.Sprintf("%s_%s", config.RequestBodyType, apiFieldName)
-		buf.WriteString(fmt.Sprintf("\t\tvar val api.%s\n", unionTypeName))
-		buf.WriteString(fmt.Sprintf("\t\tif err := val.From%s%s1(%s); err != nil {\n",
-			config.RequestBodyType, apiFieldName, fc.VarName))
-		buf.WriteString(fmt.Sprintf("\t\t\treturn nil, fmt.Errorf(\"invalid %s: %%w\", err)\n", fc.FlagName))
+		fmt.Fprintf(buf, "\t\tvar val api.%s\n", unionTypeName)
+		fmt.Fprintf(buf, "\t\tif err := val.From%s%s1(%s); err != nil {\n",
+			config.RequestBodyType, apiFieldName, fc.VarName)
+		fmt.Fprintf(buf, "\t\t\treturn nil, fmt.Errorf(\"invalid %s: %%w\", err)\n", fc.FlagName)
 		buf.WriteString("\t\t}\n")
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = &val\n", apiFieldName))
+		fmt.Fprintf(buf, "\t\tbody.%s = &val\n", apiFieldName)
 	} else {
 		// Simple enum type - direct cast
 		enumTypeName := fmt.Sprintf("%s%s", config.RequestBodyType, apiFieldName)
-		buf.WriteString(fmt.Sprintf("\t\tval := api.%s(%s)\n", enumTypeName, fc.VarName))
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = &val\n", apiFieldName))
+		fmt.Fprintf(buf, "\t\tval := api.%s(%s)\n", enumTypeName, fc.VarName)
+		fmt.Fprintf(buf, "\t\tbody.%s = &val\n", apiFieldName)
 	}
 
 	buf.WriteString("\t}\n\n")
@@ -342,9 +344,9 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 		condition = strings.Join(conditions, " || ")
 	}
 
-	buf.WriteString(fmt.Sprintf("\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name))
-	buf.WriteString(fmt.Sprintf("\tif %s {\n", condition))
-	buf.WriteString(fmt.Sprintf("\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName))
+	fmt.Fprintf(buf, "\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name)
+	fmt.Fprintf(buf, "\tif %s {\n", condition)
+	fmt.Fprintf(buf, "\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName)
 
 	for _, subFC := range fc.SubFields {
 		subAPIFieldName := toCamelCase(subFC.Field.JSONName)
@@ -354,9 +356,9 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 
 		// For required fields in API, assign directly; for optional fields, take address
 		if subFC.Field.Required {
-			buf.WriteString(fmt.Sprintf("\t\t\t%s: %s,\n", subAPIFieldName, subFC.VarName))
+			fmt.Fprintf(buf, "\t\t\t%s: %s,\n", subAPIFieldName, subFC.VarName)
 		} else {
-			buf.WriteString(fmt.Sprintf("\t\t\t%s: &%s,\n", subAPIFieldName, subFC.VarName))
+			fmt.Fprintf(buf, "\t\t\t%s: &%s,\n", subAPIFieldName, subFC.VarName)
 		}
 	}
 
@@ -370,19 +372,19 @@ func generateRepeatedFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
-	buf.WriteString(fmt.Sprintf("\tif len(%s) > 0 {\n", fc.VarName))
+	fmt.Fprintf(buf, "\tif len(%s) > 0 {\n", fc.VarName)
 
 	if fc.Field.Items.Type == "string" {
 		// For []string, we can assign directly or convert to []interface{}
 		// Check if the API expects []string or []interface{}
-		buf.WriteString(fmt.Sprintf("\t\t// Convert string slice to interface slice\n"))
-		buf.WriteString(fmt.Sprintf("\t\targs := make([]interface{}, len(%s))\n", fc.VarName))
-		buf.WriteString(fmt.Sprintf("\t\tfor i, arg := range %s {\n", fc.VarName))
+		buf.WriteString("\t\t// Convert string slice to interface slice\n")
+		fmt.Fprintf(buf, "\t\targs := make([]interface{}, len(%s))\n", fc.VarName)
+		fmt.Fprintf(buf, "\t\tfor i, arg := range %s {\n", fc.VarName)
 		buf.WriteString("\t\t\targs[i] = arg\n")
 		buf.WriteString("\t\t}\n")
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = &args\n", apiFieldName))
+		fmt.Fprintf(buf, "\t\tbody.%s = &args\n", apiFieldName)
 	} else {
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = &%s\n", apiFieldName, fc.VarName))
+		fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
 	}
 
 	buf.WriteString("\t}\n\n")

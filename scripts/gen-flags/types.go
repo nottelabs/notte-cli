@@ -153,13 +153,13 @@ type CommandConfig struct {
 
 // FieldConfig represents a field to generate flags for
 type FieldConfig struct {
-	Field      *Field
-	Category   FieldCategory
-	FlagName   string
-	VarName    string
-	FlagType   string
-	GoType     string
-	SubFields  []*FieldConfig // For flattened objects
+	Field     *Field
+	Category  FieldCategory
+	FlagName  string
+	VarName   string
+	FlagType  string
+	GoType    string
+	SubFields []*FieldConfig // For flattened objects
 }
 
 // ClassifyField determines how to generate flags for a field
@@ -366,7 +366,7 @@ func hasNestedObjects(field *Field, schemas map[string]*Field) bool {
 func toKebabCase(s string) string {
 	// First convert underscores to hyphens
 	s = strings.ReplaceAll(s, "_", "-")
-	
+
 	var result strings.Builder
 	for i, r := range s {
 		if i > 0 && r >= 'A' && r <= 'Z' {
