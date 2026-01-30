@@ -193,7 +193,7 @@ func runAgentStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentStop(cmd *cobra.Command, args []string) error {
-	confirmed, err := ConfirmAction("agent", agentID)
+	confirmed, err := ConfirmStop("agent", agentID)
 	if err != nil {
 		return err
 	}

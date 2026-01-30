@@ -454,7 +454,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	confirmed, err := ConfirmAction("session", sessionID)
+	confirmed, err := ConfirmStop("session", sessionID)
 	if err != nil {
 		return err
 	}
@@ -567,7 +567,7 @@ func runSessionExecute(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return printExecuteResponse(resp.JSON200)
 }
 
 func runSessionScrape(cmd *cobra.Command, args []string) error {
