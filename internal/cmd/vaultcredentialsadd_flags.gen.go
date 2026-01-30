@@ -2,6 +2,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
@@ -12,10 +14,10 @@ var (
 	VaultCredentialsAddUrl string
 
 	// Flattened: credentials object
+	VaultCredentialsAddCredentialsEmail string
 	VaultCredentialsAddCredentialsUsername string
 	VaultCredentialsAddCredentialsPassword string
 	VaultCredentialsAddCredentialsMfaSecret string
-	VaultCredentialsAddCredentialsEmail string
 
 )
 
@@ -23,10 +25,10 @@ var (
 func RegisterVaultCredentialsAddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&VaultCredentialsAddUrl, "url", "", "url")
 	// credentials (flattened object)
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsEmail, "email", "", "email")
 	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsUsername, "username", "", "username")
 	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsPassword, "password", "", "password")
 	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsMfaSecret, "mfa-secret", "", "mfa-secret")
-	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsEmail, "email", "", "email")
 }
 
 // BuildVaultCredentialsAddRequest builds the API request from CLI flags
@@ -34,16 +36,19 @@ func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsReq
 	body := &api.AddCredentialsRequest{}
 
 	if cmd.Flags().Changed("url") {
+		if VaultCredentialsAddUrl == "" {
+			return nil, fmt.Errorf("--url cannot be empty")
+		}
 		body.Url = VaultCredentialsAddUrl
 	}
 
 	// credentials (flattened) - only set if required fields are provided
 	if VaultCredentialsAddCredentialsPassword != "" {
 		body.Credentials = api.CredentialsDictInput{
+			Email: &VaultCredentialsAddCredentialsEmail,
 			Username: &VaultCredentialsAddCredentialsUsername,
 			Password: VaultCredentialsAddCredentialsPassword,
 			MfaSecret: &VaultCredentialsAddCredentialsMfaSecret,
-			Email: &VaultCredentialsAddCredentialsEmail,
 		}
 	}
 

@@ -9,17 +9,17 @@ import (
 
 // SessionStart command flags
 var (
-	// The user agent to use for the session
-	SessionStartUserAgent string
+	// The width of the viewport
+	SessionStartViewportWidth int
 
 	// The CDP URL of another remote session provider.
 	SessionStartCdpUrl string
 
-	// The type of screenshot to use for the session.
-	SessionStartScreenshotType string
+	// Whether to run the session in headless mode.
+	SessionStartHeadless bool
 
-	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
-	SessionStartMaxDurationMinutes int
+	// The height of the viewport
+	SessionStartViewportHeight int
 
 	// Whether FileStorage should be attached to the session.
 	SessionStartUseFileStorage bool
@@ -28,23 +28,23 @@ var (
 	SessionStartProfileId string
 	SessionStartProfilePersist bool
 
-	// Whether to try to automatically solve captchas
-	SessionStartSolveCaptchas bool
-
-	// Overwrite the chrome instance arguments
-	SessionStartChromeArgs []string
-
-	// The height of the viewport
-	SessionStartViewportHeight int
-
-	// Whether to run the session in headless mode.
-	SessionStartHeadless bool
+	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
+	SessionStartMaxDurationMinutes int
 
 	// Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	SessionStartIdleTimeoutMinutes int
 
-	// The width of the viewport
-	SessionStartViewportWidth int
+	// The type of screenshot to use for the session.
+	SessionStartScreenshotType string
+
+	// Whether to try to automatically solve captchas
+	SessionStartSolveCaptchas bool
+
+	// The user agent to use for the session
+	SessionStartUserAgent string
+
+	// Overwrite the chrome instance arguments
+	SessionStartChromeArgs []string
 
 	// The browser type to use. Can be chromium, chrome or firefox.
 	SessionStartBrowserType string
@@ -53,20 +53,20 @@ var (
 
 // RegisterSessionStartFlags registers all flags for SessionStart command
 func RegisterSessionStartFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
+	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
-	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (raw, full, last_action)")
-	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity).")
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode.")
+	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
 	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "Whether FileStorage should be attached to the session.")
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close")
-	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas")
-	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
-	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode.")
+	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity).")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).")
-	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
+	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (raw, full, last_action)")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas")
+	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
+	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Can be chromium, chrome or firefox. (chromium, chrome, firefox, chrome-nightly, chrome-turbo)")
 }
 
@@ -74,21 +74,20 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, error) {
 	body := &api.ApiSessionStartRequest{}
 
-	if SessionStartUserAgent != "" {
-		body.UserAgent = &SessionStartUserAgent
+	if SessionStartViewportWidth > 0 {
+		body.ViewportWidth = &SessionStartViewportWidth
 	}
 
 	if SessionStartCdpUrl != "" {
 		body.CdpUrl = &SessionStartCdpUrl
 	}
 
-	if SessionStartScreenshotType != "" {
-		val := api.ApiSessionStartRequestScreenshotType(SessionStartScreenshotType)
-		body.ScreenshotType = &val
+	if cmd.Flags().Changed("headless") {
+		body.Headless = &SessionStartHeadless
 	}
 
-	if SessionStartMaxDurationMinutes > 0 {
-		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
+	if SessionStartViewportHeight > 0 {
+		body.ViewportHeight = &SessionStartViewportHeight
 	}
 
 	if cmd.Flags().Changed("use-file-storage") {
@@ -103,28 +102,29 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		}
 	}
 
-	if cmd.Flags().Changed("solve-captchas") {
-		body.SolveCaptchas = &SessionStartSolveCaptchas
-	}
-
-	if len(SessionStartChromeArgs) > 0 {
-		body.ChromeArgs = &SessionStartChromeArgs
-	}
-
-	if SessionStartViewportHeight > 0 {
-		body.ViewportHeight = &SessionStartViewportHeight
-	}
-
-	if cmd.Flags().Changed("headless") {
-		body.Headless = &SessionStartHeadless
+	if SessionStartMaxDurationMinutes > 0 {
+		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
 	}
 
 	if SessionStartIdleTimeoutMinutes > 0 {
 		body.IdleTimeoutMinutes = &SessionStartIdleTimeoutMinutes
 	}
 
-	if SessionStartViewportWidth > 0 {
-		body.ViewportWidth = &SessionStartViewportWidth
+	if SessionStartScreenshotType != "" {
+		val := api.ApiSessionStartRequestScreenshotType(SessionStartScreenshotType)
+		body.ScreenshotType = &val
+	}
+
+	if cmd.Flags().Changed("solve-captchas") {
+		body.SolveCaptchas = &SessionStartSolveCaptchas
+	}
+
+	if SessionStartUserAgent != "" {
+		body.UserAgent = &SessionStartUserAgent
+	}
+
+	if len(SessionStartChromeArgs) > 0 {
+		body.ChromeArgs = &SessionStartChromeArgs
 	}
 
 	if SessionStartBrowserType != "" {

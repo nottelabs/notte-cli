@@ -32,79 +32,69 @@ func readJSONFile(path string) (interface{}, error) {
 
 // AgentStart command flags
 var (
-	// The persona to use for the agent
-	AgentStartPersonaId string
-
-	// The URL that the agent should start on (optional)
-	AgentStartUrl string
+	// [Experimental] The step from which the agent should gather information from in the session. If none, fresh memory
+	AgentStartSessionOffset int
 
 	// Whether to use vision for the agent. Not all reasoning models support vision.
 	AgentStartUseVision bool
 
-	// The maximum number of steps the agent should take
-	AgentStartMaxSteps int
-
-	// JSON file input: response-format
-	AgentStartResponseFormat string
+	// The task that the agent should perform
+	AgentStartTask string
 
 	// The reasoning model to use
 	AgentStartReasoningModel string
 
+	// The maximum number of steps the agent should take
+	AgentStartMaxSteps int
+
 	// The vault to use for the agent
 	AgentStartVaultId string
+
+	// The persona to use for the agent
+	AgentStartPersonaId string
 
 	// The ID of the session to run the agent on
 	AgentStartSessionId string
 
-	// The task that the agent should perform
-	AgentStartTask string
+	// The URL that the agent should start on (optional)
+	AgentStartUrl string
 
-	// [Experimental] The step from which the agent should gather information from in the session. If none, fresh memory
-	AgentStartSessionOffset int
+	// JSON file input: response-format
+	AgentStartResponseFormat string
 
 )
 
 // RegisterAgentStartFlags registers all flags for AgentStart command
 func RegisterAgentStartFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&AgentStartPersonaId, "persona-id", "", "The persona to use for the agent")
-	cmd.Flags().StringVar(&AgentStartUrl, "url", "", "The URL that the agent should start on (optional)")
-	cmd.Flags().BoolVar(&AgentStartUseVision, "use-vision", false, "Whether to use vision for the agent. Not all reasoning models support vision.")
-	cmd.Flags().IntVar(&AgentStartMaxSteps, "max-steps", 0, "The maximum number of steps the agent should take")
-	cmd.Flags().StringVar(&AgentStartResponseFormat, "response-format-json", "", "response-format configuration (JSON file path, e.g., @config.json)")
-	cmd.Flags().StringVar(&AgentStartReasoningModel, "reasoning-model", "", "The reasoning model to use (openai/gpt-4o, gemini/gemini-2.0-flash, vertex_ai/gemini-2.0-flash, vertex_ai/gemini-2.5-flash, openrouter/google/gemma-3-27b-it, cerebras/llama-3.3-70b, groq/llama-3.3-70b-versatile, perplexity/sonar-pro, deepseek/deepseek-r1, together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo, anthropic/claude-sonnet-4-5-20250929, moonshot/kimi-k2.5)")
-	cmd.Flags().StringVar(&AgentStartVaultId, "vault-id", "", "The vault to use for the agent")
-	cmd.Flags().StringVar(&AgentStartSessionId, "session-id", "", "The ID of the session to run the agent on")
-	cmd.Flags().StringVar(&AgentStartTask, "task", "", "The task that the agent should perform")
 	cmd.Flags().IntVar(&AgentStartSessionOffset, "session-offset", 0, "[Experimental] The step from which the agent should gather information from in the session. If none, fresh memory")
+	cmd.Flags().BoolVar(&AgentStartUseVision, "use-vision", false, "Whether to use vision for the agent. Not all reasoning models support vision.")
+	cmd.Flags().StringVar(&AgentStartTask, "task", "", "The task that the agent should perform")
+	cmd.Flags().StringVar(&AgentStartReasoningModel, "reasoning-model", "", "The reasoning model to use (openai/gpt-4o, gemini/gemini-2.0-flash, vertex_ai/gemini-2.0-flash, vertex_ai/gemini-2.5-flash, openrouter/google/gemma-3-27b-it, cerebras/llama-3.3-70b, groq/llama-3.3-70b-versatile, perplexity/sonar-pro, deepseek/deepseek-r1, together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo, anthropic/claude-sonnet-4-5-20250929, moonshot/kimi-k2.5)")
+	cmd.Flags().IntVar(&AgentStartMaxSteps, "max-steps", 0, "The maximum number of steps the agent should take")
+	cmd.Flags().StringVar(&AgentStartVaultId, "vault-id", "", "The vault to use for the agent")
+	cmd.Flags().StringVar(&AgentStartPersonaId, "persona-id", "", "The persona to use for the agent")
+	cmd.Flags().StringVar(&AgentStartSessionId, "session-id", "", "The ID of the session to run the agent on")
+	cmd.Flags().StringVar(&AgentStartUrl, "url", "", "The URL that the agent should start on (optional)")
+	cmd.Flags().StringVar(&AgentStartResponseFormat, "response-format-json", "", "response-format configuration (JSON file path, e.g., @config.json)")
 }
 
 // BuildAgentStartRequest builds the API request from CLI flags
 func BuildAgentStartRequest(cmd *cobra.Command) (*api.ApiAgentStartRequest, error) {
 	body := &api.ApiAgentStartRequest{}
 
-	if AgentStartPersonaId != "" {
-		body.PersonaId = &AgentStartPersonaId
-	}
-
-	if AgentStartUrl != "" {
-		body.Url = &AgentStartUrl
+	if AgentStartSessionOffset > 0 {
+		body.SessionOffset = &AgentStartSessionOffset
 	}
 
 	if cmd.Flags().Changed("use-vision") {
 		body.UseVision = &AgentStartUseVision
 	}
 
-	if AgentStartMaxSteps > 0 {
-		body.MaxSteps = &AgentStartMaxSteps
-	}
-
-	// response_format (JSON file input)
-	if AgentStartResponseFormat != "" {
-		data, err := readJSONFile(AgentStartResponseFormat)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response-format: %w", err)
+	if cmd.Flags().Changed("task") {
+		if AgentStartTask == "" {
+			return nil, fmt.Errorf("--task cannot be empty")
 		}
-		body.ResponseFormat = data
+		body.Task = AgentStartTask
 	}
 
 	if AgentStartReasoningModel != "" {
@@ -115,20 +105,36 @@ func BuildAgentStartRequest(cmd *cobra.Command) (*api.ApiAgentStartRequest, erro
 		body.ReasoningModel = &val
 	}
 
+	if AgentStartMaxSteps > 0 {
+		body.MaxSteps = &AgentStartMaxSteps
+	}
+
 	if AgentStartVaultId != "" {
 		body.VaultId = &AgentStartVaultId
 	}
 
+	if AgentStartPersonaId != "" {
+		body.PersonaId = &AgentStartPersonaId
+	}
+
 	if cmd.Flags().Changed("session-id") {
+		if AgentStartSessionId == "" {
+			return nil, fmt.Errorf("--session-id cannot be empty")
+		}
 		body.SessionId = AgentStartSessionId
 	}
 
-	if cmd.Flags().Changed("task") {
-		body.Task = AgentStartTask
+	if AgentStartUrl != "" {
+		body.Url = &AgentStartUrl
 	}
 
-	if AgentStartSessionOffset > 0 {
-		body.SessionOffset = &AgentStartSessionOffset
+	// response_format (JSON file input)
+	if AgentStartResponseFormat != "" {
+		data, err := readJSONFile(AgentStartResponseFormat)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response-format: %w", err)
+		}
+		body.ResponseFormat = data
 	}
 
 	return body, nil
