@@ -1,3 +1,8 @@
+---
+name: function-management
+description: Guide to creating, managing, and scheduling workflow functions
+---
+
 # Function Management Reference
 
 Complete guide to creating, managing, and scheduling workflow functions with the notte CLI.

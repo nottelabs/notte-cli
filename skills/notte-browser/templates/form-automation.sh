@@ -75,7 +75,8 @@ main() {
 
     # Navigate to form page
     log_info "Navigating to: $TARGET_URL"
-    notte page observe --url "$TARGET_URL" > /dev/null
+    notte page goto "$TARGET_URL"
+    notte page observe > /dev/null
 
     # Wait for page to load
     notte page wait 1000
@@ -96,8 +97,7 @@ main() {
     # Take screenshot before submit
     if [[ "$TAKE_SCREENSHOTS" == "true" ]]; then
         log_info "Taking pre-submit screenshot..."
-        # Note: Screenshot functionality depends on your notte setup
-        # notte page screenshot --output "$SCREENSHOT_DIR/before_submit.png"
+        notte page screenshot
     fi
 
     # Submit form
@@ -117,7 +117,7 @@ main() {
         # Take success screenshot
         if [[ "$TAKE_SCREENSHOTS" == "true" ]]; then
             log_info "Taking success screenshot..."
-            # notte page screenshot --output "$SCREENSHOT_DIR/after_submit.png"
+            notte page screenshot
         fi
     else
         log_warn "Could not verify success. Check the result manually."

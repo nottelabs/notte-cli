@@ -1,3 +1,10 @@
+---
+name: notte-browser
+description: Command-line interface for browser automation, web scraping, and AI-powered web interactions using the notte.cc platform.
+version: 1.0.0
+allowed-tools: Bash(notte:*)
+---
+
 # Notte Browser CLI Skill
 
 Command-line interface for browser automation, web scraping, and AI-powered web interactions using the notte.cc platform.
@@ -17,8 +24,8 @@ notte page observe
 notte page screenshot
 
 # 4. Execute actions
-notte page click "B3"
-notte page fill "I1" "hello world"
+notte page click "@B3"
+notte page fill "@I1" "hello world"
 
 # 5. Scrape content
 notte page scrape --instructions "Extract all product names and prices"
@@ -90,13 +97,13 @@ Simplified commands for page interactions:
 **Element Interactions:**
 ```bash
 # Click an element (use either the ids from an observe, or a selector)
-notte page click "B3"
+notte page click "@B3"
 notte page click "#submit-button"
   --timeout     Timeout in milliseconds
   --enter       Press Enter after clicking
 
 # Fill an input field
-notte page fill "I1" "hello world"
+notte page fill "@I1" "hello world"
   --clear       Clear field before filling
   --enter       Press Enter after filling
 
@@ -108,7 +115,7 @@ notte page check "#my-checkbox"
 notte page select "#dropdown-element" "Option 1"
 
 # Download file by clicking element
-notte page download "L5"
+notte page download "@L5"
 
 # Upload file to input
 notte page upload "#file-input" --file /path/to/file
@@ -307,7 +314,7 @@ notte sessions start --headless
 notte page goto "https://example.com/products"
 notte page observe
 notte page scrape --instructions "Extract product names and prices"
-notte page click "L3"
+notte page click "@L3"
 notte page scrape --instructions "Extract product names and prices"
 notte sessions stop
 ```

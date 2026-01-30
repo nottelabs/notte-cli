@@ -1,3 +1,8 @@
+---
+name: session-management
+description: Complete guide to managing browser sessions with the notte CLI
+---
+
 # Session Management Reference
 
 Complete guide to managing browser sessions with the notte CLI.
@@ -237,7 +242,7 @@ Returns data that can be used to replay the session.
 Export session steps as reusable code:
 
 ```bash
-notte sessions code
+notte sessions workflow-code
 ```
 
 Generates a function script from your session actions.
