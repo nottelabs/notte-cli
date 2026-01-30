@@ -400,9 +400,9 @@ Core workflow:
 1. `notte sessions start` - Start a browser session
 2. `notte page goto <url>` - Navigate to a URL
 3. `notte page observe` - Get interactive elements with IDs (@B1, @B2)
-3. `notte page click @B1` / `notte page fill @B2 "text"` - Interact using element IDs
-4. `notte page scrape "..."` - Extract structured data
-5. `notte sessions stop` - Clean up when done
+4. `notte page click @B1` / `notte page fill @B2 "text"` - Interact using element IDs
+5. `notte page scrape "..."` - Extract structured data
+6. `notte sessions stop` - Clean up when done
 ```
 
 ### Skills Documentation
