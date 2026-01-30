@@ -63,9 +63,6 @@ notte sessions list
 Session debugging and export:
 
 ```bash
-# Get debug info
-notte sessions debug
-
 # Get network logs
 notte sessions network
 
@@ -172,18 +169,6 @@ notte page complete "Task finished successfully" [--success=true]
 notte page form-fill --data '{"email": "test@example.com", "name": "John"}'
 ```
 
-### Quick Scrape
-
-Scrape without creating a session:
-
-```bash
-# Scrape a URL directly
-notte scrape "https://example.com" [--instructions "..."] [--only-main-content]
-
-# Scrape from local HTML file
-notte scrape-html --file page.html [--instructions "..."]
-```
-
 ### Functions (Workflow Automation)
 
 Create, manage, and schedule reusable workflows:
@@ -277,11 +262,6 @@ notte vaults credentials list --id <vault-id>
 notte vaults credentials add --id <vault-id> --url "https://site.com" --password "pass" [--email "..."] [--username "..."] [--mfa-secret "..."]
 notte vaults credentials get --id <vault-id> --url "https://site.com"
 notte vaults credentials delete --id <vault-id> --url "https://site.com"
-
-# Manage credit card
-notte vaults card --id <vault-id>
-notte vaults card-set --id <vault-id> --number "..." --expiry "12/25" --cvv "..." --name "John Doe"
-notte vaults card-delete --id <vault-id>
 ```
 
 ## Global Options
@@ -316,10 +296,13 @@ Session ID is resolved in this order:
 ### Basic Web Scraping
 
 ```bash
-# Quick scrape (no session needed)
-notte scrape "https://news.ycombinator.com" --instructions "Extract top 10 story titles"
+# Scrape with session
+notte sessions start --headless
+notte page goto "https://news.ycombinator.com"
+notte page scrape --instructions "Extract top 10 story titles"
+notte sessions stop
 
-# With session for multi-page scraping
+# Multi-page scraping
 notte sessions start --headless
 notte page goto "https://example.com/products"
 notte page observe

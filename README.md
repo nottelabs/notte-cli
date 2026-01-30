@@ -56,12 +56,6 @@ notte auth status
 notte sessions start --headless
 ```
 
-### 4. Scrape a Page
-
-```bash
-notte scrape https://news.ycombinator.com --instructions "Extract the top stories"
-```
-
 ## Configuration
 
 ### API Key Storage
@@ -120,7 +114,6 @@ notte sessions stop                   # Stop current session
 notte sessions cookies                # Get all cookies from current session
 notte sessions cookies-set --file cookies.json  # Set cookies in current session
 notte sessions network                # View network activity logs
-notte sessions debug                  # Get debug information
 notte sessions replay                 # Get session replay data
 notte sessions workflow-code          # Export session steps as Python code
 ```
@@ -200,7 +193,6 @@ notte vaults credentials list --id <id>         # List all credentials
 notte vaults credentials add --id <id>          # Add credentials
 notte vaults credentials get --id <id>          # Get credentials for URL
 notte vaults credentials delete --id <id>       # Delete credentials
-notte vaults card --id <id>                     # Manage payment cards
 ```
 
 ### Personas
@@ -223,28 +215,10 @@ notte files upload <path>            # Upload a file
 notte files download <id>            # Download a file by ID
 ```
 
-### Web Scraping
-
-```bash
-notte scrape <url> [flags]           # Scrape with structured extraction
-notte scrape-html <url>              # Get raw HTML content
-
-# Scraping options
-notte scrape <url> \
-  --instructions <text>              # Extraction instructions
-  --only-main-content                # Extract only main content area
-```
-
-### Usage & Monitoring
-
-```bash
-notte usage                          # View API usage statistics
-notte usage logs                     # View detailed usage logs
-```
-
 ### Utilities
 
 ```bash
+notte usage                          # View API usage statistics
 notte health                         # Check API health status
 notte version                        # Show CLI version
 ```

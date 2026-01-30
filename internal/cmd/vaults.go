@@ -23,10 +23,6 @@ var (
 	vaultCredentialsAddMFA      string
 	vaultCredentialsGetURL      string
 	vaultCredentialsDeleteURL   string
-	vaultCardSetNumber          string
-	vaultCardSetExpiry          string
-	vaultCardSetCVV             string
-	vaultCardSetName            string
 )
 
 var vaultsCmd = &cobra.Command{
@@ -95,27 +91,6 @@ var vaultsCredentialsDeleteCmd = &cobra.Command{
 	RunE:  runVaultCredentialsDelete,
 }
 
-var vaultsCardCmd = &cobra.Command{
-	Use:   "card",
-	Short: "Get the credit card for the vault",
-	Args:  cobra.NoArgs,
-	RunE:  runVaultCard,
-}
-
-var vaultsCardSetCmd = &cobra.Command{
-	Use:   "card-set",
-	Short: "Set credit card for the vault",
-	Args:  cobra.NoArgs,
-	RunE:  runVaultCardSet,
-}
-
-var vaultsCardDeleteCmd = &cobra.Command{
-	Use:   "card-delete",
-	Short: "Delete the credit card from the vault",
-	Args:  cobra.NoArgs,
-	RunE:  runVaultCardDelete,
-}
-
 func init() {
 	rootCmd.AddCommand(vaultsCmd)
 	vaultsCmd.AddCommand(vaultsListCmd)
@@ -123,9 +98,6 @@ func init() {
 	vaultsCmd.AddCommand(vaultsUpdateCmd)
 	vaultsCmd.AddCommand(vaultsDeleteCmd)
 	vaultsCmd.AddCommand(vaultsCredentialsCmd)
-	vaultsCmd.AddCommand(vaultsCardCmd)
-	vaultsCmd.AddCommand(vaultsCardSetCmd)
-	vaultsCmd.AddCommand(vaultsCardDeleteCmd)
 
 	vaultsCredentialsCmd.AddCommand(vaultsCredentialsListCmd)
 	vaultsCredentialsCmd.AddCommand(vaultsCredentialsAddCmd)
@@ -165,26 +137,6 @@ func init() {
 	// Credentials delete command flags
 	vaultsCredentialsDeleteCmd.Flags().StringVar(&vaultCredentialsDeleteURL, "url", "", "URL to delete credentials for (required)")
 	_ = vaultsCredentialsDeleteCmd.MarkFlagRequired("url")
-
-	// Card command flags
-	vaultsCardCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsCardCmd.MarkFlagRequired("id")
-
-	// Card-set command flags
-	vaultsCardSetCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsCardSetCmd.MarkFlagRequired("id")
-	vaultsCardSetCmd.Flags().StringVar(&vaultCardSetNumber, "number", "", "Credit card number (required)")
-	vaultsCardSetCmd.Flags().StringVar(&vaultCardSetExpiry, "expiry", "", "Card expiration date (e.g., 12/25) (required)")
-	vaultsCardSetCmd.Flags().StringVar(&vaultCardSetCVV, "cvv", "", "Card CVV (required)")
-	vaultsCardSetCmd.Flags().StringVar(&vaultCardSetName, "name", "", "Cardholder name (required)")
-	_ = vaultsCardSetCmd.MarkFlagRequired("number")
-	_ = vaultsCardSetCmd.MarkFlagRequired("expiry")
-	_ = vaultsCardSetCmd.MarkFlagRequired("cvv")
-	_ = vaultsCardSetCmd.MarkFlagRequired("name")
-
-	// Card-delete command flags
-	vaultsCardDeleteCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsCardDeleteCmd.MarkFlagRequired("id")
 }
 
 func runVaultsList(cmd *cobra.Command, args []string) error {
@@ -465,105 +417,5 @@ func runVaultCredentialsDelete(cmd *cobra.Command, args []string) error {
 	return PrintResult(fmt.Sprintf("Credentials for URL %s deleted from vault %s.", vaultCredentialsDeleteURL, vaultID), map[string]any{
 		"id":  vaultID,
 		"url": vaultCredentialsDeleteURL,
-	})
-}
-
-func runVaultCard(cmd *cobra.Command, args []string) error {
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	params := &api.VaultCreditCardGetParams{}
-	resp, err := client.Client().VaultCreditCardGetWithResponse(ctx, vaultID, params)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return GetFormatter().Print(resp.JSON200)
-}
-
-func runVaultCardSet(cmd *cobra.Command, args []string) error {
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	// Validate required fields are not empty
-	if strings.TrimSpace(vaultCardSetNumber) == "" {
-		return fmt.Errorf("card number cannot be empty")
-	}
-	if strings.TrimSpace(vaultCardSetExpiry) == "" {
-		return fmt.Errorf("card expiry cannot be empty")
-	}
-	if strings.TrimSpace(vaultCardSetCVV) == "" {
-		return fmt.Errorf("card CVV cannot be empty")
-	}
-	if strings.TrimSpace(vaultCardSetName) == "" {
-		return fmt.Errorf("cardholder name cannot be empty")
-	}
-
-	body := api.VaultCreditCardSetJSONRequestBody{
-		CreditCard: api.CreditCardDictInput{
-			CardNumber:         vaultCardSetNumber,
-			CardFullExpiration: vaultCardSetExpiry,
-			CardCvv:            vaultCardSetCVV,
-			CardHolderName:     vaultCardSetName,
-		},
-	}
-
-	params := &api.VaultCreditCardSetParams{}
-	resp, err := client.Client().VaultCreditCardSetWithResponse(ctx, vaultID, params, body)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return GetFormatter().Print(resp.JSON200)
-}
-
-func runVaultCardDelete(cmd *cobra.Command, args []string) error {
-	confirmed, err := ConfirmAction("credit card from vault", vaultID)
-	if err != nil {
-		return err
-	}
-	if !confirmed {
-		return PrintResult("Cancelled.", map[string]any{"cancelled": true})
-	}
-
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	params := &api.VaultCreditCardDeleteParams{}
-	resp, err := client.Client().VaultCreditCardDeleteWithResponse(ctx, vaultID, params)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return PrintResult(fmt.Sprintf("Credit card deleted from vault %s.", vaultID), map[string]any{
-		"id":     vaultID,
-		"status": "deleted",
 	})
 }

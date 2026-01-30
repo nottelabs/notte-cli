@@ -128,6 +128,7 @@ const (
 	DeepseekdeepseekR1                         LlmModel = "deepseek/deepseek-r1"
 	Geminigemini20Flash                        LlmModel = "gemini/gemini-2.0-flash"
 	Groqllama3370bVersatile                    LlmModel = "groq/llama-3.3-70b-versatile"
+	MoonshotkimiK25                            LlmModel = "moonshot/kimi-k2.5"
 	Openaigpt4o                                LlmModel = "openai/gpt-4o"
 	Openroutergooglegemma327bIt                LlmModel = "openrouter/google/gemma-3-27b-it"
 	PerplexitysonarPro                         LlmModel = "perplexity/sonar-pro"
@@ -1924,6 +1925,9 @@ type ProfileResponse struct {
 	// Name Profile name
 	Name *string `json:"name"`
 
+	// PersistedDomains List of domains with persisted browser state (cookies, localStorage, sessionStorage)
+	PersistedDomains *[]string `json:"persisted_domains,omitempty"`
+
 	// ProfileId Profile ID (format: notte-profile-{16 hex chars})
 	ProfileId string `json:"profile_id"`
 
@@ -1986,13 +1990,31 @@ type SchemaGenerationResponse struct {
 
 // ScrapeAction defines model for ScrapeAction.
 type ScrapeAction struct {
-	Category     *string `json:"category,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	Instructions *string `json:"instructions"`
+	Category    *string `json:"category,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// IgnoredTags HTML tags to ignore from the page.
+	IgnoredTags  *[]interface{} `json:"ignored_tags"`
+	Instructions *string        `json:"instructions"`
+
+	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
+	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
-	OnlyMainContent *bool   `json:"only_main_content,omitempty"`
-	Type            *string `json:"type,omitempty"`
+	OnlyMainContent *bool `json:"only_main_content,omitempty"`
+
+	// ResponseFormat JSON schema dict for structured output. Agent can provide a schema to extract structured data.
+	ResponseFormat *map[string]interface{} `json:"response_format"`
+
+	// ScrapeImages Whether to scrape images from the page.
+	ScrapeImages *bool `json:"scrape_images,omitempty"`
+
+	// ScrapeLinks Whether to scrape links from the page. Links are scraped by default.
+	ScrapeLinks *bool `json:"scrape_links,omitempty"`
+
+	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
+	Selector *string `json:"selector"`
+	Type     *string `json:"type,omitempty"`
 }
 
 // ScrapeFromHtmlRequest defines model for ScrapeFromHtmlRequest.
@@ -2255,6 +2277,9 @@ type SessionResponse struct {
 
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent"`
+
+	// ViewerUrl The remote session viewer URL.
+	ViewerUrl *string `json:"viewer_url"`
 
 	// ViewportHeight The height of the viewport
 	ViewportHeight *int `json:"viewport_height"`
@@ -2781,18 +2806,6 @@ type ProfileGetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// ScrapeWebpageParams defines parameters for ScrapeWebpage.
-type ScrapeWebpageParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// ScrapeFromHtmlParams defines parameters for ScrapeFromHtml.
-type ScrapeFromHtmlParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
 // ListSessionsParams defines parameters for ListSessions.
 type ListSessionsParams struct {
 	// Page Page number
@@ -2876,6 +2889,12 @@ type PageObserveParams struct {
 
 // PageScrapeParams defines parameters for PageScrape.
 type PageScrapeParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PageScreenshotParams defines parameters for PageScreenshot.
+type PageScreenshotParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2999,24 +3018,6 @@ type VaultUpdateParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// VaultCreditCardDeleteParams defines parameters for VaultCreditCardDelete.
-type VaultCreditCardDeleteParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// VaultCreditCardGetParams defines parameters for VaultCreditCardGet.
-type VaultCreditCardGetParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// VaultCreditCardSetParams defines parameters for VaultCreditCardSet.
-type VaultCreditCardSetParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
 // VaultCredentialsDeleteParams defines parameters for VaultCredentialsDelete.
 type VaultCredentialsDeleteParams struct {
 	// Url URL upon which to get credentials
@@ -3060,12 +3061,6 @@ type PersonaCreateJSONRequestBody = PersonaCreateRequest
 // ProfileCreateJSONRequestBody defines body for ProfileCreate for application/json ContentType.
 type ProfileCreateJSONRequestBody = ProfileCreateRequest
 
-// ScrapeWebpageJSONRequestBody defines body for ScrapeWebpage for application/json ContentType.
-type ScrapeWebpageJSONRequestBody = GlobalScrapeRequest
-
-// ScrapeFromHtmlJSONRequestBody defines body for ScrapeFromHtml for application/json ContentType.
-type ScrapeFromHtmlJSONRequestBody = ScrapeFromHtmlRequest
-
 // SessionStartJSONRequestBody defines body for SessionStart for application/json ContentType.
 type SessionStartJSONRequestBody = ApiSessionStartRequest
 
@@ -3092,9 +3087,6 @@ type VaultCreateJSONRequestBody = VaultCreateRequest
 
 // VaultUpdateJSONRequestBody defines body for VaultUpdate for application/json ContentType.
 type VaultUpdateJSONRequestBody = VaultUpdateRequest
-
-// VaultCreditCardSetJSONRequestBody defines body for VaultCreditCardSet for application/json ContentType.
-type VaultCreditCardSetJSONRequestBody = AddCreditCardRequest
 
 // VaultCredentialsAddJSONRequestBody defines body for VaultCredentialsAdd for application/json ContentType.
 type VaultCredentialsAddJSONRequestBody = AddCredentialsRequest
@@ -8060,16 +8052,6 @@ type ClientInterface interface {
 	// ProfileGet request
 	ProfileGet(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ScrapeWebpageWithBody request with any body
-	ScrapeWebpageWithBody(ctx context.Context, params *ScrapeWebpageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ScrapeWebpage(ctx context.Context, params *ScrapeWebpageParams, body ScrapeWebpageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ScrapeFromHtmlWithBody request with any body
-	ScrapeFromHtmlWithBody(ctx context.Context, params *ScrapeFromHtmlParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ScrapeFromHtml(ctx context.Context, params *ScrapeFromHtmlParams, body ScrapeFromHtmlJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListSessions request
 	ListSessions(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8112,6 +8094,9 @@ type ClientInterface interface {
 	PageScrapeWithBody(ctx context.Context, sessionId string, params *PageScrapeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PageScrape(ctx context.Context, sessionId string, params *PageScrapeParams, body PageScrapeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PageScreenshot request
+	PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SessionReplay request
 	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8161,17 +8146,6 @@ type ClientInterface interface {
 	VaultUpdateWithBody(ctx context.Context, vaultId string, params *VaultUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	VaultUpdate(ctx context.Context, vaultId string, params *VaultUpdateParams, body VaultUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// VaultCreditCardDelete request
-	VaultCreditCardDelete(ctx context.Context, vaultId string, params *VaultCreditCardDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// VaultCreditCardGet request
-	VaultCreditCardGet(ctx context.Context, vaultId string, params *VaultCreditCardGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// VaultCreditCardSetWithBody request with any body
-	VaultCreditCardSetWithBody(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	VaultCreditCardSet(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, body VaultCreditCardSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// VaultCredentialsDelete request
 	VaultCredentialsDelete(ctx context.Context, vaultId string, params *VaultCredentialsDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8629,54 +8603,6 @@ func (c *Client) ProfileGet(ctx context.Context, profileId string, params *Profi
 	return c.Client.Do(req)
 }
 
-func (c *Client) ScrapeWebpageWithBody(ctx context.Context, params *ScrapeWebpageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeWebpageRequestWithBody(c.Server, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ScrapeWebpage(ctx context.Context, params *ScrapeWebpageParams, body ScrapeWebpageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeWebpageRequest(c.Server, params, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ScrapeFromHtmlWithBody(ctx context.Context, params *ScrapeFromHtmlParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeFromHtmlRequestWithBody(c.Server, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ScrapeFromHtml(ctx context.Context, params *ScrapeFromHtmlParams, body ScrapeFromHtmlJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeFromHtmlRequest(c.Server, params, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListSessions(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSessionsRequest(c.Server, params)
 	if err != nil {
@@ -8859,6 +8785,18 @@ func (c *Client) PageScrapeWithBody(ctx context.Context, sessionId string, param
 
 func (c *Client) PageScrape(ctx context.Context, sessionId string, params *PageScrapeParams, body PageScrapeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPageScrapeRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageScreenshotRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -9063,54 +9001,6 @@ func (c *Client) VaultUpdateWithBody(ctx context.Context, vaultId string, params
 
 func (c *Client) VaultUpdate(ctx context.Context, vaultId string, params *VaultUpdateParams, body VaultUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewVaultUpdateRequest(c.Server, vaultId, params, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) VaultCreditCardDelete(ctx context.Context, vaultId string, params *VaultCreditCardDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVaultCreditCardDeleteRequest(c.Server, vaultId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) VaultCreditCardGet(ctx context.Context, vaultId string, params *VaultCreditCardGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVaultCreditCardGetRequest(c.Server, vaultId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) VaultCreditCardSetWithBody(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVaultCreditCardSetRequestWithBody(c.Server, vaultId, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) VaultCreditCardSet(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, body VaultCreditCardSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVaultCreditCardSetRequest(c.Server, vaultId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11691,138 +11581,6 @@ func NewProfileGetRequest(server string, profileId string, params *ProfileGetPar
 	return req, nil
 }
 
-// NewScrapeWebpageRequest calls the generic ScrapeWebpage builder with application/json body
-func NewScrapeWebpageRequest(server string, params *ScrapeWebpageParams, body ScrapeWebpageJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewScrapeWebpageRequestWithBody(server, params, "application/json", bodyReader)
-}
-
-// NewScrapeWebpageRequestWithBody generates requests for ScrapeWebpage with any type of body
-func NewScrapeWebpageRequestWithBody(server string, params *ScrapeWebpageParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/scrape")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewScrapeFromHtmlRequest calls the generic ScrapeFromHtml builder with application/json body
-func NewScrapeFromHtmlRequest(server string, params *ScrapeFromHtmlParams, body ScrapeFromHtmlJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewScrapeFromHtmlRequestWithBody(server, params, "application/json", bodyReader)
-}
-
-// NewScrapeFromHtmlRequestWithBody generates requests for ScrapeFromHtml with any type of body
-func NewScrapeFromHtmlRequestWithBody(server string, params *ScrapeFromHtmlParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/scrape_from_html")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
 // NewListSessionsRequest generates requests for ListSessions
 func NewListSessionsRequest(server string, params *ListSessionsParams) (*http.Request, error) {
 	var err error
@@ -12612,6 +12370,66 @@ func NewPageScrapeRequestWithBody(server string, sessionId string, params *PageS
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPageScreenshotRequest generates requests for PageScreenshot
+func NewPageScreenshotRequest(server string, sessionId string, params *PageScreenshotParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/screenshot", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	if params != nil {
 
@@ -13747,199 +13565,6 @@ func NewVaultUpdateRequestWithBody(server string, vaultId string, params *VaultU
 	return req, nil
 }
 
-// NewVaultCreditCardDeleteRequest generates requests for VaultCreditCardDelete
-func NewVaultCreditCardDeleteRequest(server string, vaultId string, params *VaultCreditCardDeleteParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vault_id", runtime.ParamLocationPath, vaultId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/vaults/%s/card", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewVaultCreditCardGetRequest generates requests for VaultCreditCardGet
-func NewVaultCreditCardGetRequest(server string, vaultId string, params *VaultCreditCardGetParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vault_id", runtime.ParamLocationPath, vaultId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/vaults/%s/card", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewVaultCreditCardSetRequest calls the generic VaultCreditCardSet builder with application/json body
-func NewVaultCreditCardSetRequest(server string, vaultId string, params *VaultCreditCardSetParams, body VaultCreditCardSetJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewVaultCreditCardSetRequestWithBody(server, vaultId, params, "application/json", bodyReader)
-}
-
-// NewVaultCreditCardSetRequestWithBody generates requests for VaultCreditCardSet with any type of body
-func NewVaultCreditCardSetRequestWithBody(server string, vaultId string, params *VaultCreditCardSetParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "vault_id", runtime.ParamLocationPath, vaultId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/vaults/%s/card", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
 // NewVaultCredentialsDeleteRequest generates requests for VaultCredentialsDelete
 func NewVaultCredentialsDeleteRequest(server string, vaultId string, params *VaultCredentialsDeleteParams) (*http.Request, error) {
 	var err error
@@ -14318,16 +13943,6 @@ type ClientWithResponsesInterface interface {
 	// ProfileGetWithResponse request
 	ProfileGetWithResponse(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*ProfileGetResult, error)
 
-	// ScrapeWebpageWithBodyWithResponse request with any body
-	ScrapeWebpageWithBodyWithResponse(ctx context.Context, params *ScrapeWebpageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeWebpageResult, error)
-
-	ScrapeWebpageWithResponse(ctx context.Context, params *ScrapeWebpageParams, body ScrapeWebpageJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeWebpageResult, error)
-
-	// ScrapeFromHtmlWithBodyWithResponse request with any body
-	ScrapeFromHtmlWithBodyWithResponse(ctx context.Context, params *ScrapeFromHtmlParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeFromHtmlResult, error)
-
-	ScrapeFromHtmlWithResponse(ctx context.Context, params *ScrapeFromHtmlParams, body ScrapeFromHtmlJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeFromHtmlResult, error)
-
 	// ListSessionsWithResponse request
 	ListSessionsWithResponse(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*ListSessionsResult, error)
 
@@ -14370,6 +13985,9 @@ type ClientWithResponsesInterface interface {
 	PageScrapeWithBodyWithResponse(ctx context.Context, sessionId string, params *PageScrapeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageScrapeResult, error)
 
 	PageScrapeWithResponse(ctx context.Context, sessionId string, params *PageScrapeParams, body PageScrapeJSONRequestBody, reqEditors ...RequestEditorFn) (*PageScrapeResult, error)
+
+	// PageScreenshotWithResponse request
+	PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error)
 
 	// SessionReplayWithResponse request
 	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
@@ -14419,17 +14037,6 @@ type ClientWithResponsesInterface interface {
 	VaultUpdateWithBodyWithResponse(ctx context.Context, vaultId string, params *VaultUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VaultUpdateResult, error)
 
 	VaultUpdateWithResponse(ctx context.Context, vaultId string, params *VaultUpdateParams, body VaultUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*VaultUpdateResult, error)
-
-	// VaultCreditCardDeleteWithResponse request
-	VaultCreditCardDeleteWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardDeleteParams, reqEditors ...RequestEditorFn) (*VaultCreditCardDeleteResult, error)
-
-	// VaultCreditCardGetWithResponse request
-	VaultCreditCardGetWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardGetParams, reqEditors ...RequestEditorFn) (*VaultCreditCardGetResult, error)
-
-	// VaultCreditCardSetWithBodyWithResponse request with any body
-	VaultCreditCardSetWithBodyWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VaultCreditCardSetResult, error)
-
-	VaultCreditCardSetWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, body VaultCreditCardSetJSONRequestBody, reqEditors ...RequestEditorFn) (*VaultCreditCardSetResult, error)
 
 	// VaultCredentialsDeleteWithResponse request
 	VaultCredentialsDeleteWithResponse(ctx context.Context, vaultId string, params *VaultCredentialsDeleteParams, reqEditors ...RequestEditorFn) (*VaultCredentialsDeleteResult, error)
@@ -15177,52 +14784,6 @@ func (r ProfileGetResult) StatusCode() int {
 	return 0
 }
 
-type ScrapeWebpageResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ScrapeResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r ScrapeWebpageResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ScrapeWebpageResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ScrapeFromHtmlResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ScrapeSchemaResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r ScrapeFromHtmlResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ScrapeFromHtmlResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ListSessionsResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -15470,6 +15031,29 @@ func (r PageScrapeResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PageScrapeResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PageScreenshotResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PageScreenshotResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PageScreenshotResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15816,75 +15400,6 @@ func (r VaultUpdateResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r VaultUpdateResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type VaultCreditCardDeleteResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *DeleteCreditCardResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r VaultCreditCardDeleteResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r VaultCreditCardDeleteResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type VaultCreditCardGetResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *GetCreditCardResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r VaultCreditCardGetResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r VaultCreditCardGetResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type VaultCreditCardSetResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *AddCreditCardResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r VaultCreditCardSetResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r VaultCreditCardSetResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -16288,40 +15803,6 @@ func (c *ClientWithResponses) ProfileGetWithResponse(ctx context.Context, profil
 	return ParseProfileGetResult(rsp)
 }
 
-// ScrapeWebpageWithBodyWithResponse request with arbitrary body returning *ScrapeWebpageResult
-func (c *ClientWithResponses) ScrapeWebpageWithBodyWithResponse(ctx context.Context, params *ScrapeWebpageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeWebpageResult, error) {
-	rsp, err := c.ScrapeWebpageWithBody(ctx, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseScrapeWebpageResult(rsp)
-}
-
-func (c *ClientWithResponses) ScrapeWebpageWithResponse(ctx context.Context, params *ScrapeWebpageParams, body ScrapeWebpageJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeWebpageResult, error) {
-	rsp, err := c.ScrapeWebpage(ctx, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseScrapeWebpageResult(rsp)
-}
-
-// ScrapeFromHtmlWithBodyWithResponse request with arbitrary body returning *ScrapeFromHtmlResult
-func (c *ClientWithResponses) ScrapeFromHtmlWithBodyWithResponse(ctx context.Context, params *ScrapeFromHtmlParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeFromHtmlResult, error) {
-	rsp, err := c.ScrapeFromHtmlWithBody(ctx, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseScrapeFromHtmlResult(rsp)
-}
-
-func (c *ClientWithResponses) ScrapeFromHtmlWithResponse(ctx context.Context, params *ScrapeFromHtmlParams, body ScrapeFromHtmlJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeFromHtmlResult, error) {
-	rsp, err := c.ScrapeFromHtml(ctx, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseScrapeFromHtmlResult(rsp)
-}
-
 // ListSessionsWithResponse request returning *ListSessionsResult
 func (c *ClientWithResponses) ListSessionsWithResponse(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*ListSessionsResult, error) {
 	rsp, err := c.ListSessions(ctx, params, reqEditors...)
@@ -16459,6 +15940,15 @@ func (c *ClientWithResponses) PageScrapeWithResponse(ctx context.Context, sessio
 		return nil, err
 	}
 	return ParsePageScrapeResult(rsp)
+}
+
+// PageScreenshotWithResponse request returning *PageScreenshotResult
+func (c *ClientWithResponses) PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error) {
+	rsp, err := c.PageScreenshot(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageScreenshotResult(rsp)
 }
 
 // SessionReplayWithResponse request returning *SessionReplayResult
@@ -16610,41 +16100,6 @@ func (c *ClientWithResponses) VaultUpdateWithResponse(ctx context.Context, vault
 		return nil, err
 	}
 	return ParseVaultUpdateResult(rsp)
-}
-
-// VaultCreditCardDeleteWithResponse request returning *VaultCreditCardDeleteResult
-func (c *ClientWithResponses) VaultCreditCardDeleteWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardDeleteParams, reqEditors ...RequestEditorFn) (*VaultCreditCardDeleteResult, error) {
-	rsp, err := c.VaultCreditCardDelete(ctx, vaultId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseVaultCreditCardDeleteResult(rsp)
-}
-
-// VaultCreditCardGetWithResponse request returning *VaultCreditCardGetResult
-func (c *ClientWithResponses) VaultCreditCardGetWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardGetParams, reqEditors ...RequestEditorFn) (*VaultCreditCardGetResult, error) {
-	rsp, err := c.VaultCreditCardGet(ctx, vaultId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseVaultCreditCardGetResult(rsp)
-}
-
-// VaultCreditCardSetWithBodyWithResponse request with arbitrary body returning *VaultCreditCardSetResult
-func (c *ClientWithResponses) VaultCreditCardSetWithBodyWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VaultCreditCardSetResult, error) {
-	rsp, err := c.VaultCreditCardSetWithBody(ctx, vaultId, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseVaultCreditCardSetResult(rsp)
-}
-
-func (c *ClientWithResponses) VaultCreditCardSetWithResponse(ctx context.Context, vaultId string, params *VaultCreditCardSetParams, body VaultCreditCardSetJSONRequestBody, reqEditors ...RequestEditorFn) (*VaultCreditCardSetResult, error) {
-	rsp, err := c.VaultCreditCardSet(ctx, vaultId, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseVaultCreditCardSetResult(rsp)
 }
 
 // VaultCredentialsDeleteWithResponse request returning *VaultCredentialsDeleteResult
@@ -17724,72 +17179,6 @@ func ParseProfileGetResult(rsp *http.Response) (*ProfileGetResult, error) {
 	return response, nil
 }
 
-// ParseScrapeWebpageResult parses an HTTP response from a ScrapeWebpageWithResponse call
-func ParseScrapeWebpageResult(rsp *http.Response) (*ScrapeWebpageResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ScrapeWebpageResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ScrapeResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseScrapeFromHtmlResult parses an HTTP response from a ScrapeFromHtmlWithResponse call
-func ParseScrapeFromHtmlResult(rsp *http.Response) (*ScrapeFromHtmlResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ScrapeFromHtmlResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ScrapeSchemaResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListSessionsResult parses an HTTP response from a ListSessionsWithResponse call
 func ParseListSessionsResult(rsp *http.Response) (*ListSessionsResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -18136,6 +17525,39 @@ func ParsePageScrapeResult(rsp *http.Response) (*PageScrapeResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ScrapeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePageScreenshotResult parses an HTTP response from a PageScreenshotWithResponse call
+func ParsePageScreenshotResult(rsp *http.Response) (*PageScreenshotResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PageScreenshotResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -18626,105 +18048,6 @@ func ParseVaultUpdateResult(rsp *http.Response) (*VaultUpdateResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Vault
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseVaultCreditCardDeleteResult parses an HTTP response from a VaultCreditCardDeleteWithResponse call
-func ParseVaultCreditCardDeleteResult(rsp *http.Response) (*VaultCreditCardDeleteResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &VaultCreditCardDeleteResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DeleteCreditCardResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseVaultCreditCardGetResult parses an HTTP response from a VaultCreditCardGetWithResponse call
-func ParseVaultCreditCardGetResult(rsp *http.Response) (*VaultCreditCardGetResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &VaultCreditCardGetResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest GetCreditCardResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseVaultCreditCardSetResult parses an HTTP response from a VaultCreditCardSetWithResponse call
-func ParseVaultCreditCardSetResult(rsp *http.Response) (*VaultCreditCardSetResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &VaultCreditCardSetResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AddCreditCardResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
