@@ -173,17 +173,20 @@ notte agents replay --id <id>         # Get agent execution replay
 
 ```bash
 notte functions list                  # List all functions
-notte functions create                # Create a new workflow
-notte functions show --id <id>        # View workflow details
-notte functions update --id <id>      # Update workflow configuration
-notte functions delete --id <id>      # Delete a workflow
-notte functions fork --id <id>        # Fork workflow to new version
-notte functions run --id <id>         # Execute workflow
-notte functions runs --id <id>        # List workflow runs
-notte functions run-stop --id <id>    # Stop a running workflow
-notte functions schedule --id <id>    # Schedule recurring execution
-notte functions unschedule --id <id>  # Remove schedule
+notte functions create --file workflow.py  # Create a new function
+notte functions show                  # View current function details
+notte functions update --file workflow.py  # Update current function code
+notte functions delete                # Delete current function
+notte functions fork                  # Fork current function to new version
+notte functions run                   # Execute current function
+notte functions runs                  # List runs for current function
+notte functions run-stop --run-id <id>  # Stop a running function execution
+notte functions run-metadata --run-id <id>  # Get run logs and results
+notte functions schedule --cron "0 9 * * *"  # Schedule current function
+notte functions unschedule            # Remove schedule from current function
 ```
+
+**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
 
 ### Vaults
 
