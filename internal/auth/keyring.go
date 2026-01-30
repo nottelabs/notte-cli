@@ -14,18 +14,19 @@ const (
 	KeychainName   = "notte-api-key"
 )
 
-// getFromSystemKeyring reads from the real OS keyring
-func getFromSystemKeyring(key string) (string, error) {
+// openKeyring initializes and returns a keyring instance
+func openKeyring() (keyring.Keyring, error) {
 	dir, err := config.Dir()
 	if err != nil {
-		return "", fmt.Errorf("failed to get config directory: %w", err)
+		return nil, fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	// Ensure the directory exists before attempting to open the keyring
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", fmt.Errorf("failed to create config directory: %w", err)
+		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
+	// Note: FixedStringPrompt is used for the file backend fallback (when no system keyring is available).
+	// The file backend provides basic protection for stored credentials on systems without keyring support.
 	ring, err := keyring.Open(keyring.Config{
 		ServiceName:              KeyringService,
 		KeychainName:             KeychainName,
@@ -35,7 +36,16 @@ func getFromSystemKeyring(key string) (string, error) {
 		KeychainTrustApplication: true,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to open keyring (dir=%s): %w", dir, err)
+		return nil, fmt.Errorf("failed to open keyring (dir=%s): %w", dir, err)
+	}
+	return ring, nil
+}
+
+// getFromSystemKeyring reads from the real OS keyring
+func getFromSystemKeyring(key string) (string, error) {
+	ring, err := openKeyring()
+	if err != nil {
+		return "", err
 	}
 
 	item, err := ring.Get(key)
@@ -48,26 +58,9 @@ func getFromSystemKeyring(key string) (string, error) {
 
 // setInSystemKeyring writes to the real OS keyring
 func setInSystemKeyring(key, value string) error {
-	dir, err := config.Dir()
+	ring, err := openKeyring()
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %w", err)
-	}
-
-	// Ensure the directory exists before attempting to open the keyring
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	ring, err := keyring.Open(keyring.Config{
-		ServiceName:              KeyringService,
-		KeychainName:             KeychainName,
-		FileDir:                  dir,
-		AllowedBackends:          []keyring.BackendType{keyring.SecretServiceBackend, keyring.KWalletBackend, keyring.PassBackend, keyring.FileBackend},
-		FilePasswordFunc:         keyring.FixedStringPrompt("notte-cli-keyring"),
-		KeychainTrustApplication: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to open keyring (dir=%s): %w", dir, err)
+		return err
 	}
 
 	if err := ring.Set(keyring.Item{
@@ -82,26 +75,9 @@ func setInSystemKeyring(key, value string) error {
 
 // deleteFromSystemKeyring removes from the real OS keyring
 func deleteFromSystemKeyring(key string) error {
-	dir, err := config.Dir()
+	ring, err := openKeyring()
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %w", err)
-	}
-
-	// Ensure the directory exists before attempting to open the keyring
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	ring, err := keyring.Open(keyring.Config{
-		ServiceName:              KeyringService,
-		KeychainName:             KeychainName,
-		FileDir:                  dir,
-		AllowedBackends:          []keyring.BackendType{keyring.SecretServiceBackend, keyring.KWalletBackend, keyring.PassBackend, keyring.FileBackend},
-		FilePasswordFunc:         keyring.FixedStringPrompt("notte-cli-keyring"),
-		KeychainTrustApplication: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to open keyring (dir=%s): %w", dir, err)
+		return err
 	}
 
 	if err := ring.Remove(key); err != nil {
