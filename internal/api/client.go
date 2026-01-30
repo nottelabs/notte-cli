@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	notteErrors "github.com/salmonumbrella/notte-cli/internal/errors"
+	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
 )
 
 const DefaultBaseURL = "https://api.notte.cc"

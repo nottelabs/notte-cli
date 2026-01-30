@@ -5,7 +5,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/api"
 )
 
 // IsJSONOutput returns true if the global output format is set to JSON.

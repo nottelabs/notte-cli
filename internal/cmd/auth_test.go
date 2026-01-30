@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/salmonumbrella/notte-cli/internal/auth"
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/auth"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 type stubKeyring struct {

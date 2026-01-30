@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 func TestKeyringServiceName(t *testing.T) {

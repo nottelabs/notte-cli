@@ -1,4 +1,4 @@
-module github.com/salmonumbrella/notte-cli
+module github.com/nottelabs/notte-cli
 
 go 1.25.5
 

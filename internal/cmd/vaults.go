@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/salmonumbrella/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/api"
 )
 
 var vaultsCreateName string

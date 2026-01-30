@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

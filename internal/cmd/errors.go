@@ -3,7 +3,7 @@ package cmd
 import (
 	"net/http"
 
-	"github.com/salmonumbrella/notte-cli/internal/errors"
+	"github.com/nottelabs/notte-cli/internal/errors"
 )
 
 // HandleAPIResponse checks the response status and returns an appropriate error.

@@ -10,7 +10,7 @@ import (
 
 	"github.com/muesli/termenv"
 
-	apierrors "github.com/salmonumbrella/notte-cli/internal/errors"
+	apierrors "github.com/nottelabs/notte-cli/internal/errors"
 )
 
 // TextFormatter outputs human-readable text

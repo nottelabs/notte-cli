@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/salmonumbrella/notte-cli/internal/output"
+	"github.com/nottelabs/notte-cli/internal/output"
 )
 
 func TestGetFormatter_NoColor(t *testing.T) {

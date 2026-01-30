@@ -22,4 +22,4 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/salmonumbrella/notte-cli
+        - github.com/nottelabs/notte-cli

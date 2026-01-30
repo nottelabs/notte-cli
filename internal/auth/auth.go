@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/salmonumbrella/notte-cli/internal/config"
+	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 const (

@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/salmonumbrella/notte-cli/internal/config"
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/config"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 const sessionIDTest = "sess_123"

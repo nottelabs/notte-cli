@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	apierrors "github.com/salmonumbrella/notte-cli/internal/errors"
+	apierrors "github.com/nottelabs/notte-cli/internal/errors"
 )
 
 // JSONFormatter outputs data as JSON

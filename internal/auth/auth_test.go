@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 // mockKeyringAdapter adapts testutil.MockKeyring to auth.KeyringStore

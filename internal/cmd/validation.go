@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"github.com/salmonumbrella/notte-cli/internal/validate"
+	"github.com/nottelabs/notte-cli/internal/validate"
 )
 
 // ValidateFlags runs a series of validation functions, returning the first error

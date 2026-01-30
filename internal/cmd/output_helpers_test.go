@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/salmonumbrella/notte-cli/internal/testutil"
+	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 func TestPrintListOrEmpty_JSON(t *testing.T) {
