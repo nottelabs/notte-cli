@@ -215,16 +215,10 @@ notte files upload <path>            # Upload a file
 notte files download <id>            # Download a file by ID
 ```
 
-### Usage & Monitoring
-
-```bash
-notte usage                          # View API usage statistics
-notte usage logs                     # View detailed usage logs
-```
-
 ### Utilities
 
 ```bash
+notte usage                          # View API usage statistics
 notte health                         # Check API health status
 notte version                        # Show CLI version
 ```

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -40,94 +39,5 @@ func TestRunUsageShow(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
-	}
-}
-
-func TestRunUsageLogs(t *testing.T) {
-	env := testutil.SetupTestEnv(t)
-	env.SetEnv("NOTTE_API_KEY", "test-key")
-
-	server := testutil.NewMockServer()
-	defer server.Close()
-	env.SetEnv("NOTTE_API_URL", server.URL())
-
-	server.AddResponse("/usage/logs", 200, `{"has_next":false,"items":[{"created_at":"2020-01-01T00:00:00Z","duration_ms":10,"endpoint":"/v1/test"}],"page":1,"page_size":20}`)
-
-	origEndpoint := usageLogsEndpoint
-	origPage := usageLogsPage
-	origPageSize := usageLogsPageSize
-	origOnlyActive := usageLogsOnlyActive
-	t.Cleanup(func() {
-		usageLogsEndpoint = origEndpoint
-		usageLogsPage = origPage
-		usageLogsPageSize = origPageSize
-		usageLogsOnlyActive = origOnlyActive
-	})
-
-	usageLogsEndpoint = "/v1/test"
-	usageLogsPage = 1
-	usageLogsPageSize = 20
-	usageLogsOnlyActive = true
-
-	origFormat := outputFormat
-	outputFormat = "json"
-	t.Cleanup(func() { outputFormat = origFormat })
-
-	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&usageLogsOnlyActive, "only-active", false, "")
-	_ = cmd.Flags().Set("only-active", "true")
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runUsageLogs(cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
-
-func TestRunUsageLogs_Empty(t *testing.T) {
-	env := testutil.SetupTestEnv(t)
-	env.SetEnv("NOTTE_API_KEY", "test-key")
-
-	server := testutil.NewMockServer()
-	defer server.Close()
-	env.SetEnv("NOTTE_API_URL", server.URL())
-
-	server.AddResponse("/usage/logs", 200, `{"has_next":false,"items":[],"page":1,"page_size":20}`)
-
-	origEndpoint := usageLogsEndpoint
-	origPage := usageLogsPage
-	origPageSize := usageLogsPageSize
-	t.Cleanup(func() {
-		usageLogsEndpoint = origEndpoint
-		usageLogsPage = origPage
-		usageLogsPageSize = origPageSize
-	})
-
-	usageLogsEndpoint = ""
-	usageLogsPage = 1
-	usageLogsPageSize = 20
-
-	origFormat := outputFormat
-	outputFormat = "text"
-	t.Cleanup(func() { outputFormat = origFormat })
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runUsageLogs(cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if !strings.Contains(stdout, "No usage logs found.") {
-		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
