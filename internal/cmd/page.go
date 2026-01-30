@@ -53,8 +53,17 @@ func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 	}
 
 	if !resp.Success {
+		// Build error message with available context
 		if resp.Exception != nil {
+			// Include exception and message if both present and different
+			if resp.Message != "" && *resp.Exception != resp.Message {
+				return fmt.Errorf("%s: %s", *resp.Exception, resp.Message)
+			}
 			return fmt.Errorf("%s", *resp.Exception)
+		}
+		// No exception - use message or generic fallback
+		if resp.Message != "" {
+			return fmt.Errorf("action failed: %s", resp.Message)
 		}
 		return fmt.Errorf("action failed")
 	}
