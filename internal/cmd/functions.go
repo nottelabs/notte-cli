@@ -178,6 +178,7 @@ var functionsRunMetadataUpdateCmd = &cobra.Command{
   # From stdin
   echo '{"key": "value"}' | notte functions run-metadata-update --id <function-id> --run-id <run-id>`,
 	RunE: runFunctionRunMetadataUpdate,
+	Hidden: true,
 }
 
 var functionsScheduleCmd = &cobra.Command{

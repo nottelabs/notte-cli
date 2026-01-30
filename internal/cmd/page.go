@@ -121,9 +121,6 @@ var pageCmd = &cobra.Command{
 	Short: "Execute page actions (syntactic sugar for sessions execute)",
 	Long: `Execute page actions with a simplified command interface.
 
-Instead of:
-  notte sessions execute --action '{"type": "click", "selector": "#btn"}'
-
 Use:
   notte page click "#btn"
   notte page click @B3        # @-prefixed = element ID
