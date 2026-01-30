@@ -16,8 +16,8 @@ notte page goto "https://example.com"
 notte page observe
 
 # 4. Execute actions
-notte page click "@B3"
-notte page fill "@input" "hello world"
+notte page click "B3"
+notte page fill "I1" "hello world"
 
 # 5. Scrape content
 notte page scrape --instructions "Extract all product names and prices"
@@ -91,29 +91,29 @@ Simplified commands for page interactions:
 
 **Element Interactions:**
 ```bash
-# Click an element (use @ prefix for element IDs from observe)
-notte page click "@B3"
+# Click an element (use either the ids from an observe, or a selector)
+notte page click "B3"
 notte page click "#submit-button"
   --timeout     Timeout in milliseconds
   --enter       Press Enter after clicking
 
 # Fill an input field
-notte page fill "@input" "hello world"
+notte page fill "I1" "hello world"
   --clear       Clear field before filling
   --enter       Press Enter after filling
 
 # Check/uncheck a checkbox
-notte page check "@checkbox"
+notte page check "#my-checkbox"
   --value       true to check, false to uncheck (default: true)
 
 # Select dropdown option
-notte page select "@dropdown" "Option 1"
+notte page select "#dropdown-element" "Option 1"
 
 # Download file by clicking element
-notte page download "@download-link"
+notte page download "L5"
 
 # Upload file to input
-notte page upload "@file-input" --file /path/to/file
+notte page upload "#file-input" --file /path/to/file
 ```
 
 **Navigation:**
@@ -342,7 +342,7 @@ notte sessions start --headless
 notte page goto "https://example.com/products"
 notte page observe
 notte page scrape --instructions "Extract product names and prices"
-notte page click "@next-page"
+notte page click "L3"
 notte page scrape --instructions "Extract product names and prices"
 notte sessions stop
 ```
@@ -352,9 +352,9 @@ notte sessions stop
 ```bash
 notte sessions start
 notte page goto "https://example.com/signup"
-notte page fill "@email" "user@example.com"
-notte page fill "@password" "securepassword"
-notte page click "@submit"
+notte page fill "#email-field" "user@example.com"
+notte page fill "#password-field" "securepassword"
+notte page click "#submit-button"
 notte sessions stop
 ```
 
