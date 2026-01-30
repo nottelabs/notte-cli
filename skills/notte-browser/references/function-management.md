@@ -4,18 +4,19 @@ Complete guide to creating, managing, and scheduling workflow functions with the
 
 ## Overview
 
-Functions are reusable workflows that can be:
-- Run on-demand
+Functions are reusable python workflows that can be:
+- Run on-demand (serverless) 
 - Scheduled with cron expressions
 - Shared publicly and forked by others
 - Tracked with run history and metadata
+- Can be triggered via HTTP POST requests
 
 ## Creating Functions
 
-### From a Workflow File
+### From a Python File
 
 ```bash
-notte functions create --file workflow.py
+notte functions create --file function.py
 ```
 
 ### With Metadata
@@ -28,25 +29,31 @@ notte functions create \
   --shared  # Make publicly available
 ```
 
-### Workflow File Format
+### Function File Format
 
-Workflow files define browser automation steps. Example:
+Function files define browser automation steps with the following rules:
+- must contain a `def run(**variables)`
+- must create a session using the `NotteClient`
+- variables defined in the `run` function will be exposed as POST body parameters
+
+
+Example:
 
 ```python
-# workflow.py
-from notte import workflow
+# function.py
+from notte_sdk import NotteClient
 
-@workflow
-def main(session):
-    session.goto("https://example.com/products")
-    session.observe()
+client = NotteClient()
 
-    products = session.scrape("Extract all product names and prices")
+def run(url: str):
+    with client.Session() as session:
+        session.goto(url)
+        # scrape data as markdown format
+        data = session.scrape()
+        return data
 
-    for product in products:
-        print(f"{product['name']}: {product['price']}")
-
-    session.complete(success=True, answer="Collected product data")
+if __name__ == "__main__":
+    run("https://notte.cc/pricing")
 ```
 
 ## Managing Functions
@@ -225,22 +232,23 @@ Creates a new function with the same code under your account.
 
 ### Daily Price Monitor
 
+```python
+# price_monitor.py
+from notte_sdk import NotteClient
+
+client = NotteClient()
+
+def run(competitor_url: str = "https://competitor.com/products"):
+    with client.Session() as session:
+        session.goto(competitor_url)
+        prices = session.scrape(instructions="Extract all product prices as JSON")
+        return {"prices": prices, "count": len(prices) if prices else 0}
+
+if __name__ == "__main__":
+    run()
+```
+
 ```bash
-# Create the workflow
-cat > price_monitor.py << 'EOF'
-from notte import workflow
-
-@workflow
-def main(session):
-    session.goto("https://competitor.com/products")
-    prices = session.scrape("Extract all product prices as JSON")
-
-    # Store results in run metadata
-    session.set_metadata({"prices": prices, "timestamp": "now"})
-
-    session.complete(success=True, answer=f"Collected {len(prices)} prices")
-EOF
-
 # Upload and schedule
 FUNC_ID=$(notte functions create --file price_monitor.py --name "Price Monitor" -o json | jq -r '.id')
 notte functions schedule --id "$FUNC_ID" --cron "0 9 * * *"
@@ -248,60 +256,70 @@ notte functions schedule --id "$FUNC_ID" --cron "0 9 * * *"
 
 ### Weekly Report Generator
 
+```python
+# weekly_report.py
+from notte_sdk import NotteClient
+
+client = NotteClient()
+
+vault = client.Vault("my-vault-id")
+
+def run(dashboard_url: str = "https://dashboard.example.com"):
+    with client.Session(enable_file_storage=True) as session:
+        # Login using vault credentials (vault auto-fills credentials)
+        session.goto(f"{dashboard_url}/login")
+
+        agent = client.Agent(session, vault=vault, max_steps=5)
+        agent.run(task="Login to dashboard")
+
+        session.goto(f"{dashboard_url}/reports/weekly")
+
+        report = session.scrape(instructions="Extract the weekly summary statistics")
+
+        # Download PDF report
+        session.execute(type="click", selector="@download-pdf-button")
+
+        return report
+
+if __name__ == "__main__":
+    run()
+```
+
 ```bash
-# Create workflow
-cat > weekly_report.py << 'EOF'
-from notte import workflow
-
-@workflow
-def main(session):
-    # Login using vault credentials
-    session.goto("https://dashboard.example.com/login")
-    # Vault auto-fills credentials
-
-    session.goto("https://dashboard.example.com/reports/weekly")
-    report = session.scrape("Extract the weekly summary statistics")
-
-    # Download PDF report
-    session.click("@download-pdf")
-
-    session.complete(success=True, answer=report)
-EOF
-
 # Schedule for Monday mornings
-notte functions create --file weekly_report.py --name "Weekly Report"
-notte functions schedule --id <id> --cron "0 8 * * 1"
+FUNC_ID=$(notte functions create --file weekly_report.py --name "Weekly Report" -o json | jq -r '.id')
+notte functions schedule --id "$FUNC_ID" --cron "0 8 * * 1"
 ```
 
 ### Error Monitoring with Retries
 
-```bash
-cat > monitor_with_retry.py << 'EOF'
-from notte import workflow
+```python
+# monitor_with_retry.py
+from notte_sdk import NotteClient
 import time
 
-@workflow
-def main(session, max_retries=3):
+client = NotteClient()
+
+def run(status_url: str = "https://app.example.com/status", max_retries: int = 3):
     for attempt in range(max_retries):
         try:
-            session.goto("https://app.example.com/status")
-            status = session.scrape("Extract system status")
+            with client.Session() as session:
+                session.goto(status_url)
+                status = session.scrape(instructions="Extract system status as JSON")
 
-            if status["healthy"]:
-                session.complete(success=True, answer="All systems operational")
-                return
-            else:
-                session.set_metadata({"alert": True, "status": status})
-                session.complete(success=False, answer=f"System unhealthy: {status}")
-                return
+                if status and status.get("healthy"):
+                    return {"success": True, "message": "All systems operational"}
+                else:
+                    return {"success": False, "alert": True, "status": status}
 
         except Exception as e:
             if attempt < max_retries - 1:
-                session.set_metadata({"retry": attempt + 1, "error": str(e)})
                 time.sleep(30)
             else:
-                session.complete(success=False, answer=f"Failed after {max_retries} attempts")
-EOF
+                return {"success": False, "error": f"Failed after {max_retries} attempts: {e}"}
+
+if __name__ == "__main__":
+    run()
 ```
 
 ## Best Practices
@@ -315,11 +333,10 @@ notte functions create \
   --description "Monitors prices on competitor.com every morning at 9 AM"
 ```
 
-### 2. Store Important Data in Metadata
+### 2. Return Important Data from Functions
 
 ```bash
-# In your workflow, save results to metadata
-# Then retrieve programmatically
+# Functions return data that can be retrieved via run metadata
 notte functions run-metadata --id <func-id> --run-id <run-id> -o json
 ```
 
