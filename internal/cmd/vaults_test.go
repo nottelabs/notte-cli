@@ -97,9 +97,9 @@ func TestRunVaultsCreate_Success(t *testing.T) {
 
 	server.AddResponse("/vaults/create", 200, `{"vault_id":"vault_1","name":"Test Vault","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := vaultsCreateName
-	t.Cleanup(func() { vaultsCreateName = origName })
-	vaultsCreateName = "Test Vault"
+	origName := VaultCreateName
+	t.Cleanup(func() { VaultCreateName = origName })
+	VaultCreateName = "Test Vault"
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -130,9 +130,9 @@ func TestRunVaultsCreate_NoName(t *testing.T) {
 
 	server.AddResponse("/vaults/create", 200, `{"vault_id":"vault_2","name":"","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := vaultsCreateName
-	t.Cleanup(func() { vaultsCreateName = origName })
-	vaultsCreateName = ""
+	origName := VaultCreateName
+	t.Cleanup(func() { VaultCreateName = origName })
+	VaultCreateName = ""
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -296,24 +296,24 @@ func TestRunVaultCredentialsAdd(t *testing.T) {
 	server := setupVaultTest(t)
 	server.AddResponse("/vaults/"+vaultIDTest+"/credentials", 200, `{"status":"ok"}`)
 
-	origURL := vaultCredentialsAddURL
-	origEmail := vaultCredentialsAddEmail
-	origUser := vaultCredentialsAddUsername
-	origPass := vaultCredentialsAddPassword
-	origMFA := vaultCredentialsAddMFA
+	origURL := VaultCredentialsAddUrl
+	origEmail := VaultCredentialsAddCredentialsEmail
+	origUser := VaultCredentialsAddCredentialsUsername
+	origPass := VaultCredentialsAddCredentialsPassword
+	origMFA := VaultCredentialsAddCredentialsMfaSecret
 	t.Cleanup(func() {
-		vaultCredentialsAddURL = origURL
-		vaultCredentialsAddEmail = origEmail
-		vaultCredentialsAddUsername = origUser
-		vaultCredentialsAddPassword = origPass
-		vaultCredentialsAddMFA = origMFA
+		VaultCredentialsAddUrl = origURL
+		VaultCredentialsAddCredentialsEmail = origEmail
+		VaultCredentialsAddCredentialsUsername = origUser
+		VaultCredentialsAddCredentialsPassword = origPass
+		VaultCredentialsAddCredentialsMfaSecret = origMFA
 	})
 
-	vaultCredentialsAddURL = "https://example.com"
-	vaultCredentialsAddEmail = "test@example.com"
-	vaultCredentialsAddUsername = "user"
-	vaultCredentialsAddPassword = "pass"
-	vaultCredentialsAddMFA = "mfa"
+	VaultCredentialsAddUrl = "https://example.com"
+	VaultCredentialsAddCredentialsEmail = "test@example.com"
+	VaultCredentialsAddCredentialsUsername = "user"
+	VaultCredentialsAddCredentialsPassword = "pass"
+	VaultCredentialsAddCredentialsMfaSecret = "mfa"
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -337,21 +337,21 @@ func TestRunVaultCredentialsAdd(t *testing.T) {
 func TestRunVaultCredentialsAdd_InvalidURL(t *testing.T) {
 	_ = setupVaultTest(t)
 
-	origURL := vaultCredentialsAddURL
-	origEmail := vaultCredentialsAddEmail
-	origUser := vaultCredentialsAddUsername
-	origPass := vaultCredentialsAddPassword
-	origMFA := vaultCredentialsAddMFA
+	origURL := VaultCredentialsAddUrl
+	origEmail := VaultCredentialsAddCredentialsEmail
+	origUser := VaultCredentialsAddCredentialsUsername
+	origPass := VaultCredentialsAddCredentialsPassword
+	origMFA := VaultCredentialsAddCredentialsMfaSecret
 	t.Cleanup(func() {
-		vaultCredentialsAddURL = origURL
-		vaultCredentialsAddEmail = origEmail
-		vaultCredentialsAddUsername = origUser
-		vaultCredentialsAddPassword = origPass
-		vaultCredentialsAddMFA = origMFA
+		VaultCredentialsAddUrl = origURL
+		VaultCredentialsAddCredentialsEmail = origEmail
+		VaultCredentialsAddCredentialsUsername = origUser
+		VaultCredentialsAddCredentialsPassword = origPass
+		VaultCredentialsAddCredentialsMfaSecret = origMFA
 	})
 
-	vaultCredentialsAddURL = "://bad"
-	vaultCredentialsAddPassword = "pass"
+	VaultCredentialsAddUrl = "://bad"
+	VaultCredentialsAddCredentialsPassword = "pass"
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
@@ -368,15 +368,15 @@ func TestRunVaultCredentialsAdd_InvalidURL(t *testing.T) {
 func TestRunVaultCredentialsAdd_EmptyPassword(t *testing.T) {
 	_ = setupVaultTest(t)
 
-	origURL := vaultCredentialsAddURL
-	origPass := vaultCredentialsAddPassword
+	origURL := VaultCredentialsAddUrl
+	origPass := VaultCredentialsAddCredentialsPassword
 	t.Cleanup(func() {
-		vaultCredentialsAddURL = origURL
-		vaultCredentialsAddPassword = origPass
+		VaultCredentialsAddUrl = origURL
+		VaultCredentialsAddCredentialsPassword = origPass
 	})
 
-	vaultCredentialsAddURL = "https://example.com"
-	vaultCredentialsAddPassword = "   "
+	VaultCredentialsAddUrl = "https://example.com"
+	VaultCredentialsAddCredentialsPassword = "   "
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
@@ -393,18 +393,18 @@ func TestRunVaultCredentialsAdd_EmptyPassword(t *testing.T) {
 func TestRunVaultCredentialsAdd_InvalidEmail(t *testing.T) {
 	_ = setupVaultTest(t)
 
-	origURL := vaultCredentialsAddURL
-	origEmail := vaultCredentialsAddEmail
-	origPass := vaultCredentialsAddPassword
+	origURL := VaultCredentialsAddUrl
+	origEmail := VaultCredentialsAddCredentialsEmail
+	origPass := VaultCredentialsAddCredentialsPassword
 	t.Cleanup(func() {
-		vaultCredentialsAddURL = origURL
-		vaultCredentialsAddEmail = origEmail
-		vaultCredentialsAddPassword = origPass
+		VaultCredentialsAddUrl = origURL
+		VaultCredentialsAddCredentialsEmail = origEmail
+		VaultCredentialsAddCredentialsPassword = origPass
 	})
 
-	vaultCredentialsAddURL = "https://example.com"
-	vaultCredentialsAddEmail = "not-an-email"
-	vaultCredentialsAddPassword = "pass"
+	VaultCredentialsAddUrl = "https://example.com"
+	VaultCredentialsAddCredentialsEmail = "not-an-email"
+	VaultCredentialsAddCredentialsPassword = "pass"
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())

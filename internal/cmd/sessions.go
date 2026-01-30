@@ -17,19 +17,8 @@ import (
 	"github.com/nottelabs/notte-cli/internal/config"
 )
 
-var (
-	sessionsStartHeadless      bool
-	sessionsStartBrowser       string
-	sessionsStartIdleTimeout   int
-	sessionsStartMaxDuration   int
-	sessionsStartProxies       bool
-	sessionsStartSolveCaptchas bool
-	sessionsStartViewportW     int
-	sessionsStartViewportH     int
-	sessionsStartUserAgent     string
-	sessionsStartCdpURL        string
-	sessionsStartFileStorage   bool
-)
+// Manual flag for proxies (union type not auto-generated)
+var sessionsStartProxies bool
 
 var (
 	sessionID                 string
@@ -289,18 +278,10 @@ func init() {
 	sessionsCmd.AddCommand(sessionsCodeCmd)
 	sessionsCmd.AddCommand(sessionsViewerCmd)
 
-	// Start command flags
-	sessionsStartCmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "Run session in headless mode")
-	sessionsStartCmd.Flags().StringVar(&sessionsStartBrowser, "browser", "chromium", "Browser type (chromium, chrome, firefox)")
-	sessionsStartCmd.Flags().IntVar(&sessionsStartIdleTimeout, "idle-timeout", 0, "Idle timeout in minutes (session closes after this period of inactivity)")
-	sessionsStartCmd.Flags().IntVar(&sessionsStartMaxDuration, "max-duration", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity)")
+	// Start command flags (auto-generated + manual proxies)
+	RegisterSessionStartFlags(sessionsStartCmd)
+	// Manual flag for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "Use default proxies")
-	sessionsStartCmd.Flags().BoolVar(&sessionsStartSolveCaptchas, "solve-captchas", false, "Automatically solve captchas")
-	sessionsStartCmd.Flags().IntVar(&sessionsStartViewportW, "viewport-width", 0, "Viewport width in pixels")
-	sessionsStartCmd.Flags().IntVar(&sessionsStartViewportH, "viewport-height", 0, "Viewport height in pixels")
-	sessionsStartCmd.Flags().StringVar(&sessionsStartUserAgent, "user-agent", "", "Custom user agent string")
-	sessionsStartCmd.Flags().StringVar(&sessionsStartCdpURL, "cdp-url", "", "CDP URL of remote session provider")
-	sessionsStartCmd.Flags().BoolVar(&sessionsStartFileStorage, "file-storage", false, "Enable file storage for the session")
 
 	// Status command flags
 	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -391,31 +372,13 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	// Build request body from flags
-	body := api.SessionStartJSONRequestBody{}
-
-	// Set headless if flag was provided
-	if cmd.Flags().Changed("headless") {
-		body.Headless = &sessionsStartHeadless
+	// Build request body from generated flags
+	body, err := BuildSessionStartRequest(cmd)
+	if err != nil {
+		return err
 	}
 
-	// Set browser type if provided
-	if sessionsStartBrowser != "" {
-		browserType := api.ApiSessionStartRequestBrowserType(sessionsStartBrowser)
-		body.BrowserType = &browserType
-	}
-
-	// Set idle timeout if provided
-	if sessionsStartIdleTimeout > 0 {
-		body.IdleTimeoutMinutes = &sessionsStartIdleTimeout
-	}
-
-	// Set max duration if provided
-	if sessionsStartMaxDuration > 0 {
-		body.MaxDurationMinutes = &sessionsStartMaxDuration
-	}
-
-	// Set proxies if flag was provided
+	// Handle proxies manually (union type: bool | array of proxy objects)
 	if cmd.Flags().Changed("proxies") {
 		var proxies api.ApiSessionStartRequest_Proxies
 		if err := proxies.FromApiSessionStartRequestProxies1(sessionsStartProxies); err != nil {
@@ -424,36 +387,8 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		body.Proxies = &proxies
 	}
 
-	// Set solve captchas if flag was provided
-	if cmd.Flags().Changed("solve-captchas") {
-		body.SolveCaptchas = &sessionsStartSolveCaptchas
-	}
-
-	// Set viewport dimensions if provided
-	if sessionsStartViewportW > 0 {
-		body.ViewportWidth = &sessionsStartViewportW
-	}
-	if sessionsStartViewportH > 0 {
-		body.ViewportHeight = &sessionsStartViewportH
-	}
-
-	// Set user agent if provided
-	if sessionsStartUserAgent != "" {
-		body.UserAgent = &sessionsStartUserAgent
-	}
-
-	// Set CDP URL if provided
-	if sessionsStartCdpURL != "" {
-		body.CdpUrl = &sessionsStartCdpURL
-	}
-
-	// Set file storage if flag was provided
-	if cmd.Flags().Changed("file-storage") {
-		body.UseFileStorage = &sessionsStartFileStorage
-	}
-
 	params := &api.SessionStartParams{}
-	resp, err := client.Client().SessionStartWithResponse(ctx, params, body)
+	resp, err := client.Client().SessionStartWithResponse(ctx, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

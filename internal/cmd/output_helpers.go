@@ -95,18 +95,23 @@ func PrintScrapeResponse(resp *api.ScrapeResponse, hasInstructions bool) error {
 	}
 
 	// Structured mode: check data.success
-	if data, ok := resp.Structured.(map[string]any); ok {
-		if success, ok := data["success"].(bool); ok && !success {
-			if errMsg, ok := data["error"].(string); ok {
-				return fmt.Errorf("%s", errMsg)
+	if resp.Structured != nil {
+		// Check success field
+		if resp.Structured.Success != nil && !*resp.Structured.Success {
+			if resp.Structured.Error != nil {
+				return fmt.Errorf("%s", *resp.Structured.Error)
 			}
 			return fmt.Errorf("scrape failed")
 		}
-		if resultData, ok := data["data"]; ok {
-			// Print with a nice header for scrape results
-			fmt.Println("Scraped content from the current page:")
-			fmt.Println()
-			return GetFormatter().Print(resultData)
+		// Return data if present
+		if resp.Structured.Data != nil {
+			// Extract actual data from the union type wrapper
+			if data, err := resp.Structured.Data.AsBaseModel(); err == nil && data != nil {
+				// Print with a nice header for scrape results
+				fmt.Println("Scraped content from the current page:")
+				fmt.Println()
+				return GetFormatter().Print(data)
+			}
 		}
 	}
 	fmt.Println("Scraped content from the current page:")

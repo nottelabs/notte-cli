@@ -140,15 +140,17 @@ notte page press "Enter"              # Press a key
 
 ```bash
 notte sessions start \
-  --browser chromium|chrome|firefox  # Browser type (default: chromium)
-  --headless                         # Run in headless mode (default: true)
-  --timeout <minutes>                # Session timeout 1-15 min (default: 3)
-  --user-agent <string>              # Custom user agent
-  --viewport-width <pixels>          # Viewport width
-  --viewport-height <pixels>         # Viewport height
-  --proxies                          # Use default proxy rotation
-  --solve-captchas                   # Automatically solve captchas
-  --cdp-url <url>                    # CDP URL of remote session provider
+  --browser-type chromium|chrome|firefox  # Browser type (default: chromium)
+  --headless                              # Run in headless mode (default: true)
+  --idle-timeout-minutes <minutes>        # Idle timeout (closes after inactivity)
+  --max-duration-minutes <minutes>        # Maximum session lifetime
+  --user-agent <string>                   # Custom user agent
+  --viewport-width <pixels>               # Viewport width
+  --viewport-height <pixels>              # Viewport height
+  --proxies                               # Use default proxy rotation
+  --solve-captchas                        # Automatically solve captchas
+  --use-file-storage                      # Enable file storage for downloads
+  --cdp-url <url>                         # CDP URL of remote session provider
 ```
 
 ### AI Agents
@@ -305,7 +307,7 @@ notte vaults credentials list --id $VAULT_ID
 ```bash
 # Start browser with specific configuration
 notte sessions start \
-  --browser chrome \
+  --browser-type chrome \
   --viewport-width 1920 \
   --viewport-height 1080 \
   --solve-captchas

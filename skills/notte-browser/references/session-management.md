@@ -27,13 +27,13 @@ notte sessions start --headless=false
 
 ```bash
 # Chromium (default)
-notte sessions start --browser chromium
+notte sessions start --browser-type chromium
 
 # Google Chrome
-notte sessions start --browser chrome
+notte sessions start --browser-type chrome
 
 # Firefox
-notte sessions start --browser firefox
+notte sessions start --browser-type firefox
 ```
 
 ### Session Configuration
@@ -41,15 +41,15 @@ notte sessions start --browser firefox
 ```bash
 notte sessions start \
   --headless=false \              # Show browser window
-  --browser chromium \            # Browser type
-  --idle-timeout 10 \             # Close after 10 min of inactivity
-  --max-duration 60 \             # Maximum 60 min session lifetime
+  --browser-type chromium \       # Browser type
+  --idle-timeout-minutes 10 \     # Close after 10 min of inactivity
+  --max-duration-minutes 60 \     # Maximum 60 min session lifetime
   --proxies \                     # Use rotating proxies
   --solve-captchas \              # Auto-solve CAPTCHAs
   --viewport-width 1920 \         # Custom viewport
   --viewport-height 1080 \
   --user-agent "Custom UA" \      # Custom user agent
-  --file-storage                  # Enable file storage for downloads
+  --use-file-storage              # Enable file storage for downloads
 ```
 
 ### Remote Browser Connection
@@ -191,7 +191,7 @@ Session closes after period of inactivity:
 
 ```bash
 # Close after 10 minutes of no activity
-notte sessions start --idle-timeout 10
+notte sessions start --idle-timeout-minutes 10
 ```
 
 Activity includes any command: observe, execute, scrape, etc.
@@ -202,14 +202,14 @@ Absolute maximum session lifetime:
 
 ```bash
 # Session closes after 60 minutes regardless of activity
-notte sessions start --max-duration 60
+notte sessions start --max-duration-minutes 60
 ```
 
 ### Combining Timeouts
 
 ```bash
 # Close after 10 min idle OR 60 min total, whichever comes first
-notte sessions start --idle-timeout 10 --max-duration 60
+notte sessions start --idle-timeout-minutes 10 --max-duration-minutes 60
 ```
 
 ### Network Logs
@@ -319,10 +319,10 @@ Set timeouts based on your use case:
 
 ```bash
 # Short task (login check)
-notte sessions start --idle-timeout 2 --max-duration 5
+notte sessions start --idle-timeout-minutes 2 --max-duration-minutes 5
 
 # Long task (data collection)
-notte sessions start --idle-timeout 15 --max-duration 120
+notte sessions start --idle-timeout-minutes 15 --max-duration-minutes 120
 ```
 
 ### 3. Observe Before Acting

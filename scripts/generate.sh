@@ -47,7 +47,10 @@ jq --arg excluded "$EXCLUDED_PATHS" '
         .anyOf = (.anyOf | map(select(.type != "null"))) | .nullable = true |
         # If only one non-null type remains, flatten it
         if (.anyOf | length == 1) then
-          if .anyOf[0].type then .type = .anyOf[0].type else . end | del(.anyOf)
+          if .anyOf[0].type then .type = .anyOf[0].type else . end |
+          if .anyOf[0]["$ref"] then .["$ref"] = .anyOf[0]["$ref"] else . end |
+          if .anyOf[0].items then .items = .anyOf[0].items else . end |
+          del(.anyOf)
         else . end
       else . end |
       # Handle type arrays with null
@@ -128,3 +131,28 @@ rm -f "$OUTPUT_DIR/client.gen.go.bak"
 gofmt -w "$OUTPUT_DIR/client.gen.go"
 
 echo "Done! Generated $OUTPUT_DIR/client.gen.go"
+
+# Generate CLI flags
+echo ""
+echo "Generating CLI flags..."
+CMD_OUTPUT_DIR="$PROJECT_ROOT/internal/cmd"
+
+if ! go run "$SCRIPT_DIR/gen-flags"/*.go \
+  -spec /tmp/notte-openapi-3.0.json \
+  -output "$CMD_OUTPUT_DIR"; then
+  echo "ERROR: Flag generation failed. See errors above." >&2
+  exit 1
+fi
+
+echo "Formatting generated flag files..."
+gofmt -w "$CMD_OUTPUT_DIR"/*_flags.gen.go 2>/dev/null || true
+
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "✓ Code generation complete!"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+echo "Generated files:"
+echo "  - $OUTPUT_DIR/client.gen.go"
+echo "  - $CMD_OUTPUT_DIR/*_flags.gen.go"
+echo ""

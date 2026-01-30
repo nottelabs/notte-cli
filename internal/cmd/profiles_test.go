@@ -100,9 +100,9 @@ func TestRunProfilesCreate_Success(t *testing.T) {
 
 	server.AddResponse("/profiles/create", 200, `{"profile_id":"notte-profile-abc123","name":"New Profile","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := profilesCreateName
-	profilesCreateName = "New Profile"
-	t.Cleanup(func() { profilesCreateName = origName })
+	origName := ProfileCreateName
+	ProfileCreateName = "New Profile"
+	t.Cleanup(func() { ProfileCreateName = origName })
 
 	origFormat := outputFormat
 	outputFormat = "json"

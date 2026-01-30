@@ -8,15 +8,6 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 )
 
-var (
-	agentsStartTask           string
-	agentsStartSession        string
-	agentsStartVault          string
-	agentsStartPersona        string
-	agentsStartMaxSteps       int
-	agentsStartReasoningModel string
-)
-
 var agentID string
 
 var agentsCmd = &cobra.Command{
@@ -70,13 +61,8 @@ func init() {
 	agentsCmd.AddCommand(agentsWorkflowCodeCmd)
 	agentsCmd.AddCommand(agentsReplayCmd)
 
-	// Start command flags
-	agentsStartCmd.Flags().StringVar(&agentsStartTask, "task", "", "Task for the agent (required)")
-	agentsStartCmd.Flags().StringVar(&agentsStartSession, "session", "", "Session ID to use")
-	agentsStartCmd.Flags().StringVar(&agentsStartVault, "vault", "", "Vault ID for credentials")
-	agentsStartCmd.Flags().StringVar(&agentsStartPersona, "persona", "", "Persona ID to use")
-	agentsStartCmd.Flags().IntVar(&agentsStartMaxSteps, "max-steps", 30, "Maximum steps")
-	agentsStartCmd.Flags().StringVar(&agentsStartReasoningModel, "reasoning-model", "", "Reasoning model to use")
+	// Start command flags (auto-generated)
+	RegisterAgentStartFlags(agentsStartCmd)
 	_ = agentsStartCmd.MarkFlagRequired("task")
 
 	// Status command flags
@@ -137,28 +123,14 @@ func runAgentsStart(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	body := api.AgentStartJSONRequestBody{
-		Task:      agentsStartTask,
-		SessionId: agentsStartSession,
-		MaxSteps:  &agentsStartMaxSteps,
-	}
-
-	if agentsStartVault != "" {
-		body.VaultId = &agentsStartVault
-	}
-	if agentsStartPersona != "" {
-		body.PersonaId = &agentsStartPersona
-	}
-	if agentsStartReasoningModel != "" {
-		reasoningModel := &api.ApiAgentStartRequest_ReasoningModel{}
-		if err := reasoningModel.FromApiAgentStartRequestReasoningModel1(agentsStartReasoningModel); err != nil {
-			return fmt.Errorf("failed to set reasoning model: %w", err)
-		}
-		body.ReasoningModel = reasoningModel
+	// Build request body from generated flags
+	body, err := BuildAgentStartRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.AgentStartParams{}
-	resp, err := client.Client().AgentStartWithResponse(ctx, params, body)
+	resp, err := client.Client().AgentStartWithResponse(ctx, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

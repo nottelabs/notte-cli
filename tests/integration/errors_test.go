@@ -10,7 +10,7 @@ import (
 // TestErrorParsing_InvalidBrowserType tests that validation errors show proper messages
 func TestErrorParsing_InvalidBrowserType(t *testing.T) {
 	// Try to start a session with an invalid browser type
-	result := runCLI(t, "sessions", "start", "--browser", "invalid-browser")
+	result := runCLI(t, "sessions", "start", "--browser-type", "invalid-browser")
 	requireFailure(t, result)
 
 	// Verify the error message contains useful information
@@ -135,7 +135,7 @@ func TestErrorParsing_InvalidSessionExecuteAction(t *testing.T) {
 // TestErrorParsing_ValidationErrorContainsDetails tests that validation errors contain helpful details
 func TestErrorParsing_ValidationErrorContainsDetails(t *testing.T) {
 	// Try to start a session with an invalid browser type "brave"
-	result := runCLI(t, "sessions", "start", "--browser", "brave")
+	result := runCLI(t, "sessions", "start", "--browser-type", "brave")
 	requireFailure(t, result)
 
 	// The error should contain information about valid options

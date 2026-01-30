@@ -36,17 +36,17 @@ Control browser session lifecycle:
 ```bash
 # Start a new session
 notte sessions start [flags]
-  --headless           Run in headless mode (default: true)
-  --browser            Browser type: chromium, chrome, firefox (default: chromium)
-  --idle-timeout       Idle timeout in minutes
-  --max-duration       Maximum session lifetime in minutes
-  --proxies            Use default proxies
-  --solve-captchas     Automatically solve captchas
-  --viewport-width     Viewport width in pixels
-  --viewport-height    Viewport height in pixels
-  --user-agent         Custom user agent string
-  --cdp-url            CDP URL of remote session provider
-  --file-storage       Enable file storage for the session
+  --headless                 Run in headless mode (default: true)
+  --browser-type             Browser type: chromium, chrome, firefox (default: chromium)
+  --idle-timeout-minutes     Idle timeout in minutes
+  --max-duration-minutes     Maximum session lifetime in minutes
+  --proxies                  Use default proxies
+  --solve-captchas           Automatically solve captchas
+  --viewport-width           Viewport width in pixels
+  --viewport-height          Viewport height in pixels
+  --user-agent               Custom user agent string
+  --cdp-url                  CDP URL of remote session provider
+  --use-file-storage         Enable file storage for the session
 
 # Get current session status
 notte sessions status
