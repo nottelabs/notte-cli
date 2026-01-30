@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -222,6 +226,13 @@ var sessionsCodeCmd = &cobra.Command{
 	RunE:  runSessionCode,
 }
 
+var sessionsViewerCmd = &cobra.Command{
+	Use:   "viewer",
+	Short: "Open session viewer in browser",
+	Args:  cobra.NoArgs,
+	RunE:  runSessionViewer,
+}
+
 func init() {
 	rootCmd.AddCommand(sessionsCmd)
 	sessionsCmd.AddCommand(sessionsListCmd)
@@ -239,6 +250,7 @@ func init() {
 	sessionsCmd.AddCommand(sessionsOffsetCmd)
 	sessionsCmd.AddCommand(sessionsWorkflowCodeCmd)
 	sessionsCmd.AddCommand(sessionsCodeCmd)
+	sessionsCmd.AddCommand(sessionsViewerCmd)
 
 	// Start command flags
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "Run session in headless mode")
@@ -832,6 +844,112 @@ func runSessionCode(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		fmt.Println(resp.JSON200.PythonScript)
 	}
+
+	return nil
+}
+
+func runSessionViewer(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	// Get base URL for constructing viewer URL
+	baseURL := os.Getenv(config.EnvAPIURL)
+	if baseURL == "" {
+		cfg, err := config.Load()
+		if err != nil {
+			return err
+		}
+		baseURL = cfg.APIURL
+	}
+	if baseURL == "" {
+		baseURL = api.DefaultBaseURL
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	// Get debug info to retrieve recording WebSocket URL
+	params := &api.SessionDebugInfoParams{}
+	resp, err := client.Client().SessionDebugInfoWithResponse(ctx, sessionID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	if resp.JSON200 == nil {
+		return fmt.Errorf("no debug info returned")
+	}
+
+	// Construct viewer URL
+	// Based on Python SDK: base_url/sessions/viewer/index.html?ws={recording_ws_url}
+	if resp.JSON200.Ws.Recording == "" {
+		return fmt.Errorf("no recording WebSocket URL available for this session")
+	}
+	viewerURL, err := constructViewerURL(baseURL, resp.JSON200.Ws.Recording)
+	if err != nil {
+		return fmt.Errorf("failed to construct viewer URL: %w", err)
+	}
+
+	// Open browser
+	PrintInfo(fmt.Sprintf("Opening viewer in browser: %s", viewerURL))
+	if err := openBrowser(viewerURL); err != nil {
+		return fmt.Errorf("failed to open browser: %w", err)
+	}
+
+	return nil
+}
+
+// constructViewerURL builds the viewer URL from the base URL and recording WebSocket URL
+func constructViewerURL(baseURL, recordingWS string) (string, error) {
+	// Parse base URL
+	parsedBase, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	// Construct viewer path
+	// Pattern: /sessions/viewer/index.html?ws={recording_ws_url}
+	viewerPath := "sessions/viewer/index.html"
+	parsedBase.Path = path.Join(parsedBase.Path, viewerPath)
+
+	// Add recording WebSocket URL as query parameter
+	query := parsedBase.Query()
+	query.Set("ws", recordingWS)
+	parsedBase.RawQuery = query.Encode()
+
+	return parsedBase.String(), nil
+}
+
+// openBrowser opens the specified URL in the default browser
+func openBrowser(url string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// Wait in background to avoid zombie processes
+	go func() { _ = cmd.Wait() }()
 
 	return nil
 }
