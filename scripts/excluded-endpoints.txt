@@ -4,3 +4,10 @@
 
 /prompts/improve
 /prompts/nudge
+
+# Global scrape endpoints (use session-based scrape instead)
+^/scrape$
+^/scrape_from_html$
+
+# Vault credit card operations
+/vaults/\{vault_id\}/card

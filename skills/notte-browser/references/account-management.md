@@ -222,33 +222,6 @@ notte vaults credentials add \
 
 The MFA secret is the base32-encoded key shown when setting up authenticator apps (usually displayed as a QR code or "manual entry" key).
 
-## Credit Card Storage
-
-For e-commerce automation and checkout testing:
-
-### Set Credit Card
-
-```bash
-notte vaults card-set \
-  --id <vault-id> \
-  --number "4111111111111111" \
-  --expiry "12/25" \
-  --cvv "123" \
-  --name "John Doe"
-```
-
-### Get Credit Card
-
-```bash
-notte vaults card --id <vault-id>
-```
-
-### Delete Credit Card
-
-```bash
-notte vaults card-delete --id <vault-id>
-```
-
 ## Authentication Patterns
 
 ### When to Use Personas
@@ -272,7 +245,6 @@ Use vaults when you need:
 - **Existing accounts**: Login to your accounts
 - **Persistent credentials**: Same credentials across sessions
 - **MFA automation**: Auto-generate TOTP codes
-- **Payment flows**: Stored credit cards
 
 ```bash
 # Login automation

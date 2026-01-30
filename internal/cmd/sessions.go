@@ -185,10 +185,11 @@ var sessionsCookiesSetCmd = &cobra.Command{
 }
 
 var sessionsDebugCmd = &cobra.Command{
-	Use:   "debug",
-	Short: "Get debug info for the session",
-	Args:  cobra.NoArgs,
-	RunE:  runSessionDebug,
+	Use:    "debug",
+	Short:  "Get debug info for the session",
+	Args:   cobra.NoArgs,
+	RunE:   runSessionDebug,
+	Hidden: true,
 }
 
 var sessionsNetworkCmd = &cobra.Command{

@@ -54,26 +54,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Quick scrape without session (for simple single-page extraction)
-quick_scrape() {
-    local url="$1"
-    local instructions="$2"
-
-    log_step "Quick scraping: $url"
-
-    local flags=""
-    if [[ "$ONLY_MAIN_CONTENT" == "true" ]]; then
-        flags="--only-main-content"
-    fi
-
-    local result
-    # shellcheck disable=SC2086
-    result=$(notte scrape "$url" --instructions "$instructions" $flags -o "$OUTPUT_FORMAT")
-
-    echo "$result"
-}
-
-# Session-based scrape (for complex or multi-page extraction)
+# Session-based scrape
 session_scrape() {
     local url="$1"
     local instructions="$2"
@@ -193,15 +174,13 @@ main() {
 
     local result
 
-    # Choose extraction method based on configuration
+    # Use session-based scrape
     if [[ "$PAGINATE" == "true" ]]; then
         log_info "Mode: Multi-page session scrape"
-        result=$(session_scrape "$TARGET_URL" "$EXTRACTION_INSTRUCTIONS")
     else
-        # Try quick scrape first (faster, no session needed)
-        log_info "Mode: Quick scrape"
-        result=$(quick_scrape "$TARGET_URL" "$EXTRACTION_INSTRUCTIONS")
+        log_info "Mode: Single-page session scrape"
     fi
+    result=$(session_scrape "$TARGET_URL" "$EXTRACTION_INSTRUCTIONS")
 
     # Format and output
     local formatted

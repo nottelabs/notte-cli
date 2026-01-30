@@ -5,9 +5,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 OUTPUT_DIR="$PROJECT_ROOT/internal/api"
 
-echo "Fetching OpenAPI spec from api.notte.cc..."
-if ! curl -f -s https://api.notte.cc/openapi.json -o /tmp/notte-openapi.json; then
-  echo "Error: Failed to fetch OpenAPI spec from api.notte.cc" >&2
+# Use NOTTE_API_URL env var, defaulting to staging for latest API features
+NOTTE_API_URL="${NOTTE_API_URL:-https://us-staging.notte.cc}"
+OPENAPI_URL="${NOTTE_API_URL}/openapi.json"
+
+echo "Fetching OpenAPI spec from ${NOTTE_API_URL}..."
+if ! curl -f -s "${OPENAPI_URL}" -o /tmp/notte-openapi.json; then
+  echo "Error: Failed to fetch OpenAPI spec from ${NOTTE_API_URL}" >&2
   exit 1
 fi
 
