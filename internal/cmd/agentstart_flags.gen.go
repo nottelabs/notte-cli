@@ -90,7 +90,7 @@ func BuildAgentStartRequest(cmd *cobra.Command) (*api.ApiAgentStartRequest, erro
 	}
 
 	if cmd.Flags().Changed("session-id") {
-		body.SessionId = &AgentStartSessionId
+		body.SessionId = AgentStartSessionId
 	}
 
 	if AgentStartPersonaId != "" {
@@ -98,7 +98,7 @@ func BuildAgentStartRequest(cmd *cobra.Command) (*api.ApiAgentStartRequest, erro
 	}
 
 	if cmd.Flags().Changed("task") {
-		body.Task = &AgentStartTask
+		body.Task = AgentStartTask
 	}
 
 	if AgentStartUrl != "" {

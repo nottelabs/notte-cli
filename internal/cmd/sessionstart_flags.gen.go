@@ -2,11 +2,6 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
@@ -87,10 +82,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 	}
 
 	if SessionStartBrowserType != "" {
-		var val api.ApiSessionStartRequest_BrowserType
-		if err := val.FromApiSessionStartRequestBrowserType1(SessionStartBrowserType); err != nil {
-			return nil, fmt.Errorf("invalid browser-type: %w", err)
-		}
+		val := api.ApiSessionStartRequestBrowserType(SessionStartBrowserType)
 		body.BrowserType = &val
 	}
 
@@ -103,12 +95,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 	}
 
 	if len(SessionStartChromeArgs) > 0 {
-		// Convert string slice to interface slice
-		args := make([]interface{}, len(SessionStartChromeArgs))
-		for i, arg := range SessionStartChromeArgs {
-			args[i] = arg
-		}
-		body.ChromeArgs = &args
+		body.ChromeArgs = &SessionStartChromeArgs
 	}
 
 	if SessionStartViewportWidth > 0 {
@@ -116,10 +103,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 	}
 
 	if SessionStartScreenshotType != "" {
-		var val api.ApiSessionStartRequest_ScreenshotType
-		if err := val.FromApiSessionStartRequestScreenshotType1(SessionStartScreenshotType); err != nil {
-			return nil, fmt.Errorf("invalid screenshot-type: %w", err)
-		}
+		val := api.ApiSessionStartRequestScreenshotType(SessionStartScreenshotType)
 		body.ScreenshotType = &val
 	}
 
@@ -141,7 +125,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	// profile (flattened)
 	if cmd.Flags().Changed("profile-persist") || SessionStartProfileId != "" {
-		body.Profile = api.SessionProfile{
+		body.Profile = &api.SessionProfile{
 			Persist: &SessionStartProfilePersist,
 			Id:      SessionStartProfileId,
 		}

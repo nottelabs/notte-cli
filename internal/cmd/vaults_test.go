@@ -97,9 +97,9 @@ func TestRunVaultsCreate_Success(t *testing.T) {
 
 	server.AddResponse("/vaults/create", 200, `{"vault_id":"vault_1","name":"Test Vault","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := vaultsCreateName
-	t.Cleanup(func() { vaultsCreateName = origName })
-	vaultsCreateName = "Test Vault"
+	origName := VaultCreateName
+	t.Cleanup(func() { VaultCreateName = origName })
+	VaultCreateName = "Test Vault"
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -130,9 +130,9 @@ func TestRunVaultsCreate_NoName(t *testing.T) {
 
 	server.AddResponse("/vaults/create", 200, `{"vault_id":"vault_2","name":"","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := vaultsCreateName
-	t.Cleanup(func() { vaultsCreateName = origName })
-	vaultsCreateName = ""
+	origName := VaultCreateName
+	t.Cleanup(func() { VaultCreateName = origName })
+	VaultCreateName = ""
 
 	origFormat := outputFormat
 	outputFormat = "json"

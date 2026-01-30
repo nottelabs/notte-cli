@@ -8,10 +8,7 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 )
 
-var (
-	profilesCreateName string
-	profileID          string
-)
+var profileID string
 
 var profilesCmd = &cobra.Command{
 	Use:   "profiles",
@@ -52,8 +49,8 @@ func init() {
 	profilesCmd.AddCommand(profilesShowCmd)
 	profilesCmd.AddCommand(profilesDeleteCmd)
 
-	// Create command flags
-	profilesCreateCmd.Flags().StringVar(&profilesCreateName, "name", "", "Profile name")
+	// Create command flags (auto-generated)
+	RegisterProfileCreateFlags(profilesCreateCmd)
 
 	// Show command flags
 	profilesShowCmd.Flags().StringVar(&profileID, "id", "", "Profile ID (required)")
@@ -107,13 +104,14 @@ func runProfilesCreate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	body := api.ProfileCreateJSONRequestBody{}
-	if profilesCreateName != "" {
-		body.Name = &profilesCreateName
+	// Build request body from generated flags
+	body, err := BuildProfileCreateRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.ProfileCreateParams{}
-	resp, err := client.Client().ProfileCreateWithResponse(ctx, params, body)
+	resp, err := client.Client().ProfileCreateWithResponse(ctx, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

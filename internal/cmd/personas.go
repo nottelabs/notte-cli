@@ -8,11 +8,6 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 )
 
-var (
-	personasCreatePhoneNumber bool
-	personasCreateVault       bool
-)
-
 var personaID string
 
 var personasCmd = &cobra.Command{
@@ -86,9 +81,8 @@ func init() {
 	personasCmd.AddCommand(personasPhoneCreateCmd)
 	personasCmd.AddCommand(personasPhoneDeleteCmd)
 
-	// Create command flags
-	personasCreateCmd.Flags().BoolVar(&personasCreatePhoneNumber, "create-phone-number", false, "Create a phone number for the persona")
-	personasCreateCmd.Flags().BoolVar(&personasCreateVault, "create-vault", false, "Create a vault for the persona")
+	// Create command flags (auto-generated)
+	RegisterPersonaCreateFlags(personasCreateCmd)
 
 	// Show command flags
 	personasShowCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
@@ -158,21 +152,14 @@ func runPersonasCreate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	// Build request body from flags
-	body := api.PersonaCreateJSONRequestBody{}
-
-	// Set create phone number if flag was provided
-	if cmd.Flags().Changed("create-phone-number") {
-		body.CreatePhoneNumber = &personasCreatePhoneNumber
-	}
-
-	// Set create vault if flag was provided
-	if cmd.Flags().Changed("create-vault") {
-		body.CreateVault = &personasCreateVault
+	// Build request body from generated flags
+	body, err := BuildPersonaCreateRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.PersonaCreateParams{}
-	resp, err := client.Client().PersonaCreateWithResponse(ctx, params, body)
+	resp, err := client.Client().PersonaCreateWithResponse(ctx, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

@@ -104,49 +104,49 @@ func TestRunSessionsStart(t *testing.T) {
 
 	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_123","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
 
-	origHeadless := sessionsStartHeadless
-	origBrowser := sessionsStartBrowser
-	origTimeout := sessionsStartIdleTimeout
+	origHeadless := SessionStartHeadless
+	origBrowser := SessionStartBrowserType
+	origTimeout := SessionStartIdleTimeoutMinutes
 	origProxies := sessionsStartProxies
-	origSolve := sessionsStartSolveCaptchas
-	origVW := sessionsStartViewportW
-	origVH := sessionsStartViewportH
-	origUA := sessionsStartUserAgent
-	origCDP := sessionsStartCdpURL
-	origFileStorage := sessionsStartFileStorage
+	origSolve := SessionStartSolveCaptchas
+	origVW := SessionStartViewportWidth
+	origVH := SessionStartViewportHeight
+	origUA := SessionStartUserAgent
+	origCDP := SessionStartCdpUrl
+	origFileStorage := SessionStartUseFileStorage
 	t.Cleanup(func() {
-		sessionsStartHeadless = origHeadless
-		sessionsStartBrowser = origBrowser
-		sessionsStartIdleTimeout = origTimeout
+		SessionStartHeadless = origHeadless
+		SessionStartBrowserType = origBrowser
+		SessionStartIdleTimeoutMinutes = origTimeout
 		sessionsStartProxies = origProxies
-		sessionsStartSolveCaptchas = origSolve
-		sessionsStartViewportW = origVW
-		sessionsStartViewportH = origVH
-		sessionsStartUserAgent = origUA
-		sessionsStartCdpURL = origCDP
-		sessionsStartFileStorage = origFileStorage
+		SessionStartSolveCaptchas = origSolve
+		SessionStartViewportWidth = origVW
+		SessionStartViewportHeight = origVH
+		SessionStartUserAgent = origUA
+		SessionStartCdpUrl = origCDP
+		SessionStartUseFileStorage = origFileStorage
 	})
 
-	sessionsStartHeadless = false
-	sessionsStartBrowser = "firefox"
-	sessionsStartIdleTimeout = 5
+	SessionStartHeadless = false
+	SessionStartBrowserType = "firefox"
+	SessionStartIdleTimeoutMinutes = 5
 	sessionsStartProxies = true
-	sessionsStartSolveCaptchas = true
-	sessionsStartViewportW = 1280
-	sessionsStartViewportH = 720
-	sessionsStartUserAgent = "test-agent"
-	sessionsStartCdpURL = "ws://cdp"
-	sessionsStartFileStorage = true
+	SessionStartSolveCaptchas = true
+	SessionStartViewportWidth = 1280
+	SessionStartViewportHeight = 720
+	SessionStartUserAgent = "test-agent"
+	SessionStartCdpUrl = "ws://cdp"
+	SessionStartUseFileStorage = true
 
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
-	cmd.Flags().BoolVar(&sessionsStartSolveCaptchas, "solve-captchas", false, "")
-	cmd.Flags().BoolVar(&sessionsStartFileStorage, "file-storage", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "file-storage", false, "")
 	_ = cmd.Flags().Set("headless", "false")
 	_ = cmd.Flags().Set("proxies", "true")
 	_ = cmd.Flags().Set("solve-captchas", "true")
@@ -175,45 +175,45 @@ func TestRunSessionsStart_Minimal(t *testing.T) {
 
 	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_456","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":3}`)
 
-	origHeadless := sessionsStartHeadless
-	origBrowser := sessionsStartBrowser
-	origTimeout := sessionsStartIdleTimeout
+	origHeadless := SessionStartHeadless
+	origBrowser := SessionStartBrowserType
+	origTimeout := SessionStartIdleTimeoutMinutes
 	origProxies := sessionsStartProxies
-	origSolve := sessionsStartSolveCaptchas
-	origVW := sessionsStartViewportW
-	origVH := sessionsStartViewportH
-	origUA := sessionsStartUserAgent
-	origCDP := sessionsStartCdpURL
+	origSolve := SessionStartSolveCaptchas
+	origVW := SessionStartViewportWidth
+	origVH := SessionStartViewportHeight
+	origUA := SessionStartUserAgent
+	origCDP := SessionStartCdpUrl
 	t.Cleanup(func() {
-		sessionsStartHeadless = origHeadless
-		sessionsStartBrowser = origBrowser
-		sessionsStartIdleTimeout = origTimeout
+		SessionStartHeadless = origHeadless
+		SessionStartBrowserType = origBrowser
+		SessionStartIdleTimeoutMinutes = origTimeout
 		sessionsStartProxies = origProxies
-		sessionsStartSolveCaptchas = origSolve
-		sessionsStartViewportW = origVW
-		sessionsStartViewportH = origVH
-		sessionsStartUserAgent = origUA
-		sessionsStartCdpURL = origCDP
+		SessionStartSolveCaptchas = origSolve
+		SessionStartViewportWidth = origVW
+		SessionStartViewportHeight = origVH
+		SessionStartUserAgent = origUA
+		SessionStartCdpUrl = origCDP
 	})
 
-	sessionsStartHeadless = true
-	sessionsStartBrowser = ""
-	sessionsStartIdleTimeout = 0
+	SessionStartHeadless = true
+	SessionStartBrowserType = ""
+	SessionStartIdleTimeoutMinutes = 0
 	sessionsStartProxies = false
-	sessionsStartSolveCaptchas = false
-	sessionsStartViewportW = 0
-	sessionsStartViewportH = 0
-	sessionsStartUserAgent = ""
-	sessionsStartCdpURL = ""
+	SessionStartSolveCaptchas = false
+	SessionStartViewportWidth = 0
+	SessionStartViewportHeight = 0
+	SessionStartUserAgent = ""
+	SessionStartCdpUrl = ""
 
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
-	cmd.Flags().BoolVar(&sessionsStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
@@ -587,7 +587,7 @@ func TestRunSessionScrape_TextOutput(t *testing.T) {
 
 func TestRunSessionScrape_TextOutputWithInstructions(t *testing.T) {
 	server := setupSessionTest(t)
-	scrapeResp := fmt.Sprintf(`{"markdown":"# Test","structured":{"title":"Extracted Title","data":"Extracted Data"},"session":%s}`, sessionJSON())
+	scrapeResp := fmt.Sprintf(`{"markdown":"# Test","structured":{"data":{"title":"Extracted Title","content":"Extracted Data"},"success":true},"session":%s}`, sessionJSON())
 	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
 
 	origInstructions := sessionScrapeInstructions
@@ -1075,9 +1075,9 @@ func TestSessionsStart_SetsCurrentSession(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&sessionsStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
-	cmd.Flags().BoolVar(&sessionsStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
 
 	testutil.CaptureOutput(func() {

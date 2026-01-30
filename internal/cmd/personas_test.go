@@ -105,22 +105,22 @@ func TestRunPersonasCreate(t *testing.T) {
 
 	server.AddResponse("/personas/create", 200, personaJSON("persona_2"))
 
-	origPhone := personasCreatePhoneNumber
-	origVault := personasCreateVault
+	origPhone := PersonaCreateCreatePhoneNumber
+	origVault := PersonaCreateCreateVault
 	t.Cleanup(func() {
-		personasCreatePhoneNumber = origPhone
-		personasCreateVault = origVault
+		PersonaCreateCreatePhoneNumber = origPhone
+		PersonaCreateCreateVault = origVault
 	})
-	personasCreatePhoneNumber = true
-	personasCreateVault = true
+	PersonaCreateCreatePhoneNumber = true
+	PersonaCreateCreateVault = true
 
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&personasCreatePhoneNumber, "create-phone-number", false, "")
-	cmd.Flags().BoolVar(&personasCreateVault, "create-vault", false, "")
+	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "")
+	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "")
 	_ = cmd.Flags().Set("create-phone-number", "true")
 	_ = cmd.Flags().Set("create-vault", "true")
 	cmd.SetContext(context.Background())

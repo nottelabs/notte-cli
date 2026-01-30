@@ -101,27 +101,27 @@ func TestRunAgentsStart_Success(t *testing.T) {
 
 	server.AddResponse("/agents/start", 200, `{"agent_id":"agent_1","session_id":"sess_1","status":"RUNNING","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origTask := agentsStartTask
-	origSession := agentsStartSession
-	origVault := agentsStartVault
-	origPersona := agentsStartPersona
-	origMaxSteps := agentsStartMaxSteps
-	origReasoning := agentsStartReasoningModel
+	origTask := AgentStartTask
+	origSession := AgentStartSessionId
+	origVault := AgentStartVaultId
+	origPersona := AgentStartPersonaId
+	origMaxSteps := AgentStartMaxSteps
+	origReasoning := AgentStartReasoningModel
 	t.Cleanup(func() {
-		agentsStartTask = origTask
-		agentsStartSession = origSession
-		agentsStartVault = origVault
-		agentsStartPersona = origPersona
-		agentsStartMaxSteps = origMaxSteps
-		agentsStartReasoningModel = origReasoning
+		AgentStartTask = origTask
+		AgentStartSessionId = origSession
+		AgentStartVaultId = origVault
+		AgentStartPersonaId = origPersona
+		AgentStartMaxSteps = origMaxSteps
+		AgentStartReasoningModel = origReasoning
 	})
 
-	agentsStartTask = "do the thing"
-	agentsStartSession = "sess_123"
-	agentsStartVault = "vault_123"
-	agentsStartPersona = "persona_123"
-	agentsStartMaxSteps = 5
-	agentsStartReasoningModel = "custom-model"
+	AgentStartTask = "do the thing"
+	AgentStartSessionId = "sess_123"
+	AgentStartVaultId = "vault_123"
+	AgentStartPersonaId = "persona_123"
+	AgentStartMaxSteps = 5
+	AgentStartReasoningModel = "custom-model"
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -152,27 +152,27 @@ func TestRunAgentsStart_Minimal(t *testing.T) {
 
 	server.AddResponse("/agents/start", 200, `{"agent_id":"agent_2","session_id":"sess_2","status":"RUNNING","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origTask := agentsStartTask
-	origSession := agentsStartSession
-	origVault := agentsStartVault
-	origPersona := agentsStartPersona
-	origMaxSteps := agentsStartMaxSteps
-	origReasoning := agentsStartReasoningModel
+	origTask := AgentStartTask
+	origSession := AgentStartSessionId
+	origVault := AgentStartVaultId
+	origPersona := AgentStartPersonaId
+	origMaxSteps := AgentStartMaxSteps
+	origReasoning := AgentStartReasoningModel
 	t.Cleanup(func() {
-		agentsStartTask = origTask
-		agentsStartSession = origSession
-		agentsStartVault = origVault
-		agentsStartPersona = origPersona
-		agentsStartMaxSteps = origMaxSteps
-		agentsStartReasoningModel = origReasoning
+		AgentStartTask = origTask
+		AgentStartSessionId = origSession
+		AgentStartVaultId = origVault
+		AgentStartPersonaId = origPersona
+		AgentStartMaxSteps = origMaxSteps
+		AgentStartReasoningModel = origReasoning
 	})
 
-	agentsStartTask = "do the thing"
-	agentsStartSession = ""
-	agentsStartVault = ""
-	agentsStartPersona = ""
-	agentsStartMaxSteps = 30
-	agentsStartReasoningModel = ""
+	AgentStartTask = "do the thing"
+	AgentStartSessionId = ""
+	AgentStartVaultId = ""
+	AgentStartPersonaId = ""
+	AgentStartMaxSteps = 30
+	AgentStartReasoningModel = ""
 
 	origFormat := outputFormat
 	outputFormat = "json"

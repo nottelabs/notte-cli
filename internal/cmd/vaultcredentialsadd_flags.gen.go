@@ -22,7 +22,7 @@ func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsReq
 	body := &api.AddCredentialsRequest{}
 
 	if cmd.Flags().Changed("url") {
-		body.Url = &VaultCredentialsAddUrl
+		body.Url = VaultCredentialsAddUrl
 	}
 
 	return body, nil

@@ -11,8 +11,6 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 )
 
-var vaultsCreateName string
-
 var (
 	vaultID                     string
 	vaultUpdateName             string
@@ -104,8 +102,8 @@ func init() {
 	vaultsCredentialsCmd.AddCommand(vaultsCredentialsGetCmd)
 	vaultsCredentialsCmd.AddCommand(vaultsCredentialsDeleteCmd)
 
-	// Create command flags
-	vaultsCreateCmd.Flags().StringVar(&vaultsCreateName, "name", "", "Name of the vault")
+	// Create command flags (auto-generated)
+	RegisterVaultCreateFlags(vaultsCreateCmd)
 
 	// Credentials subcommand group - use PersistentFlags for --id
 	vaultsCredentialsCmd.PersistentFlags().StringVar(&vaultID, "id", "", "Vault ID (required)")
@@ -182,16 +180,14 @@ func runVaultsCreate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	// Build request body from flags
-	body := api.VaultCreateJSONRequestBody{}
-
-	// Set name if provided
-	if vaultsCreateName != "" {
-		body.Name = &vaultsCreateName
+	// Build request body from generated flags
+	body, err := BuildVaultCreateRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.VaultCreateParams{}
-	resp, err := client.Client().VaultCreateWithResponse(ctx, params, body)
+	resp, err := client.Client().VaultCreateWithResponse(ctx, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
