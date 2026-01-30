@@ -20,7 +20,7 @@ notte page click "@B3"
 notte page fill "@input" "hello world"
 
 # 5. Scrape content
-notte page scrape "Extract all product names and prices"
+notte page scrape --instructions "Extract all product names and prices"
 
 # 6. Stop the session
 notte sessions stop
@@ -148,7 +148,7 @@ notte page close-tab
 notte page observe [--url <url>]
 
 # Scrape content with instructions
-notte page scrape "Extract all links" [only-main-content]
+notte page scrape --instructions "Extract all links" [--only-main-content]
 ```
 
 **Utilities:**
@@ -314,9 +314,9 @@ notte scrape "https://news.ycombinator.com" --instructions "Extract top 10 story
 notte sessions start --headless
 notte page goto "https://example.com/products"
 notte page observe
-notte page scrape "Extract product names and prices"
+notte page scrape --instructions "Extract product names and prices"
 notte page click "@next-page"
-notte page scrape "Extract product names and prices"
+notte page scrape --instructions "Extract product names and prices"
 notte sessions stop
 ```
 

@@ -518,7 +518,14 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp.JSON200)
+	}
+
+	// Text mode: return only the page description
+	fmt.Println(resp.JSON200.Space.Description)
+	return nil
 }
 
 func runSessionExecute(cmd *cobra.Command, args []string) error {

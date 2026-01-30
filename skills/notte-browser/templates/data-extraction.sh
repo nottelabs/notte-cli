@@ -98,7 +98,7 @@ session_scrape() {
 
         local page_result
         # shellcheck disable=SC2086
-        page_result=$(notte page scrape "$instructions" $flags -o json)
+        page_result=$(notte page scrape --instructions "$instructions" $flags -o json)
 
         # Merge results (assuming JSON array output)
         if command -v jq &> /dev/null; then
@@ -150,7 +150,7 @@ batch_scrape() {
 
         local result
         # shellcheck disable=SC2086
-        result=$(notte page scrape "$EXTRACTION_INSTRUCTIONS" $flags -o json)
+        result=$(notte page scrape --instructions "$EXTRACTION_INSTRUCTIONS" $flags -o json)
 
         # Add source URL to result
         if command -v jq &> /dev/null; then

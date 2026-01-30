@@ -287,7 +287,7 @@ notte sessions start --headless
 notte page goto "https://news.ycombinator.com"
 
 # Extract structured data
-notte page scrape "Extract top 10 stories with title and URL"
+notte page scrape --instructions "Extract top 10 stories with title and URL"
 
 # Cleanup
 notte sessions stop

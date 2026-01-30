@@ -357,7 +357,7 @@ notte page wait 2000
 
 # Now logged in, collect data
 notte page goto "https://analytics.example.com/reports/weekly"
-REPORT=$(notte page scrape "Extract the weekly metrics summary")
+REPORT=$(notte page scrape --instructions "Extract the weekly metrics summary")
 
 # Save cookies for faster future logins
 notte sessions cookies -o json > analytics_cookies.json

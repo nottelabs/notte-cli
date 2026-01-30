@@ -68,7 +68,7 @@ check_login_success() {
 
     # Check for common login failure indicators
     local page_content
-    page_content=$(notte page scrape "Check if there are any error messages about login failure" 2>/dev/null || echo "")
+    page_content=$(notte page scrape --instructions "Check if there are any error messages about login failure" 2>/dev/null || echo "")
 
     if echo "$page_content" | grep -qiE "(invalid|incorrect|failed|error|wrong)"; then
         return 1
@@ -233,7 +233,7 @@ main() {
     log_info "Session ID: $(notte sessions status -o json | jq -r '.session_id // .sessionId // .id')"
 
     # Example: Scrape data from authenticated page
-    # notte page scrape "Extract user profile information"
+    # notte page scrape --instructions "Extract user profile information"
 }
 
 main "$@"

@@ -109,7 +109,7 @@ main() {
 
     # Verify submission
     log_info "Verifying submission..."
-    SCRAPE_RESULT=$(notte page scrape "Check if the page shows a success message")
+    SCRAPE_RESULT=$(notte page scrape --instructions "Check if the page shows a success message")
 
     if echo "$SCRAPE_RESULT" | grep -qi "$SUCCESS_INDICATOR"; then
         log_info "Form submitted successfully!"

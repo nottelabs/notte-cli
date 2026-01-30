@@ -28,17 +28,11 @@ var (
 	// upload flags
 	pageUploadFile string
 
-	// scrape flags
-	pageScrapeMainOnly bool
-
 	// complete flags
 	pageCompleteSuccess bool
 
 	// form-fill flags
 	pageFormFillData string
-
-	// observe flags
-	pageObserveURL string
 )
 
 // printExecuteResponse formats execute response output.
@@ -481,89 +475,16 @@ var pageObserveCmd = &cobra.Command{
 	Use:   "observe",
 	Short: "Observe the current page state",
 	Args:  cobra.NoArgs,
-	RunE:  runPageObserve,
-}
-
-func runPageObserve(cmd *cobra.Command, args []string) error {
-	if err := RequireSessionID(); err != nil {
-		return err
-	}
-
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	body := api.PageObserveJSONRequestBody{}
-	if pageObserveURL != "" {
-		body.Url = &pageObserveURL
-	}
-
-	params := &api.PageObserveParams{}
-	resp, err := client.Client().PageObserveWithResponse(ctx, sessionID, params, body)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	// JSON mode: return full response
-	if IsJSONOutput() {
-		return GetFormatter().Print(resp.JSON200)
-	}
-
-	// Text mode: return only the page description
-	fmt.Println(resp.JSON200.Space.Description)
-	return nil
+	RunE:  runSessionObserve,
 }
 
 // Data Extraction
 
 var pageScrapeCmd = &cobra.Command{
-	Use:   "scrape [instructions]",
+	Use:   "scrape",
 	Short: "Scrape content from the page",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runPageScrape,
-}
-
-func runPageScrape(cmd *cobra.Command, args []string) error {
-	if err := RequireSessionID(); err != nil {
-		return err
-	}
-
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	body := api.PageScrapeJSONRequestBody{}
-	hasInstructions := len(args) > 0
-	if hasInstructions {
-		body.Instructions = &args[0]
-	}
-	if pageScrapeMainOnly {
-		body.OnlyMainContent = &pageScrapeMainOnly
-	}
-
-	params := &api.PageScrapeParams{}
-	resp, err := client.Client().PageScrapeWithResponse(ctx, sessionID, params, body)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return PrintScrapeResponse(resp.JSON200, hasInstructions)
+	Args:  cobra.NoArgs,
+	RunE:  runSessionScrape,
 }
 
 // Other Actions
@@ -665,10 +586,11 @@ func init() {
 	_ = pageUploadCmd.MarkFlagRequired("file")
 
 	// observe flags
-	pageObserveCmd.Flags().StringVar(&pageObserveURL, "url", "", "Navigate to URL before observing")
+	pageObserveCmd.Flags().StringVar(&sessionObserveURL, "url", "", "Navigate to URL before observing")
 
 	// scrape flags
-	pageScrapeCmd.Flags().BoolVar(&pageScrapeMainOnly, "main-only", false, "Only scrape main content")
+	pageScrapeCmd.Flags().StringVar(&sessionScrapeInstructions, "instructions", "", "Extraction instructions")
+	pageScrapeCmd.Flags().BoolVar(&sessionScrapeOnlyMain, "only-main-content", false, "Only scrape main content")
 
 	// complete flags
 	pageCompleteCmd.Flags().BoolVar(&pageCompleteSuccess, "success", true, "Whether the completion was successful")

@@ -165,7 +165,7 @@ See the main SKILL.md for complete page command reference.
 notte page scrape
 
 # With extraction instructions
-notte page scrape "Extract all product names and prices as JSON"
+notte page scrape --instructions "Extract all product names and prices as JSON"
 
 # Only main content (skip headers, footers, ads)
 notte page scrape only-main-content
@@ -176,7 +176,7 @@ notte page scrape only-main-content
 Extraction instructions accept natural language:
 
 ```bash
-notte page scrape "Extract:
+notte page scrape --instructions "Extract:
 - Article title
 - Author name
 - Publication date

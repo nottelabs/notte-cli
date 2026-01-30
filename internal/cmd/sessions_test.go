@@ -486,6 +486,139 @@ func TestRunSessionScrape_Defaults(t *testing.T) {
 	}
 }
 
+func TestRunSessionScrape_InstructionsOnly(t *testing.T) {
+	server := setupSessionTest(t)
+	scrapeResp := fmt.Sprintf(`{"markdown":"content","structured":{"data":"value"},"session":%s}`, sessionJSON())
+	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
+
+	origInstructions := sessionScrapeInstructions
+	origOnlyMain := sessionScrapeOnlyMain
+	sessionScrapeInstructions = "extract data"
+	sessionScrapeOnlyMain = false
+	t.Cleanup(func() {
+		sessionScrapeInstructions = origInstructions
+		sessionScrapeOnlyMain = origOnlyMain
+	})
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runSessionScrape(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunSessionScrape_OnlyMainContentOnly(t *testing.T) {
+	server := setupSessionTest(t)
+	scrapeResp := fmt.Sprintf(`{"markdown":"main content only","structured":{},"session":%s}`, sessionJSON())
+	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
+
+	origInstructions := sessionScrapeInstructions
+	origOnlyMain := sessionScrapeOnlyMain
+	sessionScrapeInstructions = ""
+	sessionScrapeOnlyMain = true
+	t.Cleanup(func() {
+		sessionScrapeInstructions = origInstructions
+		sessionScrapeOnlyMain = origOnlyMain
+	})
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runSessionScrape(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if stdout == "" {
+		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunSessionScrape_TextOutput(t *testing.T) {
+	server := setupSessionTest(t)
+	scrapeResp := fmt.Sprintf(`{"markdown":"# Test Content\n\nSome markdown text","structured":{},"session":%s}`, sessionJSON())
+	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
+
+	origInstructions := sessionScrapeInstructions
+	origOnlyMain := sessionScrapeOnlyMain
+	sessionScrapeInstructions = ""
+	sessionScrapeOnlyMain = false
+	t.Cleanup(func() {
+		sessionScrapeInstructions = origInstructions
+		sessionScrapeOnlyMain = origOnlyMain
+	})
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runSessionScrape(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "Test Content") {
+		t.Errorf("expected markdown content in output, got: %s", stdout)
+	}
+}
+
+func TestRunSessionScrape_TextOutputWithInstructions(t *testing.T) {
+	server := setupSessionTest(t)
+	scrapeResp := fmt.Sprintf(`{"markdown":"# Test","structured":{"title":"Extracted Title","data":"Extracted Data"},"session":%s}`, sessionJSON())
+	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
+
+	origInstructions := sessionScrapeInstructions
+	origOnlyMain := sessionScrapeOnlyMain
+	sessionScrapeInstructions = "extract structured data"
+	sessionScrapeOnlyMain = false
+	t.Cleanup(func() {
+		sessionScrapeInstructions = origInstructions
+		sessionScrapeOnlyMain = origOnlyMain
+	})
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runSessionScrape(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// When instructions are provided, structured data should be shown
+	if !strings.Contains(stdout, "Extracted") {
+		t.Errorf("expected structured data in output, got: %s", stdout)
+	}
+}
+
 func TestRunSessionCookies(t *testing.T) {
 	server := setupSessionTest(t)
 	server.AddResponse("/sessions/"+sessionIDTest+"/cookies", 200, `{"cookies":[{"domain":"example.com","httpOnly":true,"name":"a","path":"/","value":"b"}]}`)
