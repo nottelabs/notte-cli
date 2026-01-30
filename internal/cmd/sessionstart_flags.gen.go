@@ -2,6 +2,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
@@ -12,62 +14,62 @@ var (
 	// The width of the viewport
 	SessionStartViewportWidth int
 
-	// The CDP URL of another remote session provider.
-	SessionStartCdpUrl string
-
-	// Whether to run the session in headless mode.
-	SessionStartHeadless bool
-
 	// The height of the viewport
 	SessionStartViewportHeight int
 
+	// The CDP URL of another remote session provider.
+	SessionStartCdpUrl string
+
 	// Whether FileStorage should be attached to the session.
 	SessionStartUseFileStorage bool
+
+	// Whether to try to automatically solve captchas
+	SessionStartSolveCaptchas bool
+
+	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
+	SessionStartMaxDurationMinutes int
+
+	// The browser type to use. Can be chromium, chrome or firefox.
+	SessionStartBrowserType string
+
+	// Overwrite the chrome instance arguments
+	SessionStartChromeArgs []string
+
+	// The type of screenshot to use for the session.
+	SessionStartScreenshotType string
 
 	// Flattened: profile object
 	SessionStartProfileId string
 	SessionStartProfilePersist bool
 
-	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
-	SessionStartMaxDurationMinutes int
+	// Whether to run the session in headless mode.
+	SessionStartHeadless bool
 
 	// Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	SessionStartIdleTimeoutMinutes int
 
-	// The type of screenshot to use for the session.
-	SessionStartScreenshotType string
-
-	// Whether to try to automatically solve captchas
-	SessionStartSolveCaptchas bool
-
 	// The user agent to use for the session
 	SessionStartUserAgent string
-
-	// Overwrite the chrome instance arguments
-	SessionStartChromeArgs []string
-
-	// The browser type to use. Can be chromium, chrome or firefox.
-	SessionStartBrowserType string
 
 )
 
 // RegisterSessionStartFlags registers all flags for SessionStart command
 func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
-	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode.")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
+	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "Whether FileStorage should be attached to the session.")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas")
+	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity).")
+	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Can be chromium, chrome or firefox. (chromium, chrome, firefox, chrome-nightly, chrome-turbo)")
+	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
+	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (raw, full, last_action)")
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close")
-	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity).")
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode.")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).")
-	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (raw, full, last_action)")
-	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
-	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
-	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Can be chromium, chrome or firefox. (chromium, chrome, firefox, chrome-nightly, chrome-turbo)")
 }
 
 // BuildSessionStartRequest builds the API request from CLI flags
@@ -78,20 +80,43 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		body.ViewportWidth = &SessionStartViewportWidth
 	}
 
-	if SessionStartCdpUrl != "" {
-		body.CdpUrl = &SessionStartCdpUrl
-	}
-
-	if cmd.Flags().Changed("headless") {
-		body.Headless = &SessionStartHeadless
-	}
-
 	if SessionStartViewportHeight > 0 {
 		body.ViewportHeight = &SessionStartViewportHeight
 	}
 
+	if SessionStartCdpUrl != "" {
+		body.CdpUrl = &SessionStartCdpUrl
+	}
+
 	if cmd.Flags().Changed("use-file-storage") {
 		body.UseFileStorage = &SessionStartUseFileStorage
+	}
+
+	if cmd.Flags().Changed("solve-captchas") {
+		body.SolveCaptchas = &SessionStartSolveCaptchas
+	}
+
+	if SessionStartMaxDurationMinutes > 0 {
+		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
+	}
+
+	if SessionStartBrowserType != "" {
+		val := api.ApiSessionStartRequestBrowserType(SessionStartBrowserType)
+		body.BrowserType = &val
+	}
+
+	if len(SessionStartChromeArgs) > 0 {
+		body.ChromeArgs = &SessionStartChromeArgs
+	}
+
+	if SessionStartScreenshotType != "" {
+		val := api.ApiSessionStartRequestScreenshotType(SessionStartScreenshotType)
+		body.ScreenshotType = &val
+	}
+
+	// profile: validate required fields when optional fields are provided
+	if (cmd.Flags().Changed("profile-persist")) && !(SessionStartProfileId != "") {
+		return nil, fmt.Errorf("profile requires --profile-id to be set")
 	}
 
 	// profile (flattened) - only set if required fields are provided
@@ -102,34 +127,16 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		}
 	}
 
-	if SessionStartMaxDurationMinutes > 0 {
-		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
+	if cmd.Flags().Changed("headless") {
+		body.Headless = &SessionStartHeadless
 	}
 
 	if SessionStartIdleTimeoutMinutes > 0 {
 		body.IdleTimeoutMinutes = &SessionStartIdleTimeoutMinutes
 	}
 
-	if SessionStartScreenshotType != "" {
-		val := api.ApiSessionStartRequestScreenshotType(SessionStartScreenshotType)
-		body.ScreenshotType = &val
-	}
-
-	if cmd.Flags().Changed("solve-captchas") {
-		body.SolveCaptchas = &SessionStartSolveCaptchas
-	}
-
 	if SessionStartUserAgent != "" {
 		body.UserAgent = &SessionStartUserAgent
-	}
-
-	if len(SessionStartChromeArgs) > 0 {
-		body.ChromeArgs = &SessionStartChromeArgs
-	}
-
-	if SessionStartBrowserType != "" {
-		val := api.ApiSessionStartRequestBrowserType(SessionStartBrowserType)
-		body.BrowserType = &val
 	}
 
 	return body, nil

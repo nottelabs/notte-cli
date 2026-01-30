@@ -42,6 +42,11 @@ func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsReq
 		body.Url = VaultCredentialsAddUrl
 	}
 
+	// credentials: validate required fields when optional fields are provided
+	if (VaultCredentialsAddCredentialsEmail != "" || VaultCredentialsAddCredentialsUsername != "" || VaultCredentialsAddCredentialsMfaSecret != "") && !(VaultCredentialsAddCredentialsPassword != "") {
+		return nil, fmt.Errorf("credentials requires --password to be set")
+	}
+
 	// credentials (flattened) - only set if required fields are provided
 	if VaultCredentialsAddCredentialsPassword != "" {
 		body.Credentials = api.CredentialsDictInput{

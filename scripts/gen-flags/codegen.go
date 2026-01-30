@@ -27,6 +27,15 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 		if fc.Field.Required && fc.Field.Type == "string" {
 			needsFmt = true
 		}
+		// Flattened fields with required sub-fields need fmt for validation
+		if fc.Category == CategoryFlattenedFlags {
+			for _, subFC := range fc.SubFields {
+				if subFC.Field.Required && subFC.Field.Type == "string" {
+					needsFmt = true
+					break
+				}
+			}
+		}
 	}
 
 	// File header
@@ -335,29 +344,44 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 	// Convert hyphenated names to CamelCase (e.g., "CredentialsDict-Input" -> "CredentialsDictInput")
 	structTypeName = strings.ReplaceAll(structTypeName, "-", "")
 
-	// Build condition: required string fields must be set (AND), optional fields use OR
+	// Build conditions for required and optional fields
 	var requiredConditions []string
+	var requiredVarNames []string
+	var optionalConditions []string
 	for _, subFC := range fc.SubFields {
 		if subFC.Field.Required && subFC.Field.Type == "string" {
 			requiredConditions = append(requiredConditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
+			requiredVarNames = append(requiredVarNames, subFC.VarName)
+		} else if subFC.Field.Type == "string" {
+			optionalConditions = append(optionalConditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
+		} else {
+			optionalConditions = append(optionalConditions, fmt.Sprintf("cmd.Flags().Changed(\"%s\")", subFC.FlagName))
 		}
 	}
 
-	// If there are required fields, use them as the condition
+	// If there are required fields, validate they're provided when optional fields are set
 	var condition string
 	if len(requiredConditions) > 0 {
 		condition = strings.Join(requiredConditions, " && ")
+		// Add validation: error if optional fields set without required fields
+		if len(optionalConditions) > 0 {
+			// Collect required flag names for error message
+			var requiredFlagNames []string
+			for _, subFC := range fc.SubFields {
+				if subFC.Field.Required && subFC.Field.Type == "string" {
+					requiredFlagNames = append(requiredFlagNames, "--"+subFC.FlagName)
+				}
+			}
+			optionalCond := strings.Join(optionalConditions, " || ")
+			fmt.Fprintf(buf, "\t// %s: validate required fields when optional fields are provided\n", fc.Field.Name)
+			fmt.Fprintf(buf, "\tif (%s) && !(%s) {\n", optionalCond, condition)
+			fmt.Fprintf(buf, "\t\treturn nil, fmt.Errorf(\"%s requires %s to be set\")\n",
+				fc.FlagName, strings.Join(requiredFlagNames, ", "))
+			buf.WriteString("\t}\n\n")
+		}
 	} else {
 		// No required fields - use OR for any field being set
-		var conditions []string
-		for _, subFC := range fc.SubFields {
-			if subFC.Field.Type == "string" {
-				conditions = append(conditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
-			} else {
-				conditions = append(conditions, fmt.Sprintf("cmd.Flags().Changed(\"%s\")", subFC.FlagName))
-			}
-		}
-		condition = strings.Join(conditions, " || ")
+		condition = strings.Join(optionalConditions, " || ")
 	}
 
 	fmt.Fprintf(buf, "\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name)
