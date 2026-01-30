@@ -71,9 +71,9 @@ notte sessions start
 # Session ID saved to ~/.config/notte/current_session
 
 # These commands use the current session automatically:
-notte sessions observe
-notte sessions scrape
+notte page observe
 notte page click "@B3"
+notte page scrape
 notte sessions stop
 ```
 
@@ -81,11 +81,11 @@ notte sessions stop
 
 ```bash
 # Via --id flag
-notte sessions observe --id sess_abc123
+notte page observe --id sess_abc123
 
 # Via environment variable
 export NOTTE_SESSION_ID=sess_abc123
-notte sessions observe
+notte page observe
 ```
 
 ### Priority Order
@@ -100,10 +100,10 @@ The `observe` command returns the current page state including available actions
 
 ```bash
 # Observe current page
-notte sessions observe
+notte page observe
 
 # Navigate and observe
-notte sessions observe --url "https://example.com"
+notte page observe https://example.com
 ```
 
 ### Observe Response
@@ -159,7 +159,7 @@ echo '{"type": "goto", "url": "https://example.com"}' | notte sessions execute
 The `page` commands provide a cleaner interface:
 
 ```bash
-notte page goto "https://example.com"
+notte page goto https://example.com
 notte page click "@B3"
 notte page fill "@B1" "hello"
 ```
@@ -172,13 +172,13 @@ See the main SKILL.md for complete page command reference.
 
 ```bash
 # Scrape entire page
-notte sessions scrape
+notte page scrape
 
 # With extraction instructions
-notte sessions scrape --instructions "Extract all product names and prices as JSON"
+notte page scrape "Extract all product names and prices as JSON"
 
 # Only main content (skip headers, footers, ads)
-notte sessions scrape --only-main-content
+notte page scrape --only-main-content
 ```
 
 ### Structured Extraction
@@ -186,7 +186,7 @@ notte sessions scrape --only-main-content
 The `--instructions` parameter accepts natural language:
 
 ```bash
-notte sessions scrape --instructions "Extract:
+notte page scrape "Extract:
 - Article title
 - Author name
 - Publication date
@@ -222,18 +222,6 @@ notte sessions start --max-duration 60
 notte sessions start --idle-timeout 10 --max-duration 60
 ```
 
-## Debugging Sessions
-
-### Debug Info
-
-Get detailed session state:
-
-```bash
-notte sessions debug
-```
-
-Returns browser state, memory usage, active tabs, etc.
-
 ### Network Logs
 
 View all network requests:
@@ -254,15 +242,15 @@ notte sessions replay
 
 Returns data that can be used to replay the session.
 
-### Workflow Code Export
+### Export Code
 
 Export session steps as reusable code:
 
 ```bash
-notte sessions workflow-code
+notte sessions code
 ```
 
-Generates a workflow script from your session actions.
+Generates a function script from your session actions.
 
 ## Cookie Management
 

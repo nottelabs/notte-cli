@@ -10,13 +10,12 @@ Notte provides two complementary systems for managing identities and credentials
 |---------|----------|--------|
 | Purpose | Auto-generated test identities | Store your own credentials |
 | Email | Platform-generated inbox | Your email addresses |
-| Phone | Platform-provided numbers | N/A |
 | Credentials | Auto-managed | User-provided |
 | Use case | Testing, signups | Login to existing accounts |
 
 ## Notte Personas
 
-Personas are auto-generated identities with real email addresses and optional phone numbers. Perfect for:
+Personas are auto-generated identities with real email addresses. Perfect for:
 - Testing signup flows
 - Creating test accounts
 - Receiving verification codes
@@ -28,14 +27,9 @@ Personas are auto-generated identities with real email addresses and optional ph
 # Basic persona (email only)
 notte personas create
 
-# With phone number
-notte personas create --create-phone-number
-
 # With associated vault for credentials
 notte personas create --create-vault
 
-# Full-featured persona
-notte personas create --create-phone-number --create-vault
 ```
 
 ### Managing Personas
@@ -75,7 +69,7 @@ Example response:
 }
 ```
 
-### Receiving SMS
+### Receiving SMS (contact notte sales team to get access)
 
 For personas with phone numbers:
 
@@ -98,32 +92,21 @@ Example response:
 }
 ```
 
-### Phone Number Management
-
-```bash
-# Add phone number to existing persona
-notte personas phone-create --id <persona-id>
-
-# Remove phone number
-notte personas phone-delete --id <persona-id>
-```
-
 ### Persona Workflow Example
 
 ```bash
 # Create persona for testing
-PERSONA=$(notte personas create --create-phone-number -o json)
+PERSONA=$(notte personas create --create-vault -o json)
 PERSONA_ID=$(echo "$PERSONA" | jq -r '.id')
 EMAIL=$(echo "$PERSONA" | jq -r '.email')
-PHONE=$(echo "$PERSONA" | jq -r '.phone_number')
 
 # Start browser session
 notte sessions start
 
 # Fill signup form
 notte page goto "https://example.com/signup"
+notte page observe
 notte page fill "@email" "$EMAIL"
-notte page fill "@phone" "$PHONE"
 notte page click "@submit"
 
 # Wait for verification email
@@ -135,6 +118,7 @@ CODE=$(notte personas emails --id "$PERSONA_ID" -o json | \
   grep -oE '[0-9]{6}')
 
 # Enter verification code
+notte page observe
 notte page fill "@verification-code" "$CODE"
 notte page click "@verify"
 
@@ -150,9 +134,6 @@ Vaults store your own credentials for automated login to existing accounts.
 
 ```bash
 # Create vault
-notte vaults create
-
-# With custom name
 notte vaults create --name "Work Accounts"
 ```
 
@@ -176,13 +157,8 @@ notte vaults delete --id <vault-id>
 Store credentials for specific URLs:
 
 ```bash
-# Basic credentials
-notte vaults credentials add \
-  --id <vault-id> \
-  --url "https://example.com" \
-  --password "mypassword"
 
-# With email
+# Add credentials email
 notte vaults credentials add \
   --id <vault-id> \
   --url "https://example.com" \
@@ -285,8 +261,8 @@ Use personas when you need:
 
 ```bash
 # Signup flow testing
-notte personas create --create-phone-number
-# → Use generated email/phone for signup
+notte personas create --create-vault
+# → Use generated email/sms for signup
 # → Check personas emails/sms for verification codes
 ```
 
@@ -316,7 +292,7 @@ Use both for complex flows:
 
 ```bash
 # Create persona for new account testing
-notte personas create --create-vault --create-phone-number
+notte personas create --create-vault
 
 # The persona's vault is linked and can store credentials
 # created during the signup process
