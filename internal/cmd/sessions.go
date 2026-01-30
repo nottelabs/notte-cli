@@ -116,12 +116,16 @@ func getCurrentViewerURL() string {
 }
 
 // clearCurrentViewerURL removes the current_viewer_url file
-func clearCurrentViewerURL() {
+func clearCurrentViewerURL() error {
 	configDir, err := config.Dir()
 	if err != nil {
-		return
+		return err
 	}
-	_ = os.Remove(filepath.Join(configDir, config.CurrentViewerURLFile))
+	path := filepath.Join(configDir, config.CurrentViewerURLFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 // RequireSessionID ensures a session ID is available from flag, env, or file
@@ -537,7 +541,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		data, _ := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
 		if strings.TrimSpace(string(data)) == sessionID {
 			_ = clearCurrentSession()
-			clearCurrentViewerURL()
+			_ = clearCurrentViewerURL()
 		}
 	}
 
