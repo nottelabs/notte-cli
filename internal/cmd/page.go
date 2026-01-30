@@ -604,7 +604,7 @@ func runPageScreenshot(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
@@ -632,6 +632,9 @@ func runPageScreenshot(cmd *cobra.Command, args []string) error {
 		tmpDir := os.TempDir()
 		outputPath = filepath.Join(tmpDir, fmt.Sprintf("notte-screenshot-%s.jpg", sessionID))
 	}
+
+	// Clean the path to resolve any ".." components
+	outputPath = filepath.Clean(outputPath)
 
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(outputPath)
