@@ -411,9 +411,7 @@ type ActionParameter struct {
 type ActionSpace struct {
 	Actions        *[]ActionSpace_Actions_Item        `json:"actions,omitempty"`
 	BrowserActions *[]ActionSpace_BrowserActions_Item `json:"browser_actions,omitempty"`
-
-	// Category Category of the action space (e.g., 'homepage', 'search-results', 'item')
-	Category interface{} `json:"category"`
+	Category       *SpaceCategory                     `json:"category,omitempty"`
 
 	// Description Human-readable description of the current web page
 	Description string `json:"description"`
@@ -588,7 +586,7 @@ type ApiAgentStartRequest_ReasoningModel struct {
 // ApiExecutionResponse defines model for ApiExecutionResponse.
 type ApiExecutionResponse struct {
 	Action    ApiExecutionResponse_Action `json:"action"`
-	Data      interface{}                 `json:"data"`
+	Data      *DataSpace                  `json:"data,omitempty"`
 	Exception *string                     `json:"exception"`
 	Message   string                      `json:"message"`
 	Session   SessionResponse             `json:"session"`
@@ -609,7 +607,7 @@ type ApiSessionStartRequest struct {
 	CdpUrl *string `json:"cdp_url"`
 
 	// ChromeArgs Overwrite the chrome instance arguments
-	ChromeArgs *[]interface{} `json:"chrome_args"`
+	ChromeArgs *[]string `json:"chrome_args"`
 
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
@@ -618,10 +616,8 @@ type ApiSessionStartRequest struct {
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
 
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
-	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
-
-	// Profile Browser profile configuration for state persistence
-	Profile interface{} `json:"profile"`
+	MaxDurationMinutes *int            `json:"max_duration_minutes,omitempty"`
+	Profile            *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
@@ -726,7 +722,7 @@ type CheckActionInput struct {
 	Category    *string                    `json:"category,omitempty"`
 	Description *string                    `json:"description,omitempty"`
 	Id          *string                    `json:"id,omitempty"`
-	Param       interface{}                `json:"param"`
+	Param       *ActionParameter           `json:"param,omitempty"`
 	PressEnter  *bool                      `json:"press_enter"`
 	Selector    *CheckActionInput_Selector `json:"selector"`
 	TextLabel   *string                    `json:"text_label"`
@@ -773,7 +769,7 @@ type ClickActionInput struct {
 	Category    *string                    `json:"category,omitempty"`
 	Description *string                    `json:"description,omitempty"`
 	Id          *string                    `json:"id,omitempty"`
-	Param       interface{}                `json:"param"`
+	Param       *ActionParameter           `json:"param,omitempty"`
 	PressEnter  *bool                      `json:"press_enter"`
 	Selector    *ClickActionInput_Selector `json:"selector"`
 	TextLabel   *string                    `json:"text_label"`
@@ -896,13 +892,11 @@ type CreditCardDictOutput struct {
 // DataSpace defines model for DataSpace.
 type DataSpace struct {
 	// Images List of images extracted from the page (ID and download link)
-	Images *[]interface{} `json:"images"`
+	Images *[]ImageData `json:"images"`
 
 	// Markdown Markdown representation of the extracted data
-	Markdown string `json:"markdown"`
-
-	// Structured Structured data extracted from the page in JSON format
-	Structured interface{} `json:"structured"`
+	Markdown   string                   `json:"markdown"`
+	Structured *StructuredDataBaseModel `json:"structured,omitempty"`
 }
 
 // DeleteCredentialsResponse defines model for DeleteCredentialsResponse.
@@ -982,7 +976,7 @@ type DownloadFileActionInput struct {
 	Category    *string                           `json:"category,omitempty"`
 	Description *string                           `json:"description,omitempty"`
 	Id          *string                           `json:"id,omitempty"`
-	Param       interface{}                       `json:"param"`
+	Param       *ActionParameter                  `json:"param,omitempty"`
 	PressEnter  *bool                             `json:"press_enter"`
 	Selector    *DownloadFileActionInput_Selector `json:"selector"`
 	TextLabel   *string                           `json:"text_label"`
@@ -1086,7 +1080,7 @@ type FallbackFillActionInput struct {
 	ClearBeforeFill *bool                             `json:"clear_before_fill,omitempty"`
 	Description     *string                           `json:"description,omitempty"`
 	Id              *string                           `json:"id,omitempty"`
-	Param           interface{}                       `json:"param"`
+	Param           *ActionParameter                  `json:"param,omitempty"`
 	PressEnter      *bool                             `json:"press_enter"`
 	Selector        *FallbackFillActionInput_Selector `json:"selector"`
 	TextLabel       *string                           `json:"text_label"`
@@ -1169,7 +1163,7 @@ type FillActionInput struct {
 	ClearBeforeFill *bool                     `json:"clear_before_fill,omitempty"`
 	Description     *string                   `json:"description,omitempty"`
 	Id              *string                   `json:"id,omitempty"`
-	Param           interface{}               `json:"param"`
+	Param           *ActionParameter          `json:"param,omitempty"`
 	PressEnter      *bool                     `json:"press_enter"`
 	Selector        *FillActionInput_Selector `json:"selector"`
 	TextLabel       *string                   `json:"text_label"`
@@ -1328,7 +1322,7 @@ type GetFunctionResponse struct {
 	UpdatedAt FlexibleTime `json:"updated_at"`
 
 	// Variables The variables to run the workflow with
-	Variables *[]interface{} `json:"variables"`
+	Variables *[]ParameterInfo `json:"variables"`
 
 	// Versions The versions of the workflow
 	Versions   []string `json:"versions"`
@@ -1401,7 +1395,7 @@ type GetFunctionWithLinkResponse struct {
 	Url string `json:"url"`
 
 	// Variables The variables to run the workflow with
-	Variables *[]interface{} `json:"variables"`
+	Variables *[]ParameterInfo `json:"variables"`
 
 	// Versions The versions of the workflow
 	Versions   []string `json:"versions"`
@@ -1417,7 +1411,7 @@ type GlobalScrapeRequest struct {
 	CdpUrl *string `json:"cdp_url"`
 
 	// ChromeArgs Overwrite the chrome instance arguments
-	ChromeArgs *[]interface{} `json:"chrome_args"`
+	ChromeArgs *[]string `json:"chrome_args"`
 
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
@@ -1426,7 +1420,7 @@ type GlobalScrapeRequest struct {
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]interface{} `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags"`
 
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
 	Instructions *string `json:"instructions"`
@@ -1438,10 +1432,8 @@ type GlobalScrapeRequest struct {
 	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
-	OnlyMainContent *bool `json:"only_main_content,omitempty"`
-
-	// Profile Browser profile configuration for state persistence
-	Profile interface{} `json:"profile"`
+	OnlyMainContent *bool           `json:"only_main_content,omitempty"`
+	Profile         *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *GlobalScrapeRequest_Proxies `json:"proxies,omitempty"`
@@ -1558,8 +1550,7 @@ type ImageCategory string
 
 // ImageData defines model for ImageData.
 type ImageData struct {
-	// Category Category of the image (icon, svg, content, etc.)
-	Category interface{} `json:"category"`
+	Category *ImageCategory `json:"category,omitempty"`
 
 	// Description Description of the image
 	Description *string `json:"description"`
@@ -1575,8 +1566,8 @@ type ImprovePromptRequest struct {
 
 // ImprovePromptResponse defines model for ImprovePromptResponse.
 type ImprovePromptResponse struct {
-	Prompt    string         `json:"prompt"`
-	Variables *[]interface{} `json:"variables"`
+	Prompt    string    `json:"prompt"`
+	Variables *[]string `json:"variables"`
 }
 
 // LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
@@ -1644,7 +1635,7 @@ type MultiFactorFillActionInput struct {
 	ClearBeforeFill *bool                                `json:"clear_before_fill,omitempty"`
 	Description     *string                              `json:"description,omitempty"`
 	Id              *string                              `json:"id,omitempty"`
-	Param           interface{}                          `json:"param"`
+	Param           *ActionParameter                     `json:"param,omitempty"`
 	PressEnter      *bool                                `json:"press_enter"`
 	Selector        *MultiFactorFillActionInput_Selector `json:"selector"`
 	TextLabel       *string                              `json:"text_label"`
@@ -1743,9 +1734,9 @@ type NodeSelectors struct {
 
 // NotteProxy defines model for NotteProxy.
 type NotteProxy struct {
-	Country interface{} `json:"country"`
-	Id      *string     `json:"id"`
-	Type    *string     `json:"type,omitempty"`
+	Country *ProxyGeolocationCountry `json:"country,omitempty"`
+	Id      *string                  `json:"id"`
+	Type    *string                  `json:"type,omitempty"`
 }
 
 // NudgePromptRequest defines model for NudgePromptRequest.
@@ -1994,8 +1985,8 @@ type ScrapeAction struct {
 	Description *string `json:"description,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page.
-	IgnoredTags  *[]interface{} `json:"ignored_tags"`
-	Instructions *string        `json:"instructions"`
+	IgnoredTags  *[]string `json:"ignored_tags"`
+	Instructions *string   `json:"instructions"`
 
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
@@ -2023,7 +2014,7 @@ type ScrapeFromHtmlRequest struct {
 	Frames *[]FrameData `json:"frames,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]interface{} `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags"`
 
 	// Instructions User description as to what needs to be scraped
 	Instructions *string `json:"instructions,omitempty"`
@@ -2053,7 +2044,7 @@ type ScrapeFromHtmlRequest struct {
 // ScrapeRequest defines model for ScrapeRequest.
 type ScrapeRequest struct {
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]interface{} `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags"`
 
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
 	Instructions *string `json:"instructions"`
@@ -2083,22 +2074,18 @@ type ScrapeRequest struct {
 // ScrapeResponse defines model for ScrapeResponse.
 type ScrapeResponse struct {
 	// Images List of images extracted from the page (ID and download link)
-	Images *[]interface{} `json:"images"`
+	Images *[]ImageData `json:"images"`
 
 	// Markdown Markdown representation of the extracted data
-	Markdown string          `json:"markdown"`
-	Session  SessionResponse `json:"session"`
-
-	// Structured Structured data extracted from the page in JSON format
-	Structured interface{} `json:"structured"`
+	Markdown   string                   `json:"markdown"`
+	Session    SessionResponse          `json:"session"`
+	Structured *StructuredDataBaseModel `json:"structured,omitempty"`
 }
 
 // ScrapeSchemaResponse defines model for ScrapeSchemaResponse.
 type ScrapeSchemaResponse struct {
 	ModelSchema SchemaGenerationResponse `json:"model_schema"`
-
-	// Scrape Output from the scrape, validated upon the model schema
-	Scrape interface{} `json:"scrape"`
+	Scrape      StructuredDataBaseModel  `json:"scrape"`
 }
 
 // Screenshot defines model for Screenshot.
@@ -2129,7 +2116,7 @@ type SelectDropdownOptionActionInput struct {
 	Category    *string                                   `json:"category,omitempty"`
 	Description *string                                   `json:"description,omitempty"`
 	Id          *string                                   `json:"id,omitempty"`
-	Param       interface{}                               `json:"param"`
+	Param       *ActionParameter                          `json:"param,omitempty"`
 	PressEnter  *bool                                     `json:"press_enter"`
 	Selector    *SelectDropdownOptionActionInput_Selector `json:"selector"`
 	TextLabel   *string                                   `json:"text_label"`
@@ -2386,7 +2373,7 @@ type UploadFileActionInput struct {
 	Description *string                         `json:"description,omitempty"`
 	FilePath    string                          `json:"file_path"`
 	Id          *string                         `json:"id,omitempty"`
-	Param       interface{}                     `json:"param"`
+	Param       *ActionParameter                `json:"param,omitempty"`
 	PressEnter  *bool                           `json:"press_enter"`
 	Selector    *UploadFileActionInput_Selector `json:"selector"`
 	TextLabel   *string                         `json:"text_label"`
