@@ -130,10 +130,11 @@ var sessionsStopCmd = &cobra.Command{
 }
 
 var sessionsObserveCmd = &cobra.Command{
-	Use:   "observe",
-	Short: "Observe page state and available actions",
-	Args:  cobra.NoArgs,
-	RunE:  runSessionObserve,
+	Use:    "observe",
+	Short:  "Observe page state and available actions",
+	Args:   cobra.NoArgs,
+	RunE:   runSessionObserve,
+	Hidden: true, // Use "notte page observe" instead
 }
 
 var sessionsExecuteCmd = &cobra.Command{
@@ -148,14 +149,16 @@ var sessionsExecuteCmd = &cobra.Command{
 
   # From stdin
   echo '{"type": "goto", "url": "https://example.com"}' | notte sessions execute --id <session-id>`,
-	RunE: runSessionExecute,
+	RunE:   runSessionExecute,
+	Hidden: true, // Use "notte page <action>" instead
 }
 
 var sessionsScrapeCmd = &cobra.Command{
-	Use:   "scrape",
-	Short: "Scrape content from the page",
-	Args:  cobra.NoArgs,
-	RunE:  runSessionScrape,
+	Use:    "scrape",
+	Short:  "Scrape content from the page",
+	Args:   cobra.NoArgs,
+	RunE:   runSessionScrape,
+	Hidden: true, // Use "notte page scrape" instead
 }
 
 var sessionsCookiesCmd = &cobra.Command{

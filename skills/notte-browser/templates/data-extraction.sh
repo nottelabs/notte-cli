@@ -82,7 +82,7 @@ session_scrape() {
     notte sessions start > /dev/null
 
     log_step "Navigating to: $url"
-    notte sessions observe --url "$url" > /dev/null
+    notte page observe --url "$url" > /dev/null
     notte page wait 1500
 
     local all_results="[]"
@@ -93,12 +93,12 @@ session_scrape() {
 
         local flags=""
         if [[ "$ONLY_MAIN_CONTENT" == "true" ]]; then
-            flags="--only-main-content"
+            flags="--main-only"
         fi
 
         local page_result
         # shellcheck disable=SC2086
-        page_result=$(notte sessions scrape --instructions "$instructions" $flags -o json)
+        page_result=$(notte page scrape "$instructions" $flags -o json)
 
         # Merge results (assuming JSON array output)
         if command -v jq &> /dev/null; then
@@ -140,17 +140,17 @@ batch_scrape() {
 
     for url in "${urls[@]}"; do
         log_step "Scraping: $url"
-        notte sessions observe --url "$url" > /dev/null
+        notte page observe --url "$url" > /dev/null
         notte page wait 1500
 
         local flags=""
         if [[ "$ONLY_MAIN_CONTENT" == "true" ]]; then
-            flags="--only-main-content"
+            flags="--main-only"
         fi
 
         local result
         # shellcheck disable=SC2086
-        result=$(notte sessions scrape --instructions "$EXTRACTION_INSTRUCTIONS" $flags -o json)
+        result=$(notte page scrape "$EXTRACTION_INSTRUCTIONS" $flags -o json)
 
         # Add source URL to result
         if command -v jq &> /dev/null; then

@@ -6,8 +6,8 @@ Complete guide to managing browser sessions with the notte CLI.
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   start     │ -> │   observe   │ -> │   execute   │ -> │    stop     │
-│             │    │   /scrape   │    │   /page     │    │             │
+│   start     │ -> │   observe   │ -> │    page     │ -> │    stop     │
+│  sessions   │    │   (page)    │    │  commands   │    │  sessions   │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
@@ -135,33 +135,23 @@ notte page click "@B3"
 
 ## Executing Actions
 
-### Via sessions execute (Raw JSON)
+Use the `page` commands for interacting with the browser:
 
 ```bash
 # Navigate
-notte sessions execute --action '{"type": "goto", "url": "https://example.com"}'
+notte page goto "https://example.com"
 
 # Click
-notte sessions execute --action '{"type": "click", "id": "B3"}'
+notte page click "@B3"
 
 # Fill
-notte sessions execute --action '{"type": "fill", "id": "B1", "value": "hello"}'
-
-# From file
-notte sessions execute --action @action.json
-
-# From stdin
-echo '{"type": "goto", "url": "https://example.com"}' | notte sessions execute
-```
-
-### Via page commands (Recommended)
-
-The `page` commands provide a cleaner interface:
-
-```bash
-notte page goto https://example.com
-notte page click "@B3"
 notte page fill "@B1" "hello"
+
+# Select dropdown
+notte page select "@dropdown" "Option 1"
+
+# Press key
+notte page press "Enter"
 ```
 
 See the main SKILL.md for complete page command reference.
@@ -178,12 +168,12 @@ notte page scrape
 notte page scrape "Extract all product names and prices as JSON"
 
 # Only main content (skip headers, footers, ads)
-notte page scrape --only-main-content
+notte page scrape --main-only
 ```
 
 ### Structured Extraction
 
-The `--instructions` parameter accepts natural language:
+Extraction instructions accept natural language:
 
 ```bash
 notte page scrape "Extract:
@@ -340,7 +330,7 @@ notte sessions start --idle-timeout 15 --max-duration 120
 Always observe to get current element IDs:
 
 ```bash
-notte sessions observe --url "https://example.com"
+notte page observe --url "https://example.com"
 # Now you know the element IDs
 notte page click "@B3"
 ```
@@ -349,7 +339,7 @@ notte page click "@B3"
 
 ```bash
 # Parse response in scripts
-RESULT=$(notte sessions observe -o json)
+RESULT=$(notte page observe -o json)
 URL=$(echo "$RESULT" | jq -r '.url')
 ```
 

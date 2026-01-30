@@ -75,7 +75,7 @@ main() {
 
     # Navigate to form page
     log_info "Navigating to: $TARGET_URL"
-    notte sessions observe --url "$TARGET_URL" > /dev/null
+    notte page observe --url "$TARGET_URL" > /dev/null
 
     # Wait for page to load
     notte page wait 1000
@@ -109,7 +109,7 @@ main() {
 
     # Verify submission
     log_info "Verifying submission..."
-    SCRAPE_RESULT=$(notte sessions scrape --instructions "Check if the page shows a success message")
+    SCRAPE_RESULT=$(notte page scrape "Check if the page shows a success message")
 
     if echo "$SCRAPE_RESULT" | grep -qi "$SUCCESS_INDICATOR"; then
         log_info "Form submitted successfully!"

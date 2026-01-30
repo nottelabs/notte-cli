@@ -117,14 +117,27 @@ notte sessions list                   # List all active sessions
 notte sessions start [flags]          # Start a new session
 notte sessions status --id <id>       # Get session status
 notte sessions stop --id <id>         # Stop a session
-notte sessions observe --id <id>      # Watch session in real-time
-notte sessions execute --id <id>      # Execute browser actions
-notte sessions scrape --id <id>       # Scrape content from current page
 notte sessions cookies --id <id>      # Get all cookies
 notte sessions cookies-set --id <id>  # Set cookies from JSON file
 notte sessions network --id <id>      # View network activity logs
 notte sessions debug --id <id>        # Get debug information
 notte sessions replay --id <id>       # Get session replay data
+```
+
+### Page Actions
+
+Interact with pages using simplified commands (requires an active session):
+
+```bash
+notte page observe                    # Get page state and available actions
+notte page scrape [instructions]      # Scrape content from the page 
+notte page click "@B3"                # Click an element by ID
+notte page fill "@input" "text"       # Fill an input field
+notte page goto "https://example.com" # Navigate to a URL
+notte page back                       # Go back in history
+notte page forward                    # Go forward in history
+notte page scroll-down [amount]       # Scroll down the page
+notte page press "Enter"              # Press a key
 ```
 
 #### Session Start Options
@@ -267,20 +280,17 @@ Data goes to stdout, errors and progress to stderr for clean piping.
 ### Automated Web Scraping Pipeline
 
 ```bash
-# Start session, navigate, scrape, and cleanup
-SESSION_ID=$(notte sessions start --headless -o json | jq -r '.id')
+# Start session (automatically becomes the current session)
+notte sessions start --headless
 
-# Navigate to page (stdin also supported: --action @file.json or --action -)
-notte sessions execute --id $SESSION_ID << 'EOF'
-{"type": "goto", "url": "https://news.ycombinator.com"}
-EOF
+# Navigate to page
+notte page goto "https://news.ycombinator.com"
 
 # Extract structured data
-notte sessions scrape --id $SESSION_ID \
-  --instructions "Extract top 10 stories with title and URL"
+notte page scrape "Extract top 10 stories with title and URL"
 
 # Cleanup
-notte sessions stop --id $SESSION_ID
+notte sessions stop
 ```
 
 ### Running a Workflow
@@ -313,23 +323,22 @@ notte vaults credentials list --id $VAULT_ID
 
 ```bash
 # Start browser with specific configuration
-SESSION_ID=$(notte sessions start \
+notte sessions start \
   --browser chrome \
   --viewport-width 1920 \
   --viewport-height 1080 \
-  --solve-captchas \
-  -o json | jq -r '.id')
+  --solve-captchas
 
-# Execute multiple actions
-notte sessions execute --id $SESSION_ID '{"type": "goto", "url": "https://example.com"}'
-notte sessions execute --id $SESSION_ID '{"type": "click", "selector": "#login-button"}'
-notte sessions execute --id $SESSION_ID '{"type": "form_fill", "selector": "#username", "text": "user@example.com"}'
+# Navigate and interact
+notte page goto "https://example.com"
+notte page click "#login-button"
+notte page fill "#username" "user@example.com"
 
-# Get current page state
-notte sessions observe --id $SESSION_ID
+# Get current page state with available actions
+notte page observe
 
 # Stop when done
-notte sessions stop --id $SESSION_ID
+notte sessions stop
 ```
 
 ### JQ Filtering
@@ -344,34 +353,18 @@ notte sessions list --output json | jq -r '.sessions[].id'
 
 ### Advanced Usage
 
-#### Heredoc for Complex JSON
+#### Form Filling
 
-For multi-line JSON payloads, use heredoc syntax:
+Use the `form-fill` command for filling multiple fields at once:
 
 ```bash
-# Execute a complex action with heredoc
-notte sessions execute --id $SESSION_ID --action - << 'EOF'
-{
-  "action": "fill_form",
-  "fields": [
-    {"selector": "#name", "value": "John Doe"},
-    {"selector": "#email", "value": "john@example.com"},
-    {"selector": "#message", "value": "Hello,\nThis is a multi-line message."}
-  ]
-}
-EOF
+# Fill a form with JSON data
+notte page form-fill --data '{"name": "John Doe", "email": "john@example.com"}'
 
-# Update workflow metadata with heredoc
-notte functions run-metadata-update --id $WORKFLOW_ID --run-id $RUN_ID --data - << 'EOF'
-{
-  "status": "processing",
-  "progress": 75,
-  "results": {
-    "items_processed": 150,
-    "errors": []
-  }
-}
-EOF
+# Or fill fields individually
+notte page fill "#name" "John Doe"
+notte page fill "#email" "john@example.com"
+notte page click "#submit"
 ```
 
 ## Usage with AI Agents
@@ -405,9 +398,9 @@ Use `notte` for web automation. Run `notte --help` for all commands.
 
 Core workflow:
 1. `notte sessions start` - Start a browser session
-2. `notte sessions observe --url <url>` - Navigate and get interactive elements with IDs (@B1, @B2)
+2. `notte page observe --url <url>` - Navigate and get interactive elements with IDs (@B1, @B2)
 3. `notte page click @B1` / `notte page fill @B2 "text"` - Interact using element IDs
-4. `notte sessions scrape --instructions "..."` - Extract structured data
+4. `notte page scrape "..."` - Extract structured data
 5. `notte sessions stop` - Clean up when done
 ```
 
