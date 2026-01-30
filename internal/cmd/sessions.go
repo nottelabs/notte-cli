@@ -944,5 +944,12 @@ func openBrowser(url string) error {
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
-	return cmd.Start()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// Wait in background to catch immediate failures without blocking
+	go cmd.Wait()
+
+	return nil
 }
