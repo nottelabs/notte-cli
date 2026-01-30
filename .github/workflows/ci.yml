@@ -25,6 +25,16 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      - name: Check generated code is up to date
+        run: |
+          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+          ./scripts/generate.sh
+          if [ -n "$(git status --porcelain internal/api/client.gen.go)" ]; then
+            echo "::error::Generated code is out of date. Run 'make generate' and commit the changes."
+            git diff internal/api/client.gen.go
+            exit 1
+          fi
+
       - name: Test
         run: go test -v -race -short -coverprofile=coverage.out ./...
 
