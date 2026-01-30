@@ -11,6 +11,89 @@ Functions are reusable python workflows that can be:
 - Tracked with run history and metadata
 - Can be triggered via HTTP POST requests
 
+## Development Workflow
+
+Building a function follows this iterative process:
+
+### Step-by-Step Process
+
+1. **Build interactively** - Use `notte sessions start` and `notte page` commands to develop your automation step-by-step in the terminal
+2. **Export code** - Run `notte sessions workflow-code` to generate a working Python script from your session
+3. **Create function** - Save the exported code as `my_function.py`, then upload it with `notte functions create --file my_function.py`
+4. **Test in cloud** - Run `notte functions run --id <function-id>` to execute remotely and get a run ID
+5. **Monitor logs** - Check execution output with `notte functions run-metadata --id <function-id> --run-id <run-id>` and inspect the `logs` field
+6. **Iterate** - Update your code based on results, then use `notte functions update --id <function-id> --file my_function.py`
+7. **Schedule** - When stable, add a cron schedule: `notte functions schedule --id <function-id> --cron "0 9 * * *"`
+
+### Complete Example
+
+```bash
+# 1. Build your automation interactively
+notte sessions start --headless
+notte page goto "https://news.ycombinator.com"
+notte page observe
+notte page scrape --instructions "Extract top 5 story titles and URLs"
+notte sessions stop
+
+# 2. Export the session as Python code
+notte sessions workflow-code > hn_scraper.py
+
+# 3. Edit the file to add the run() function and parameters
+# hn_scraper.py should look like:
+# from notte_sdk import NotteClient
+# 
+# client = NotteClient()
+# 
+# def run(max_stories: int = 5):
+#     with client.Session() as session:
+#         session.goto("https://news.ycombinator.com")
+#         data = session.scrape(instructions=f"Extract top {max_stories} story titles and URLs")
+#         return {"stories": data, "count": max_stories}
+
+# 4. Create the function
+FUNC_ID=$(notte functions create \
+  --file hn_scraper.py \
+  --name "HN Top Stories" \
+  --description "Scrapes top stories from Hacker News" \
+  -o json | jq -r '.id')
+
+echo "Function created: $FUNC_ID"
+
+# 5. Test the function
+RUN_ID=$(notte functions run --id "$FUNC_ID" -o json | jq -r '.run_id')
+echo "Started run: $RUN_ID"
+
+# Wait a few seconds for execution
+sleep 10
+
+# 6. Check the logs and results
+notte functions run-metadata --id "$FUNC_ID" --run-id "$RUN_ID" -o json | jq '{
+  status: .status,
+  logs: .logs,
+  result: .result
+}'
+
+# 7. If needed, update and iterate
+# Edit hn_scraper.py with improvements
+notte functions update --id "$FUNC_ID" --file hn_scraper.py
+
+# Test again
+RUN_ID=$(notte functions run --id "$FUNC_ID" -o json | jq -r '.run_id')
+sleep 10
+notte functions run-metadata --id "$FUNC_ID" --run-id "$RUN_ID"
+
+# 8. Schedule when ready (every day at 9 AM)
+notte functions schedule --id "$FUNC_ID" --cron "0 9 * * *"
+```
+
+### Tips for Iterative Development
+
+- **Start simple**: Build a minimal version first, then add features
+- **Test frequently**: Run `notte functions run` after each change to catch issues early
+- **Monitor logs**: The `logs` field in run-metadata shows print statements and errors
+- **Use variables**: Add function parameters for flexibility (e.g., `max_stories` in the example)
+- **Return data**: Always return structured data from your `run()` function for easy access via run-metadata
+
 ## Creating Functions
 
 ### From a Python File
@@ -31,13 +114,23 @@ notte functions create \
 
 ### Function File Format
 
-Function files define browser automation steps with the following rules:
-- must contain a `def run(**variables)`
-- must create a session using the `NotteClient`
-- variables defined in the `run` function will be exposed as POST body parameters
+Function files define browser automation steps with the following requirements:
 
+**Required:**
+- Must contain a `def run()` function - this is the entry point
+- Must create a session using `NotteClient().Session()`
 
-Example:
+**Function Variables (Parameters):**
+- Parameters in the `run()` function become POST body parameters when triggering the function
+- Use type hints to document expected types (e.g., `str`, `int`, `bool`, `list`, `dict`)
+- Default values make parameters optional when triggering
+
+**Return Values:**
+- Data returned from `run()` is stored and accessible via `notte functions run-metadata`
+- Return structured data (dict, list) for easy parsing
+- The return value appears in the `result` field of run-metadata
+
+**Basic Example:**
 
 ```python
 # function.py
@@ -46,14 +139,111 @@ from notte_sdk import NotteClient
 client = NotteClient()
 
 def run(url: str):
+    """Simple function with one required parameter."""
     with client.Session() as session:
         session.goto(url)
-        # scrape data as markdown format
         data = session.scrape()
         return data
 
 if __name__ == "__main__":
     run("https://notte.cc/pricing")
+```
+
+**Advanced Example with Variables:**
+
+```python
+# price_monitor.py
+from notte_sdk import NotteClient
+
+client = NotteClient()
+
+def run(
+    url: str,
+    max_items: int = 10,
+    only_discounted: bool = False,
+    categories: list[str] = None
+):
+    """
+    Function parameters become POST body parameters.
+    
+    Args:
+        url: Required parameter (no default)
+        max_items: Optional with default value
+        only_discounted: Optional boolean
+        categories: Optional list
+    """
+    with client.Session() as session:
+        session.goto(url)
+        
+        # Build extraction instructions dynamically
+        instructions = f"Extract up to {max_items} products"
+        if only_discounted:
+            instructions += " that are on sale"
+        if categories:
+            instructions += f" in categories: {', '.join(categories)}"
+        
+        products = session.scrape(instructions=instructions)
+        
+        # Return structured data
+        return {
+            "success": True,
+            "url": url,
+            "products": products,
+            "count": len(products) if products else 0,
+            "filters": {
+                "max_items": max_items,
+                "only_discounted": only_discounted,
+                "categories": categories
+            }
+        }
+
+if __name__ == "__main__":
+    # Test locally with default values
+    result = run(
+        url="https://example.com/products",
+        max_items=5,
+        only_discounted=True,
+        categories=["electronics", "accessories"]
+    )
+    print(result)
+```
+
+**Triggering with Parameters:**
+
+When running the function, pass parameters as JSON in the POST body or via the CLI:
+
+```bash
+# Run with default parameters
+notte functions run --id <function-id>
+
+# The function will be triggered via HTTP POST with parameters in body:
+# POST /functions/{id}/run
+# {
+#   "url": "https://example.com/products",
+#   "max_items": 5,
+#   "only_discounted": true,
+#   "categories": ["electronics"]
+# }
+```
+
+**Accessing Return Values:**
+
+```bash
+# Get the result from run-metadata
+notte functions run-metadata --id <function-id> --run-id <run-id> -o json | jq '.result'
+
+# Output:
+# {
+#   "success": true,
+#   "url": "https://example.com/products",
+#   "products": [...],
+#   "count": 5,
+#   "filters": {
+#     "max_items": 5,
+#     "only_discounted": true,
+#     "categories": ["electronics"]
+#   }
+# }
 ```
 
 ## Managing Functions

@@ -47,40 +47,42 @@ notte sessions start [flags]
   --cdp-url            CDP URL of remote session provider
   --file-storage       Enable file storage for the session
 
+# Get current session status
+notte sessions status
+
+# Stop current session
+notte sessions stop
+
 # List active sessions
 notte sessions list
-
-# Get session status
-notte sessions status [--id <session-id>]
-
-# Stop a session
-notte sessions stop [--id <session-id>]
 ```
+
+**Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 Session debugging and export:
 
 ```bash
 # Get debug info
-notte sessions debug [--id <session-id>]
+notte sessions debug
 
 # Get network logs
-notte sessions network [--id <session-id>]
+notte sessions network
 
 # Get replay URL/data
-notte sessions replay [--id <session-id>]
+notte sessions replay
 
-# Export session steps as workflow code
-notte sessions workflow-code [--id <session-id>]
+# Export session steps as Python workflow code
+notte sessions workflow-code
 ```
 
 Cookie management:
 
 ```bash
 # Get all cookies
-notte sessions cookies [--id <session-id>]
+notte sessions cookies
 
 # Set cookies from JSON file
-notte sessions cookies-set --file cookies.json [--id <session-id>]
+notte sessions cookies-set --file cookies.json
 ```
 
 ### Page Actions

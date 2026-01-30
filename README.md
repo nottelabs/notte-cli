@@ -115,14 +115,17 @@ notte auth status                    # Show authentication status
 ```bash
 notte sessions list                   # List all active sessions
 notte sessions start [flags]          # Start a new session
-notte sessions status --id <id>       # Get session status
-notte sessions stop --id <id>         # Stop a session
-notte sessions cookies --id <id>      # Get all cookies
-notte sessions cookies-set --id <id>  # Set cookies from JSON file
-notte sessions network --id <id>      # View network activity logs
-notte sessions debug --id <id>        # Get debug information
-notte sessions replay --id <id>       # Get session replay data
+notte sessions status                 # Get current session status
+notte sessions stop                   # Stop current session
+notte sessions cookies                # Get all cookies from current session
+notte sessions cookies-set --file cookies.json  # Set cookies in current session
+notte sessions network                # View network activity logs
+notte sessions debug                  # Get debug information
+notte sessions replay                 # Get session replay data
+notte sessions workflow-code          # Export session steps as Python code
 ```
+
+**Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 ### Page Actions
 
