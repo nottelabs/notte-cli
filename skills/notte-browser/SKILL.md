@@ -14,6 +14,7 @@ notte sessions start
 # 3. Navigate and observe
 notte page goto "https://example.com"
 notte page observe
+notte page screenshot
 
 # 4. Execute actions
 notte page click "B3"
@@ -149,6 +150,9 @@ notte page close-tab
 # Observe page state and available actions
 notte page observe [--url <url>]
 
+# Save a screenshot in tmp folder
+notte page screenshot
+
 # Scrape content with instructions
 notte page scrape --instructions "Extract all links" [--only-main-content]
 ```
@@ -224,28 +228,6 @@ notte functions fork --id <shared-function-id>
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
 
-### Low-Level Session Commands
-
-For advanced use cases, you can use low-level session commands:
-
-```bash
-# Execute actions with raw JSON (alternative to notte page commands)
-# Direct JSON
-notte sessions execute --session-id <session-id> --action '{"type": "goto", "url": "https://example.com"}'
-
-# From file
-notte sessions execute --session-id <session-id> --action @action.json
-
-# From stdin (heredoc)
-notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
-{"type": "fill", "id": "I1", "value": "my text"}
-EOF
-
-# Multiple actions
-notte sessions execute --session-id "27ac8eea-1afc-4cad-aa23-bf122ed2390f" << 'EOF'
-{"type": "click", "id": "B5"}
-EOF
-```
 
 ### Account Management
 

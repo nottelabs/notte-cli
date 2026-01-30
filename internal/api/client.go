@@ -179,6 +179,17 @@ func (c *NotteClient) Client() *ClientWithResponses {
 	return c.client
 }
 
+// HTTPClient returns the underlying HTTP client for making raw requests
+// This client includes authentication, retry logic, and circuit breaker
+func (c *NotteClient) HTTPClient() *http.Client {
+	return c.httpClient
+}
+
+// BaseURL returns the base URL for the API
+func (c *NotteClient) BaseURL() string {
+	return c.baseURL
+}
+
 // Context helper for commands
 func DefaultContext() context.Context {
 	return context.Background()

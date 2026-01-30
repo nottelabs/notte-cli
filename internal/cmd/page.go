@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -34,6 +38,9 @@ var (
 
 	// form-fill flags
 	pageFormFillData string
+
+	// screenshot flags
+	pageScreenshotOutput string
 )
 
 // printExecuteResponse formats execute response output.
@@ -555,6 +562,101 @@ func runPageFormFill(cmd *cobra.Command, args []string) error {
 	return executePageAction(cmd, action)
 }
 
+var pageScreenshotCmd = &cobra.Command{
+	Use:   "screenshot [output]",
+	Short: "Take a screenshot of the current page",
+	Long: `Take a screenshot of the current page and save it as a JPEG file.
+
+By default, saves to a temporary directory. Optionally provide a path to save to a specific location.
+
+Examples:
+  notte page screenshot                    # saves to tmp directory
+  notte page screenshot screenshot.jpg     # saves to specified path
+  notte page screenshot --output out.jpg   # saves to specified path (alt syntax)`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: runPageScreenshot,
+}
+
+func runPageScreenshot(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	// Construct the URL manually since this endpoint isn't in the generated client yet
+	url := fmt.Sprintf("%s/sessions/%s/page/screenshot", client.BaseURL(), sessionID)
+
+	// Create the POST request
+	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Execute the request through the client's HTTP client (which has auth and retry)
+	resp, err := client.HTTPClient().Do(req)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if err := HandleAPIResponse(resp, body); err != nil {
+			return err
+		}
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	// Read the image data
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Determine output path
+	outputPath := pageScreenshotOutput
+	if len(args) > 0 {
+		outputPath = args[0]
+	}
+
+	if outputPath == "" {
+		// Default to temp directory
+		tmpDir := os.TempDir()
+		outputPath = filepath.Join(tmpDir, fmt.Sprintf("notte-screenshot-%s.jpg", sessionID))
+	}
+
+	// Clean the path to resolve any ".." components
+	outputPath = filepath.Clean(outputPath)
+
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(outputPath)
+	if dir != "." && dir != "/" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
+
+	// Write the file
+	err = os.WriteFile(outputPath, imageData, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write screenshot: %w", err)
+	}
+
+	return PrintResult(fmt.Sprintf("Screenshot saved: %s", outputPath), map[string]any{
+		"path":    outputPath,
+		"session": sessionID,
+		"success": true,
+	})
+}
+
 func init() {
 	rootCmd.AddCommand(pageCmd)
 
@@ -581,6 +683,7 @@ func init() {
 	pageCmd.AddCommand(pageCaptchaSolveCmd)
 	pageCmd.AddCommand(pageCompleteCmd)
 	pageCmd.AddCommand(pageFormFillCmd)
+	pageCmd.AddCommand(pageScreenshotCmd)
 
 	// Add --id flag to parent command (inherited by all subcommands)
 	pageCmd.PersistentFlags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
@@ -613,4 +716,7 @@ func init() {
 	// form-fill flags
 	pageFormFillCmd.Flags().StringVar(&pageFormFillData, "data", "", "JSON object with form field values (required)")
 	_ = pageFormFillCmd.MarkFlagRequired("data")
+
+	// screenshot flags
+	pageScreenshotCmd.Flags().StringVarP(&pageScreenshotOutput, "output", "o", "", "Output path for the screenshot (defaults to temp directory)")
 }
