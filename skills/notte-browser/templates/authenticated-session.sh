@@ -60,7 +60,7 @@ trap cleanup EXIT
 
 check_login_success() {
     local current_url
-    current_url=$(notte sessions observe -o json | jq -r '.url // empty')
+    current_url=$(notte page observe -o json | jq -r '.url // empty')
 
     if [[ "$current_url" == *"dashboard"* ]] || [[ "$current_url" == *"home"* ]]; then
         return 0
@@ -68,7 +68,7 @@ check_login_success() {
 
     # Check for common login failure indicators
     local page_content
-    page_content=$(notte sessions scrape --instructions "Check if there are any error messages about login failure" 2>/dev/null || echo "")
+    page_content=$(notte page scrape --instructions "Check if there are any error messages about login failure" 2>/dev/null || echo "")
 
     if echo "$page_content" | grep -qiE "(invalid|incorrect|failed|error|wrong)"; then
         return 1
@@ -120,7 +120,7 @@ save_cookies() {
 
 perform_login() {
     log_step "Navigating to login page..."
-    notte sessions observe --url "$LOGIN_URL" > /dev/null
+    notte page observe --url "$LOGIN_URL" > /dev/null
     notte page wait 1000
 
     # Fill email/username
@@ -144,7 +144,7 @@ perform_login() {
 
     # Check for MFA prompt
     local observe_result
-    observe_result=$(notte sessions observe -o json)
+    observe_result=$(notte page observe -o json)
 
     if echo "$observe_result" | grep -qiE "(mfa|two.?factor|verification|authenticator|2fa)"; then
         log_step "MFA detected, handling..."
@@ -162,7 +162,7 @@ handle_mfa() {
 
     # Check if still on MFA page
     local current_url
-    current_url=$(notte sessions observe -o json | jq -r '.url // empty')
+    current_url=$(notte page observe -o json | jq -r '.url // empty')
 
     if echo "$current_url" | grep -qiE "(mfa|verify|2fa)"; then
         log_warn "MFA may require manual intervention"
@@ -233,7 +233,7 @@ main() {
     log_info "Session ID: $(notte sessions status -o json | jq -r '.session_id // .sessionId // .id')"
 
     # Example: Scrape data from authenticated page
-    # notte sessions scrape --instructions "Extract user profile information"
+    # notte page scrape --instructions "Extract user profile information"
 }
 
 main "$@"

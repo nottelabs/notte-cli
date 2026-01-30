@@ -37,10 +37,6 @@ func pageExecResponse() string {
 	return `{"action":{"type":"click"},"data":{},"message":"ok","session":{"session_id":"` + pageSessionIDTest + `","status":"ACTIVE"},"success":true}`
 }
 
-func pageScrapeResponse() string {
-	return `{"markdown":"# Test","session":{"session_id":"` + pageSessionIDTest + `","status":"ACTIVE"},"structured":{"success":true,"data":{"title":"Test"}}}`
-}
-
 // Test parseSelector helper
 func TestParseSelector(t *testing.T) {
 	tests := []struct {
@@ -558,66 +554,7 @@ func TestRunPageWait_InvalidTime(t *testing.T) {
 
 // Data Extraction Tests
 
-func TestRunPageScrape(t *testing.T) {
-	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageScrape(cmd, []string{"Extract all product names"})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
-
-func TestRunPageScrape_MainOnly(t *testing.T) {
-	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
-
-	origMainOnly := pageScrapeMainOnly
-	pageScrapeMainOnly = true
-	t.Cleanup(func() { pageScrapeMainOnly = origMainOnly })
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageScrape(cmd, []string{"Extract main content"})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
-
-func TestRunPageScrape_NoInstructions(t *testing.T) {
-	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/scrape", 200, pageScrapeResponse())
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageScrape(cmd, []string{})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
+// Page scrape tests removed - now covered by sessions_test.go since page scrape calls runSessionScrape
 
 // Page Observe Tests
 
@@ -633,7 +570,7 @@ func TestRunPageObserve(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageObserve(cmd, []string{})
+		err := runSessionObserve(cmd, []string{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -648,15 +585,15 @@ func TestRunPageObserve_WithURL(t *testing.T) {
 	server := setupPageTest(t)
 	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/observe", 200, pageObserveResponse())
 
-	origURL := pageObserveURL
-	pageObserveURL = "https://example.com"
-	t.Cleanup(func() { pageObserveURL = origURL })
+	origURL := sessionObserveURL
+	sessionObserveURL = "https://example.com"
+	t.Cleanup(func() { sessionObserveURL = origURL })
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runPageObserve(cmd, []string{})
+		err := runSessionObserve(cmd, []string{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

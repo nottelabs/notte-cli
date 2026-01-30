@@ -12,14 +12,15 @@ notte auth login
 notte sessions start
 
 # 3. Navigate and observe
-notte sessions observe --url "https://example.com"
+notte page goto "https://example.com"
+notte page observe
 
 # 4. Execute actions
 notte page click "@B3"
 notte page fill "@input" "hello world"
 
 # 5. Scrape content
-notte sessions scrape --instructions "Extract all product names and prices"
+notte page scrape --instructions "Extract all product names and prices"
 
 # 6. Stop the session
 notte sessions stop
@@ -51,15 +52,6 @@ notte sessions list
 
 # Get session status
 notte sessions status [--id <session-id>]
-
-# Observe page state and available actions
-notte sessions observe [--id <session-id>] [--url <url>]
-
-# Execute an action (raw JSON)
-notte sessions execute --action '{"type": "goto", "url": "https://example.com"}'
-
-# Scrape content from current page
-notte sessions scrape [--instructions "..."] [--only-main-content]
 
 # Stop a session
 notte sessions stop [--id <session-id>]
@@ -93,7 +85,7 @@ notte sessions cookies-set --file cookies.json [--id <session-id>]
 
 ### Page Actions
 
-Simplified commands for page interactions (syntactic sugar for `sessions execute`):
+Simplified commands for page interactions:
 
 **Element Interactions:**
 ```bash
@@ -150,13 +142,19 @@ notte page switch-tab 1
 notte page close-tab
 ```
 
+**Page State:**
+```bash
+# Observe page state and available actions
+notte page observe [--url <url>]
+
+# Scrape content with instructions
+notte page scrape --instructions "Extract all links" [--only-main-content]
+```
+
 **Utilities:**
 ```bash
 # Wait for specified duration
 notte page wait 1000
-
-# Scrape with instructions
-notte page scrape "Extract all links" [--main-only]
 
 # Solve CAPTCHA
 notte page captcha-solve "recaptcha_v2"
@@ -211,7 +209,6 @@ notte functions run-stop --id <function-id> --run-id <run-id>
 
 # Get/update run metadata
 notte functions run-metadata --id <function-id> --run-id <run-id>
-notte functions run-metadata-update --id <function-id> --run-id <run-id> --data '{"key": "value"}'
 
 # Schedule with cron expression
 notte functions schedule --id <function-id> --cron "0 9 * * *"
@@ -310,15 +307,16 @@ Session ID is resolved in this order:
 ### Basic Web Scraping
 
 ```bash
-# Quick scrape
+# Quick scrape (no session needed)
 notte scrape "https://news.ycombinator.com" --instructions "Extract top 10 story titles"
 
 # With session for multi-page scraping
 notte sessions start --headless
-notte sessions observe --url "https://example.com/products"
-notte sessions scrape --instructions "Extract product names and prices"
+notte page goto "https://example.com/products"
+notte page observe
+notte page scrape --instructions "Extract product names and prices"
 notte page click "@next-page"
-notte sessions scrape --instructions "Extract product names and prices"
+notte page scrape --instructions "Extract product names and prices"
 notte sessions stop
 ```
 

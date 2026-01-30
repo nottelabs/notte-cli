@@ -129,27 +129,6 @@ Store and retrieve custom data for function runs:
 notte functions run-metadata --id <function-id> --run-id <run-id>
 ```
 
-### Update Metadata
-
-```bash
-# Direct JSON
-notte functions run-metadata-update \
-  --id <function-id> \
-  --run-id <run-id> \
-  --data '{"items_processed": 150, "errors": 2}'
-
-# From file
-notte functions run-metadata-update \
-  --id <function-id> \
-  --run-id <run-id> \
-  --data @metadata.json
-
-# From stdin
-echo '{"status": "completed"}' | notte functions run-metadata-update \
-  --id <function-id> \
-  --run-id <run-id>
-```
-
 ### Metadata Use Cases
 
 - Track progress during long-running jobs
