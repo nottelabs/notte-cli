@@ -948,8 +948,8 @@ func openBrowser(url string) error {
 		return err
 	}
 
-	// Wait in background to catch immediate failures without blocking
-	go cmd.Wait()
+	// Wait in background to avoid zombie processes
+	go func() { _ = cmd.Wait() }()
 
 	return nil
 }
