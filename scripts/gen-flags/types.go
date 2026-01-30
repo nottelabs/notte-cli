@@ -71,6 +71,7 @@ type Field struct {
 	Ref         string
 	Default     interface{}
 	Nullable    bool
+	IsUnionType bool // True if field is an anyOf with enum + string (not a simple enum)
 }
 
 // GoType returns the Go type for flag variables (without pointers)

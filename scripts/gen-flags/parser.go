@@ -301,17 +301,19 @@ func handleAnyOf(name string, schemaRef SchemaRef, allSchemas map[string]SchemaR
 		}
 	}
 
-	// If we have enum ref + string, treat as string with enum suggestions
+	// If we have enum ref + string, treat as string with enum suggestions (union type)
 	if hasEnumRef && hasString {
 		field.Type = "string"
 		field.Enum = enumValues // Store for description purposes
+		field.IsUnionType = true
 		return field
 	}
 
-	// If we only have enum ref (without string), treat as enum
+	// If we only have enum ref (without string), treat as simple enum
 	if hasEnumRef && !hasString {
 		field.Type = "string"
 		field.Enum = enumValues
+		field.IsUnionType = false
 		return field
 	}
 

@@ -19,8 +19,8 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 			needsFmt = true
 			needsJSON = true
 		}
-		// Check for enum union types (anyOf with enum + string)
-		if fc.Category == CategoryEnumFlag && fc.Field.Description != "" && len(fc.Field.Enum) > 0 {
+		// Check for actual union types (anyOf with enum + string), not simple enums
+		if fc.Category == CategoryEnumFlag && fc.Field.IsUnionType {
 			needsFmt = true
 		}
 	}
@@ -280,14 +280,10 @@ func generateEnumFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *Comman
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
-	// Check if this is a union type (anyOf with enum + string)
-	// In this case, we need to use the From*1 method
-	isUnionType := fc.Field.Description != "" && len(fc.Field.Enum) > 0
-
 	fmt.Fprintf(buf, "\tif %s != \"\" {\n", fc.VarName)
 
-	if isUnionType {
-		// Union type - use From*1 method to set string value
+	if fc.Field.IsUnionType {
+		// Union type (anyOf with enum + string) - use From*1 method to set string value
 		unionTypeName := fmt.Sprintf("%s_%s", config.RequestBodyType, apiFieldName)
 		fmt.Fprintf(buf, "\t\tvar val api.%s\n", unionTypeName)
 		fmt.Fprintf(buf, "\t\tif err := val.From%s%s1(%s); err != nil {\n",
@@ -346,7 +342,12 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 
 	fmt.Fprintf(buf, "\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name)
 	fmt.Fprintf(buf, "\tif %s {\n", condition)
-	fmt.Fprintf(buf, "\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName)
+	// Optional flattened fields are pointers in the API, required ones are not
+	if fc.Field.Required {
+		fmt.Fprintf(buf, "\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName)
+	} else {
+		fmt.Fprintf(buf, "\t\tbody.%s = &api.%s{\n", apiFieldName, structTypeName)
+	}
 
 	for _, subFC := range fc.SubFields {
 		subAPIFieldName := toCamelCase(subFC.Field.JSONName)
@@ -373,19 +374,8 @@ func generateRepeatedFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
 	}
 
 	fmt.Fprintf(buf, "\tif len(%s) > 0 {\n", fc.VarName)
-
-	if fc.Field.Items.Type == "string" {
-		// For []string, we can assign directly or convert to []interface{}
-		// Check if the API expects []string or []interface{}
-		buf.WriteString("\t\t// Convert string slice to interface slice\n")
-		fmt.Fprintf(buf, "\t\targs := make([]interface{}, len(%s))\n", fc.VarName)
-		fmt.Fprintf(buf, "\t\tfor i, arg := range %s {\n", fc.VarName)
-		buf.WriteString("\t\t\targs[i] = arg\n")
-		buf.WriteString("\t\t}\n")
-		fmt.Fprintf(buf, "\t\tbody.%s = &args\n", apiFieldName)
-	} else {
-		fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
-	}
+	// Pass the slice directly as a pointer - API expects *[]string or similar
+	fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
 
 	buf.WriteString("\t}\n\n")
 }
