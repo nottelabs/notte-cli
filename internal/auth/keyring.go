@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/99designs/keyring"
+
 	"github.com/nottelabs/notte-cli/internal/config"
 )
 
