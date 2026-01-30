@@ -112,14 +112,17 @@ perl -i -pe 's/(\s+)(\w+)\.Type = "([^"]+)"/\1tmp := "\3"; \2.Type = &tmp/' "$OU
 
 # Rename NewClient to newGeneratedClient to avoid collision with wrapper
 # Only rename the base NewClient, not NewClientWithResponses
-sed -i '' 's/^func NewClient(/func newGeneratedClient(/g' "$OUTPUT_DIR/client.gen.go"
+sed -i.bak 's/^func NewClient(/func newGeneratedClient(/g' "$OUTPUT_DIR/client.gen.go"
 # Also update the call to NewClient within NewClientWithResponses
-sed -i '' 's/NewClient(server, opts\.\.\.)/newGeneratedClient(server, opts...)/g' "$OUTPUT_DIR/client.gen.go"
+sed -i.bak 's/NewClient(server, opts\.\.\.)/newGeneratedClient(server, opts...)/g' "$OUTPUT_DIR/client.gen.go"
 
 # Replace time.Time with FlexibleTime in struct fields for flexible timestamp parsing
 # This handles API responses that don't include timezone info
-sed -i '' 's/\(	[A-Za-z]*\) time\.Time /\1 FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
-sed -i '' 's/\(	[A-Za-z]*\) \*time\.Time /\1 *FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+sed -i.bak 's/\(	[A-Za-z]*\) time\.Time /\1 FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+sed -i.bak 's/\(	[A-Za-z]*\) \*time\.Time /\1 *FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+
+# Remove backup files
+rm -f "$OUTPUT_DIR/client.gen.go.bak"
 
 # Format the fixed code
 gofmt -w "$OUTPUT_DIR/client.gen.go"
