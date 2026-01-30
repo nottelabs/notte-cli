@@ -46,10 +46,15 @@ func (e *RateLimitError) Error() string {
 
 // AuthError represents authentication/authorization failures
 type AuthError struct {
-	Reason string // "expired", "invalid", "missing"
+	Reason     string // "expired", "invalid", "missing", "forbidden"
+	Message    string // Detailed error message from the API
+	StatusCode int    // HTTP status code (401 or 403)
 }
 
 func (e *AuthError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("authentication error: %s - %s", e.Reason, e.Message)
+	}
 	return fmt.Sprintf("authentication error: %s", e.Reason)
 }
 

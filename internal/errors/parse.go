@@ -47,36 +47,72 @@ func ParseAPIError(resp *http.Response, body []byte) error {
 		return &APIError{Message: "nil response"}
 	}
 
-	// Handle specific status codes
-	switch resp.StatusCode {
-	case http.StatusUnauthorized:
-		return &AuthError{Reason: "invalid"}
-	case http.StatusForbidden:
-		return &AuthError{Reason: "forbidden"}
-	case http.StatusTooManyRequests:
+	// Handle rate limiting separately
+	if resp.StatusCode == http.StatusTooManyRequests {
 		return parseRateLimitError(resp)
 	}
 
-	// Try to parse JSON error
+	// Try to parse JSON error body for all error responses
 	var apiResp apiErrorResponse
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		// Fallback for non-JSON responses
-		return &APIError{
+	var message string
+	if err := json.Unmarshal(body, &apiResp); err == nil {
+		message = extractErrorMessage(&apiResp)
+	}
+
+	// If JSON parsing failed, use raw body as message
+	if message == "" && len(body) > 0 {
+		message = string(body)
+	}
+
+	// Handle auth-specific status codes with detailed messages
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		return &AuthError{
+			Reason:     "invalid",
+			Message:    SanitizeMessage(message),
 			StatusCode: resp.StatusCode,
-			Code:       http.StatusText(resp.StatusCode),
-			Message:    SanitizeMessage(string(body)),
+		}
+	case http.StatusForbidden:
+		return &AuthError{
+			Reason:     "forbidden",
+			Message:    SanitizeMessage(message),
+			StatusCode: resp.StatusCode,
 		}
 	}
 
-	// Parse the error field (can be string or object)
-	var message, code, source string
+	// Parse the error field for other errors (can be string or object)
+	var code, source string
+	if len(apiResp.Error) > 0 {
+		// Try as nested object first
+		var nested nestedError
+		if err := json.Unmarshal(apiResp.Error, &nested); err == nil {
+			code = nested.Code
+			source = nested.Source
+		}
+	}
+
+	if code == "" {
+		code = http.StatusText(resp.StatusCode)
+	}
+
+	return &APIError{
+		StatusCode: resp.StatusCode,
+		Code:       code,
+		Message:    SanitizeMessage(message),
+		Source:     source,
+	}
+}
+
+// extractErrorMessage extracts the error message from various API response formats
+func extractErrorMessage(apiResp *apiErrorResponse) string {
+	var message string
+
+	// Try parsing the error field (can be string or object)
 	if len(apiResp.Error) > 0 {
 		// Try as nested object first
 		var nested nestedError
 		if err := json.Unmarshal(apiResp.Error, &nested); err == nil {
 			message = nested.Message
-			code = nested.Code
-			source = nested.Source
 		} else {
 			// Try as string
 			var errStr string
@@ -96,16 +132,7 @@ func ParseAPIError(resp *http.Response, body []byte) error {
 		message = parseDetailMessage(apiResp.Detail)
 	}
 
-	if code == "" {
-		code = http.StatusText(resp.StatusCode)
-	}
-
-	return &APIError{
-		StatusCode: resp.StatusCode,
-		Code:       code,
-		Message:    SanitizeMessage(message),
-		Source:     source,
-	}
+	return message
 }
 
 // parseDetailMessage extracts a message from FastAPI's detail field

@@ -150,6 +150,18 @@ func (f *TextFormatter) PrintError(err error) {
 		fmt.Fprintf(os.Stderr, "%s %s\n", errText, apiErr.Message)
 		return
 	}
+
+	// For auth errors, display "Error <status>: <reason> - <message>"
+	if authErr, ok := err.(*apierrors.AuthError); ok {
+		errText := f.colorize(fmt.Sprintf("Error %d:", authErr.StatusCode), termenv.ANSIRed)
+		if authErr.Message != "" {
+			fmt.Fprintf(os.Stderr, "%s %s - %s\n", errText, authErr.Reason, authErr.Message)
+		} else {
+			fmt.Fprintf(os.Stderr, "%s %s\n", errText, authErr.Reason)
+		}
+		return
+	}
+
 	errText := f.colorize("Error:", termenv.ANSIRed)
 	fmt.Fprintf(os.Stderr, "%s %s\n", errText, err.Error())
 }
