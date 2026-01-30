@@ -162,6 +162,12 @@ func processField(commandName, fieldName string, field *Field, schemas map[strin
 		return nil, err
 	}
 
+	// Check if this field should be force-flattened (e.g., credentials in VaultCredentialsAdd)
+	skipPrefix := ShouldFlattenWithoutPrefix(commandName, fieldName)
+	if category == CategoryUnsupported && IsForceFlattenable(commandName, fieldName, field, schemas) {
+		category = CategoryFlattenedFlags
+	}
+
 	flagName := toKebabCase(fieldName)
 	varName := commandName + toCamelCase(fieldName)
 
@@ -184,7 +190,13 @@ func processField(commandName, fieldName string, field *Field, schemas map[strin
 		}
 
 		for subFieldName, subField := range resolvedField.Properties {
-			subFlagName := flagName + "-" + toKebabCase(subFieldName)
+			var subFlagName string
+			if skipPrefix {
+				// Use short flag names (e.g., --email instead of --credentials-email)
+				subFlagName = toKebabCase(subFieldName)
+			} else {
+				subFlagName = flagName + "-" + toKebabCase(subFieldName)
+			}
 			subVarName := varName + toCamelCase(subFieldName)
 
 			subFC := &FieldConfig{

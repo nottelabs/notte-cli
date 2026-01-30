@@ -12,15 +12,10 @@ import (
 )
 
 var (
-	vaultID                     string
-	vaultUpdateName             string
-	vaultCredentialsAddURL      string
-	vaultCredentialsAddEmail    string
-	vaultCredentialsAddUsername string
-	vaultCredentialsAddPassword string
-	vaultCredentialsAddMFA      string
-	vaultCredentialsGetURL      string
-	vaultCredentialsDeleteURL   string
+	vaultID                   string
+	vaultUpdateName           string
+	vaultCredentialsGetURL    string
+	vaultCredentialsDeleteURL string
 )
 
 var vaultsCmd = &cobra.Command{
@@ -119,12 +114,8 @@ func init() {
 	vaultsDeleteCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
 	_ = vaultsDeleteCmd.MarkFlagRequired("id")
 
-	// Credentials add command flags
-	vaultsCredentialsAddCmd.Flags().StringVar(&vaultCredentialsAddURL, "url", "", "URL for the credentials (required)")
-	vaultsCredentialsAddCmd.Flags().StringVar(&vaultCredentialsAddEmail, "email", "", "Email for the credentials")
-	vaultsCredentialsAddCmd.Flags().StringVar(&vaultCredentialsAddUsername, "username", "", "Username for the credentials")
-	vaultsCredentialsAddCmd.Flags().StringVar(&vaultCredentialsAddPassword, "password", "", "Password for the credentials (required)")
-	vaultsCredentialsAddCmd.Flags().StringVar(&vaultCredentialsAddMFA, "mfa-secret", "", "MFA secret for the credentials")
+	// Credentials add command flags (auto-generated)
+	RegisterVaultCredentialsAddFlags(vaultsCredentialsAddCmd)
 	_ = vaultsCredentialsAddCmd.MarkFlagRequired("url")
 	_ = vaultsCredentialsAddCmd.MarkFlagRequired("password")
 
@@ -304,46 +295,30 @@ func runVaultCredentialsAdd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	// Validate URL format
-	if _, err := url.Parse(vaultCredentialsAddURL); err != nil {
+	if _, err := url.Parse(VaultCredentialsAddUrl); err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 
 	// Validate password not empty
-	if strings.TrimSpace(vaultCredentialsAddPassword) == "" {
+	if strings.TrimSpace(VaultCredentialsAddCredentialsPassword) == "" {
 		return fmt.Errorf("password cannot be empty or whitespace")
 	}
 
 	// Validate email format if provided
-	if vaultCredentialsAddEmail != "" {
-		if _, err := mail.ParseAddress(vaultCredentialsAddEmail); err != nil {
+	if VaultCredentialsAddCredentialsEmail != "" {
+		if _, err := mail.ParseAddress(VaultCredentialsAddCredentialsEmail); err != nil {
 			return fmt.Errorf("invalid email format: %w", err)
 		}
 	}
 
-	// Build credentials object
-	credentials := api.CredentialsDictInput{
-		Password: vaultCredentialsAddPassword,
-	}
-
-	if vaultCredentialsAddEmail != "" {
-		credentials.Email = &vaultCredentialsAddEmail
-	}
-
-	if vaultCredentialsAddUsername != "" {
-		credentials.Username = &vaultCredentialsAddUsername
-	}
-
-	if vaultCredentialsAddMFA != "" {
-		credentials.MfaSecret = &vaultCredentialsAddMFA
-	}
-
-	body := api.VaultCredentialsAddJSONRequestBody{
-		Url:         vaultCredentialsAddURL,
-		Credentials: credentials,
+	// Build request body from generated flags
+	body, err := BuildVaultCredentialsAddRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.VaultCredentialsAddParams{}
-	resp, err := client.Client().VaultCredentialsAddWithResponse(ctx, vaultID, params, body)
+	resp, err := client.Client().VaultCredentialsAddWithResponse(ctx, vaultID, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

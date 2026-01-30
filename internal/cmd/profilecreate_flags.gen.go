@@ -11,6 +11,7 @@ import (
 var (
 	// Name of the profile
 	ProfileCreateName string
+
 )
 
 // RegisterProfileCreateFlags registers all flags for ProfileCreate command

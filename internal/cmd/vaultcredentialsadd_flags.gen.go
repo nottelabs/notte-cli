@@ -10,11 +10,23 @@ import (
 // VaultCredentialsAdd command flags
 var (
 	VaultCredentialsAddUrl string
+
+	// Flattened: credentials object
+	VaultCredentialsAddCredentialsPassword string
+	VaultCredentialsAddCredentialsMfaSecret string
+	VaultCredentialsAddCredentialsEmail string
+	VaultCredentialsAddCredentialsUsername string
+
 )
 
 // RegisterVaultCredentialsAddFlags registers all flags for VaultCredentialsAdd command
 func RegisterVaultCredentialsAddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&VaultCredentialsAddUrl, "url", "", "url")
+	// credentials (flattened object)
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsPassword, "password", "", "password")
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsMfaSecret, "mfa-secret", "", "mfa-secret")
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsEmail, "email", "", "email")
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsUsername, "username", "", "username")
 }
 
 // BuildVaultCredentialsAddRequest builds the API request from CLI flags
@@ -23,6 +35,16 @@ func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsReq
 
 	if cmd.Flags().Changed("url") {
 		body.Url = VaultCredentialsAddUrl
+	}
+
+	// credentials (flattened) - only set if required fields are provided
+	if VaultCredentialsAddCredentialsPassword != "" {
+		body.Credentials = api.CredentialsDictInput{
+			Password: VaultCredentialsAddCredentialsPassword,
+			MfaSecret: &VaultCredentialsAddCredentialsMfaSecret,
+			Email: &VaultCredentialsAddCredentialsEmail,
+			Username: &VaultCredentialsAddCredentialsUsername,
+		}
 	}
 
 	return body, nil

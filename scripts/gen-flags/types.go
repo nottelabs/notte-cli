@@ -49,6 +49,15 @@ var JSONFileFields = map[string]bool{
 	"response_format": true,
 }
 
+// FlattenWithoutPrefix - command-scoped fields that flatten without parent prefix
+// Key: CommandName, Value: map of field names that should use short flag names
+// e.g., "credentials" in VaultCredentialsAdd generates --email, --password (not --credentials-email)
+var FlattenWithoutPrefix = map[string]map[string]bool{
+	"VaultCredentialsAdd": {
+		"credentials": true,
+	},
+}
+
 // Field represents a field in an OpenAPI schema
 type Field struct {
 	Name        string
@@ -226,6 +235,10 @@ func isPrimitiveArray(field *Field) bool {
 }
 
 func isFlattenableObject(field *Field, schemas map[string]*Field) bool {
+	return isFlattenableObjectWithLimit(field, schemas, 3)
+}
+
+func isFlattenableObjectWithLimit(field *Field, schemas map[string]*Field, maxFields int) bool {
 	// Resolve reference if needed
 	if field.Ref != "" {
 		refField, ok := schemas[field.Ref]
@@ -239,8 +252,8 @@ func isFlattenableObject(field *Field, schemas map[string]*Field) bool {
 		return false
 	}
 
-	// Object must have <= 3 properties
-	if len(field.Properties) == 0 || len(field.Properties) > 3 {
+	// Object must have <= maxFields properties (0 means no limit)
+	if len(field.Properties) == 0 || (maxFields > 0 && len(field.Properties) > maxFields) {
 		return false
 	}
 
@@ -252,6 +265,23 @@ func isFlattenableObject(field *Field, schemas map[string]*Field) bool {
 	}
 
 	return true
+}
+
+// ShouldFlattenWithoutPrefix checks if a command+field combo should use short flag names
+func ShouldFlattenWithoutPrefix(commandName, fieldName string) bool {
+	if cmdFields, ok := FlattenWithoutPrefix[commandName]; ok {
+		return cmdFields[fieldName]
+	}
+	return false
+}
+
+// IsForceFlattenable checks if a field should be force-flattened (regardless of field count)
+func IsForceFlattenable(commandName, fieldName string, field *Field, schemas map[string]*Field) bool {
+	if !ShouldFlattenWithoutPrefix(commandName, fieldName) {
+		return false
+	}
+	// Check if it's flattenable with no field limit
+	return isFlattenableObjectWithLimit(field, schemas, 0)
 }
 
 // BuildGenerationError creates a detailed error for unsupported fields

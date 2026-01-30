@@ -245,10 +245,17 @@ func generateSimpleFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
+	// Required fields in API are non-pointer types, assign directly
+	// Optional fields are pointer types, take address
+	assignOp := "&" + fc.VarName
+	if fc.Field.Required {
+		assignOp = fc.VarName
+	}
+
 	if fc.Field.Type == "boolean" || fc.Field.Required {
 		// For booleans and required fields, check if flag was changed
 		buf.WriteString(fmt.Sprintf("\tif cmd.Flags().Changed(\"%s\") {\n", fc.FlagName))
-		buf.WriteString(fmt.Sprintf("\t\tbody.%s = &%s\n", apiFieldName, fc.VarName))
+		buf.WriteString(fmt.Sprintf("\t\tbody.%s = %s\n", apiFieldName, assignOp))
 		buf.WriteString("\t}\n\n")
 	} else {
 		// For optional fields, check if non-zero
@@ -302,24 +309,41 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
-	// Resolve the struct type
+	// Resolve the struct type (convert to valid Go identifier by removing hyphens)
 	structTypeName := fc.Field.Ref
 	if structTypeName == "" {
 		structTypeName = apiFieldName
 	}
+	// Convert hyphenated names to CamelCase (e.g., "CredentialsDict-Input" -> "CredentialsDictInput")
+	structTypeName = strings.ReplaceAll(structTypeName, "-", "")
 
-	// Check if any sub-field is set
-	var conditions []string
+	// Build condition: required string fields must be set (AND), optional fields use OR
+	var requiredConditions []string
 	for _, subFC := range fc.SubFields {
-		if subFC.Field.Type == "string" {
-			conditions = append(conditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
-		} else {
-			conditions = append(conditions, fmt.Sprintf("cmd.Flags().Changed(\"%s\")", subFC.FlagName))
+		if subFC.Field.Required && subFC.Field.Type == "string" {
+			requiredConditions = append(requiredConditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
 		}
 	}
 
-	buf.WriteString(fmt.Sprintf("\t// %s (flattened)\n", fc.Field.Name))
-	buf.WriteString(fmt.Sprintf("\tif %s {\n", strings.Join(conditions, " || ")))
+	// If there are required fields, use them as the condition
+	var condition string
+	if len(requiredConditions) > 0 {
+		condition = strings.Join(requiredConditions, " && ")
+	} else {
+		// No required fields - use OR for any field being set
+		var conditions []string
+		for _, subFC := range fc.SubFields {
+			if subFC.Field.Type == "string" {
+				conditions = append(conditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
+			} else {
+				conditions = append(conditions, fmt.Sprintf("cmd.Flags().Changed(\"%s\")", subFC.FlagName))
+			}
+		}
+		condition = strings.Join(conditions, " || ")
+	}
+
+	buf.WriteString(fmt.Sprintf("\t// %s (flattened) - only set if required fields are provided\n", fc.Field.Name))
+	buf.WriteString(fmt.Sprintf("\tif %s {\n", condition))
 	buf.WriteString(fmt.Sprintf("\t\tbody.%s = api.%s{\n", apiFieldName, structTypeName))
 
 	for _, subFC := range fc.SubFields {
