@@ -346,12 +346,10 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 
 	// Build conditions for required and optional fields
 	var requiredConditions []string
-	var requiredVarNames []string
 	var optionalConditions []string
 	for _, subFC := range fc.SubFields {
 		if subFC.Field.Required && subFC.Field.Type == "string" {
 			requiredConditions = append(requiredConditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
-			requiredVarNames = append(requiredVarNames, subFC.VarName)
 		} else if subFC.Field.Type == "string" {
 			optionalConditions = append(optionalConditions, fmt.Sprintf("%s != \"\"", subFC.VarName))
 		} else {
