@@ -115,14 +115,17 @@ notte auth status                    # Show authentication status
 ```bash
 notte sessions list                   # List all active sessions
 notte sessions start [flags]          # Start a new session
-notte sessions status --id <id>       # Get session status
-notte sessions stop --id <id>         # Stop a session
-notte sessions cookies --id <id>      # Get all cookies
-notte sessions cookies-set --id <id>  # Set cookies from JSON file
-notte sessions network --id <id>      # View network activity logs
-notte sessions debug --id <id>        # Get debug information
-notte sessions replay --id <id>       # Get session replay data
+notte sessions status                 # Get current session status
+notte sessions stop                   # Stop current session
+notte sessions cookies                # Get all cookies from current session
+notte sessions cookies-set --file cookies.json  # Set cookies in current session
+notte sessions network                # View network activity logs
+notte sessions debug                  # Get debug information
+notte sessions replay                 # Get session replay data
+notte sessions workflow-code          # Export session steps as Python code
 ```
+
+**Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
 
 ### Page Actions
 
@@ -170,17 +173,21 @@ notte agents replay --id <id>         # Get agent execution replay
 
 ```bash
 notte functions list                  # List all functions
-notte functions create                # Create a new workflow
-notte functions show --id <id>        # View workflow details
-notte functions update --id <id>      # Update workflow configuration
-notte functions delete --id <id>      # Delete a workflow
-notte functions fork --id <id>        # Fork workflow to new version
-notte functions run --id <id>         # Execute workflow
-notte functions runs --id <id>        # List workflow runs
-notte functions run-stop --id <id>    # Stop a running workflow
-notte functions schedule --id <id>    # Schedule recurring execution
-notte functions unschedule --id <id>  # Remove schedule
+notte functions create --file workflow.py  # Create a new function
+notte functions show                  # View current function details
+notte functions show --id <id>        # View specific function details (different from current function)
+notte functions update --file workflow.py  # Update current function code
+notte functions delete                # Delete current function
+notte functions fork                  # Fork current function to new version
+notte functions run                   # Execute current function
+notte functions runs                  # List runs for current function
+notte functions run-stop --run-id <id>  # Stop a running function execution
+notte functions run-metadata --run-id <id>  # Get run logs and results
+notte functions schedule --cron "0 9 * * *"  # Schedule current function
+notte functions unschedule            # Remove schedule from current function
 ```
+
+**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
 
 ### Vaults
 
