@@ -41,60 +41,23 @@ make build
 
 ### 1. Authenticate
 
+Specify the API key using one of three methods (checked in priority order):
+
 ```bash
+# 1. Via environment variable (recommended for CI/CD)
+export NOTTE_API_KEY="your-api-key"
+# 2. Via system keyring (recommended for local development)
 notte auth login
-# Enter your notte.cc API key when prompted
-```
-
-### 2. Test Authentication
-
-```bash
+# 3. Via config file (~/.notte/cli/config.json)
+# create ~/.notte/cli/config.json and add your API key
 notte auth status
 ```
 
-### 3. Start a Browser Session
+### 2. Start a Browser Session
 
 ```bash
 notte sessions start --headless
 ```
-
-## Configuration
-
-### API Key Storage
-
-Specify the API key using one of three methods (checked in priority order):
-
-```bash
-# Via environment variable (recommended for CI/CD)
-export NOTTE_API_KEY="your-api-key"
-notte sessions list
-
-# Via system keyring (recommended for local development)
-notte auth login
-
-# Via config file (~/.notte/cli/config.json)
-```
-
-### Environment Variables
-
-- `NOTTE_API_KEY` - API key for authentication
-- `NOTTE_API_URL` - Override API endpoint (default: https://api.notte.cc)
-
-## Security
-
-### Credential Storage
-
-API keys are stored securely in your system's keychain:
-- **macOS**: Keychain Access
-- **Linux**: Secret Service (GNOME Keyring, KWallet)
-- **Windows**: Credential Manager
-
-### Best Practices
-
-- Never pass API keys on the command line
-- Use vaults for website passwords and payment cards
-- Rotate API keys regularly from notte.cc dashboard
-- Use `notte auth logout` to remove stored keys
 
 ## Commands
 
@@ -363,22 +326,6 @@ notte sessions list --output json | jq '.sessions[] | select(.status=="ACTIVE")'
 notte sessions list --output json | jq -r '.sessions[].id'
 ```
 
-### Advanced Usage
-
-#### Form Filling
-
-Use the `form-fill` command for filling multiple fields at once:
-
-```bash
-# Fill a form with JSON data
-notte page form-fill --data '{"name": "John Doe", "email": "john@example.com"}'
-
-# Or fill fields individually
-notte page fill "#name" "John Doe"
-notte page fill "#email" "john@example.com"
-notte page click "#submit"
-```
-
 ## Usage with AI Agents
 
 ### Just Ask the Agent
@@ -394,7 +341,7 @@ The `--help` output is comprehensive and most agents can figure it out from ther
 Add the skill to your AI coding assistant for richer context:
 
 ```bash
-npx @anthropic-ai/claude-code-mcp add nottelabs/notte-cli
+npx skills add nottelabs/notte-cli
 ```
 
 This works with Claude Code, Cursor, Windsurf, and other MCP-compatible assistants.
@@ -421,16 +368,21 @@ Core workflow:
 
 For comprehensive documentation including templates and reference guides, see the [skills/notte-browser](skills/notte-browser/SKILL.md) folder.
 
-## Global Flags
+## Security
 
-All commands support these flags:
+### Credential Storage
 
-- `-o, --output <format>` - Output format: `text` or `json` (default: text)
-- `--no-color` - Disable colored output
-- `-v, --verbose` - Enable verbose logging
-- `--timeout <seconds>` - API request timeout (default: 30)
-- `-y, --yes` - Skip confirmation prompts
-- `-h, --help` - Show help for any command
+API keys are stored securely in your system's keychain:
+- **macOS**: Keychain Access
+- **Linux**: Secret Service (GNOME Keyring, KWallet)
+- **Windows**: Credential Manager
+
+### Best Practices
+
+- Never pass API keys on the command line
+- Use vaults for website passwords and payment cards
+- Rotate API keys regularly from notte.cc dashboard
+- Use `notte auth logout` to remove stored keys
 
 ## Shell Completions
 
