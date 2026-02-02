@@ -59,10 +59,11 @@ func clearCurrentAgent() error {
 
 // RequireAgentID ensures an agent ID is available from flag, env, or file
 func RequireAgentID() error {
-	agentID = GetCurrentAgentID()
-	if agentID == "" {
+	resolvedID := GetCurrentAgentID()
+	if resolvedID == "" {
 		return errors.New("agent ID required: use --id flag, set NOTTE_AGENT_ID env var, or start an agent first")
 	}
+	agentID = resolvedID
 	return nil
 }
 
