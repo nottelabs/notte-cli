@@ -92,17 +92,19 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		var files []string
+		var fileNames []string
 		if resp.JSON200 != nil {
-			files = resp.JSON200.Files
+			for _, f := range resp.JSON200.Files {
+				fileNames = append(fileNames, f.Name)
+			}
 		}
-		if printed, err := PrintListOrEmpty(files, "No downloaded files in session."); err != nil {
+		if printed, err := PrintListOrEmpty(fileNames, "No downloaded files in session."); err != nil {
 			return err
 		} else if printed {
 			return nil
 		}
 
-		return formatter.Print(files)
+		return formatter.Print(fileNames)
 	}
 
 	// Default: list uploads
@@ -119,17 +121,19 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var files []string
+	var fileNames []string
 	if resp.JSON200 != nil {
-		files = resp.JSON200.Files
+		for _, f := range resp.JSON200.Files {
+			fileNames = append(fileNames, f.Name)
+		}
 	}
-	if printed, err := PrintListOrEmpty(files, "No uploaded files."); err != nil {
+	if printed, err := PrintListOrEmpty(fileNames, "No uploaded files."); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(files)
+	return formatter.Print(fileNames)
 }
 
 func runFilesUpload(cmd *cobra.Command, args []string) error {

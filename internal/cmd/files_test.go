@@ -21,7 +21,7 @@ func TestRunFilesListUploads(t *testing.T) {
 	defer server.Close()
 	env.SetEnv("NOTTE_API_URL", server.URL())
 
-	server.AddResponse("/storage/uploads", 200, `{"files":["a.txt"]}`)
+	server.AddResponse("/storage/uploads", 200, `{"files":[{"name":"a.txt","file_ext":".txt","size":100}]}`)
 
 	origDownloadsFlag := filesListDownloadsFlag
 	origSession := sessionID
@@ -97,7 +97,7 @@ func TestRunFilesListDownloads(t *testing.T) {
 	defer server.Close()
 	env.SetEnv("NOTTE_API_URL", server.URL())
 
-	server.AddResponse("/storage/sess_123/downloads", 200, `{"files":["b.txt"]}`)
+	server.AddResponse("/storage/sess_123/downloads", 200, `{"files":[{"name":"b.txt","file_ext":".txt","size":200}]}`)
 
 	origDownloadsFlag := filesListDownloadsFlag
 	origSession := sessionID

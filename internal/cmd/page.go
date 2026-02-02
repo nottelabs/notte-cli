@@ -666,6 +666,29 @@ func runPageScreenshot(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var pageEvalJsCmd = &cobra.Command{
+	Use:   "eval-js <code>",
+	Short: "Evaluate JavaScript code on the page",
+	Long: `Evaluate JavaScript code on the current page and return the result.
+
+The JavaScript code is executed in the context of the page's main frame.
+
+Examples:
+  notte page eval-js "document.title"
+  notte page eval-js "window.location.href"
+  notte page eval-js "document.querySelectorAll('a').length"`,
+	Args: cobra.ExactArgs(1),
+	RunE: runPageEvalJs,
+}
+
+func runPageEvalJs(cmd *cobra.Command, args []string) error {
+	action := map[string]any{
+		"type": "evaluate_js",
+		"code": args[0],
+	}
+	return executePageAction(cmd, action)
+}
+
 func init() {
 	rootCmd.AddCommand(pageCmd)
 
@@ -693,6 +716,7 @@ func init() {
 	pageCmd.AddCommand(pageCompleteCmd)
 	pageCmd.AddCommand(pageFormFillCmd)
 	pageCmd.AddCommand(pageScreenshotCmd)
+	pageCmd.AddCommand(pageEvalJsCmd)
 
 	// Add --id flag to parent command (inherited by all subcommands)
 	pageCmd.PersistentFlags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
