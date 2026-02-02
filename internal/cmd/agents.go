@@ -57,6 +57,25 @@ func clearCurrentAgent() error {
 	return nil
 }
 
+func clearCurrentAgentIfMatches(expectedID string) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentAgentFile)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if strings.TrimSpace(string(data)) == expectedID {
+		return os.Remove(path)
+	}
+	return nil
+}
+
 // RequireAgentID ensures an agent ID is available from flag, env, or file
 func RequireAgentID() error {
 	resolvedID := GetCurrentAgentID()
@@ -270,13 +289,7 @@ func runAgentStop(cmd *cobra.Command, args []string) error {
 	}
 
 	// Clear current agent only if it matches the stopped agent
-	configDir, _ := config.Dir()
-	if configDir != "" {
-		data, _ := os.ReadFile(filepath.Join(configDir, config.CurrentAgentFile))
-		if strings.TrimSpace(string(data)) == agentID {
-			_ = clearCurrentAgent()
-		}
-	}
+	_ = clearCurrentAgentIfMatches(agentID)
 
 	return PrintResult(fmt.Sprintf("Agent %s stopped.", agentID), map[string]any{
 		"id":     agentID,
