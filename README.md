@@ -20,7 +20,8 @@ Control browser sessions, AI agents, and web scraping through intuitive resource
 ### Homebrew
 
 ```bash
-brew install nottelabs/notte-cli/notte
+brew tap nottelabs/notte-cli https://github.com/nottelabs/notte-cli.git
+brew install notte
 ```
 
 ### Go Install
