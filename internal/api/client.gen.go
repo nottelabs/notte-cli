@@ -126,14 +126,13 @@ const (
 	AnthropicclaudeSonnet4520250929            LlmModel = "anthropic/claude-sonnet-4-5-20250929"
 	Cerebrasllama3370b                         LlmModel = "cerebras/llama-3.3-70b"
 	DeepseekdeepseekR1                         LlmModel = "deepseek/deepseek-r1"
-	Geminigemini20Flash                        LlmModel = "gemini/gemini-2.0-flash"
+	Geminigemini25Flash                        LlmModel = "gemini/gemini-2.5-flash"
 	Groqllama3370bVersatile                    LlmModel = "groq/llama-3.3-70b-versatile"
 	MoonshotkimiK25                            LlmModel = "moonshot/kimi-k2.5"
 	Openaigpt4o                                LlmModel = "openai/gpt-4o"
 	Openroutergooglegemma327bIt                LlmModel = "openrouter/google/gemma-3-27b-it"
 	PerplexitysonarPro                         LlmModel = "perplexity/sonar-pro"
 	TogetherAimetaLlamaLlama3370BInstructTurbo LlmModel = "together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo"
-	VertexAigemini20Flash                      LlmModel = "vertex_ai/gemini-2.0-flash"
 	VertexAigemini25Flash                      LlmModel = "vertex_ai/gemini-2.5-flash"
 )
 
@@ -833,6 +832,7 @@ type Cookie struct {
 	HostOnly       *bool    `json:"hostOnly"`
 	HttpOnly       bool     `json:"httpOnly"`
 	Name           string   `json:"name"`
+	PartitionKey   *string  `json:"partitionKey"`
 	Path           string   `json:"path"`
 	SameSite       *string  `json:"sameSite"`
 	Secure         *bool    `json:"secure"`
@@ -1056,6 +1056,16 @@ type EmailResponse struct {
 	TextContent *string `json:"text_content"`
 }
 
+// EvaluateJsAction defines model for EvaluateJsAction.
+type EvaluateJsAction struct {
+	Category *string `json:"category,omitempty"`
+
+	// Code The JavaScript code to evaluate on the page
+	Code        string  `json:"code"`
+	Description *string `json:"description,omitempty"`
+	Type        *string `json:"type,omitempty"`
+}
+
 // ExecutionResponse defines model for ExecutionResponse.
 type ExecutionResponse struct {
 	// Message A message describing the operation
@@ -1143,6 +1153,14 @@ type FallbackFillActionOutputValue1 = string
 // FallbackFillActionOutput_Value defines model for FallbackFillActionOutput.Value.
 type FallbackFillActionOutput_Value struct {
 	union json.RawMessage
+}
+
+// FileInfo defines model for FileInfo.
+type FileInfo struct {
+	FileExt   string  `json:"file_ext"`
+	Name      string  `json:"name"`
+	Size      int     `json:"size"`
+	UpdatedAt *string `json:"updated_at"`
 }
 
 // FileLinkResponse defines model for FileLinkResponse.
@@ -1622,8 +1640,8 @@ type ListCredentialsResponse struct {
 
 // ListFilesResponse defines model for ListFilesResponse.
 type ListFilesResponse struct {
-	// Files Names of available files
-	Files []string `json:"files"`
+	// Files List of files with metadata
+	Files []FileInfo `json:"files"`
 }
 
 // LlmModel defines model for LlmModel.
@@ -3618,6 +3636,36 @@ func (t *ActionSpace_Actions_Item) MergeSmsReadAction(v SmsReadAction) error {
 	return err
 }
 
+// AsEvaluateJsAction returns the union data inside the ActionSpace_Actions_Item as a EvaluateJsAction
+func (t ActionSpace_Actions_Item) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the ActionSpace_Actions_Item as the provided EvaluateJsAction
+func (t *ActionSpace_Actions_Item) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the ActionSpace_Actions_Item, using the provided EvaluateJsAction
+func (t *ActionSpace_Actions_Item) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsClickActionOutput returns the union data inside the ActionSpace_Actions_Item as a ClickActionOutput
 func (t ActionSpace_Actions_Item) AsClickActionOutput() (ClickActionOutput, error) {
 	var body ClickActionOutput
@@ -3886,6 +3934,8 @@ func (t ActionSpace_Actions_Item) ValueByDiscriminator() (interface{}, error) {
 		return t.AsDownloadFileActionOutput()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
 	case "fallback_fill":
 		return t.AsFallbackFillActionOutput()
 	case "fill":
@@ -4479,6 +4529,36 @@ func (t *ActionSpace_BrowserActions_Item) MergeSmsReadAction(v SmsReadAction) er
 	return err
 }
 
+// AsEvaluateJsAction returns the union data inside the ActionSpace_BrowserActions_Item as a EvaluateJsAction
+func (t ActionSpace_BrowserActions_Item) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the ActionSpace_BrowserActions_Item as the provided EvaluateJsAction
+func (t *ActionSpace_BrowserActions_Item) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the ActionSpace_BrowserActions_Item, using the provided EvaluateJsAction
+func (t *ActionSpace_BrowserActions_Item) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t ActionSpace_BrowserActions_Item) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -4501,6 +4581,8 @@ func (t ActionSpace_BrowserActions_Item) ValueByDiscriminator() (interface{}, er
 		return t.AsCompletionAction()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
 	case "form_fill":
 		return t.AsFormFillAction()
 	case "go_back":
@@ -5431,6 +5513,36 @@ func (t *ApiExecutionResponse_Action) MergeSmsReadAction(v SmsReadAction) error 
 	return err
 }
 
+// AsEvaluateJsAction returns the union data inside the ApiExecutionResponse_Action as a EvaluateJsAction
+func (t ApiExecutionResponse_Action) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the ApiExecutionResponse_Action as the provided EvaluateJsAction
+func (t *ApiExecutionResponse_Action) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the ApiExecutionResponse_Action, using the provided EvaluateJsAction
+func (t *ApiExecutionResponse_Action) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsClickActionOutput returns the union data inside the ApiExecutionResponse_Action as a ClickActionOutput
 func (t ApiExecutionResponse_Action) AsClickActionOutput() (ClickActionOutput, error) {
 	var body ClickActionOutput
@@ -5699,6 +5811,8 @@ func (t ApiExecutionResponse_Action) ValueByDiscriminator() (interface{}, error)
 		return t.AsDownloadFileActionOutput()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
 	case "fallback_fill":
 		return t.AsFallbackFillActionOutput()
 	case "fill":

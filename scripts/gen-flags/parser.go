@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -144,8 +145,15 @@ func extractCommandConfig(name, path, method string, op *Operation, schemas map[
 		RequestBodyType: schemaName,
 	}
 
-	// Process fields
-	for fieldName, field := range schema.Properties {
+	// Process fields (sorted for deterministic output)
+	fieldNames := make([]string, 0, len(schema.Properties))
+	for fieldName := range schema.Properties {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+
+	for _, fieldName := range fieldNames {
+		field := schema.Properties[fieldName]
 		fieldConfig, err := processField(name, fieldName, field, schemas)
 		if err != nil {
 			return nil, err
@@ -180,7 +188,7 @@ func processField(commandName, fieldName string, field *Field, schemas map[strin
 		GoType:   field.GoType(),
 	}
 
-	// For flattened objects, process sub-fields
+	// For flattened objects, process sub-fields (sorted for deterministic output)
 	if category == CategoryFlattenedFlags {
 		resolvedField := field
 		if field.Ref != "" {
@@ -189,7 +197,14 @@ func processField(commandName, fieldName string, field *Field, schemas map[strin
 			}
 		}
 
-		for subFieldName, subField := range resolvedField.Properties {
+		subFieldNames := make([]string, 0, len(resolvedField.Properties))
+		for subFieldName := range resolvedField.Properties {
+			subFieldNames = append(subFieldNames, subFieldName)
+		}
+		sort.Strings(subFieldNames)
+
+		for _, subFieldName := range subFieldNames {
+			subField := resolvedField.Properties[subFieldName]
 			var subFlagName string
 			if skipPrefix {
 				// Use short flag names (e.g., --email instead of --credentials-email)
