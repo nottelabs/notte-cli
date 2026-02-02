@@ -9,29 +9,29 @@ import (
 
 // PersonaCreate command flags
 var (
-	// Whether to create a vault for the persona
-	PersonaCreateCreateVault bool
-
 	// Whether to create a phone number for the persona
 	PersonaCreateCreatePhoneNumber bool
+
+	// Whether to create a vault for the persona
+	PersonaCreateCreateVault bool
 )
 
 // RegisterPersonaCreateFlags registers all flags for PersonaCreate command
 func RegisterPersonaCreateFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona")
 	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona")
+	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona")
 }
 
 // BuildPersonaCreateRequest builds the API request from CLI flags
 func BuildPersonaCreateRequest(cmd *cobra.Command) (*api.PersonaCreateRequest, error) {
 	body := &api.PersonaCreateRequest{}
 
-	if cmd.Flags().Changed("create-vault") {
-		body.CreateVault = &PersonaCreateCreateVault
-	}
-
 	if cmd.Flags().Changed("create-phone-number") {
 		body.CreatePhoneNumber = &PersonaCreateCreatePhoneNumber
+	}
+
+	if cmd.Flags().Changed("create-vault") {
+		body.CreateVault = &PersonaCreateCreateVault
 	}
 
 	return body, nil

@@ -11,38 +11,31 @@ import (
 
 // VaultCredentialsAdd command flags
 var (
-	VaultCredentialsAddUrl string
-
 	// Flattened: credentials object
 	VaultCredentialsAddCredentialsEmail     string
-	VaultCredentialsAddCredentialsUsername  string
-	VaultCredentialsAddCredentialsPassword  string
 	VaultCredentialsAddCredentialsMfaSecret string
+	VaultCredentialsAddCredentialsPassword  string
+	VaultCredentialsAddCredentialsUsername  string
+
+	VaultCredentialsAddUrl string
 )
 
 // RegisterVaultCredentialsAddFlags registers all flags for VaultCredentialsAdd command
 func RegisterVaultCredentialsAddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&VaultCredentialsAddUrl, "url", "", "url")
 	// credentials (flattened object)
 	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsEmail, "email", "", "email")
-	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsUsername, "username", "", "username")
-	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsPassword, "password", "", "password")
 	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsMfaSecret, "mfa-secret", "", "mfa-secret")
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsPassword, "password", "", "password")
+	cmd.Flags().StringVar(&VaultCredentialsAddCredentialsUsername, "username", "", "username")
+	cmd.Flags().StringVar(&VaultCredentialsAddUrl, "url", "", "url")
 }
 
 // BuildVaultCredentialsAddRequest builds the API request from CLI flags
 func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsRequest, error) {
 	body := &api.AddCredentialsRequest{}
 
-	if cmd.Flags().Changed("url") {
-		if VaultCredentialsAddUrl == "" {
-			return nil, fmt.Errorf("--url cannot be empty")
-		}
-		body.Url = VaultCredentialsAddUrl
-	}
-
 	// credentials: validate required fields when optional fields are provided
-	if (VaultCredentialsAddCredentialsEmail != "" || VaultCredentialsAddCredentialsUsername != "" || VaultCredentialsAddCredentialsMfaSecret != "") && !(VaultCredentialsAddCredentialsPassword != "") {
+	if (VaultCredentialsAddCredentialsEmail != "" || VaultCredentialsAddCredentialsMfaSecret != "" || VaultCredentialsAddCredentialsUsername != "") && !(VaultCredentialsAddCredentialsPassword != "") {
 		return nil, fmt.Errorf("credentials requires --password to be set")
 	}
 
@@ -54,13 +47,20 @@ func BuildVaultCredentialsAddRequest(cmd *cobra.Command) (*api.AddCredentialsReq
 		if VaultCredentialsAddCredentialsEmail != "" {
 			credentials.Email = &VaultCredentialsAddCredentialsEmail
 		}
-		if VaultCredentialsAddCredentialsUsername != "" {
-			credentials.Username = &VaultCredentialsAddCredentialsUsername
-		}
 		if VaultCredentialsAddCredentialsMfaSecret != "" {
 			credentials.MfaSecret = &VaultCredentialsAddCredentialsMfaSecret
 		}
+		if VaultCredentialsAddCredentialsUsername != "" {
+			credentials.Username = &VaultCredentialsAddCredentialsUsername
+		}
 		body.Credentials = credentials
+	}
+
+	if cmd.Flags().Changed("url") {
+		if VaultCredentialsAddUrl == "" {
+			return nil, fmt.Errorf("--url cannot be empty")
+		}
+		body.Url = VaultCredentialsAddUrl
 	}
 
 	return body, nil
