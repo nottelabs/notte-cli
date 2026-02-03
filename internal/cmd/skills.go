@@ -46,25 +46,17 @@ func init() {
 	skillCmd.AddCommand(skillRemoveCmd)
 }
 
-// checkSkillsInstalled verifies that npx and the skills package are available
-func checkSkillsInstalled() error {
-	// Check if npx is available
+// checkNpxInstalled verifies that npx is available
+func checkNpxInstalled() error {
 	if _, err := exec.LookPath("npx"); err != nil {
 		return errors.New("npx not found. Please install Node.js from https://nodejs.org")
 	}
-
-	// Check if skills package is available by running 'npx skills --version'
-	cmd := exec.Command("npx", "skills", "--version")
-	if err := cmd.Run(); err != nil {
-		return errors.New("'skills' package not found. Install it with: npm install -g skills")
-	}
-
 	return nil
 }
 
 func runSkillAdd(cmd *cobra.Command, args []string) error {
 	// Check prerequisites
-	if err := checkSkillsInstalled(); err != nil {
+	if err := checkNpxInstalled(); err != nil {
 		return err
 	}
 
@@ -91,7 +83,7 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 
 func runSkillRemove(cmd *cobra.Command, args []string) error {
 	// Check prerequisites
-	if err := checkSkillsInstalled(); err != nil {
+	if err := checkNpxInstalled(); err != nil {
 		return err
 	}
 
