@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -46,20 +45,7 @@ func init() {
 	skillCmd.AddCommand(skillRemoveCmd)
 }
 
-// checkNpxInstalled verifies that npx is available
-func checkNpxInstalled() error {
-	if _, err := exec.LookPath("npx"); err != nil {
-		return errors.New("npx not found. Please install Node.js from https://nodejs.org")
-	}
-	return nil
-}
-
 func runSkillAdd(cmd *cobra.Command, args []string) error {
-	// Check prerequisites
-	if err := checkNpxInstalled(); err != nil {
-		return err
-	}
-
 	PrintInfo("Installing Notte skill via npx...")
 
 	// Create the npx command
@@ -82,11 +68,6 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 }
 
 func runSkillRemove(cmd *cobra.Command, args []string) error {
-	// Check prerequisites
-	if err := checkNpxInstalled(); err != nil {
-		return err
-	}
-
 	PrintInfo("Removing Notte skill via npx...")
 
 	// Create the npx command
