@@ -313,7 +313,8 @@ func runAgentWorkflowCode(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := &api.GetScriptParams{
-		AsWorkflow: true, // Return as standalone workflow
+		AsWorkflow:          true, // Return as standalone workflow
+		InferResponseFormat: boolPtr(true),
 	}
 	resp, err := client.Client().GetScriptWithResponse(ctx, agentID, params)
 	if err != nil {

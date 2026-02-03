@@ -783,7 +783,8 @@ func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := &api.GetSessionScriptParams{
-		AsWorkflow: true,
+		AsWorkflow:          true,
+		InferResponseFormat: boolPtr(true),
 	}
 	resp, err := client.Client().GetSessionScriptWithResponse(ctx, sessionID, params)
 	if err != nil {
@@ -820,7 +821,9 @@ func runSessionCode(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.GetSessionScriptParams{}
+	params := &api.GetSessionScriptParams{
+		InferResponseFormat: boolPtr(true),
+	}
 	resp, err := client.Client().GetSessionScriptWithResponse(ctx, sessionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
