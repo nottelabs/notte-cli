@@ -116,3 +116,8 @@ func GetClient() (*api.NotteClient, error) {
 func GetContextWithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, time.Duration(requestTimeout)*time.Second)
 }
+
+// boolPtr returns a pointer to the given bool value
+func boolPtr(b bool) *bool {
+	return &b
+}

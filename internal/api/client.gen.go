@@ -2587,7 +2587,10 @@ type AgentStopParams struct {
 // GetScriptParams defines parameters for GetScript.
 type GetScriptParams struct {
 	// AsWorkflow Whether to return code as standalone workflow or just relevant instructions
-	AsWorkflow          bool    `form:"as_workflow" json:"as_workflow"`
+	AsWorkflow bool `form:"as_workflow" json:"as_workflow"`
+
+	// InferResponseFormat Whether to infer response_format schema for scrape calls that have instructions but no schema
+	InferResponseFormat *bool   `form:"infer_response_format,omitempty" json:"infer_response_format,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2919,7 +2922,10 @@ type SessionStopParams struct {
 // GetSessionScriptParams defines parameters for GetSessionScript.
 type GetSessionScriptParams struct {
 	// AsWorkflow Whether to return code as standalone workflow or just relevant instructions
-	AsWorkflow          bool    `form:"as_workflow" json:"as_workflow"`
+	AsWorkflow bool `form:"as_workflow" json:"as_workflow"`
+
+	// InferResponseFormat Whether to infer response_format schema for scrape calls that have instructions but no schema
+	InferResponseFormat *bool   `form:"infer_response_format,omitempty" json:"infer_response_format,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -9604,6 +9610,22 @@ func NewGetScriptRequest(server string, agentId string, params *GetScriptParams)
 			}
 		}
 
+		if params.InferResponseFormat != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "infer_response_format", runtime.ParamLocationQuery, *params.InferResponseFormat); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12720,6 +12742,22 @@ func NewGetSessionScriptRequest(server string, sessionId string, params *GetSess
 					queryValues.Add(k, v2)
 				}
 			}
+		}
+
+		if params.InferResponseFormat != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "infer_response_format", runtime.ParamLocationQuery, *params.InferResponseFormat); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
 		}
 
 		queryURL.RawQuery = queryValues.Encode()
