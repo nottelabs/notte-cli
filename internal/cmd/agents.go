@@ -289,7 +289,9 @@ func runAgentStop(cmd *cobra.Command, args []string) error {
 	}
 
 	// Clear current agent only if it matches the stopped agent
-	_ = clearCurrentAgentIfMatches(agentID)
+	if err := clearCurrentAgentIfMatches(agentID); err != nil {
+		PrintInfo(fmt.Sprintf("Warning: could not clear current agent: %v", err))
+	}
 
 	return PrintResult(fmt.Sprintf("Agent %s stopped.", agentID), map[string]any{
 		"id":     agentID,
