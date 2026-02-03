@@ -176,6 +176,42 @@ notte page complete "Task finished successfully" [--success=true]
 notte page form-fill --data '{"email": "test@example.com", "name": "John"}'
 ```
 
+### AI Agents
+
+Start and manage AI-powered browser agents:
+
+```bash
+# List all agents
+notte agents list
+
+# Start a new agent (auto-uses current session if active)
+notte agents start --task "Navigate to example.com and extract the main heading"
+  --session-id             Session ID (uses current session if not specified)
+  --vault-id               Vault ID for credential access
+  --persona-id             Persona ID for identity
+  --max-steps              Maximum steps for the agent (default: 30)
+  --reasoning-model        Custom reasoning model
+
+# Get current agent status
+notte agents status
+
+# Stop current agent
+notte agents stop
+
+# Export agent steps as workflow code
+notte agents workflow-code
+
+# Get agent execution replay
+notte agents replay
+```
+
+**Note:** When you start an agent, it automatically becomes the "current" agent (saved to `~/.notte/cli/current_agent`). All subsequent commands use this agent by default. Use `--id <agent-id>` only when you need to manage multiple agents simultaneously or reference a specific agent.
+
+**Agent ID Resolution:**
+1. `--id` flag (highest priority)
+2. `NOTTE_AGENT_ID` environment variable
+3. `~/.notte/cli/current_agent` file (lowest priority)
+
 ### Functions (Workflow Automation)
 
 Create, manage, and schedule reusable workflows:

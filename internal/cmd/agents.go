@@ -1,14 +1,90 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 var agentID string
+
+// GetCurrentAgentID returns the agent ID from flag, env var, or file (in priority order)
+func GetCurrentAgentID() string {
+	if agentID != "" {
+		return agentID
+	}
+	if envID := os.Getenv(config.EnvAgentID); envID != "" {
+		return envID
+	}
+	configDir, err := config.Dir()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentAgentFile))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+func setCurrentAgent(id string) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(configDir, config.CurrentAgentFile), []byte(id), 0o600)
+}
+
+func clearCurrentAgent() error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentAgentFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func clearCurrentAgentIfMatches(expectedID string) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentAgentFile)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if strings.TrimSpace(string(data)) == expectedID {
+		return os.Remove(path)
+	}
+	return nil
+}
+
+// RequireAgentID ensures an agent ID is available from flag, env, or file
+func RequireAgentID() error {
+	resolvedID := GetCurrentAgentID()
+	if resolvedID == "" {
+		return errors.New("agent ID required: use --id flag, set NOTTE_AGENT_ID env var, or start an agent first")
+	}
+	agentID = resolvedID
+	return nil
+}
 
 var agentsCmd = &cobra.Command{
 	Use:   "agents",
@@ -66,20 +142,16 @@ func init() {
 	_ = agentsStartCmd.MarkFlagRequired("task")
 
 	// Status command flags
-	agentsStatusCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (required)")
-	_ = agentsStatusCmd.MarkFlagRequired("id")
+	agentsStatusCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
 
 	// Stop command flags
-	agentsStopCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (required)")
-	_ = agentsStopCmd.MarkFlagRequired("id")
+	agentsStopCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
 
 	// Workflow-code command flags
-	agentsWorkflowCodeCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (required)")
-	_ = agentsWorkflowCodeCmd.MarkFlagRequired("id")
+	agentsWorkflowCodeCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
 
 	// Replay command flags
-	agentsReplayCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (required)")
-	_ = agentsReplayCmd.MarkFlagRequired("id")
+	agentsReplayCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
 }
 
 func runAgentsList(cmd *cobra.Command, args []string) error {
@@ -129,6 +201,13 @@ func runAgentsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Auto-use current session ID if --session-id not provided
+	if body.SessionId == "" {
+		if currentSessionID := GetCurrentSessionID(); currentSessionID != "" {
+			body.SessionId = currentSessionID
+		}
+	}
+
 	params := &api.AgentStartParams{}
 	resp, err := client.Client().AgentStartWithResponse(ctx, params, *body)
 	if err != nil {
@@ -139,10 +218,21 @@ func runAgentsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Save agent ID as current agent
+	if resp.JSON200 != nil {
+		if err := setCurrentAgent(resp.JSON200.AgentId); err != nil {
+			PrintInfo(fmt.Sprintf("Warning: could not save current agent: %v", err))
+		}
+	}
+
 	return GetFormatter().Print(resp.JSON200)
 }
 
 func runAgentStatus(cmd *cobra.Command, args []string) error {
+	if err := RequireAgentID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -165,6 +255,10 @@ func runAgentStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentStop(cmd *cobra.Command, args []string) error {
+	if err := RequireAgentID(); err != nil {
+		return err
+	}
+
 	confirmed, err := ConfirmStop("agent", agentID)
 	if err != nil {
 		return err
@@ -181,8 +275,9 @@ func runAgentStop(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
+	// Use current session ID for the stop request
 	params := &api.AgentStopParams{
-		SessionId: "", // Session ID is required but can be empty
+		SessionId: GetCurrentSessionID(),
 	}
 	resp, err := client.Client().AgentStopWithResponse(ctx, agentID, params)
 	if err != nil {
@@ -193,6 +288,11 @@ func runAgentStop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Clear current agent only if it matches the stopped agent
+	if err := clearCurrentAgentIfMatches(agentID); err != nil {
+		PrintInfo(fmt.Sprintf("Warning: could not clear current agent: %v", err))
+	}
+
 	return PrintResult(fmt.Sprintf("Agent %s stopped.", agentID), map[string]any{
 		"id":     agentID,
 		"status": "stopped",
@@ -200,6 +300,10 @@ func runAgentStop(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentWorkflowCode(cmd *cobra.Command, args []string) error {
+	if err := RequireAgentID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -224,6 +328,10 @@ func runAgentWorkflowCode(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentReplay(cmd *cobra.Command, args []string) error {
+	if err := RequireAgentID(); err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err

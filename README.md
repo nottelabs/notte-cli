@@ -141,12 +141,14 @@ notte page captcha-solve              # Solve captcha
 
 ```bash
 notte agents list                     # List all AI agents
-notte agents start                    # Start a new AI agent
-notte agents status --id <id>         # Get agent status
-notte agents stop --id <id>           # Stop an agent
-notte agents workflow-code --id <id>  # Get agent's workflow code
-notte agents replay --id <id>         # Get agent execution replay
+notte agents start --task "..."       # Start a new AI agent (auto-uses current session)
+notte agents status                   # Get agent status (uses current agent)
+notte agents stop                     # Stop an agent (uses current agent)
+notte agents workflow-code            # Get agent's workflow code
+notte agents replay                   # Get agent execution replay
 ```
+
+**Note:** When you start an agent, it automatically becomes the "current" agent. All subsequent commands use this agent by default. Use `--id <agent-id>` only when you need to manage multiple agents. If a session is active, `agents start` will automatically use that session unless `--session-id` is specified.
 
 ### Functions
 
