@@ -682,11 +682,61 @@ Examples:
 }
 
 func runPageEvalJs(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
 	action := map[string]any{
 		"type": "evaluate_js",
 		"code": args[0],
 	}
-	return executePageAction(cmd, action)
+	actionJSON, err := json.Marshal(action)
+	if err != nil {
+		return fmt.Errorf("failed to marshal action: %w", err)
+	}
+
+	params := &api.PageExecuteParams{}
+	resp, err := client.Client().PageExecuteWithBodyWithResponse(ctx, sessionID, params, "application/json", bytes.NewReader(actionJSON))
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	// Custom output formatting for eval-js
+	result := resp.JSON200
+	if IsJSONOutput() {
+		return GetFormatter().Print(result)
+	}
+
+	if !result.Success {
+		if result.Exception != nil {
+			if result.Message != "" && *result.Exception != result.Message {
+				return fmt.Errorf("%s: %s", *result.Exception, result.Message)
+			}
+			return fmt.Errorf("%s", *result.Exception)
+		}
+		if result.Message != "" {
+			return fmt.Errorf("eval-js failed: %s", result.Message)
+		}
+		return fmt.Errorf("eval-js failed")
+	}
+
+	fmt.Println(result.Message)
+	if result.Data != nil && result.Data.Markdown != "" {
+		fmt.Printf("Result:  %s\n", result.Data.Markdown)
+	}
+	return nil
 }
 
 func init() {

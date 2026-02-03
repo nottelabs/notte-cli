@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -110,13 +111,25 @@ func PrintScrapeResponse(resp *api.ScrapeResponse, hasInstructions bool) error {
 				// Print with a nice header for scrape results
 				fmt.Println("Scraped content from the current page:")
 				fmt.Println()
-				return GetFormatter().Print(data)
+				// Print as indented JSON for better readability
+				jsonBytes, err := json.MarshalIndent(data, "", "  ")
+				if err != nil {
+					return GetFormatter().Print(data)
+				}
+				fmt.Println(string(jsonBytes))
+				return nil
 			}
 		}
 	}
 	fmt.Println("Scraped content from the current page:")
 	fmt.Println()
-	return GetFormatter().Print(resp.Structured)
+	// Print as indented JSON for better readability
+	jsonBytes, err := json.MarshalIndent(resp.Structured, "", "  ")
+	if err != nil {
+		return GetFormatter().Print(resp.Structured)
+	}
+	fmt.Println(string(jsonBytes))
+	return nil
 }
 
 // printSessionStatus formats session status output with simplified Steps display.
