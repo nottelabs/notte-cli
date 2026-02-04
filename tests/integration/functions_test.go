@@ -132,7 +132,7 @@ func TestFunctionsLifecycle(t *testing.T) {
 	defer cleanupFunction(t, functionID)
 
 	// Step 2: Show function details
-	result = runCLI(t, "functions", "show", "--id", functionID)
+	result = runCLI(t, "functions", "show", "--function-id", functionID)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, functionID) {
 		t.Error("Function show did not contain function ID")
@@ -148,12 +148,12 @@ func TestFunctionsLifecycle(t *testing.T) {
 	t.Log("Function appears in list")
 
 	// Step 4: Update function with new code
-	result = runCLI(t, "functions", "update", "--id", functionID, "--file", tmpFile)
+	result = runCLI(t, "functions", "update", "--function-id", functionID, "--file", tmpFile)
 	requireSuccess(t, result)
 	t.Log("Successfully updated function")
 
 	// Step 5: List function runs (should be empty initially)
-	result = runCLI(t, "functions", "runs", "--id", functionID)
+	result = runCLI(t, "functions", "runs", "--function-id", functionID)
 	requireSuccess(t, result)
 	t.Log("Function lifecycle test completed successfully")
 }
@@ -161,7 +161,7 @@ func TestFunctionsLifecycle(t *testing.T) {
 func TestFunctionIDResolution(t *testing.T) {
 	// This test verifies the function ID resolution feature:
 	// 1. Create a function and verify current_function file is created
-	// 2. Run subsequent commands without --id and verify they use the saved function
+	// 2. Run subsequent commands without --function-id and verify they use the saved function
 	// 3. Delete the function and verify current_function file is cleared
 
 	tmpFile := createTempFunctionFile(t)
@@ -205,28 +205,28 @@ func TestFunctionIDResolution(t *testing.T) {
 	}
 	t.Log("Verified current_function file was created with correct function ID")
 
-	// Step 3: Test show command without --id should use the saved function
+	// Step 3: Test show command without --function-id should use the saved function
 	result = runCLI(t, "functions", "show")
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, functionID) {
-		t.Error("Function show without --id did not return the current function")
+		t.Error("Function show without --function-id did not return the current function")
 	}
 	t.Log("Successfully used current function for 'show' command")
 
-	// Step 4: Test runs command without --id should use the saved function
+	// Step 4: Test runs command without --function-id should use the saved function
 	result = runCLI(t, "functions", "runs")
 	requireSuccess(t, result)
 	t.Log("Successfully used current function for 'runs' command")
 
-	// Step 4a: Test run command without --id should use the saved function
+	// Step 4a: Test run command without --function-id should use the saved function
 	result = runCLI(t, "functions", "run")
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, functionID) {
-		t.Error("Function run without --id did not use the current function")
+		t.Error("Function run without --function-id did not use the current function")
 	}
 	t.Log("Successfully used current function for 'run' command")
 
-	// Step 5: Test delete command without --id should use the saved function and clear it
+	// Step 5: Test delete command without --function-id should use the saved function and clear it
 	result = runCLI(t, "functions", "delete")
 	requireSuccess(t, result)
 	deleted = true // Mark as deleted so deferred cleanup is skipped
@@ -243,7 +243,7 @@ func TestFunctionIDResolution(t *testing.T) {
 }
 
 func TestFunctionIDResolutionPriority(t *testing.T) {
-	// Test priority: --id flag > NOTTE_FUNCTION_ID env var > current_function file
+	// Test priority: --function-id flag > NOTTE_FUNCTION_ID env var > current_function file
 	tmpFile := createTempFunctionFile(t)
 
 	// Create first function (this sets current_function)
@@ -283,13 +283,13 @@ func TestFunctionIDResolutionPriority(t *testing.T) {
 	}
 	t.Log("Verified env var takes priority over current_function file")
 
-	// Test 2: --id flag should take priority over env var
-	result = runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": functionID1}, "functions", "show", "--id", functionID2)
+	// Test 2: --function-id flag should take priority over env var
+	result = runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": functionID1}, "functions", "show", "--function-id", functionID2)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, functionID2) {
-		t.Errorf("Expected function2 (%s) when using --id flag, but got different function", functionID2)
+		t.Errorf("Expected function2 (%s) when using --function-id flag, but got different function", functionID2)
 	}
-	t.Log("Verified --id flag takes priority over env var")
+	t.Log("Verified --function-id flag takes priority over env var")
 }
 
 func TestFunctionsUpdate(t *testing.T) {
@@ -312,7 +312,7 @@ func TestFunctionsUpdate(t *testing.T) {
 	t.Logf("Created function: %s (version: %s)", functionID, originalVersion)
 
 	// Update function
-	result = runCLI(t, "functions", "update", "--id", functionID, "--file", tmpFile)
+	result = runCLI(t, "functions", "update", "--function-id", functionID, "--file", tmpFile)
 	requireSuccess(t, result)
 
 	var updateResp struct {
@@ -333,14 +333,14 @@ func TestFunctionsUpdate(t *testing.T) {
 
 func TestFunctionsShowNonexistent(t *testing.T) {
 	// Try to show a non-existent function
-	result := runCLI(t, "functions", "show", "--id", "00000000-0000-0000-0000-000000000000")
+	result := runCLI(t, "functions", "show", "--function-id", "00000000-0000-0000-0000-000000000000")
 	requireFailure(t, result)
 	t.Log("Correctly failed to show non-existent function")
 }
 
 func TestFunctionsDeleteNonexistent(t *testing.T) {
 	// Try to delete a non-existent function
-	result := runCLI(t, "functions", "delete", "--id", "00000000-0000-0000-0000-000000000000")
+	result := runCLI(t, "functions", "delete", "--function-id", "00000000-0000-0000-0000-000000000000")
 	requireFailure(t, result)
 	t.Log("Correctly failed to delete non-existent function")
 }
@@ -361,12 +361,12 @@ func TestFunctionsDeleteAlreadyDeleted(t *testing.T) {
 	functionID := createResp.FunctionID
 
 	// Delete first time - should succeed
-	result = runCLI(t, "functions", "delete", "--id", functionID)
+	result = runCLI(t, "functions", "delete", "--function-id", functionID)
 	requireSuccess(t, result)
 	t.Log("First delete succeeded")
 
 	// Delete second time - should fail
-	result = runCLI(t, "functions", "delete", "--id", functionID)
+	result = runCLI(t, "functions", "delete", "--function-id", functionID)
 	requireFailure(t, result)
 	t.Log("Correctly failed on second delete (already deleted)")
 }
@@ -407,7 +407,7 @@ func TestFunctionsFork(t *testing.T) {
 	t.Logf("Created source function: %s", sourceFunctionID)
 
 	// Fork the function
-	result = runCLI(t, "functions", "fork", "--id", sourceFunctionID)
+	result = runCLI(t, "functions", "fork", "--function-id", sourceFunctionID)
 	requireSuccess(t, result)
 
 	var forkResp struct {
@@ -448,12 +448,12 @@ func TestFunctionsScheduleAndUnschedule(t *testing.T) {
 	t.Logf("Created function: %s", functionID)
 
 	// Schedule the function
-	result = runCLI(t, "functions", "schedule", "--id", functionID, "--cron", "0 * * * ? *")
+	result = runCLI(t, "functions", "schedule", "--function-id", functionID, "--cron", "0 * * * ? *")
 	requireSuccess(t, result)
 	t.Log("Successfully scheduled function")
 
 	// Unschedule the function
-	result = runCLI(t, "functions", "unschedule", "--id", functionID)
+	result = runCLI(t, "functions", "unschedule", "--function-id", functionID)
 	requireSuccess(t, result)
 	t.Log("Successfully unscheduled function")
 }
@@ -466,7 +466,7 @@ func TestFunctionsNoIDProvided(t *testing.T) {
 		os.Remove(currentFunctionFile)
 	}
 
-	// Clear NOTTE_FUNCTION_ID env var and try to show without --id
+	// Clear NOTTE_FUNCTION_ID env var and try to show without --function-id
 	result := runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": ""}, "functions", "show")
 	requireFailure(t, result)
 
@@ -495,7 +495,7 @@ func TestFunctionRun(t *testing.T) {
 	t.Logf("Created function: %s", functionID)
 
 	// Run the function
-	result = runCLI(t, "functions", "run", "--id", functionID)
+	result = runCLI(t, "functions", "run", "--function-id", functionID)
 	requireSuccess(t, result)
 
 	// Parse the run response to verify it contains expected fields
@@ -526,7 +526,7 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	t.Logf("Created function: %s", functionID)
 
 	// Test 1: Run with --var flag
-	result = runCLI(t, "functions", "run", "--id", functionID, "--var", "test=mytest_variable")
+	result = runCLI(t, "functions", "run", "--function-id", functionID, "--var", "test=mytest_variable")
 	requireSuccess(t, result)
 
 	var runResp map[string]interface{}
@@ -536,7 +536,7 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	t.Logf("Function run response with --var: %+v", runResp)
 
 	// Test 2: Run with --vars JSON
-	result = runCLI(t, "functions", "run", "--id", functionID, "--vars", `{"test":"json_variable"}`)
+	result = runCLI(t, "functions", "run", "--function-id", functionID, "--vars", `{"test":"json_variable"}`)
 	requireSuccess(t, result)
 
 	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
@@ -545,7 +545,7 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	t.Logf("Function run response with --vars: %+v", runResp)
 
 	// Test 3: Run with multiple --var flags
-	result = runCLI(t, "functions", "run", "--id", functionID, "--var", "test=first", "--var", "another=second")
+	result = runCLI(t, "functions", "run", "--function-id", functionID, "--var", "test=first", "--var", "another=second")
 	requireSuccess(t, result)
 
 	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
@@ -562,7 +562,7 @@ func cleanupFunction(t *testing.T, functionID string) {
 	if functionID == "" {
 		return
 	}
-	result := runCLI(t, "functions", "delete", "--id", functionID)
+	result := runCLI(t, "functions", "delete", "--function-id", functionID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup function %s: %s", functionID, result.Stderr)
 	}

@@ -33,7 +33,7 @@ func TestPageGoto(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate using page goto
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	if result.Stdout == "" {
@@ -48,11 +48,11 @@ func TestPageClick(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// First navigate to a page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Click on a link (example.com has an "a" tag with "More information...")
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "click", "a", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "click", "a", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	if result.Stdout == "" {
@@ -67,16 +67,16 @@ func TestPageScrollDown(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scroll down without amount (default)
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page scroll-down (default)")
 
 	// Scroll down with specific amount
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "300", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "300", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page scroll-down with amount")
 }
@@ -87,15 +87,15 @@ func TestPageScrollUp(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scroll down first
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "500", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "500", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Then scroll up
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-up", "200", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-up", "200", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page scroll-up")
 }
@@ -106,11 +106,11 @@ func TestPageWait(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Wait for 500ms
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "wait", "500", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "wait", "500", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page wait")
 }
@@ -121,11 +121,11 @@ func TestPagePress(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Press Tab key
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "press", "Tab", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "press", "Tab", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page press")
 }
@@ -136,11 +136,11 @@ func TestPageReload(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Reload the page
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "reload", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "reload", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page reload")
 }
@@ -151,20 +151,20 @@ func TestPageBackForward(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to first page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Navigate to second page
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.org", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.org", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Go back
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "back", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "back", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page back")
 
 	// Go forward
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "forward", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "forward", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page forward")
 }
@@ -175,11 +175,11 @@ func TestPageNewTab(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to initial page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Open new tab
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page new-tab")
 }
@@ -190,15 +190,15 @@ func TestPageSwitchTab(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to initial page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Open new tab
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Switch back to first tab (index 0)
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "switch-tab", "0", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "switch-tab", "0", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page switch-tab")
 }
@@ -209,15 +209,15 @@ func TestPageCloseTab(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to initial page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Open new tab
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "new-tab", "https://example.org", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Close current tab (the new one)
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "close-tab", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "close-tab", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page close-tab")
 }
@@ -228,11 +228,11 @@ func TestPageScrape(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape with instructions
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the page title", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the page title", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	if result.Stdout == "" {
@@ -247,11 +247,11 @@ func TestPageScrapeMainOnly(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page first
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape with main-only flag
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the main content", "--only-main-content", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract the main content", "--only-main-content", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page scrape with only-main-content")
 }
@@ -262,37 +262,37 @@ func TestPageCommandsWorkflow(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Step 1: Navigate to a page
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 1: Navigated to example.com")
 
 	// Step 2: Wait for page to stabilize
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "wait", "500", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "wait", "500", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 2: Waited 500ms")
 
 	// Step 3: Scroll down
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "200", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scroll-down", "200", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 3: Scrolled down")
 
 	// Step 4: Scrape content
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract all text content", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "scrape", "--instructions", "Extract all text content", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 4: Scraped content")
 
 	// Step 5: Navigate to another page
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.org", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.org", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 5: Navigated to example.org")
 
 	// Step 6: Go back
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "back", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "back", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 6: Went back to example.com")
 
 	// Step 7: Reload
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "reload", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "reload", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 7: Reloaded page")
 
@@ -305,18 +305,18 @@ func TestPageFormFill(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with a form (using httpbin for testing)
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Fill form with JSON data using valid field names from API schema
 	// Valid fields: first_name, last_name, email, phone, etc.
 	formData := `{"first_name":"Test","last_name":"User","email":"test@example.com","phone":"555-1234"}`
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "form-fill", "--data", formData, "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "form-fill", "--data", formData, "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page form-fill")
 }
 
-// TestPageUsesCurrentSession tests that page commands use the current session when --id is not specified
+// TestPageUsesCurrentSession tests that page commands use the current session when --session-id is not specified
 func TestPageUsesCurrentSession(t *testing.T) {
 	// Start a session (this sets the current session)
 	result := runCLI(t, "sessions", "start", "--headless")
@@ -334,16 +334,16 @@ func TestPageUsesCurrentSession(t *testing.T) {
 	// Wait for session to be ready
 	time.Sleep(2 * time.Second)
 
-	// Run page command WITHOUT --id flag (should use current session)
+	// Run page command WITHOUT --session-id flag (should use current session)
 	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com")
 	requireSuccess(t, result)
-	t.Log("Successfully used current session without --id flag")
+	t.Log("Successfully used current session without --session-id flag")
 }
 
 // TestPageCommandErrors tests error handling for page commands
 func TestPageCommandErrors(t *testing.T) {
 	// Test without a session
-	result := runCLI(t, "page", "goto", "https://example.com", "--id", "nonexistent-session-id")
+	result := runCLI(t, "page", "goto", "https://example.com", "--session-id", "nonexistent-session-id")
 	requireFailure(t, result)
 	t.Log("Correctly failed with invalid session ID")
 }
@@ -354,11 +354,11 @@ func TestPageFillCommand(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with an input field
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Fill an input field using CSS selector
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "fill", "input[name=custname]", "Test User", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "fill", "input[name=custname]", "Test User", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page fill with selector")
 }
@@ -369,11 +369,11 @@ func TestPageFillWithFlags(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with an input field
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Fill with --clear flag
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "fill", "input[name=custname]", "Cleared and filled", "--clear", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "fill", "input[name=custname]", "Cleared and filled", "--clear", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page fill with --clear flag")
 }
@@ -384,11 +384,11 @@ func TestPageSelect(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with a select dropdown
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Select a dropdown option
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "select", "select[name=size]", "medium", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "select", "select[name=size]", "medium", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page select")
 }
@@ -399,11 +399,11 @@ func TestPageCheck(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with checkboxes
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Check a checkbox
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page check")
 }
@@ -414,15 +414,15 @@ func TestPageCheckUncheck(t *testing.T) {
 	defer cleanupSession(t, sessionID)
 
 	// Navigate to a page with checkboxes
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--id", sessionID)
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// First check
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--value=true", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--value=true", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Then uncheck
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--value=false", "--id", sessionID)
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "check", "input[name=topping][value=bacon]", "--value=false", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page check/uncheck")
 }

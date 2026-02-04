@@ -69,20 +69,20 @@ func init() {
 	RegisterPersonaCreateFlags(personasCreateCmd)
 
 	// Show command flags
-	personasShowCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasShowCmd.MarkFlagRequired("id")
+	personasShowCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
+	_ = personasShowCmd.MarkFlagRequired("persona-id")
 
 	// Delete command flags
-	personasDeleteCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasDeleteCmd.MarkFlagRequired("id")
+	personasDeleteCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
+	_ = personasDeleteCmd.MarkFlagRequired("persona-id")
 
 	// Emails command flags
-	personasEmailsCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasEmailsCmd.MarkFlagRequired("id")
+	personasEmailsCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
+	_ = personasEmailsCmd.MarkFlagRequired("persona-id")
 
 	// SMS command flags
-	personasSmsCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasSmsCmd.MarkFlagRequired("id")
+	personasSmsCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
+	_ = personasSmsCmd.MarkFlagRequired("persona-id")
 }
 
 func runPersonasList(cmd *cobra.Command, args []string) error {

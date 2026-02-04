@@ -36,7 +36,7 @@ func TestProfilesCreateAndDelete(t *testing.T) {
 	defer cleanupProfile(t, profileID)
 
 	// Show profile details
-	result = runCLI(t, "profiles", "show", "--id", profileID)
+	result = runCLI(t, "profiles", "show", "--profile-id", profileID)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, profileID) {
 		t.Error("Profile show did not contain profile ID")
@@ -72,7 +72,7 @@ func TestProfilesCreateWithName(t *testing.T) {
 	defer cleanupProfile(t, profileID)
 
 	// Show profile to verify name
-	result = runCLI(t, "profiles", "show", "--id", profileID)
+	result = runCLI(t, "profiles", "show", "--profile-id", profileID)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, "test-profile-integration") {
 		t.Log("Profile name might not be in show output, but creation succeeded")
@@ -82,14 +82,14 @@ func TestProfilesCreateWithName(t *testing.T) {
 
 func TestProfilesShowNonexistent(t *testing.T) {
 	// Try to show a non-existent profile
-	result := runCLI(t, "profiles", "show", "--id", "nonexistent-profile-id-12345")
+	result := runCLI(t, "profiles", "show", "--profile-id", "nonexistent-profile-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to show non-existent profile")
 }
 
 func TestProfilesDeleteNonexistent(t *testing.T) {
 	// Try to delete a non-existent profile
-	result := runCLI(t, "profiles", "delete", "--id", "nonexistent-profile-id-12345")
+	result := runCLI(t, "profiles", "delete", "--profile-id", "nonexistent-profile-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to delete non-existent profile")
 }

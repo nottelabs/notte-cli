@@ -36,7 +36,7 @@ func TestPersonasCreateAndDelete(t *testing.T) {
 	defer cleanupPersona(t, personaID)
 
 	// Show persona details
-	result = runCLI(t, "personas", "show", "--id", personaID)
+	result = runCLI(t, "personas", "show", "--persona-id", personaID)
 	requireSuccess(t, result)
 	if !containsString(result.Stdout, personaID) {
 		t.Error("Persona show did not contain persona ID")
@@ -72,7 +72,7 @@ func TestPersonasCreateWithVault(t *testing.T) {
 	defer cleanupPersona(t, personaID)
 
 	// Show persona details
-	result = runCLI(t, "personas", "show", "--id", personaID)
+	result = runCLI(t, "personas", "show", "--persona-id", personaID)
 	requireSuccess(t, result)
 	t.Log("Persona with vault created successfully")
 }
@@ -92,7 +92,7 @@ func TestPersonasEmails(t *testing.T) {
 	defer cleanupPersona(t, personaID)
 
 	// List emails for the persona
-	result = runCLI(t, "personas", "emails", "--id", personaID)
+	result = runCLI(t, "personas", "emails", "--persona-id", personaID)
 	requireSuccess(t, result)
 	t.Log("Successfully listed persona emails")
 }
@@ -112,21 +112,21 @@ func TestPersonasSms(t *testing.T) {
 	defer cleanupPersona(t, personaID)
 
 	// List SMS messages for the persona
-	result = runCLI(t, "personas", "sms", "--id", personaID)
+	result = runCLI(t, "personas", "sms", "--persona-id", personaID)
 	requireSuccess(t, result)
 	t.Log("Successfully listed persona SMS messages")
 }
 
 func TestPersonasShowNonexistent(t *testing.T) {
 	// Try to show a non-existent persona
-	result := runCLI(t, "personas", "show", "--id", "nonexistent-persona-id-12345")
+	result := runCLI(t, "personas", "show", "--persona-id", "nonexistent-persona-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to show non-existent persona")
 }
 
 func TestPersonasDeleteNonexistent(t *testing.T) {
 	// Try to delete a non-existent persona
-	result := runCLI(t, "personas", "delete", "--id", "nonexistent-persona-id-12345")
+	result := runCLI(t, "personas", "delete", "--persona-id", "nonexistent-persona-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to delete non-existent persona")
 }

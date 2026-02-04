@@ -80,7 +80,7 @@ func clearCurrentAgentIfMatches(expectedID string) error {
 func RequireAgentID() error {
 	resolvedID := GetCurrentAgentID()
 	if resolvedID == "" {
-		return errors.New("agent ID required: use --id flag, set NOTTE_AGENT_ID env var, or start an agent first")
+		return errors.New("agent ID required: use --agent-id flag, set NOTTE_AGENT_ID env var, or start an agent first")
 	}
 	agentID = resolvedID
 	return nil
@@ -142,16 +142,16 @@ func init() {
 	_ = agentsStartCmd.MarkFlagRequired("task")
 
 	// Status command flags
-	agentsStatusCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
+	agentsStatusCmd.Flags().StringVar(&agentID, "agent-id", "", "Agent ID (uses current agent if not specified)")
 
 	// Stop command flags
-	agentsStopCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
+	agentsStopCmd.Flags().StringVar(&agentID, "agent-id", "", "Agent ID (uses current agent if not specified)")
 
 	// Workflow-code command flags
-	agentsWorkflowCodeCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
+	agentsWorkflowCodeCmd.Flags().StringVar(&agentID, "agent-id", "", "Agent ID (uses current agent if not specified)")
 
 	// Replay command flags
-	agentsReplayCmd.Flags().StringVar(&agentID, "id", "", "Agent ID (uses current agent if not specified)")
+	agentsReplayCmd.Flags().StringVar(&agentID, "agent-id", "", "Agent ID (uses current agent if not specified)")
 }
 
 func runAgentsList(cmd *cobra.Command, args []string) error {

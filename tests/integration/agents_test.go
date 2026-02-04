@@ -56,21 +56,21 @@ func TestAgentsStartWithSession(t *testing.T) {
 	// cleanupSession will stop the session which implicitly stops the agent
 
 	// Get agent status
-	result = runCLI(t, "agents", "status", "--id", agentID)
+	result = runCLI(t, "agents", "status", "--agent-id", agentID)
 	requireSuccess(t, result)
 	t.Log("Agent on session test completed")
 }
 
 func TestAgentsStatusNonexistent(t *testing.T) {
 	// Try to get status of a non-existent agent
-	result := runCLI(t, "agents", "status", "--id", "nonexistent-agent-id-12345")
+	result := runCLI(t, "agents", "status", "--agent-id", "nonexistent-agent-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to get status of non-existent agent")
 }
 
 func TestAgentsStopNonexistent(t *testing.T) {
 	// Try to stop a non-existent agent
-	result := runCLI(t, "agents", "stop", "--id", "nonexistent-agent-id-12345")
+	result := runCLI(t, "agents", "stop", "--agent-id", "nonexistent-agent-id-12345")
 	requireFailure(t, result)
 	t.Log("Correctly failed to stop non-existent agent")
 }
