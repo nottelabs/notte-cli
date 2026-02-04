@@ -8,7 +8,7 @@
 #   - notte CLI installed and authenticated (notte auth login)
 #   - Vault created with credentials for the target site:
 #     notte vaults create --name "MyVault"
-#     notte vaults credentials add --id <vault-id> \
+#     notte vaults credentials add --vault-id <vault-id> \
 #       --url "https://example.com" \
 #       --email "user@example.com" \
 #       --password "password" \
@@ -85,7 +85,7 @@ load_credentials_from_vault() {
 
     log_step "Loading credentials from vault..."
     local creds
-    creds=$(notte vaults credentials get --id "$VAULT_ID" --url "$LOGIN_URL" -o json 2>/dev/null || echo "{}")
+    creds=$(notte vaults credentials get --vault-id "$VAULT_ID" --url "$LOGIN_URL" -o json 2>/dev/null || echo "{}")
 
     EMAIL=$(echo "$creds" | jq -r '.email // empty')
     PASSWORD=$(echo "$creds" | jq -r '.password // empty')
@@ -185,7 +185,7 @@ main() {
         log_error "No credentials available. Set EMAIL/PASSWORD or configure vault."
         log_info "To set up vault:"
         log_info "  notte vaults create --name 'MyVault'"
-        log_info "  notte vaults credentials add --id <vault-id> \\"
+        log_info "  notte vaults credentials add --vault-id <vault-id> \\"
         log_info "    --url '$LOGIN_URL' \\"
         log_info "    --email 'your@email.com' \\"
         log_info "    --password 'yourpassword'"

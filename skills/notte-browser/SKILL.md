@@ -207,10 +207,10 @@ notte agents workflow-code
 notte agents replay
 ```
 
-**Note:** When you start an agent, it automatically becomes the "current" agent (saved to `~/.notte/cli/current_agent`). All subsequent commands use this agent by default. Use `--id <agent-id>` only when you need to manage multiple agents simultaneously or reference a specific agent.
+**Note:** When you start an agent, it automatically becomes the "current" agent (saved to `~/.notte/cli/current_agent`). All subsequent commands use this agent by default. Use `--agent-id <agent-id>` only when you need to manage multiple agents simultaneously or reference a specific agent.
 
 **Agent ID Resolution:**
-1. `--id` flag (highest priority)
+1. `--agent-id` flag (highest priority)
 2. `NOTTE_AGENT_ID` environment variable
 3. `~/.notte/cli/current_agent` file (lowest priority)
 
@@ -253,10 +253,10 @@ notte functions schedule --cron "0 9 * * *"
 notte functions unschedule
 
 # Fork a shared function to your account
-notte functions fork --id <shared-function-id>
+notte functions fork --function-id <shared-function-id>
 ```
 
-**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
+**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
 
 
 ### Account Management
@@ -271,16 +271,16 @@ notte personas list
 notte personas create [--create-phone-number] [--create-vault]
 
 # Show persona details
-notte personas show --id <persona-id>
+notte personas show --persona-id <persona-id>
 
 # Delete a persona
-notte personas delete --id <persona-id>
+notte personas delete --persona-id <persona-id>
 
 # List emails received by persona
-notte personas emails --id <persona-id>
+notte personas emails --persona-id <persona-id>
 
 # List SMS messages received
-notte personas sms --id <persona-id>
+notte personas sms --persona-id <persona-id>
 ```
 
 **Vaults** - Store your own credentials:
@@ -293,16 +293,16 @@ notte vaults list
 notte vaults create [--name "My Vault"]
 
 # Update vault name
-notte vaults update --id <vault-id> --name "New Name"
+notte vaults update --vault-id <vault-id> --name "New Name"
 
 # Delete a vault
-notte vaults delete --id <vault-id>
+notte vaults delete --vault-id <vault-id>
 
 # Manage credentials
-notte vaults credentials list --id <vault-id>
-notte vaults credentials add --id <vault-id> --url "https://site.com" --password "pass" [--email "..."] [--username "..."] [--mfa-secret "..."]
-notte vaults credentials get --id <vault-id> --url "https://site.com"
-notte vaults credentials delete --id <vault-id> --url "https://site.com"
+notte vaults credentials list --vault-id <vault-id>
+notte vaults credentials add --vault-id <vault-id> --url "https://site.com" --password "pass" [--email "..."] [--username "..."] [--mfa-secret "..."]
+notte vaults credentials get --vault-id <vault-id> --url "https://site.com"
+notte vaults credentials delete --vault-id <vault-id> --url "https://site.com"
 ```
 
 ## Global Options
@@ -322,7 +322,7 @@ Available on all commands:
 | Variable | Description |
 |----------|-------------|
 | `NOTTE_API_KEY` | API key for authentication |
-| `NOTTE_SESSION_ID` | Default session ID (avoids --id flag) |
+| `NOTTE_SESSION_ID` | Default session ID (avoids --session-id flag) |
 | `NOTTE_API_URL` | Custom API endpoint URL |
 
 ## Session ID Resolution
@@ -369,7 +369,7 @@ notte sessions stop
 ```bash
 # Setup credentials once
 notte vaults create --name "MyService"
-notte vaults credentials add --id <vault-id> \
+notte vaults credentials add --vault-id <vault-id> \
   --url "https://myservice.com" \
   --email "me@example.com" \
   --password "mypassword" \
@@ -395,10 +395,10 @@ EOF
 notte functions create --file collect_data.py --name "Daily Data Collection"
 
 # Schedule to run every day at 9 AM
-notte functions schedule --id <function-id> --cron "0 9 * * *"
+notte functions schedule --function-id <function-id> --cron "0 9 * * *"
 
 # Check run history
-notte functions runs --id <function-id>
+notte functions runs --function-id <function-id>
 ```
 
 ## Tips & Troubleshooting

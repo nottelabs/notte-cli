@@ -148,7 +148,7 @@ notte agents workflow-code            # Get agent's workflow code
 notte agents replay                   # Get agent execution replay
 ```
 
-**Note:** When you start an agent, it automatically becomes the "current" agent. All subsequent commands use this agent by default. Use `--id <agent-id>` only when you need to manage multiple agents. If a session is active, `agents start` will automatically use that session unless `--session-id` is specified.
+**Note:** When you start an agent, it automatically becomes the "current" agent. All subsequent commands use this agent by default. Use `--agent-id <agent-id>` only when you need to manage multiple agents. If a session is active, `agents start` will automatically use that session unless `--session-id` is specified.
 
 ### Functions
 
@@ -156,7 +156,7 @@ notte agents replay                   # Get agent execution replay
 notte functions list                  # List all functions
 notte functions create --file workflow.py  # Create a new function
 notte functions show                  # View current function details
-notte functions show --id <id>        # View specific function details (different from current function)
+notte functions show --function-id <id>  # View specific function details (different from current function)
 notte functions update --file workflow.py  # Update current function code
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
@@ -168,40 +168,39 @@ notte functions schedule --cron "0 9 * * *"  # Schedule current function
 notte functions unschedule            # Remove schedule from current function
 ```
 
-**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
+**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
 
 ### Vaults
 
 ```bash
-notte vaults list                               # List all vaults
-notte vaults create                             # Create a new vault
-notte vaults update --id <id>                   # Update vault metadata
-notte vaults delete --id <id>                   # Delete a vault
-notte vaults credentials list --id <id>         # List all credentials
-notte vaults credentials add --id <id>          # Add credentials
-notte vaults credentials get --id <id>          # Get credentials for URL
-notte vaults credentials delete --id <id>       # Delete credentials
+notte vaults list                                     # List all vaults
+notte vaults create                                   # Create a new vault
+notte vaults update --vault-id <id>                   # Update vault metadata
+notte vaults delete --vault-id <id>                   # Delete a vault
+notte vaults credentials list --vault-id <id>         # List all credentials
+notte vaults credentials add --vault-id <id>          # Add credentials
+notte vaults credentials get --vault-id <id>          # Get credentials for URL
+notte vaults credentials delete --vault-id <id>       # Delete credentials
 ```
 
 ### Personas
 
 ```bash
-notte personas list                   # List all personas
-notte personas create                 # Create a new persona
-notte personas show --id <id>         # View persona details
-notte personas delete --id <id>       # Delete a persona
-notte personas emails --id <id>       # Manage email addresses
-notte personas sms --id <id>          # Manage SMS numbers
-notte personas phone --id <id>        # Manage phone numbers
+notte personas list                      # List all personas
+notte personas create                    # Create a new persona
+notte personas show --persona-id <id>    # View persona details
+notte personas delete --persona-id <id>  # Delete a persona
+notte personas emails --persona-id <id>  # List emails
+notte personas sms --persona-id <id>     # List SMS messages
 ```
 
 ### Profiles
 
 ```bash
-notte profiles list                   # List all profiles
-notte profiles create                 # Create a new profile
-notte profiles show --id <id>         # View profile details
-notte profiles delete --id <id>       # Delete a profile
+notte profiles list                      # List all profiles
+notte profiles create                    # Create a new profile
+notte profiles show --profile-id <id>    # View profile details
+notte profiles delete --profile-id <id>  # Delete a profile
 ```
 
 ### Files
@@ -278,7 +277,7 @@ notte sessions stop
 notte functions list
 
 # Run workflow
-notte functions run --id func_abc123
+notte functions run --function-id func_abc123
 ```
 
 ### Managing Credentials Securely
@@ -288,13 +287,13 @@ notte functions run --id func_abc123
 VAULT_ID=$(notte vaults create --name "Production Sites" -o json | jq -r '.id')
 
 # Add website credentials
-notte vaults credentials add --id $VAULT_ID \
+notte vaults credentials add --vault-id $VAULT_ID \
   --username "admin@example.com" \
   --password "$SECURE_PASSWORD" \
   --url "https://app.example.com"
 
 # List stored credentials
-notte vaults credentials list --id $VAULT_ID
+notte vaults credentials list --vault-id $VAULT_ID
 ```
 
 ### Multi-Step Browser Automation

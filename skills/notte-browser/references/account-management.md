@@ -44,10 +44,10 @@ notte personas create --create-vault
 notte personas list
 
 # View persona details
-notte personas show --id <persona-id>
+notte personas show --persona-id <persona-id>
 
 # Delete persona
-notte personas delete --id <persona-id>
+notte personas delete --persona-id <persona-id>
 ```
 
 ### Receiving Emails
@@ -56,7 +56,7 @@ Personas have real email inboxes that receive messages:
 
 ```bash
 # List emails received by persona
-notte personas emails --id <persona-id>
+notte personas emails --persona-id <persona-id>
 ```
 
 Example response:
@@ -80,7 +80,7 @@ For personas with phone numbers:
 
 ```bash
 # List SMS messages
-notte personas sms --id <persona-id>
+notte personas sms --persona-id <persona-id>
 ```
 
 Example response:
@@ -118,7 +118,7 @@ notte page click "@submit"
 sleep 10
 
 # Get verification code from email
-CODE=$(notte personas emails --id "$PERSONA_ID" -o json | \
+CODE=$(notte personas emails --persona-id "$PERSONA_ID" -o json | \
   jq -r '.emails[0].body' | \
   grep -oE '[0-9]{6}')
 
@@ -149,10 +149,10 @@ notte vaults create --name "Work Accounts"
 notte vaults list
 
 # Update vault name
-notte vaults update --id <vault-id> --name "Personal Accounts"
+notte vaults update --vault-id <vault-id> --name "Personal Accounts"
 
 # Delete vault
-notte vaults delete --id <vault-id>
+notte vaults delete --vault-id <vault-id>
 ```
 
 ## Credential Management
@@ -165,21 +165,21 @@ Store credentials for specific URLs:
 
 # Add credentials email
 notte vaults credentials add \
-  --id <vault-id> \
+  --vault-id <vault-id> \
   --url "https://example.com" \
   --email "user@example.com" \
   --password "mypassword"
 
 # With username (for sites that use username instead of email)
 notte vaults credentials add \
-  --id <vault-id> \
+  --vault-id <vault-id> \
   --url "https://example.com" \
   --username "myusername" \
   --password "mypassword"
 
 # With MFA secret for TOTP
 notte vaults credentials add \
-  --id <vault-id> \
+  --vault-id <vault-id> \
   --url "https://example.com" \
   --email "user@example.com" \
   --password "mypassword" \
@@ -189,7 +189,7 @@ notte vaults credentials add \
 ### Listing Credentials
 
 ```bash
-notte vaults credentials list --id <vault-id>
+notte vaults credentials list --vault-id <vault-id>
 ```
 
 Note: Passwords are not returned in list output for security.
@@ -197,7 +197,7 @@ Note: Passwords are not returned in list output for security.
 ### Getting Credentials for a URL
 
 ```bash
-notte vaults credentials get --id <vault-id> --url "https://example.com"
+notte vaults credentials get --vault-id <vault-id> --url "https://example.com"
 ```
 
 Returns credentials matching the URL.
@@ -205,7 +205,7 @@ Returns credentials matching the URL.
 ### Deleting Credentials
 
 ```bash
-notte vaults credentials delete --id <vault-id> --url "https://example.com"
+notte vaults credentials delete --vault-id <vault-id> --url "https://example.com"
 ```
 
 ## MFA/TOTP Support
@@ -215,7 +215,7 @@ When you add an `--mfa-secret`, Notte can automatically generate TOTP codes:
 ```bash
 # Add credentials with MFA secret
 notte vaults credentials add \
-  --id <vault-id> \
+  --vault-id <vault-id> \
   --url "https://secure.example.com" \
   --email "user@example.com" \
   --password "password123" \
@@ -253,7 +253,7 @@ Use vaults when you need:
 
 ```bash
 # Login automation
-notte vaults credentials add --id <vault-id> \
+notte vaults credentials add --vault-id <vault-id> \
   --url "https://dashboard.example.com" \
   --email "myreal@email.com" \
   --password "myrealpassword" \
@@ -303,7 +303,7 @@ notte personas create --create-vault
 
 5. **Clean up test personas** - delete when no longer needed:
    ```bash
-   notte personas delete --id <persona-id>
+   notte personas delete --persona-id <persona-id>
    ```
 
 ## Complete Example: Authenticated Data Collection
@@ -314,7 +314,7 @@ set -euo pipefail
 
 # Setup: Create vault and add credentials (one-time)
 # notte vaults create --name "Analytics Dashboard"
-# notte vaults credentials add --id <vault-id> \
+# notte vaults credentials add --vault-id <vault-id> \
 #   --url "https://analytics.example.com" \
 #   --email "analyst@company.com" \
 #   --password "securepassword" \
