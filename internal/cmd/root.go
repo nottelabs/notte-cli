@@ -109,7 +109,7 @@ func GetClient() (*api.NotteClient, error) {
 		baseURL = api.DefaultBaseURL
 	}
 
-	return api.NewClientWithURL(apiKey, baseURL)
+	return api.NewClientWithURL(apiKey, baseURL, Version)
 }
 
 // GetContextWithTimeout wraps the provided context with a timeout

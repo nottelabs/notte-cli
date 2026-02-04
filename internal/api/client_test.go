@@ -39,7 +39,7 @@ func TestNewClient_Success(t *testing.T) {
 }
 
 func TestNewClientWithURL_CustomURL(t *testing.T) {
-	client, err := NewClientWithURL("test-key", "https://custom.api.com")
+	client, err := NewClientWithURL("test-key", "https://custom.api.com", "v1.0.0")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestResilientTransport_AddsAuthHeader(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClientWithURL("test-api-key", server.URL)
+	client, err := NewClientWithURL("test-api-key", server.URL, "v1.0.0")
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestResilientTransport_RecordsFailureOn5xx(t *testing.T) {
 		MaxBackoff:     10 * time.Millisecond,
 		Jitter:         false,
 	}
-	client, err := NewClientWithURL("test-key", server.URL,
+	client, err := NewClientWithURL("test-key", server.URL, "v1.0.0",
 		WithCircuitBreaker(cb),
 		WithRetryConfig(fastRetry))
 	if err != nil {
