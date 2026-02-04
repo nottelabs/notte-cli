@@ -98,7 +98,7 @@ notte functions schedule --cron "0 9 * * *"
 
 ## Creating Functions
 
-**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands (run, update, schedule, etc.) use this function by default. Use `--id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
+**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands (run, update, schedule, etc.) use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
 
 ### From a Python File
 
@@ -396,7 +396,7 @@ notte functions create --file workflow.py --shared
 Copy a shared function to your account:
 
 ```bash
-notte functions fork --id <shared-function-id>
+notte functions fork --function-id <shared-function-id>
 ```
 
 Creates a new function with the same code under your account.
@@ -547,7 +547,7 @@ notte functions schedule --cron "0 9 * * *"
 notte functions list
 
 # Switch to the function you want to delete
-notte functions show --id <old-func-id>
+notte functions show --function-id <old-func-id>
 
 # Delete it
 notte functions delete --yes
