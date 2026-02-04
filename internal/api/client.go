@@ -41,11 +41,11 @@ func WithCircuitBreaker(cb *CircuitBreaker) NotteClientOption {
 
 // NewClient creates a new Notte API client
 func NewClient(apiKey string, opts ...NotteClientOption) (*NotteClient, error) {
-	return NewClientWithURL(apiKey, DefaultBaseURL, opts...)
+	return NewClientWithURL(apiKey, DefaultBaseURL, "", opts...)
 }
 
 // NewClientWithURL creates a client with custom base URL
-func NewClientWithURL(apiKey, baseURL string, opts ...NotteClientOption) (*NotteClient, error) {
+func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption) (*NotteClient, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("API key is required")
 	}
@@ -67,6 +67,7 @@ func NewClientWithURL(apiKey, baseURL string, opts ...NotteClientOption) (*Notte
 		Timeout: 45 * time.Second,
 		Transport: &resilientTransport{
 			apiKey:         apiKey,
+			version:        version,
 			retryConfig:    nc.retryConfig,
 			circuitBreaker: nc.circuitBreaker,
 			base: &http.Transport{
@@ -92,6 +93,7 @@ func NewClientWithURL(apiKey, baseURL string, opts ...NotteClientOption) (*Notte
 // resilientTransport wraps http.RoundTripper with auth, retry, and circuit breaker
 type resilientTransport struct {
 	apiKey         string
+	version        string
 	retryConfig    *RetryConfig
 	circuitBreaker *CircuitBreaker
 	base           http.RoundTripper
@@ -107,6 +109,10 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 	// Add auth header
 	req.Header.Set("Authorization", "Bearer "+t.apiKey)
+
+	// Add tracking headers
+	req.Header.Set("x-notte-request-origin", "cli")
+	req.Header.Set("x-notte-sdk-version", t.version)
 
 	// Add idempotency key for mutating requests
 	AddIdempotencyKey(req)
