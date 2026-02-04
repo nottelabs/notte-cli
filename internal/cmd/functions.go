@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,8 @@ var (
 	functionRunID          string
 	functionMetadataJSON   string
 	functionCronExpression string
+	functionRunVariables   []string // Variables as key=value pairs
+	functionRunVariablesJSON string // Variables as JSON string
 )
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
@@ -231,6 +234,8 @@ func init() {
 
 	// Run command flags
 	functionsRunCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunCmd.Flags().StringArrayVar(&functionRunVariables, "var", []string{}, "Variable as key=value pair (can be used multiple times)")
+	functionsRunCmd.Flags().StringVar(&functionRunVariablesJSON, "vars", "", "Variables as JSON object string")
 
 	// Runs command flags
 	functionsRunsCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
@@ -510,17 +515,72 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.FunctionRunStartParams{}
-	resp, err := client.Client().FunctionRunStartWithResponse(ctx, functionID, params)
+	// Parse variables
+	variables := make(map[string]interface{})
+	
+	// First, parse JSON variables if provided
+	if functionRunVariablesJSON != "" {
+		if err := json.Unmarshal([]byte(functionRunVariablesJSON), &variables); err != nil {
+			return fmt.Errorf("failed to parse --vars JSON: %w", err)
+		}
+	}
+	
+	// Then, parse key=value pairs (these override JSON if there's a conflict)
+	for _, kv := range functionRunVariables {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid variable format %q: expected key=value", kv)
+		}
+		variables[parts[0]] = parts[1]
+	}
+
+	// The generated client doesn't support request body for FunctionRunStart,
+	// so we need to make a manual request with the function_id in the body
+	requestBody := map[string]interface{}{
+		"function_id": functionID,
+	}
+	
+	// Add variables if any were provided
+	if len(variables) > 0 {
+		requestBody["variables"] = variables
+	}
+	
+	bodyJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/functions/%s/runs/start", client.BaseURL(), functionID)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyJSON))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-notte-api-key", client.APIKey())
+
+	httpResp, err := client.HTTPClient().Do(req)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
+	defer httpResp.Body.Close()
 
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+	body, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if err := HandleAPIResponse(httpResp, body); err != nil {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	// Parse and print the response
+	var result interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return GetFormatter().Print(result)
 }
 
 func runFunctionRuns(cmd *cobra.Command, args []string) error {

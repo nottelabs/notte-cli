@@ -30,7 +30,7 @@ func TestNewClient_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if client == nil {
-		t.Error("expected non-nil client")
+		t.Fatal("expected non-nil client")
 	}
 	if client.apiKey != "test-api-key" {
 		t.Errorf("got apiKey %q, want %q", client.apiKey, "test-api-key")
@@ -317,6 +317,17 @@ func TestNotteClient_Client(t *testing.T) {
 	inner := client.Client()
 	if inner == nil {
 		t.Error("Client() should return non-nil ClientWithResponses")
+	}
+}
+
+func TestNotteClient_APIKey(t *testing.T) {
+	client, err := NewClient("test-api-key-123")
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	if got := client.APIKey(); got != "test-api-key-123" {
+		t.Errorf("APIKey() = %q, want %q", got, "test-api-key-123")
 	}
 }
 
