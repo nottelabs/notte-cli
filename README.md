@@ -116,8 +116,8 @@ Interact with pages using simplified commands (requires an active session):
 ```bash
 notte page observe                    # Get page state and available actions
 notte page scrape --instructions "..." # Scrape content from the page 
-notte page click B3                # Click an element by ID
-notte page fill I1 "text"       # Fill an input field
+notte page click "@B3"            # Click an element by ID
+notte page fill "@I1" "text"    # Fill an input field
 notte page goto "https://example.com" # Navigate to a URL
 notte page back                       # Go back in history
 notte page forward                    # Go forward in history
@@ -361,11 +361,18 @@ Use `notte` for web automation. Run `notte --help` for all commands.
 Core workflow:
 1. `notte sessions start` - Start a browser session
 2. `notte page goto <url>` - Navigate to a URL
-3. `notte page observe` - Get interactive elements with IDs (B1, B2)
-4. `notte page click B1` / `notte page fill B2 "text"` - Interact using element IDs
+3. `notte page observe` - Get interactive elements with IDs (@B1, @B2)
+4. `notte page click "@B1"` / `notte page fill "@I1" "text"` - Interact using element IDs
 5. `notte page scrape --instructions "..."` - Extract structured data
 6. `notte sessions stop` - Clean up when done
 ```
+
+### Tips
+
+- **Viewing headless sessions**: When you start a session, the output includes a `ViewerUrl` - open it to watch your headless browser live
+- **Element selectors**: If element IDs from `observe` (like `@B1`) don't work, use Playwright selectors: `#id`, `.class`, `button:has-text('Submit')`
+- **Multiple matches**: Use `>> nth=0` suffix to select the first match: `button:has-text('OK') >> nth=0`
+- **Closing modals**: `notte page press "Escape"` reliably dismisses most dialogs
 
 ### Skills Documentation
 
