@@ -26,13 +26,13 @@ var (
 )
 
 var (
-	functionID             string
-	functionUpdateFile     string
-	functionRunID          string
-	functionMetadataJSON   string
-	functionCronExpression string
-	functionRunVariables   []string // Variables as key=value pairs
-	functionRunVariablesJSON string // Variables as JSON string
+	functionID               string
+	functionUpdateFile       string
+	functionRunID            string
+	functionMetadataJSON     string
+	functionCronExpression   string
+	functionRunVariables     []string // Variables as key=value pairs
+	functionRunVariablesJSON string   // Variables as JSON string
 )
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
@@ -517,14 +517,14 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 
 	// Parse variables
 	variables := make(map[string]interface{})
-	
+
 	// First, parse JSON variables if provided
 	if functionRunVariablesJSON != "" {
 		if err := json.Unmarshal([]byte(functionRunVariablesJSON), &variables); err != nil {
 			return fmt.Errorf("failed to parse --vars JSON: %w", err)
 		}
 	}
-	
+
 	// Then, parse key=value pairs (these override JSON if there's a conflict)
 	for _, kv := range functionRunVariables {
 		parts := strings.SplitN(kv, "=", 2)
@@ -539,12 +539,12 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	requestBody := map[string]interface{}{
 		"function_id": functionID,
 	}
-	
+
 	// Add variables if any were provided
 	if len(variables) > 0 {
 		requestBody["variables"] = variables
 	}
-	
+
 	bodyJSON, err := json.Marshal(requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)
@@ -563,7 +563,7 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {

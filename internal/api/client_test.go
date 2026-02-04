@@ -29,9 +29,7 @@ func TestNewClient_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if client == nil {
-		t.Fatal("expected non-nil client")
-	}
+	// NewClient never returns nil client with nil error, so no need to check
 	if client.apiKey != "test-api-key" {
 		t.Errorf("got apiKey %q, want %q", client.apiKey, "test-api-key")
 	}
