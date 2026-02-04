@@ -53,12 +53,12 @@ func init() {
 	RegisterProfileCreateFlags(profilesCreateCmd)
 
 	// Show command flags
-	profilesShowCmd.Flags().StringVar(&profileID, "id", "", "Profile ID (required)")
-	_ = profilesShowCmd.MarkFlagRequired("id")
+	profilesShowCmd.Flags().StringVar(&profileID, "profile-id", "", "Profile ID (required)")
+	_ = profilesShowCmd.MarkFlagRequired("profile-id")
 
 	// Delete command flags
-	profilesDeleteCmd.Flags().StringVar(&profileID, "id", "", "Profile ID (required)")
-	_ = profilesDeleteCmd.MarkFlagRequired("id")
+	profilesDeleteCmd.Flags().StringVar(&profileID, "profile-id", "", "Profile ID (required)")
+	_ = profilesDeleteCmd.MarkFlagRequired("profile-id")
 }
 
 func runProfilesList(cmd *cobra.Command, args []string) error {

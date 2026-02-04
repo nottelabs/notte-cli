@@ -37,7 +37,7 @@ var (
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
 func GetCurrentFunctionID() string {
-	// 1. Check --id flag (already in functionID variable if set)
+	// 1. Check --function-id flag (already in functionID variable if set)
 	if functionID != "" {
 		return functionID
 	}
@@ -89,7 +89,7 @@ func clearCurrentFunction() error {
 func RequireFunctionID() error {
 	functionID = GetCurrentFunctionID()
 	if functionID == "" {
-		return errors.New("function ID required: use --id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
+		return errors.New("function ID required: use --function-id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
 	}
 	return nil
 }
@@ -173,13 +173,13 @@ var functionsRunMetadataUpdateCmd = &cobra.Command{
 	Short: "Update function run metadata",
 	Args:  cobra.NoArgs,
 	Example: `  # Direct JSON
-  notte functions run-metadata-update --id <function-id> --run-id <run-id> --data '{"key": "value"}'
+  notte functions run-metadata-update --function-id <function-id> --run-id <run-id> --data '{"key": "value"}'
 
   # From file
-  notte functions run-metadata-update --id <function-id> --run-id <run-id> --data @metadata.json
+  notte functions run-metadata-update --function-id <function-id> --run-id <run-id> --data @metadata.json
 
   # From stdin
-  echo '{"key": "value"}' | notte functions run-metadata-update --id <function-id> --run-id <run-id>`,
+  echo '{"key": "value"}' | notte functions run-metadata-update --function-id <function-id> --run-id <run-id>`,
 	RunE:   runFunctionRunMetadataUpdate,
 	Hidden: true,
 }
@@ -222,50 +222,50 @@ func init() {
 	functionsCreateCmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "Make function public")
 
 	// Show command flags
-	functionsShowCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsShowCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
 	// Update command flags
-	functionsUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsUpdateCmd.Flags().StringVar(&functionUpdateFile, "file", "", "Path to updated function file (required)")
 	_ = functionsUpdateCmd.MarkFlagRequired("file")
 
 	// Delete command flags
-	functionsDeleteCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsDeleteCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
 	// Run command flags
-	functionsRunCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunCmd.Flags().StringArrayVar(&functionRunVariables, "var", []string{}, "Variable as key=value pair (can be used multiple times)")
 	functionsRunCmd.Flags().StringVar(&functionRunVariablesJSON, "vars", "", "Variables as JSON object string")
 
 	// Runs command flags
-	functionsRunsCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunsCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
 	// Fork command flags
-	functionsForkCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsForkCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
 	// Run-stop command flags
-	functionsRunStopCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunStopCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunStopCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunStopCmd.MarkFlagRequired("run-id")
 
 	// Run-metadata command flags
-	functionsRunMetadataCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunMetadataCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunMetadataCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunMetadataCmd.MarkFlagRequired("run-id")
 
 	// Run-metadata-update command flags
-	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionRunID, "run-id", "", "Run ID (required)")
 	_ = functionsRunMetadataUpdateCmd.MarkFlagRequired("run-id")
 	functionsRunMetadataUpdateCmd.Flags().StringVar(&functionMetadataJSON, "data", "", "JSON metadata, @file, or '-' for stdin")
 
 	// Schedule command flags
-	functionsScheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsScheduleCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsScheduleCmd.Flags().StringVar(&functionCronExpression, "cron", "", "Cron expression (required)")
 	_ = functionsScheduleCmd.MarkFlagRequired("cron")
 
 	// Unschedule command flags
-	functionsUnscheduleCmd.Flags().StringVar(&functionID, "id", "", "Function ID (uses current function if not specified)")
+	functionsUnscheduleCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 }
 
 func runFunctionsList(cmd *cobra.Command, args []string) error {

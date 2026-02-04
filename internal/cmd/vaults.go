@@ -100,19 +100,19 @@ func init() {
 	// Create command flags (auto-generated)
 	RegisterVaultCreateFlags(vaultsCreateCmd)
 
-	// Credentials subcommand group - use PersistentFlags for --id
-	vaultsCredentialsCmd.PersistentFlags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsCredentialsCmd.MarkPersistentFlagRequired("id")
+	// Credentials subcommand group - use PersistentFlags for --vault-id
+	vaultsCredentialsCmd.PersistentFlags().StringVar(&vaultID, "vault-id", "", "Vault ID (required)")
+	_ = vaultsCredentialsCmd.MarkPersistentFlagRequired("vault-id")
 
 	// Update command flags
-	vaultsUpdateCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsUpdateCmd.MarkFlagRequired("id")
+	vaultsUpdateCmd.Flags().StringVar(&vaultID, "vault-id", "", "Vault ID (required)")
+	_ = vaultsUpdateCmd.MarkFlagRequired("vault-id")
 	vaultsUpdateCmd.Flags().StringVar(&vaultUpdateName, "name", "", "New name for the vault (required)")
 	_ = vaultsUpdateCmd.MarkFlagRequired("name")
 
 	// Delete command flags
-	vaultsDeleteCmd.Flags().StringVar(&vaultID, "id", "", "Vault ID (required)")
-	_ = vaultsDeleteCmd.MarkFlagRequired("id")
+	vaultsDeleteCmd.Flags().StringVar(&vaultID, "vault-id", "", "Vault ID (required)")
+	_ = vaultsDeleteCmd.MarkFlagRequired("vault-id")
 
 	// Credentials add command flags (auto-generated)
 	RegisterVaultCredentialsAddFlags(vaultsCredentialsAddCmd)

@@ -127,7 +127,7 @@ func cleanupAgent(t *testing.T, agentID string) {
 	if agentID == "" {
 		return
 	}
-	result := runCLI(t, "agents", "stop", "--id", agentID)
+	result := runCLI(t, "agents", "stop", "--agent-id", agentID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup agent %s: %s", agentID, result.Stderr)
 	}
@@ -139,7 +139,7 @@ func cleanupVault(t *testing.T, vaultID string) {
 	if vaultID == "" {
 		return
 	}
-	result := runCLI(t, "vaults", "delete", "--id", vaultID)
+	result := runCLI(t, "vaults", "delete", "--vault-id", vaultID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup vault %s: %s", vaultID, result.Stderr)
 	}
@@ -151,7 +151,7 @@ func cleanupPersona(t *testing.T, personaID string) {
 	if personaID == "" {
 		return
 	}
-	result := runCLI(t, "personas", "delete", "--id", personaID)
+	result := runCLI(t, "personas", "delete", "--persona-id", personaID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup persona %s: %s", personaID, result.Stderr)
 	}
@@ -163,7 +163,7 @@ func cleanupProfile(t *testing.T, profileID string) {
 	if profileID == "" {
 		return
 	}
-	result := runCLI(t, "profiles", "delete", "--id", profileID)
+	result := runCLI(t, "profiles", "delete", "--profile-id", profileID)
 	if result.ExitCode != 0 {
 		t.Logf("Warning: failed to cleanup profile %s: %s", profileID, result.Stderr)
 	}

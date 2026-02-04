@@ -768,8 +768,8 @@ func init() {
 	pageCmd.AddCommand(pageScreenshotCmd)
 	pageCmd.AddCommand(pageEvalJsCmd)
 
-	// Add --id flag to parent command (inherited by all subcommands)
-	pageCmd.PersistentFlags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	// Add --session-id flag to parent command (inherited by all subcommands)
+	pageCmd.PersistentFlags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// click flags
 	pageClickCmd.Flags().IntVar(&pageClickTimeout, "timeout", 0, "Timeout in milliseconds")

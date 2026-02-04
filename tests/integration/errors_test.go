@@ -49,7 +49,7 @@ func TestErrorParsing_NonexistentSession(t *testing.T) {
 // TestErrorParsing_NonexistentVault tests that vault not found errors show proper messages
 func TestErrorParsing_NonexistentVault(t *testing.T) {
 	// Try to get credentials from a non-existent vault
-	result := runCLI(t, "vaults", "credentials", "list", "--id", "nonexistent-vault-id-abc123")
+	result := runCLI(t, "vaults", "credentials", "list", "--vault-id", "nonexistent-vault-id-abc123")
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")
@@ -63,7 +63,7 @@ func TestErrorParsing_NonexistentVault(t *testing.T) {
 // TestErrorParsing_NonexistentPersona tests that persona not found errors show proper messages
 func TestErrorParsing_NonexistentPersona(t *testing.T) {
 	// Try to get a non-existent persona
-	result := runCLI(t, "personas", "show", "--id", "nonexistent-persona-id-def456")
+	result := runCLI(t, "personas", "show", "--persona-id", "nonexistent-persona-id-def456")
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")
@@ -77,7 +77,7 @@ func TestErrorParsing_NonexistentPersona(t *testing.T) {
 // TestErrorParsing_NonexistentProfile tests that profile not found errors show proper messages
 func TestErrorParsing_NonexistentProfile(t *testing.T) {
 	// Try to get a non-existent profile
-	result := runCLI(t, "profiles", "show", "--id", "nonexistent-profile-id-ghi789")
+	result := runCLI(t, "profiles", "show", "--profile-id", "nonexistent-profile-id-ghi789")
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")
@@ -91,7 +91,7 @@ func TestErrorParsing_NonexistentProfile(t *testing.T) {
 // TestErrorParsing_NonexistentAgent tests that agent not found errors show proper messages
 func TestErrorParsing_NonexistentAgent(t *testing.T) {
 	// Try to get status of a non-existent agent
-	result := runCLI(t, "agents", "status", "--id", "nonexistent-agent-id-jkl012")
+	result := runCLI(t, "agents", "status", "--agent-id", "nonexistent-agent-id-jkl012")
 	requireFailure(t, result)
 
 	// Verify we get a proper error (not "failed to read response body")

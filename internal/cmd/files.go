@@ -58,10 +58,10 @@ func init() {
 	// List command flags
 	filesListCmd.Flags().BoolVar(&filesListUploadsFlag, "uploads", true, "List uploaded files")
 	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", false, "List downloaded files from a session")
-	filesListCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	filesListCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Download command flags
-	filesDownloadCmd.Flags().StringVar(&sessionID, "id", "", "Session ID (uses current session if not specified)")
+	filesDownloadCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	filesDownloadCmd.Flags().StringVarP(&filesDownloadOutput, "output", "o", "", "Output file path (defaults to current directory)")
 }
 
