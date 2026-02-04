@@ -190,6 +190,11 @@ func (c *NotteClient) BaseURL() string {
 	return c.baseURL
 }
 
+// APIKey returns the API key used by the client
+func (c *NotteClient) APIKey() string {
+	return c.apiKey
+}
+
 // Context helper for commands
 func DefaultContext() context.Context {
 	return context.Background()

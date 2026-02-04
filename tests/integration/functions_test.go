@@ -218,6 +218,14 @@ func TestFunctionIDResolution(t *testing.T) {
 	requireSuccess(t, result)
 	t.Log("Successfully used current function for 'runs' command")
 
+	// Step 4a: Test run command without --id should use the saved function
+	result = runCLI(t, "functions", "run")
+	requireSuccess(t, result)
+	if !containsString(result.Stdout, functionID) {
+		t.Error("Function run without --id did not use the current function")
+	}
+	t.Log("Successfully used current function for 'run' command")
+
 	// Step 5: Test delete command without --id should use the saved function and clear it
 	result = runCLI(t, "functions", "delete")
 	requireSuccess(t, result)
@@ -467,6 +475,85 @@ func TestFunctionsNoIDProvided(t *testing.T) {
 		t.Log("Expected error message about function ID being required")
 	}
 	t.Log("Correctly failed when no function ID is available")
+}
+
+func TestFunctionRun(t *testing.T) {
+	tmpFile := createTempFunctionFile(t)
+
+	// Create function
+	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "run-test-function")
+	requireSuccess(t, result)
+
+	var createResp struct {
+		FunctionID string `json:"function_id"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &createResp); err != nil {
+		t.Fatalf("Failed to parse create response: %v", err)
+	}
+	functionID := createResp.FunctionID
+	defer cleanupFunction(t, functionID)
+	t.Logf("Created function: %s", functionID)
+
+	// Run the function
+	result = runCLI(t, "functions", "run", "--id", functionID)
+	requireSuccess(t, result)
+
+	// Parse the run response to verify it contains expected fields
+	var runResp map[string]interface{}
+	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+		t.Fatalf("Failed to parse run response: %v", err)
+	}
+
+	t.Logf("Function run response: %+v", runResp)
+	t.Log("Successfully ran function")
+}
+
+func TestFunctionRunWithVariables(t *testing.T) {
+	tmpFile := createTempFunctionFile(t)
+
+	// Create function
+	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "run-test-function-with-vars")
+	requireSuccess(t, result)
+
+	var createResp struct {
+		FunctionID string `json:"function_id"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &createResp); err != nil {
+		t.Fatalf("Failed to parse create response: %v", err)
+	}
+	functionID := createResp.FunctionID
+	defer cleanupFunction(t, functionID)
+	t.Logf("Created function: %s", functionID)
+
+	// Test 1: Run with --var flag
+	result = runCLI(t, "functions", "run", "--id", functionID, "--var", "test=mytest_variable")
+	requireSuccess(t, result)
+
+	var runResp map[string]interface{}
+	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+		t.Fatalf("Failed to parse run response: %v", err)
+	}
+	t.Logf("Function run response with --var: %+v", runResp)
+
+	// Test 2: Run with --vars JSON
+	result = runCLI(t, "functions", "run", "--id", functionID, "--vars", `{"test":"json_variable"}`)
+	requireSuccess(t, result)
+
+	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+		t.Fatalf("Failed to parse run response: %v", err)
+	}
+	t.Logf("Function run response with --vars: %+v", runResp)
+
+	// Test 3: Run with multiple --var flags
+	result = runCLI(t, "functions", "run", "--id", functionID, "--var", "test=first", "--var", "another=second")
+	requireSuccess(t, result)
+
+	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+		t.Fatalf("Failed to parse run response: %v", err)
+	}
+	t.Logf("Function run response with multiple vars: %+v", runResp)
+
+	t.Log("Successfully ran function with variables")
 }
 
 // cleanupFunction deletes a function, ignoring errors (for deferred cleanup)
