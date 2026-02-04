@@ -19,6 +19,12 @@ setup: ## Install development dependencies (linters, formatters, git hooks)
 	lefthook install
 	@echo "Setup complete!"
 
+pre-commit-run: ## Run pre-commit hooks manually
+	lefthook run pre-commit
+
+pre-push-run: ## Run pre-push hooks manually
+	lefthook run pre-push
+
 build: ## Build the CLI binary
 	go build $(LDFLAGS) -o notte ./cmd/notte
 
