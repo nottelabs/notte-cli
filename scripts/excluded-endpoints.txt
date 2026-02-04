@@ -11,3 +11,6 @@
 
 # Vault credit card operations
 /vaults/\{vault_id\}/card
+
+# Persona phone number operations
+/personas/\{id\}/sms/number

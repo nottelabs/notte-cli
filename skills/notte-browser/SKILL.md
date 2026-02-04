@@ -279,10 +279,6 @@ notte personas emails --id <persona-id>
 
 # List SMS messages received
 notte personas sms --id <persona-id>
-
-# Manage phone numbers
-notte personas phone-create --id <persona-id>
-notte personas phone-delete --id <persona-id>
 ```
 
 **Vaults** - Store your own credentials:

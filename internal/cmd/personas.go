@@ -56,20 +56,6 @@ var personasSmsCmd = &cobra.Command{
 	RunE:  runPersonaSms,
 }
 
-var personasPhoneCreateCmd = &cobra.Command{
-	Use:   "phone-create",
-	Short: "Create a new phone number for the persona",
-	Args:  cobra.NoArgs,
-	RunE:  runPersonaPhoneCreate,
-}
-
-var personasPhoneDeleteCmd = &cobra.Command{
-	Use:   "phone-delete",
-	Short: "Delete the phone number for the persona",
-	Args:  cobra.NoArgs,
-	RunE:  runPersonaPhoneDelete,
-}
-
 func init() {
 	rootCmd.AddCommand(personasCmd)
 	personasCmd.AddCommand(personasListCmd)
@@ -78,8 +64,6 @@ func init() {
 	personasCmd.AddCommand(personasDeleteCmd)
 	personasCmd.AddCommand(personasEmailsCmd)
 	personasCmd.AddCommand(personasSmsCmd)
-	personasCmd.AddCommand(personasPhoneCreateCmd)
-	personasCmd.AddCommand(personasPhoneDeleteCmd)
 
 	// Create command flags (auto-generated)
 	RegisterPersonaCreateFlags(personasCreateCmd)
@@ -99,14 +83,6 @@ func init() {
 	// SMS command flags
 	personasSmsCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
 	_ = personasSmsCmd.MarkFlagRequired("id")
-
-	// Phone-create command flags
-	personasPhoneCreateCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasPhoneCreateCmd.MarkFlagRequired("id")
-
-	// Phone-delete command flags
-	personasPhoneDeleteCmd.Flags().StringVar(&personaID, "id", "", "Persona ID (required)")
-	_ = personasPhoneDeleteCmd.MarkFlagRequired("id")
 }
 
 func runPersonasList(cmd *cobra.Command, args []string) error {
@@ -260,50 +236,6 @@ func runPersonaSms(cmd *cobra.Command, args []string) error {
 
 	params := &api.PersonaSmsListParams{}
 	resp, err := client.Client().PersonaSmsListWithResponse(ctx, personaID, params)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return GetFormatter().Print(resp.JSON200)
-}
-
-func runPersonaPhoneCreate(cmd *cobra.Command, args []string) error {
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	params := &api.PersonaCreateNumberParams{}
-	resp, err := client.Client().PersonaCreateNumberWithResponse(ctx, personaID, params)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
-	}
-
-	return GetFormatter().Print(resp.JSON200)
-}
-
-func runPersonaPhoneDelete(cmd *cobra.Command, args []string) error {
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
-	params := &api.PersonaDeleteNumberParams{}
-	resp, err := client.Client().PersonaDeleteNumberWithResponse(ctx, personaID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
