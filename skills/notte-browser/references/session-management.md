@@ -291,7 +291,11 @@ notte sessions status
 ### List All Sessions
 
 ```bash
+# List all sessions
 notte sessions list
+
+# With pagination and filters
+notte sessions list --page 2 --page-size 10 --only-active
 ```
 
 ## Stopping Sessions

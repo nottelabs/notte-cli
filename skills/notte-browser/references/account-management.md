@@ -43,6 +43,9 @@ notte personas create --create-vault
 # List all personas
 notte personas list
 
+# With pagination and filters
+notte personas list --page 1 --page-size 20 --only-active
+
 # View persona details
 notte personas show --persona-id <persona-id>
 
@@ -147,6 +150,9 @@ notte vaults create --name "Work Accounts"
 ```bash
 # List vaults
 notte vaults list
+
+# With pagination and filters
+notte vaults list --page 1 --page-size 20 --only-active
 
 # Update vault name
 notte vaults update --vault-id <vault-id> --name "Personal Accounts"

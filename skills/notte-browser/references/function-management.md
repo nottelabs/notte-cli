@@ -255,7 +255,11 @@ notte functions run-metadata --run-id <run-id> -o json | jq '.result'
 ### List Functions
 
 ```bash
+# List all functions
 notte functions list
+
+# With pagination and filters
+notte functions list --page 1 --page-size 20 --only-active
 ```
 
 Output includes function ID, name, description, and creation date.
@@ -299,6 +303,9 @@ Starts a new function run and returns the run ID.
 ```bash
 # List all runs for current function
 notte functions runs
+
+# With pagination and filters
+notte functions runs --page 1 --page-size 10 --only-active
 ```
 
 Output includes:

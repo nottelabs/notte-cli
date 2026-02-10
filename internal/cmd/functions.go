@@ -201,12 +201,18 @@ var functionsUnscheduleCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(functionsCmd)
 	functionsCmd.AddCommand(functionsListCmd)
+	registerPaginationFlags(functionsListCmd)
+	functionsListCmd.Flags().Bool("only-active", false, "Only return active functions")
+
 	functionsCmd.AddCommand(functionsCreateCmd)
 	functionsCmd.AddCommand(functionsShowCmd)
 	functionsCmd.AddCommand(functionsUpdateCmd)
 	functionsCmd.AddCommand(functionsDeleteCmd)
 	functionsCmd.AddCommand(functionsRunCmd)
 	functionsCmd.AddCommand(functionsRunsCmd)
+	registerPaginationFlags(functionsRunsCmd)
+	functionsRunsCmd.Flags().Bool("only-active", false, "Only return active runs")
+
 	functionsCmd.AddCommand(functionsForkCmd)
 	functionsCmd.AddCommand(functionsRunStopCmd)
 	functionsCmd.AddCommand(functionsRunMetadataCmd)
@@ -277,7 +283,22 @@ func runFunctionsList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.ListFunctionsParams{}
+	page, err := getPageFlag(cmd)
+	if err != nil {
+		return err
+	}
+	pageSize, err := getPageSizeFlag(cmd)
+	if err != nil {
+		return err
+	}
+	params := &api.ListFunctionsParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if cmd.Flags().Changed("only-active") {
+		v, _ := cmd.Flags().GetBool("only-active")
+		params.OnlyActive = &v
+	}
 	resp, err := client.Client().ListFunctionsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -596,7 +617,22 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.ListFunctionRunsByFunctionIdParams{}
+	page, err := getPageFlag(cmd)
+	if err != nil {
+		return err
+	}
+	pageSize, err := getPageSizeFlag(cmd)
+	if err != nil {
+		return err
+	}
+	params := &api.ListFunctionRunsByFunctionIdParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if cmd.Flags().Changed("only-active") {
+		v, _ := cmd.Flags().GetBool("only-active")
+		params.OnlyActive = &v
+	}
 	resp, err := client.Client().ListFunctionRunsByFunctionIdWithResponse(ctx, functionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

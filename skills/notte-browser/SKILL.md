@@ -63,8 +63,8 @@ notte sessions status
 # Stop current session
 notte sessions stop
 
-# List active sessions
-notte sessions list
+# List sessions (with optional pagination and filters)
+notte sessions list [--page N] [--page-size N] [--only-active]
 ```
 
 **Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
@@ -183,8 +183,8 @@ notte page form-fill --data '{"email": "test@example.com", "name": "John"}'
 Start and manage AI-powered browser agents:
 
 ```bash
-# List all agents
-notte agents list
+# List all agents (with optional pagination and filters)
+notte agents list [--page N] [--page-size N] [--only-active] [--only-saved]
 
 # Start a new agent (auto-uses current session if active)
 notte agents start --task "Navigate to example.com and extract the main heading"
@@ -219,8 +219,8 @@ notte agents replay
 Create, manage, and schedule reusable workflows:
 
 ```bash
-# List all functions
-notte functions list
+# List all functions (with optional pagination and filters)
+notte functions list [--page N] [--page-size N] [--only-active]
 
 # Create a function from a workflow file
 notte functions create --file workflow.py [--name "My Function"] [--description "..."] [--shared]
@@ -237,8 +237,8 @@ notte functions delete
 # Run current function
 notte functions run
 
-# List runs for current function
-notte functions runs
+# List runs for current function (with optional pagination and filters)
+notte functions runs [--page N] [--page-size N] [--only-active]
 
 # Stop a running function execution
 notte functions run-stop --run-id <run-id>
@@ -264,8 +264,8 @@ notte functions fork --function-id <shared-function-id>
 **Personas** - Auto-generated identities with email/phone:
 
 ```bash
-# List personas
-notte personas list
+# List personas (with optional pagination and filters)
+notte personas list [--page N] [--page-size N] [--only-active]
 
 # Create a persona
 notte personas create [--create-phone-number] [--create-vault]
@@ -286,8 +286,8 @@ notte personas sms --persona-id <persona-id>
 **Vaults** - Store your own credentials:
 
 ```bash
-# List vaults
-notte vaults list
+# List vaults (with optional pagination and filters)
+notte vaults list [--page N] [--page-size N] [--only-active]
 
 # Create a vault
 notte vaults create [--name "My Vault"]

@@ -45,6 +45,9 @@ var profilesDeleteCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(profilesCmd)
 	profilesCmd.AddCommand(profilesListCmd)
+	registerPaginationFlags(profilesListCmd)
+	profilesListCmd.Flags().String("name", "", "Filter profiles by name")
+
 	profilesCmd.AddCommand(profilesCreateCmd)
 	profilesCmd.AddCommand(profilesShowCmd)
 	profilesCmd.AddCommand(profilesDeleteCmd)
@@ -70,7 +73,22 @@ func runProfilesList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.ProfileListParams{}
+	page, err := getPageFlag(cmd)
+	if err != nil {
+		return err
+	}
+	pageSize, err := getPageSizeFlag(cmd)
+	if err != nil {
+		return err
+	}
+	params := &api.ProfileListParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if cmd.Flags().Changed("name") {
+		v, _ := cmd.Flags().GetString("name")
+		params.Name = &v
+	}
 	resp, err := client.Client().ProfileListWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

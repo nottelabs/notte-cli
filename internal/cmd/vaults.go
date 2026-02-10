@@ -87,6 +87,9 @@ var vaultsCredentialsDeleteCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(vaultsCmd)
 	vaultsCmd.AddCommand(vaultsListCmd)
+	registerPaginationFlags(vaultsListCmd)
+	vaultsListCmd.Flags().Bool("only-active", false, "Only return active vaults")
+
 	vaultsCmd.AddCommand(vaultsCreateCmd)
 	vaultsCmd.AddCommand(vaultsUpdateCmd)
 	vaultsCmd.AddCommand(vaultsDeleteCmd)
@@ -137,7 +140,22 @@ func runVaultsList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.ListVaultsParams{}
+	page, err := getPageFlag(cmd)
+	if err != nil {
+		return err
+	}
+	pageSize, err := getPageSizeFlag(cmd)
+	if err != nil {
+		return err
+	}
+	params := &api.ListVaultsParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if cmd.Flags().Changed("only-active") {
+		v, _ := cmd.Flags().GetBool("only-active")
+		params.OnlyActive = &v
+	}
 	resp, err := client.Client().ListVaultsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

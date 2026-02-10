@@ -59,6 +59,9 @@ var personasSmsCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(personasCmd)
 	personasCmd.AddCommand(personasListCmd)
+	registerPaginationFlags(personasListCmd)
+	personasListCmd.Flags().Bool("only-active", false, "Only return active personas")
+
 	personasCmd.AddCommand(personasCreateCmd)
 	personasCmd.AddCommand(personasShowCmd)
 	personasCmd.AddCommand(personasDeleteCmd)
@@ -94,7 +97,22 @@ func runPersonasList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.ListPersonasParams{}
+	page, err := getPageFlag(cmd)
+	if err != nil {
+		return err
+	}
+	pageSize, err := getPageSizeFlag(cmd)
+	if err != nil {
+		return err
+	}
+	params := &api.ListPersonasParams{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if cmd.Flags().Changed("only-active") {
+		v, _ := cmd.Flags().GetBool("only-active")
+		params.OnlyActive = &v
+	}
 	resp, err := client.Client().ListPersonasWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

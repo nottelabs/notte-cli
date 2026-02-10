@@ -3,6 +3,7 @@ package cmd
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -104,5 +105,31 @@ func TestNoGenericIDFlags(t *testing.T) {
 			t.Errorf("  - %s", v)
 		}
 		t.Error("All ID flags should be resource-specific (e.g., --session-id, --function-id, --vault-id)")
+	}
+}
+
+// TestPaginatedListCommandsHaveFlags ensures all paginated list commands
+// expose --page, --page-size, and their resource-specific filter flags.
+func TestPaginatedListCommandsHaveFlags(t *testing.T) {
+	paginatedCommands := []struct {
+		cmd           *cobra.Command
+		path          string
+		requiredFlags []string
+	}{
+		{sessionsListCmd, "sessions list", []string{"page", "page-size", "only-active"}},
+		{agentsListCmd, "agents list", []string{"page", "page-size", "only-active", "only-saved"}},
+		{functionsListCmd, "functions list", []string{"page", "page-size", "only-active"}},
+		{functionsRunsCmd, "functions runs", []string{"page", "page-size", "only-active"}},
+		{personasListCmd, "personas list", []string{"page", "page-size", "only-active"}},
+		{profilesListCmd, "profiles list", []string{"page", "page-size", "name"}},
+		{vaultsListCmd, "vaults list", []string{"page", "page-size", "only-active"}},
+	}
+
+	for _, tc := range paginatedCommands {
+		for _, flag := range tc.requiredFlags {
+			if tc.cmd.Flags().Lookup(flag) == nil {
+				t.Errorf("%s: missing required flag --%s", tc.path, flag)
+			}
+		}
 	}
 }

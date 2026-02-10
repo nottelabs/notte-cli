@@ -73,7 +73,7 @@ notte auth status                    # Show authentication status
 ### Browser Sessions
 
 ```bash
-notte sessions list                   # List all active sessions
+notte sessions list [--page N] [--page-size N] [--only-active]  # List sessions
 notte sessions start [flags]          # Start a new session
 notte sessions status                 # Get current session status
 notte sessions stop                   # Stop current session
@@ -140,7 +140,7 @@ notte page captcha-solve              # Solve captcha
 ### AI Agents
 
 ```bash
-notte agents list                     # List all AI agents
+notte agents list [--page N] [--page-size N] [--only-active] [--only-saved]  # List agents
 notte agents start --task "..."       # Start a new AI agent (auto-uses current session)
 notte agents status                   # Get agent status (uses current agent)
 notte agents stop                     # Stop an agent (uses current agent)
@@ -153,7 +153,7 @@ notte agents replay                   # Get agent execution replay
 ### Functions
 
 ```bash
-notte functions list                  # List all functions
+notte functions list [--page N] [--page-size N] [--only-active]  # List functions
 notte functions create --file workflow.py  # Create a new function
 notte functions show                  # View current function details
 notte functions show --function-id <id>  # View specific function details (different from current function)
@@ -161,7 +161,7 @@ notte functions update --file workflow.py  # Update current function code
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
 notte functions run                   # Execute current function
-notte functions runs                  # List runs for current function
+notte functions runs [--page N] [--page-size N] [--only-active]  # List runs for current function
 notte functions run-stop --run-id <id>  # Stop a running function execution
 notte functions run-metadata --run-id <id>  # Get run logs and results
 notte functions schedule --cron "0 9 * * *"  # Schedule current function
@@ -173,7 +173,7 @@ notte functions unschedule            # Remove schedule from current function
 ### Vaults
 
 ```bash
-notte vaults list                                     # List all vaults
+notte vaults list [--page N] [--page-size N] [--only-active]  # List all vaults
 notte vaults create                                   # Create a new vault
 notte vaults update --vault-id <id>                   # Update vault metadata
 notte vaults delete --vault-id <id>                   # Delete a vault
@@ -186,7 +186,7 @@ notte vaults credentials delete --vault-id <id>       # Delete credentials
 ### Personas
 
 ```bash
-notte personas list                      # List all personas
+notte personas list [--page N] [--page-size N] [--only-active]  # List all personas
 notte personas create                    # Create a new persona
 notte personas show --persona-id <id>    # View persona details
 notte personas delete --persona-id <id>  # Delete a persona
@@ -197,7 +197,7 @@ notte personas sms --persona-id <id>     # List SMS messages
 ### Profiles
 
 ```bash
-notte profiles list                      # List all profiles
+notte profiles list [--page N] [--page-size N] [--name "..."]  # List all profiles
 notte profiles create                    # Create a new profile
 notte profiles show --profile-id <id>    # View profile details
 notte profiles delete --profile-id <id>  # Delete a profile
@@ -321,10 +321,13 @@ notte sessions stop
 ### JQ Filtering
 
 ```bash
-# Get only active sessions
-notte sessions list --output json | jq '.sessions[] | select(.status=="ACTIVE")'
+# Get only active sessions (using built-in filter)
+notte sessions list --only-active
 
-# Extract session IDs
+# Paginate through results
+notte sessions list --page 2 --page-size 5
+
+# Extract session IDs with jq
 notte sessions list --output json | jq -r '.sessions[].id'
 ```
 

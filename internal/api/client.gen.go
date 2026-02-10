@@ -69,16 +69,10 @@ const (
 	DeletePersonaResponseStatusSuccess DeletePersonaResponseStatus = "success"
 )
 
-// Defines values for DeletePhoneNumberResponseStatus.
-const (
-	DeletePhoneNumberResponseStatusFailure DeletePhoneNumberResponseStatus = "failure"
-	DeletePhoneNumberResponseStatusSuccess DeletePhoneNumberResponseStatus = "success"
-)
-
 // Defines values for DeleteVaultResponseStatus.
 const (
-	DeleteVaultResponseStatusFailure DeleteVaultResponseStatus = "failure"
-	DeleteVaultResponseStatusSuccess DeleteVaultResponseStatus = "success"
+	Failure DeleteVaultResponseStatus = "failure"
+	Success DeleteVaultResponseStatus = "success"
 )
 
 // Defines values for FunctionRunUpdateRequestStatus.
@@ -123,17 +117,17 @@ const (
 
 // Defines values for LlmModel.
 const (
-	AnthropicclaudeSonnet4520250929            LlmModel = "anthropic/claude-sonnet-4-5-20250929"
-	Cerebrasllama3370b                         LlmModel = "cerebras/llama-3.3-70b"
-	DeepseekdeepseekR1                         LlmModel = "deepseek/deepseek-r1"
-	Geminigemini25Flash                        LlmModel = "gemini/gemini-2.5-flash"
-	Groqllama3370bVersatile                    LlmModel = "groq/llama-3.3-70b-versatile"
-	MoonshotkimiK25                            LlmModel = "moonshot/kimi-k2.5"
-	Openaigpt4o                                LlmModel = "openai/gpt-4o"
-	Openroutergooglegemma327bIt                LlmModel = "openrouter/google/gemma-3-27b-it"
-	PerplexitysonarPro                         LlmModel = "perplexity/sonar-pro"
-	TogetherAimetaLlamaLlama3370BInstructTurbo LlmModel = "together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo"
-	VertexAigemini25Flash                      LlmModel = "vertex_ai/gemini-2.5-flash"
+	AnthropicclaudeSonnet4520250929       LlmModel = "anthropic/claude-sonnet-4-5-20250929"
+	CerebrasgptOss120b                    LlmModel = "cerebras/gpt-oss-120b"
+	DeepseekdeepseekR1                    LlmModel = "deepseek/deepseek-r1"
+	Geminigemini25Flash                   LlmModel = "gemini/gemini-2.5-flash"
+	GroqgptOss120b                        LlmModel = "groq/gpt-oss-120b"
+	MoonshotkimiK25                       LlmModel = "moonshot/kimi-k2.5"
+	Openaigpt4o                           LlmModel = "openai/gpt-4o"
+	Openroutergooglegemma327bIt           LlmModel = "openrouter/google/gemma-3-27b-it"
+	PerplexitysonarPro                    LlmModel = "perplexity/sonar-pro"
+	TogetherAimetaLlamallama3370bInstruct LlmModel = "together_ai/meta-llama/llama-3.3-70b-instruct"
+	VertexAigemini25Flash                 LlmModel = "vertex_ai/gemini-2.5-flash"
 )
 
 // Defines values for NetworkLogFileType.
@@ -841,15 +835,6 @@ type Cookie struct {
 	Value          string   `json:"value"`
 }
 
-// CreatePhoneNumberResponse defines model for CreatePhoneNumberResponse.
-type CreatePhoneNumberResponse struct {
-	// PhoneNumber The phone number that was created
-	PhoneNumber string `json:"phone_number"`
-
-	// Status Status of the created virtual number
-	Status string `json:"status"`
-}
-
 // Credential defines model for Credential.
 type Credential struct {
 	Email    *string `json:"email"`
@@ -946,18 +931,6 @@ type DeletePersonaResponse struct {
 
 // DeletePersonaResponseStatus Status of the deletion
 type DeletePersonaResponseStatus string
-
-// DeletePhoneNumberResponse defines model for DeletePhoneNumberResponse.
-type DeletePhoneNumberResponse struct {
-	// Message Message of the deletion
-	Message *string `json:"message,omitempty"`
-
-	// Status Status of the deletion
-	Status DeletePhoneNumberResponseStatus `json:"status"`
-}
-
-// DeletePhoneNumberResponseStatus Status of the deletion
-type DeletePhoneNumberResponseStatus string
 
 // DeleteVaultResponse defines model for DeleteVaultResponse.
 type DeleteVaultResponse struct {
@@ -2766,18 +2739,6 @@ type PersonaSmsListParams struct {
 
 	// OnlyUnread Whether to only return unread messages
 	OnlyUnread          *bool   `form:"only_unread,omitempty" json:"only_unread,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// PersonaDeleteNumberParams defines parameters for PersonaDeleteNumber.
-type PersonaDeleteNumberParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// PersonaCreateNumberParams defines parameters for PersonaCreateNumber.
-type PersonaCreateNumberParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -8139,12 +8100,6 @@ type ClientInterface interface {
 	// PersonaSmsList request
 	PersonaSmsList(ctx context.Context, personaId string, params *PersonaSmsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PersonaDeleteNumber request
-	PersonaDeleteNumber(ctx context.Context, personaId string, params *PersonaDeleteNumberParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PersonaCreateNumber request
-	PersonaCreateNumber(ctx context.Context, personaId string, params *PersonaCreateNumberParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ProfileList request
 	ProfileList(ctx context.Context, params *ProfileListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8616,30 +8571,6 @@ func (c *Client) PersonaEmailsList(ctx context.Context, personaId string, params
 
 func (c *Client) PersonaSmsList(ctx context.Context, personaId string, params *PersonaSmsListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPersonaSmsListRequest(c.Server, personaId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PersonaDeleteNumber(ctx context.Context, personaId string, params *PersonaDeleteNumberParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPersonaDeleteNumberRequest(c.Server, personaId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PersonaCreateNumber(ctx context.Context, personaId string, params *PersonaCreateNumberParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPersonaCreateNumberRequest(c.Server, personaId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -11258,126 +11189,6 @@ func NewPersonaSmsListRequest(server string, personaId string, params *PersonaSm
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewPersonaDeleteNumberRequest generates requests for PersonaDeleteNumber
-func NewPersonaDeleteNumberRequest(server string, personaId string, params *PersonaDeleteNumberParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "persona_id", runtime.ParamLocationPath, personaId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/personas/%s/sms/number", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewPersonaCreateNumberRequest generates requests for PersonaCreateNumber
-func NewPersonaCreateNumberRequest(server string, personaId string, params *PersonaCreateNumberParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "persona_id", runtime.ParamLocationPath, personaId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/personas/%s/sms/number", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -14062,12 +13873,6 @@ type ClientWithResponsesInterface interface {
 	// PersonaSmsListWithResponse request
 	PersonaSmsListWithResponse(ctx context.Context, personaId string, params *PersonaSmsListParams, reqEditors ...RequestEditorFn) (*PersonaSmsListResult, error)
 
-	// PersonaDeleteNumberWithResponse request
-	PersonaDeleteNumberWithResponse(ctx context.Context, personaId string, params *PersonaDeleteNumberParams, reqEditors ...RequestEditorFn) (*PersonaDeleteNumberResult, error)
-
-	// PersonaCreateNumberWithResponse request
-	PersonaCreateNumberWithResponse(ctx context.Context, personaId string, params *PersonaCreateNumberParams, reqEditors ...RequestEditorFn) (*PersonaCreateNumberResult, error)
-
 	// ProfileListWithResponse request
 	ProfileListWithResponse(ctx context.Context, params *ProfileListParams, reqEditors ...RequestEditorFn) (*ProfileListResult, error)
 
@@ -14779,52 +14584,6 @@ func (r PersonaSmsListResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PersonaSmsListResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PersonaDeleteNumberResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *DeletePhoneNumberResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r PersonaDeleteNumberResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PersonaDeleteNumberResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PersonaCreateNumberResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *CreatePhoneNumberResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r PersonaCreateNumberResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PersonaCreateNumberResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15878,24 +15637,6 @@ func (c *ClientWithResponses) PersonaSmsListWithResponse(ctx context.Context, pe
 		return nil, err
 	}
 	return ParsePersonaSmsListResult(rsp)
-}
-
-// PersonaDeleteNumberWithResponse request returning *PersonaDeleteNumberResult
-func (c *ClientWithResponses) PersonaDeleteNumberWithResponse(ctx context.Context, personaId string, params *PersonaDeleteNumberParams, reqEditors ...RequestEditorFn) (*PersonaDeleteNumberResult, error) {
-	rsp, err := c.PersonaDeleteNumber(ctx, personaId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePersonaDeleteNumberResult(rsp)
-}
-
-// PersonaCreateNumberWithResponse request returning *PersonaCreateNumberResult
-func (c *ClientWithResponses) PersonaCreateNumberWithResponse(ctx context.Context, personaId string, params *PersonaCreateNumberParams, reqEditors ...RequestEditorFn) (*PersonaCreateNumberResult, error) {
-	rsp, err := c.PersonaCreateNumber(ctx, personaId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePersonaCreateNumberResult(rsp)
 }
 
 // ProfileListWithResponse request returning *ProfileListResult
@@ -17103,72 +16844,6 @@ func ParsePersonaSmsListResult(rsp *http.Response) (*PersonaSmsListResult, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []SMSResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePersonaDeleteNumberResult parses an HTTP response from a PersonaDeleteNumberWithResponse call
-func ParsePersonaDeleteNumberResult(rsp *http.Response) (*PersonaDeleteNumberResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PersonaDeleteNumberResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DeletePhoneNumberResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePersonaCreateNumberResult parses an HTTP response from a PersonaCreateNumberWithResponse call
-func ParsePersonaCreateNumberResult(rsp *http.Response) (*PersonaCreateNumberResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PersonaCreateNumberResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest CreatePhoneNumberResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
