@@ -50,6 +50,9 @@ var (
 
 	// The width of the viewport
 	SessionStartViewportWidth int
+
+	// Whether to use web bot authentication.
+	SessionStartWebBotAuth bool
 )
 
 // RegisterSessionStartFlags registers all flags for SessionStart command
@@ -69,6 +72,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
 	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
+	cmd.Flags().BoolVar(&SessionStartWebBotAuth, "web-bot-auth", false, "Whether to use web bot authentication.")
 }
 
 // BuildSessionStartRequest builds the API request from CLI flags
@@ -139,6 +143,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartViewportWidth > 0 {
 		body.ViewportWidth = &SessionStartViewportWidth
+	}
+
+	if cmd.Flags().Changed("web-bot-auth") {
+		body.WebBotAuth = &SessionStartWebBotAuth
 	}
 
 	return body, nil

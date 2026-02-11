@@ -632,6 +632,9 @@ type ApiSessionStartRequest struct {
 
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width"`
+
+	// WebBotAuth Whether to use web bot authentication.
+	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
 // ApiSessionStartRequestBrowserType The browser type to use. Can be chromium, chrome or firefox.
@@ -1462,6 +1465,9 @@ type GlobalScrapeRequest struct {
 
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width"`
+
+	// WebBotAuth Whether to use web bot authentication.
+	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
 // GlobalScrapeRequestBrowserType The browser type to use. Can be chromium, chrome or firefox.
@@ -2264,6 +2270,9 @@ type SessionResponse struct {
 
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width"`
+
+	// WebBotAuth Whether to use web bot authentication.
+	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
 // SessionResponseBrowserType defines model for SessionResponse.BrowserType.
