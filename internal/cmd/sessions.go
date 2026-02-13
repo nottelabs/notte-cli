@@ -22,7 +22,6 @@ var sessionsStartProxies bool
 
 var (
 	sessionID                 string
-	sessionObserveURL         string
 	sessionExecuteAction      string
 	sessionScrapeInstructions string
 	sessionScrapeOnlyMain     bool
@@ -294,8 +293,6 @@ func init() {
 
 	// Observe command flags
 	sessionsObserveCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
-	sessionsObserveCmd.Flags().StringVar(&sessionObserveURL, "url", "", "Navigate to URL before observing")
-
 	// Execute command flags
 	sessionsExecuteCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsExecuteCmd.Flags().StringVar(&sessionExecuteAction, "action", "", "Action JSON, @file, or '-' for stdin")
@@ -545,9 +542,6 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	body := api.PageObserveJSONRequestBody{}
-	if sessionObserveURL != "" {
-		body.Url = &sessionObserveURL
-	}
 
 	params := &api.PageObserveParams{}
 	resp, err := client.Client().PageObserveWithResponse(ctx, sessionID, params, body)

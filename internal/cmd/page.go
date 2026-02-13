@@ -786,9 +786,6 @@ func init() {
 	pageUploadCmd.Flags().StringVar(&pageUploadFile, "file", "", "Path to the file to upload (required)")
 	_ = pageUploadCmd.MarkFlagRequired("file")
 
-	// observe flags
-	pageObserveCmd.Flags().StringVar(&sessionObserveURL, "url", "", "Navigate to URL before observing")
-
 	// scrape flags
 	pageScrapeCmd.Flags().StringVar(&sessionScrapeInstructions, "instructions", "", "Extraction instructions")
 	pageScrapeCmd.Flags().BoolVar(&sessionScrapeOnlyMain, "only-main-content", false, "Only scrape main content")
