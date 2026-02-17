@@ -5,21 +5,21 @@
 class Notte < Formula
   desc "Browser automation CLI for notte.cc"
   homepage "https://notte.cc"
-  version "0.0.5"
+  version "0.0.6"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.5/notte-cli_0.0.5_darwin_amd64.tar.gz"
-      sha256 "436b194bf71ebe1379a1964139b039774191b5d12255399c8749a37a3b5f9e8b"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.6/notte-cli_0.0.6_darwin_amd64.tar.gz"
+      sha256 "0855863544d7a1931d17c7d78e0cfcd174c8b967a97823749fce057ec7deab15"
 
       def install
         bin.install "notte"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.5/notte-cli_0.0.5_darwin_arm64.tar.gz"
-      sha256 "a1c81dee23639e8961a72e586713d6eff013144296d96c6e99f723f9e6f01886"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.6/notte-cli_0.0.6_darwin_arm64.tar.gz"
+      sha256 "56cf4e2845742c78a8c6a84a9bfa3745ab39325509fc4a9d1c3a3c6fea6a8da9"
 
       def install
         bin.install "notte"
@@ -29,15 +29,15 @@ class Notte < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.5/notte-cli_0.0.5_linux_amd64.tar.gz"
-      sha256 "0391a2b3849a4737a33495cff1be540535e361de91a16d9e57d73ba1ddb68646"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.6/notte-cli_0.0.6_linux_amd64.tar.gz"
+      sha256 "0003e906b7331fd1d19b1cae34264a43e23b3bc3440368e6b581e9be8a6b143f"
       def install
         bin.install "notte"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.5/notte-cli_0.0.5_linux_arm64.tar.gz"
-      sha256 "63eb6c86d51a6761ae15db4a3ae8a7ebc590b912e71cae77b6065b713e3ae4af"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.6/notte-cli_0.0.6_linux_arm64.tar.gz"
+      sha256 "a4e531d9ecd457ae8606dd0052e2a96e51094882c9832f54e194ce6d5709a186"
       def install
         bin.install "notte"
       end
