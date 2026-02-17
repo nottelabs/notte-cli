@@ -112,8 +112,12 @@ func TestSessionsObserve(t *testing.T) {
 	// Wait a moment for the session to be fully ready
 	time.Sleep(2 * time.Second)
 
-	// Observe the page (navigate to a URL)
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	// Navigate to a URL
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	// Observe the page
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully observed page")
 }
@@ -136,7 +140,10 @@ func TestSessionsScrape(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// First navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape the page content
@@ -163,7 +170,10 @@ func TestSessionsNetwork(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Navigate to generate some network activity
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Get network logs
