@@ -48,7 +48,7 @@ func confirmReplaceSession(id string) (bool, error) {
 
 // confirmReplaceSessionWithIO is the testable version of confirmReplaceSession.
 func confirmReplaceSessionWithIO(in io.Reader, out io.Writer, id string) (bool, error) {
-	if _, err := fmt.Fprintf(out, "Session %s is currently active. Stop it and start a new one? [Y/n]: ", id); err != nil {
+	if _, err := fmt.Fprintf(out, "Session %s is currently active. A new session will be created either way.\nStop the existing session before starting the new one? [Y/n]: ", id); err != nil {
 		return false, fmt.Errorf("failed to write prompt: %w", err)
 	}
 
@@ -73,7 +73,7 @@ func confirmReplaceAgent(id string) (bool, error) {
 
 // confirmReplaceAgentWithIO is the testable version of confirmReplaceAgent.
 func confirmReplaceAgentWithIO(in io.Reader, out io.Writer, id string) (bool, error) {
-	if _, err := fmt.Fprintf(out, "Agent %s is currently active. Stop it and start a new one? [Y/n]: ", id); err != nil {
+	if _, err := fmt.Fprintf(out, "Agent %s is currently active. A new agent will be started either way.\nStop the existing agent before starting the new one? [Y/n]: ", id); err != nil {
 		return false, fmt.Errorf("failed to write prompt: %w", err)
 	}
 
