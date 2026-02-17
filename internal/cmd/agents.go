@@ -232,6 +232,7 @@ func runAgentsStart(cmd *cobra.Command, args []string) error {
 				PrintInfo(fmt.Sprintf("Warning: could not stop agent %s: %v", existingAgentID, stopErr))
 			}
 			_ = clearCurrentAgent()
+			_ = clearCurrentSessionExpiry()
 		}
 	}
 

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -110,6 +111,44 @@ func clearCurrentViewerURL() error {
 		return err
 	}
 	path := filepath.Join(configDir, config.CurrentViewerURLFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// setCurrentSessionExpiry saves the session expiry timestamp to the current_session_expiry file
+func setCurrentSessionExpiry(t time.Time) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionExpiryFile), []byte(t.Format(time.RFC3339)), 0o600)
+}
+
+// getCurrentSessionExpiry reads the session expiry timestamp from the current_session_expiry file
+func getCurrentSessionExpiry() (time.Time, error) {
+	configDir, err := config.Dir()
+	if err != nil {
+		return time.Time{}, err
+	}
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionExpiryFile))
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Parse(time.RFC3339, strings.TrimSpace(string(data)))
+}
+
+// clearCurrentSessionExpiry removes the current_session_expiry file
+func clearCurrentSessionExpiry() error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, config.CurrentSessionExpiryFile)
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -382,6 +421,17 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	// Check if there's already a current session
 	existingSessionID := GetCurrentSessionID()
 	if existingSessionID != "" {
+		// Check if the session has expired based on stored max expiry
+		if expiry, err := getCurrentSessionExpiry(); err == nil && !expiry.IsZero() && time.Now().UTC().After(expiry) {
+			// Session has expired — silently clear stale state
+			_ = clearCurrentSession()
+			_ = clearCurrentViewerURL()
+			_ = clearCurrentAgent()
+			_ = clearCurrentSessionExpiry()
+			existingSessionID = "" // skip the confirmation prompt
+		}
+	}
+	if existingSessionID != "" {
 		confirmed, err := confirmReplaceSession(existingSessionID)
 		if err != nil {
 			return err
@@ -402,6 +452,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
 			_ = clearCurrentAgent()
+			_ = clearCurrentSessionExpiry()
 		}
 	}
 
@@ -442,6 +493,13 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		if err := setCurrentSession(resp.JSON200.SessionId); err != nil {
 			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
+		}
+		// Store session expiry if max duration is set
+		if resp.JSON200.MaxDurationMinutes != nil {
+			expiry := resp.JSON200.CreatedAt.Add(time.Duration(*resp.JSON200.MaxDurationMinutes) * time.Minute)
+			if err := setCurrentSessionExpiry(expiry); err != nil {
+				PrintInfo(fmt.Sprintf("Warning: could not save session expiry: %v", err))
+			}
 		}
 		// Store viewer URL if available
 		if resp.JSON200.ViewerUrl != nil && *resp.JSON200.ViewerUrl != "" {
@@ -519,6 +577,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
 			_ = clearCurrentAgent()
+			_ = clearCurrentSessionExpiry()
 		}
 	}
 

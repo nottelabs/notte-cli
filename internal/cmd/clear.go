@@ -30,6 +30,9 @@ func runClear(cmd *cobra.Command, args []string) error {
 	if err := clearCurrentFunction(); err != nil {
 		return fmt.Errorf("failed to clear current function: %w", err)
 	}
+	if err := clearCurrentSessionExpiry(); err != nil {
+		return fmt.Errorf("failed to clear current session expiry: %w", err)
+	}
 
 	fmt.Println("Cleared all stored state (session, viewer URL, agent, function).")
 	return nil
