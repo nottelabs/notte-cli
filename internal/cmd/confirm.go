@@ -62,6 +62,31 @@ func confirmReplaceSessionWithIO(in io.Reader, out io.Writer, id string) (bool, 
 	return response != "n" && response != "no", nil
 }
 
+// confirmReplaceAgent prompts the user to confirm stopping an existing agent before starting a new one.
+// Defaults to "yes" if user just presses Enter.
+func confirmReplaceAgent(id string) (bool, error) {
+	if skipConfirmation {
+		return true, nil
+	}
+	return confirmReplaceAgentWithIO(os.Stdin, os.Stderr, id)
+}
+
+// confirmReplaceAgentWithIO is the testable version of confirmReplaceAgent.
+func confirmReplaceAgentWithIO(in io.Reader, out io.Writer, id string) (bool, error) {
+	if _, err := fmt.Fprintf(out, "Agent %s is currently active. Stop it and start a new one? [Y/n]: ", id); err != nil {
+		return false, fmt.Errorf("failed to write prompt: %w", err)
+	}
+
+	reader := bufio.NewReader(in)
+	response, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return false, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	return response != "n" && response != "no", nil
+}
+
 // SetSkipConfirmation sets whether to skip confirmation prompts (for --yes flag).
 func SetSkipConfirmation(skip bool) {
 	skipConfirmation = skip

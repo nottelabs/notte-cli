@@ -210,6 +210,31 @@ func runAgentsList(cmd *cobra.Command, args []string) error {
 }
 
 func runAgentsStart(cmd *cobra.Command, args []string) error {
+	// Check if there's already a current agent
+	existingAgentID := GetCurrentAgentID()
+	if existingAgentID != "" {
+		confirmed, err := confirmReplaceAgent(existingAgentID)
+		if err != nil {
+			return err
+		}
+		if confirmed {
+			stopClient, err := GetClient()
+			if err != nil {
+				return err
+			}
+			ctx, cancel := GetContextWithTimeout(cmd.Context())
+			params := &api.AgentStopParams{
+				SessionId: GetCurrentSessionID(),
+			}
+			_, stopErr := stopClient.Client().AgentStopWithResponse(ctx, existingAgentID, params)
+			cancel()
+			if stopErr != nil {
+				PrintInfo(fmt.Sprintf("Warning: could not stop agent %s: %v", existingAgentID, stopErr))
+			}
+			_ = clearCurrentAgent()
+		}
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
