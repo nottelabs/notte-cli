@@ -25,8 +25,12 @@ func TestPageObserve(t *testing.T) {
 	// Wait for session to be ready
 	time.Sleep(2 * time.Second)
 
-	// Observe a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	// Navigate to the page first
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	// Observe the page
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Verify we got some observation data
@@ -54,7 +58,10 @@ func TestPageExecuteAction(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// First navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Execute a simple goto action
@@ -82,7 +89,10 @@ func TestPageScrapeBasic(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape the page
@@ -114,7 +124,10 @@ func TestPageScrapeWithInstructions(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape with specific instructions
@@ -141,7 +154,10 @@ func TestPageScrapeOnlyMainContent(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Navigate to a page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 
 	// Scrape only main content
@@ -167,8 +183,12 @@ func TestPageObserveExecuteScrapeFlow(t *testing.T) {
 	// Wait for session to be ready
 	time.Sleep(2 * time.Second)
 
-	// Step 1: Observe initial page
-	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID, "--url", "https://example.com")
+	// Step 1: Navigate to initial page
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	// Step 1b: Observe initial page
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "observe", "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Step 1: Observed initial page")
 

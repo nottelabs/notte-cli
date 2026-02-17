@@ -625,29 +625,6 @@ func TestRunPageObserve(t *testing.T) {
 	}
 }
 
-func TestRunPageObserve_WithURL(t *testing.T) {
-	server := setupPageTest(t)
-	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/observe", 200, pageObserveResponse())
-
-	origURL := sessionObserveURL
-	sessionObserveURL = "https://example.com"
-	t.Cleanup(func() { sessionObserveURL = origURL })
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runSessionObserve(cmd, []string{})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
-
 // Other Actions Tests
 
 func TestRunPageCaptchaSolve(t *testing.T) {

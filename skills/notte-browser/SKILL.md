@@ -154,7 +154,7 @@ notte page close-tab
 **Page State:**
 ```bash
 # Observe page state and available actions
-notte page observe [--url <url>]
+notte page observe
 
 # Save a screenshot in tmp folder
 notte page screenshot

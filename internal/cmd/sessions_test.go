@@ -322,38 +322,6 @@ func TestRunSessionObserve(t *testing.T) {
 	observeResp := fmt.Sprintf(`{"metadata":{"tabs":[{"tab_id":1,"title":"Tab","url":"https://example.com"}],"title":"Tab","url":"https://example.com"},"screenshot":{"raw":"aGVsbG8="},"session":%s,"space":{"category":"page","description":"desc","interaction_actions":[]}}`, sessionJSON())
 	server.AddResponse("/sessions/"+sessionIDTest+"/page/observe", 200, observeResp)
 
-	origURL := sessionObserveURL
-	sessionObserveURL = "https://example.com"
-	t.Cleanup(func() { sessionObserveURL = origURL })
-
-	origFormat := outputFormat
-	outputFormat = "json"
-	t.Cleanup(func() { outputFormat = origFormat })
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		err := runSessionObserve(cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	if stdout == "" {
-		t.Error("expected output, got empty string")
-	}
-}
-
-func TestRunSessionObserve_NoURL(t *testing.T) {
-	server := setupSessionTest(t)
-	observeResp := fmt.Sprintf(`{"metadata":{"tabs":[{"tab_id":1,"title":"Tab","url":"https://example.com"}],"title":"Tab","url":"https://example.com"},"screenshot":{"raw":"aGVsbG8="},"session":%s,"space":{"category":"page","description":"desc","interaction_actions":[]}}`, sessionJSON())
-	server.AddResponse("/sessions/"+sessionIDTest+"/page/observe", 200, observeResp)
-
-	origURL := sessionObserveURL
-	sessionObserveURL = ""
-	t.Cleanup(func() { sessionObserveURL = origURL })
-
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
