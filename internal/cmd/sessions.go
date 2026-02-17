@@ -404,6 +404,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			}
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
+			_ = clearCurrentAgent()
 		}
 	}
 
@@ -520,6 +521,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		if strings.TrimSpace(string(data)) == sessionID {
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
+			_ = clearCurrentAgent()
 		}
 	}
 

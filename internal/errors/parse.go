@@ -49,7 +49,7 @@ func ParseAPIError(resp *http.Response, body []byte) error {
 
 	// Handle rate limiting separately
 	if resp.StatusCode == http.StatusTooManyRequests {
-		return parseRateLimitError(resp)
+		return parseRateLimitError(resp, body)
 	}
 
 	// Try to parse JSON error body for all error responses
@@ -165,7 +165,7 @@ func parseDetailMessage(detail json.RawMessage) string {
 	return string(detail)
 }
 
-func parseRateLimitError(resp *http.Response) *RateLimitError {
+func parseRateLimitError(resp *http.Response, body []byte) *RateLimitError {
 	retryAfter := 60 * time.Second // Default
 
 	if header := resp.Header.Get("Retry-After"); header != "" {
@@ -174,7 +174,22 @@ func parseRateLimitError(resp *http.Response) *RateLimitError {
 		}
 	}
 
-	return &RateLimitError{RetryAfter: retryAfter}
+	// Try to extract error message from response body
+	var message string
+	var apiResp apiErrorResponse
+	if err := json.Unmarshal(body, &apiResp); err == nil {
+		message = extractErrorMessage(&apiResp)
+	}
+
+	// If JSON parsing failed, use raw body as message
+	if message == "" && len(body) > 0 {
+		message = string(body)
+	}
+
+	return &RateLimitError{
+		RetryAfter: retryAfter,
+		Message:    SanitizeMessage(message),
+	}
 }
 
 // SanitizeMessage cleans error messages for safe display

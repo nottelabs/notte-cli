@@ -34,9 +34,9 @@ func (c *RetryConfig) ShouldRetry(statusCode int, method string, attempt int) bo
 		return false
 	}
 
-	// Always retry rate limits
+	// Don't retry rate limits - fail immediately so user sees the error
 	if statusCode == http.StatusTooManyRequests {
-		return true
+		return false
 	}
 
 	// Only retry 5xx for idempotent methods

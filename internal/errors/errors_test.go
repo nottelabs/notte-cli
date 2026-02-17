@@ -49,15 +49,44 @@ func TestValidationError_Error(t *testing.T) {
 }
 
 func TestRateLimitError_Error(t *testing.T) {
-	err := &RateLimitError{
-		RetryAfter: 30 * time.Second,
+	tests := []struct {
+		name       string
+		retryAfter time.Duration
+		message    string
+		want       string
+	}{
+		{
+			name:       "without message",
+			retryAfter: 30 * time.Second,
+			message:    "",
+			want:       "rate limit exceeded: too many requests (retry after 30 seconds)",
+		},
+		{
+			name:       "with message",
+			retryAfter: 60 * time.Second,
+			message:    "Max active sessions limit exceeded",
+			want:       "rate limit exceeded: Max active sessions limit exceeded (retry after 1 minutes)",
+		},
+		{
+			name:       "under 60 seconds",
+			retryAfter: 45 * time.Second,
+			message:    "",
+			want:       "rate limit exceeded: too many requests (retry after 45 seconds)",
+		},
 	}
 
-	got := err.Error()
-	want := "rate limited: retry after 30s"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := &RateLimitError{
+				RetryAfter: tt.retryAfter,
+				Message:    tt.message,
+			}
 
-	if got != want {
-		t.Errorf("got %q, want %q", got, want)
+			got := err.Error()
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
