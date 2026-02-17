@@ -129,16 +129,16 @@ type GenerationError struct {
 
 func (e GenerationError) Error() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("\nERROR: Unsupported field type in %s\n", e.Endpoint))
-	sb.WriteString(fmt.Sprintf("  Field: '%s'\n", e.Field))
-	sb.WriteString(fmt.Sprintf("  Type: %s\n", e.FieldType))
+	fmt.Fprintf(&sb, "\nERROR: Unsupported field type in %s\n", e.Endpoint)
+	fmt.Fprintf(&sb, "  Field: '%s'\n", e.Field)
+	fmt.Fprintf(&sb, "  Type: %s\n", e.FieldType)
 	if e.Location != "" {
-		sb.WriteString(fmt.Sprintf("  Location: %s\n", e.Location))
+		fmt.Fprintf(&sb, "  Location: %s\n", e.Location)
 	}
 	sb.WriteString("\n  ACTION REQUIRED:\n")
-	sb.WriteString(fmt.Sprintf("  %s\n", e.Reason))
+	fmt.Fprintf(&sb, "  %s\n", e.Reason)
 	if e.Suggestion != "" {
-		sb.WriteString(fmt.Sprintf("\n  %s\n", e.Suggestion))
+		fmt.Fprintf(&sb, "\n  %s\n", e.Suggestion)
 	}
 	return sb.String()
 }

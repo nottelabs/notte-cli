@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -1169,6 +1170,246 @@ func TestSessionStop_DifferentSession_DoesNotClearCurrentSession(t *testing.T) {
 	}
 	if strings.TrimSpace(string(data)) != "sess_current" {
 		t.Errorf("session file content = %q, want %q", string(data), "sess_current")
+	}
+}
+
+// Tests for session expiry helpers and auto-clear logic
+
+func TestSetAndGetCurrentSessionExpiry(t *testing.T) {
+	_ = setupSessionFileTest(t)
+
+	expiry := time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC)
+	if err := setCurrentSessionExpiry(expiry); err != nil {
+		t.Fatalf("setCurrentSessionExpiry() error = %v", err)
+	}
+
+	got, err := getCurrentSessionExpiry()
+	if err != nil {
+		t.Fatalf("getCurrentSessionExpiry() error = %v", err)
+	}
+
+	if !got.Equal(expiry) {
+		t.Errorf("getCurrentSessionExpiry() = %v, want %v", got, expiry)
+	}
+}
+
+func TestGetCurrentSessionExpiry_MissingFile(t *testing.T) {
+	_ = setupSessionFileTest(t)
+
+	_, err := getCurrentSessionExpiry()
+	if err == nil {
+		t.Fatal("getCurrentSessionExpiry() should error when file doesn't exist")
+	}
+}
+
+func TestClearCurrentSessionExpiry(t *testing.T) {
+	tmpDir := setupSessionFileTest(t)
+
+	// Create expiry file
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	expiryFile := filepath.Join(configDir, config.CurrentSessionExpiryFile)
+	if err := os.WriteFile(expiryFile, []byte("2025-06-15T12:30:00Z"), 0o600); err != nil {
+		t.Fatalf("failed to write expiry file: %v", err)
+	}
+
+	if err := clearCurrentSessionExpiry(); err != nil {
+		t.Fatalf("clearCurrentSessionExpiry() error = %v", err)
+	}
+
+	if _, err := os.Stat(expiryFile); !os.IsNotExist(err) {
+		t.Error("expiry file should have been removed")
+	}
+}
+
+func TestClearCurrentSessionExpiry_NoFile(t *testing.T) {
+	_ = setupSessionFileTest(t)
+
+	err := clearCurrentSessionExpiry()
+	if err != nil {
+		t.Errorf("clearCurrentSessionExpiry() should not error when file doesn't exist: %v", err)
+	}
+}
+
+func TestSessionsStart_SavesExpiry(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	// Response with max_duration_minutes set
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_exp","status":"ACTIVE","created_at":"2025-06-15T12:00:00Z","last_accessed_at":"2025-06-15T12:00:00Z","timeout_minutes":5,"max_duration_minutes":30}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.SetContext(context.Background())
+
+	testutil.CaptureOutput(func() {
+		err := runSessionsStart(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// Verify expiry was saved
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	expiryFile := filepath.Join(configDir, config.CurrentSessionExpiryFile)
+
+	data, err := os.ReadFile(expiryFile)
+	if err != nil {
+		t.Fatalf("expiry file should exist: %v", err)
+	}
+
+	got, err := time.Parse(time.RFC3339, strings.TrimSpace(string(data)))
+	if err != nil {
+		t.Fatalf("failed to parse expiry: %v", err)
+	}
+
+	// created_at (12:00) + 30 minutes = 12:30
+	expected := time.Date(2025, 6, 15, 12, 30, 0, 0, time.UTC)
+	if !got.Equal(expected) {
+		t.Errorf("expiry = %v, want %v", got, expected)
+	}
+}
+
+func TestSessionsStart_AutoClearsExpiredSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	// Set up an existing session with an expiry in the past
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, config.CurrentSessionFile), []byte("sess_old"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+	// Set expiry to the past
+	pastExpiry := time.Now().UTC().Add(-10 * time.Minute)
+	if err := os.WriteFile(filepath.Join(configDir, config.CurrentSessionExpiryFile), []byte(pastExpiry.Format(time.RFC3339)), 0o600); err != nil {
+		t.Fatalf("failed to write expiry file: %v", err)
+	}
+
+	// The start endpoint should be called (no stop for the expired session)
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new","status":"ACTIVE","created_at":"2025-06-15T12:00:00Z","last_accessed_at":"2025-06-15T12:00:00Z","timeout_minutes":5}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	// Reset sessionID flag so file-based resolution is used
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+	env.SetEnv("NOTTE_SESSION_ID", "")
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.SetContext(context.Background())
+
+	testutil.CaptureOutput(func() {
+		err := runSessionsStart(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// Verify old session was cleared and new one was saved
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
+	if err != nil {
+		t.Fatalf("session file should exist: %v", err)
+	}
+	if string(data) != "sess_new" {
+		t.Errorf("session file = %q, want %q", string(data), "sess_new")
+	}
+
+	// Old expiry file should have been cleared (no new one since no max_duration_minutes in response)
+	if _, err := os.Stat(filepath.Join(configDir, config.CurrentSessionExpiryFile)); !os.IsNotExist(err) {
+		t.Error("expiry file should have been cleared for expired session")
+	}
+}
+
+func TestSessionsStart_DoesNotAutoClearNonExpiredSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	// Set up an existing session with an expiry in the future
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, config.CurrentSessionFile), []byte("sess_active"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+	futureExpiry := time.Now().UTC().Add(30 * time.Minute)
+	if err := os.WriteFile(filepath.Join(configDir, config.CurrentSessionExpiryFile), []byte(futureExpiry.Format(time.RFC3339)), 0o600); err != nil {
+		t.Fatalf("failed to write expiry file: %v", err)
+	}
+
+	// Reset sessionID flag so file-based resolution is used
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+	env.SetEnv("NOTTE_SESSION_ID", "")
+
+	// Set up stop endpoint (for the confirmation path) and start endpoint
+	server.AddResponse("/sessions/sess_active/stop", 200, `{"session_id":"sess_active","status":"STOPPED"}`)
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new","status":"ACTIVE","created_at":"2025-06-15T12:00:00Z","last_accessed_at":"2025-06-15T12:00:00Z","timeout_minutes":5}`)
+
+	// Skip confirmation to auto-confirm the replace prompt
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
+	cmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "")
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
+	cmd.SetContext(context.Background())
+
+	testutil.CaptureOutput(func() {
+		err := runSessionsStart(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	// Verify the new session was saved (confirmation path was followed, not auto-clear)
+	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
+	if err != nil {
+		t.Fatalf("session file should exist: %v", err)
+	}
+	if string(data) != "sess_new" {
+		t.Errorf("session file = %q, want %q", string(data), "sess_new")
 	}
 }
 
