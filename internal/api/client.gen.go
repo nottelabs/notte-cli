@@ -1036,7 +1036,7 @@ type EmailResponse struct {
 type EvaluateJsAction struct {
 	Category *string `json:"category,omitempty"`
 
-	// Code The JavaScript code to evaluate on the page
+	// Code The JavaScript code to evaluate on the page. Use a single expression or an IIFE for multi-statement code.
 	Code        string  `json:"code"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`

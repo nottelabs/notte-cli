@@ -177,6 +177,15 @@ func cloneRequest(req *http.Request) *http.Request {
 	reqCopy := req.Clone(req.Context())
 	// Copy headers since Clone doesn't deep copy them
 	reqCopy.Header = req.Header.Clone()
+
+	// Fix: If GetBody is available, use it to get a fresh body for the retry
+	if reqCopy.GetBody != nil {
+		body, err := reqCopy.GetBody()
+		if err == nil {
+			reqCopy.Body = body
+		}
+	}
+
 	return reqCopy
 }
 

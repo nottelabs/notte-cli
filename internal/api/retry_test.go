@@ -30,10 +30,10 @@ func TestRetryConfig_ShouldRetry(t *testing.T) {
 		attempt     int
 		shouldRetry bool
 	}{
-		{"429 first attempt", 429, "GET", 0, true},
-		{"429 second attempt", 429, "GET", 1, true},
-		{"429 third attempt", 429, "GET", 2, true},
-		{"429 fourth attempt", 429, "GET", 3, false}, // Max retries exceeded
+		{"429 first attempt", 429, "GET", 0, false},  // Don't retry rate limits - fail immediately
+		{"429 second attempt", 429, "GET", 1, false}, // Don't retry rate limits
+		{"429 third attempt", 429, "GET", 2, false},  // Don't retry rate limits
+		{"429 fourth attempt", 429, "GET", 3, false}, // Don't retry rate limits
 		{"500 GET", 500, "GET", 0, true},
 		{"500 POST", 500, "POST", 0, false}, // Non-idempotent
 		{"502 GET", 502, "GET", 0, true},
@@ -203,24 +203,21 @@ func TestDoWithRetry_RetriesOnServerError(t *testing.T) {
 	}
 }
 
-func TestDoWithRetry_RetriesOnRateLimit(t *testing.T) {
+func TestDoWithRetry_NoRetryOnRateLimit(t *testing.T) {
 	callCount := 0
 	client := &http.Client{
 		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 			callCount++
-			status := http.StatusTooManyRequests
-			if callCount > 1 {
-				status = http.StatusOK
-			}
+			// Always return 429 - should not retry
 			return &http.Response{
-				StatusCode: status,
+				StatusCode: http.StatusTooManyRequests,
 				Body:       io.NopCloser(strings.NewReader("{}")),
 				Header:     http.Header{"Content-Type": []string{"application/json"}},
 			}, nil
 		}),
 	}
 
-	cfg := &RetryConfig{MaxRetries: 1, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
+	cfg := &RetryConfig{MaxRetries: 3, InitialBackoff: time.Millisecond, MaxBackoff: time.Millisecond, Jitter: false}
 	req, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 
 	resp, err := DoWithRetry(context.Background(), client, req, cfg)
@@ -229,11 +226,12 @@ func TestDoWithRetry_RetriesOnRateLimit(t *testing.T) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if callCount != 2 {
-		t.Errorf("expected 2 calls, got %d", callCount)
+	// Should only call once (no retry) even though MaxRetries is 3
+	if callCount != 1 {
+		t.Errorf("expected 1 call (no retry on 429), got %d", callCount)
 	}
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("expected 429, got %d", resp.StatusCode)
 	}
 }
 

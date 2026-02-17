@@ -382,6 +382,32 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionsStart(cmd *cobra.Command, args []string) error {
+	// Check if there's already a current session
+	existingSessionID := GetCurrentSessionID()
+	if existingSessionID != "" {
+		confirmed, err := confirmReplaceSession(existingSessionID)
+		if err != nil {
+			return err
+		}
+		if confirmed {
+			// Stop the existing session
+			stopClient, err := GetClient()
+			if err != nil {
+				return err
+			}
+			ctx, cancel := GetContextWithTimeout(cmd.Context())
+			params := &api.SessionStopParams{}
+			_, stopErr := stopClient.Client().SessionStopWithResponse(ctx, existingSessionID, params)
+			cancel()
+			if stopErr != nil {
+				PrintInfo(fmt.Sprintf("Warning: could not stop session %s: %v", existingSessionID, stopErr))
+			}
+			_ = clearCurrentSession()
+			_ = clearCurrentViewerURL()
+			_ = clearCurrentAgent()
+		}
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -495,6 +521,7 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		if strings.TrimSpace(string(data)) == sessionID {
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
+			_ = clearCurrentAgent()
 		}
 	}
 

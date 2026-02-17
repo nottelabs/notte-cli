@@ -38,10 +38,23 @@ func (e *ValidationError) Error() string {
 // RateLimitError indicates rate limiting with retry guidance
 type RateLimitError struct {
 	RetryAfter time.Duration
+	Message    string // The actual error message from the API
 }
 
 func (e *RateLimitError) Error() string {
-	return fmt.Sprintf("rate limited: retry after %s", e.RetryAfter)
+	var timeMsg string
+	seconds := int(e.RetryAfter.Seconds())
+	if seconds < 60 {
+		timeMsg = fmt.Sprintf("%d seconds", seconds)
+	} else {
+		minutes := int(e.RetryAfter.Minutes())
+		timeMsg = fmt.Sprintf("%d minutes", minutes)
+	}
+
+	if e.Message != "" {
+		return fmt.Sprintf("rate limit exceeded: %s (retry after %s)", e.Message, timeMsg)
+	}
+	return fmt.Sprintf("rate limit exceeded: too many requests (retry after %s)", timeMsg)
 }
 
 // AuthError represents authentication/authorization failures
