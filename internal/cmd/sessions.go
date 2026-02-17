@@ -495,7 +495,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
 		}
 		// Store session expiry if max duration is set
-		if resp.JSON200.MaxDurationMinutes != nil {
+		if resp.JSON200.MaxDurationMinutes != nil && !resp.JSON200.CreatedAt.IsZero() {
 			expiry := resp.JSON200.CreatedAt.Add(time.Duration(*resp.JSON200.MaxDurationMinutes) * time.Minute)
 			if err := setCurrentSessionExpiry(expiry); err != nil {
 				PrintInfo(fmt.Sprintf("Warning: could not save session expiry: %v", err))
