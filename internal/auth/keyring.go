@@ -97,17 +97,39 @@ func deleteFromSystemKeyring(key string) error {
 	return nil
 }
 
-// GetKeyringAPIKey retrieves API key from OS keychain
+// GetKeyringAPIKey retrieves API key from OS keychain for the current environment.
+// On first read after upgrade, it falls back to the legacy "api_key" entry and
+// auto-migrates it to the env-qualified key.
 func GetKeyringAPIKey() (string, error) {
-	return defaultKeyring.Get(KeyringKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	envKey := KeyringKeyForEnv(envLabel)
+
+	// Try env-qualified key first
+	if val, err := defaultKeyring.Get(envKey); err == nil {
+		return val, nil
+	}
+
+	// Fall back to legacy key and auto-migrate
+	val, err := defaultKeyring.Get(KeyringKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Migrate: copy to env-qualified key, delete legacy
+	_ = defaultKeyring.Set(envKey, val)
+	_ = defaultKeyring.Delete(KeyringKey)
+
+	return val, nil
 }
 
-// SetKeyringAPIKey stores API key in OS keychain
+// SetKeyringAPIKey stores API key in OS keychain for the current environment.
 func SetKeyringAPIKey(apiKey string) error {
-	return defaultKeyring.Set(KeyringKey, apiKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	return defaultKeyring.Set(KeyringKeyForEnv(envLabel), apiKey)
 }
 
-// DeleteKeyringAPIKey removes API key from OS keychain
+// DeleteKeyringAPIKey removes API key from OS keychain for the current environment.
 func DeleteKeyringAPIKey() error {
-	return defaultKeyring.Delete(KeyringKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	return defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
 }

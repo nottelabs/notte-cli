@@ -62,8 +62,8 @@ func TestGetAPIKey_Keyring(t *testing.T) {
 	env, cleanup := setupTestAuth(t)
 	defer cleanup()
 
-	// Store key in mock keyring
-	_ = env.MockStore.Set("api_key", "keyring_test_key")
+	// Store key in mock keyring (env-qualified for prod since NOTTE_API_URL is unset)
+	_ = env.MockStore.Set("api_key:prod", "keyring_test_key")
 
 	key, source, err := GetAPIKey("")
 	if err != nil {
@@ -115,13 +115,48 @@ func TestGetAPIKey_NotFound(t *testing.T) {
 	}
 }
 
+func TestGetAPIKey_LegacyMigration(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+
+	// Store key under legacy "api_key" (simulating pre-upgrade state)
+	_ = env.MockStore.Set("api_key", "legacy_key_value")
+
+	// Should find via legacy fallback and migrate
+	key, source, err := GetAPIKey("")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if key != "legacy_key_value" {
+		t.Errorf("got %q, want 'legacy_key_value'", key)
+	}
+	if source != SourceKeyring {
+		t.Errorf("got source %q, want %q", source, SourceKeyring)
+	}
+
+	// Verify migration: env-qualified key should now exist
+	migrated, err := env.MockStore.Get("api_key:prod")
+	if err != nil {
+		t.Fatalf("expected migrated key, got error: %v", err)
+	}
+	if migrated != "legacy_key_value" {
+		t.Errorf("migrated key = %q, want 'legacy_key_value'", migrated)
+	}
+
+	// Legacy key should be deleted
+	_, err = env.MockStore.Get("api_key")
+	if err == nil {
+		t.Error("expected legacy key to be deleted after migration")
+	}
+}
+
 func TestGetAPIKey_Priority(t *testing.T) {
 	env, cleanup := setupTestAuth(t)
 	defer cleanup()
 
 	// Set all three sources
 	env.SetEnv(EnvAPIKey, "env_key")
-	_ = env.MockStore.Set("api_key", "keyring_key")
+	_ = env.MockStore.Set("api_key:prod", "keyring_key")
 
 	cfgPath := filepath.Join(env.TempDir, "config.json")
 	_ = os.WriteFile(cfgPath, []byte(`{"api_key": "config_key"}`), 0o600)
@@ -140,7 +175,7 @@ func TestGetAPIKey_Priority(t *testing.T) {
 	}
 
 	// Remove keyring, config should win
-	_ = env.MockStore.Delete("api_key")
+	_ = env.MockStore.Delete("api_key:prod")
 	key, source, _ = GetAPIKey(cfgPath)
 	if key != "config_key" || source != SourceConfig {
 		t.Errorf("config should be fallback: got %q from %q", key, source)
