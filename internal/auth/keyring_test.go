@@ -95,6 +95,110 @@ func TestKeyring_Delete(t *testing.T) {
 	}
 }
 
+func TestKeyring_MultipleEnvironments(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// Store key for prod (default, NOTTE_API_URL unset)
+	err := SetKeyringAPIKey("prod-key-123")
+	if err != nil {
+		t.Fatalf("SetKeyringAPIKey (prod) failed: %v", err)
+	}
+
+	// Store key for staging
+	env.SetEnv("NOTTE_API_URL", "https://us-staging.notte.cc")
+	err = SetKeyringAPIKey("staging-key-456")
+	if err != nil {
+		t.Fatalf("SetKeyringAPIKey (staging) failed: %v", err)
+	}
+
+	// Retrieve staging key
+	key, err := GetKeyringAPIKey()
+	if err != nil {
+		t.Fatalf("GetKeyringAPIKey (staging) failed: %v", err)
+	}
+	if key != "staging-key-456" {
+		t.Errorf("staging key = %q, want %q", key, "staging-key-456")
+	}
+
+	// Switch back to prod
+	_ = os.Unsetenv("NOTTE_API_URL")
+	key, err = GetKeyringAPIKey()
+	if err != nil {
+		t.Fatalf("GetKeyringAPIKey (prod) failed: %v", err)
+	}
+	if key != "prod-key-123" {
+		t.Errorf("prod key = %q, want %q", key, "prod-key-123")
+	}
+}
+
+func TestKeyring_LegacyMigration(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// Simulate pre-upgrade: legacy key exists
+	_ = env.MockStore.Set("api_key", "legacy-key")
+
+	// Get should find legacy key and migrate it
+	key, err := GetKeyringAPIKey()
+	if err != nil {
+		t.Fatalf("GetKeyringAPIKey failed: %v", err)
+	}
+	if key != "legacy-key" {
+		t.Errorf("got %q, want %q", key, "legacy-key")
+	}
+
+	// Verify migration happened
+	migrated, err := env.MockStore.Get("api_key:prod")
+	if err != nil {
+		t.Fatalf("expected migrated key: %v", err)
+	}
+	if migrated != "legacy-key" {
+		t.Errorf("migrated = %q, want %q", migrated, "legacy-key")
+	}
+
+	// Legacy key should be gone
+	_, err = env.MockStore.Get("api_key")
+	if err == nil {
+		t.Error("expected legacy key to be deleted")
+	}
+}
+
+func TestKeyring_LegacyMigration_NonProdEnv(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// Simulate pre-upgrade: legacy key exists
+	_ = env.MockStore.Set("api_key", "legacy-key")
+
+	// Set current env to staging
+	env.SetEnv("NOTTE_API_URL", "https://us-staging.notte.cc")
+
+	// Get should NOT return the legacy key for staging
+	_, err := GetKeyringAPIKey()
+	if err == nil {
+		t.Fatal("expected error when legacy key is accessed from non-prod env")
+	}
+
+	// But the legacy key should still be migrated to prod
+	migrated, err := env.MockStore.Get("api_key:prod")
+	if err != nil {
+		t.Fatalf("expected legacy key migrated to prod: %v", err)
+	}
+	if migrated != "legacy-key" {
+		t.Errorf("migrated = %q, want %q", migrated, "legacy-key")
+	}
+
+	// Legacy key should be deleted
+	_, err = env.MockStore.Get("api_key")
+	if err == nil {
+		t.Error("expected legacy key to be deleted after migration")
+	}
+}
+
 func TestKeyring_GetWhenEmpty(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	SetKeyring(env.MockStore)

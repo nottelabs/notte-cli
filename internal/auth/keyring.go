@@ -97,17 +97,46 @@ func deleteFromSystemKeyring(key string) error {
 	return nil
 }
 
-// GetKeyringAPIKey retrieves API key from OS keychain
+// GetKeyringAPIKey retrieves API key from OS keychain for the current environment.
+// On first read after upgrade, it falls back to the legacy "api_key" entry and
+// auto-migrates it to the env-qualified key.
 func GetKeyringAPIKey() (string, error) {
-	return defaultKeyring.Get(KeyringKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	envKey := KeyringKeyForEnv(envLabel)
+
+	// Try env-qualified key first
+	if val, err := defaultKeyring.Get(envKey); err == nil {
+		return val, nil
+	}
+
+	// Fall back to legacy key and auto-migrate to prod.
+	// The legacy entry was always associated with the default (prod) environment,
+	// so always migrate to "api_key:prod" regardless of current NOTTE_API_URL.
+	val, err := defaultKeyring.Get(KeyringKey)
+	if err != nil {
+		return "", err
+	}
+
+	prodKey := KeyringKeyForEnv("prod")
+	_ = defaultKeyring.Set(prodKey, val)
+	_ = defaultKeyring.Delete(KeyringKey)
+
+	// Only return the value if the current env is actually prod
+	if envLabel != "prod" {
+		return "", fmt.Errorf("failed to get key from keyring: legacy key migrated to prod, but current environment is %s", envLabel)
+	}
+
+	return val, nil
 }
 
-// SetKeyringAPIKey stores API key in OS keychain
+// SetKeyringAPIKey stores API key in OS keychain for the current environment.
 func SetKeyringAPIKey(apiKey string) error {
-	return defaultKeyring.Set(KeyringKey, apiKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	return defaultKeyring.Set(KeyringKeyForEnv(envLabel), apiKey)
 }
 
-// DeleteKeyringAPIKey removes API key from OS keychain
+// DeleteKeyringAPIKey removes API key from OS keychain for the current environment.
 func DeleteKeyringAPIKey() error {
-	return defaultKeyring.Delete(KeyringKey)
+	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	return defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
 }

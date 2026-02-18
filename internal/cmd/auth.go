@@ -95,11 +95,14 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 		masked = key[:8] + "..." + key[len(key)-4:]
 	}
 
+	envLabel := auth.ResolveEnvLabel(auth.GetCurrentAPIURL())
+
 	formatter := GetFormatter()
 	data := map[string]any{
 		"Authenticated": "yes",
 		"Source":        string(source),
 		"API Key":       masked,
+		"Environment":   envLabel,
 	}
 
 	return formatter.Print(data)
