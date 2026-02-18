@@ -109,15 +109,22 @@ func GetKeyringAPIKey() (string, error) {
 		return val, nil
 	}
 
-	// Fall back to legacy key and auto-migrate
+	// Fall back to legacy key and auto-migrate to prod.
+	// The legacy entry was always associated with the default (prod) environment,
+	// so always migrate to "api_key:prod" regardless of current NOTTE_API_URL.
 	val, err := defaultKeyring.Get(KeyringKey)
 	if err != nil {
 		return "", err
 	}
 
-	// Migrate: copy to env-qualified key, delete legacy
-	_ = defaultKeyring.Set(envKey, val)
+	prodKey := KeyringKeyForEnv("prod")
+	_ = defaultKeyring.Set(prodKey, val)
 	_ = defaultKeyring.Delete(KeyringKey)
+
+	// Only return the value if the current env is actually prod
+	if envLabel != "prod" {
+		return "", fmt.Errorf("failed to get key from keyring: legacy key migrated to prod, but current environment is %s", envLabel)
+	}
 
 	return val, nil
 }
