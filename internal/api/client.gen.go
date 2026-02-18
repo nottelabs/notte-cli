@@ -584,6 +584,9 @@ type ApiExecutionResponse struct {
 	Message   string                      `json:"message"`
 	Session   SessionResponse             `json:"session"`
 	Success   bool                        `json:"success"`
+
+	// Timestamp Timestamp of the execution result
+	Timestamp *FlexibleTime `json:"timestamp,omitempty"`
 }
 
 // ApiExecutionResponse_Action defines model for ApiExecutionResponse.Action.
@@ -2299,7 +2302,9 @@ type SmsReadAction struct {
 
 // SnapshotMetadata defines model for SnapshotMetadata.
 type SnapshotMetadata struct {
-	Tabs      []TabsData    `json:"tabs"`
+	Tabs []TabsData `json:"tabs"`
+
+	// Timestamp Timestamp of the snapshot
 	Timestamp *FlexibleTime `json:"timestamp,omitempty"`
 	Title     string        `json:"title"`
 	Url       string        `json:"url"`
