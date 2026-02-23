@@ -62,7 +62,7 @@ func init() {
 
 	// Download command flags
 	filesDownloadCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
-	filesDownloadCmd.Flags().StringVarP(&filesDownloadOutput, "output", "o", "", "Output file path (defaults to current directory)")
+	filesDownloadCmd.Flags().StringVar(&filesDownloadOutput, "path", "", "Output file path (defaults to current directory)")
 }
 
 func runFilesList(cmd *cobra.Command, args []string) error {

@@ -366,6 +366,9 @@ func init() {
 
 	// Code command flags
 	sessionsCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+
+	// Viewer command flags
+	sessionsViewerCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 }
 
 func runSessionsList(cmd *cobra.Command, args []string) error {
@@ -931,6 +934,12 @@ func runSessionCode(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// JSON mode: return full response
+	if IsJSONOutput() {
+		return GetFormatter().Print(resp.JSON200)
+	}
+
+	// Text mode: just print the Python script
 	if resp.JSON200 != nil {
 		fmt.Println(resp.JSON200.PythonScript)
 	}
@@ -974,12 +983,18 @@ func runSessionViewer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no viewer URL available for this session")
 	}
 
-	PrintInfo(fmt.Sprintf("Opening viewer in browser: %s", viewerURL))
+	if !IsJSONOutput() {
+		PrintInfo(fmt.Sprintf("Opening viewer in browser: %s", viewerURL))
+	}
 	if err := openBrowser(viewerURL); err != nil {
 		return fmt.Errorf("failed to open browser: %w", err)
 	}
 
-	return nil
+	return PrintResult("Opened viewer in browser.", map[string]any{
+		"session_id": sessionID,
+		"viewer_url": viewerURL,
+		"success":    true,
+	})
 }
 
 // openBrowser opens the specified URL in the default browser

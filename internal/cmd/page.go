@@ -798,5 +798,5 @@ func init() {
 	_ = pageFormFillCmd.MarkFlagRequired("data")
 
 	// screenshot flags
-	pageScreenshotCmd.Flags().StringVarP(&pageScreenshotOutput, "output", "o", "", "Output path for the screenshot (defaults to temp directory)")
+	pageScreenshotCmd.Flags().StringVar(&pageScreenshotOutput, "path", "", "Output path for the screenshot (defaults to temp directory)")
 }
