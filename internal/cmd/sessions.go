@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -27,6 +30,8 @@ var (
 	sessionScrapeInstructions string
 	sessionScrapeOnlyMain     bool
 	sessionCookiesSetFile     string
+	sessionNetworkURLsOnly    bool
+	sessionNetworkPath        string
 )
 
 // GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
@@ -354,6 +359,8 @@ func init() {
 
 	// Network command flags
 	sessionsNetworkCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsNetworkCmd.Flags().BoolVar(&sessionNetworkURLsOnly, "urls-only", false, "Only show download URLs without downloading")
+	sessionsNetworkCmd.Flags().StringVar(&sessionNetworkPath, "path", "", "Output directory for downloaded files (defaults to temp directory)")
 
 	// Replay command flags
 	sessionsReplayCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -800,7 +807,11 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.SessionNetworkLogsParams{}
+	// Enable download URLs in API response
+	download := true
+	params := &api.SessionNetworkLogsParams{
+		Download: &download,
+	}
 	resp, err := client.Client().SessionNetworkLogsWithResponse(ctx, sessionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -810,7 +821,187 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If urls-only flag is set, just print the URLs
+	if sessionNetworkURLsOnly {
+		// JSON mode: return full response
+		if IsJSONOutput() {
+			return GetFormatter().Print(resp.JSON200)
+		}
+		// Text mode: print nicely formatted list of URLs
+		return printNetworkURLs(resp.JSON200)
+	}
+
+	// Default: download files to folder
+	if resp.JSON200 != nil {
+		return downloadNetworkLogs(resp.JSON200, sessionNetworkPath)
+	}
+
 	return GetFormatter().Print(resp.JSON200)
+}
+
+// downloadNetworkLogs downloads all network log files in parallel to a folder
+func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error {
+	var outDir string
+	var err error
+
+	if outputPath != "" {
+		// Use specified path
+		outDir = outputPath
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+	} else {
+		// Create temp directory
+		outDir, err = os.MkdirTemp("", fmt.Sprintf("notte-network-%s-*", logs.SessionId))
+		if err != nil {
+			return fmt.Errorf("failed to create temp directory: %w", err)
+		}
+	}
+
+	// Create subdirectories for requests and responses
+	requestsDir := filepath.Join(outDir, "requests")
+	responsesDir := filepath.Join(outDir, "responses")
+	if err := os.MkdirAll(requestsDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create requests directory: %w", err)
+	}
+	if err := os.MkdirAll(responsesDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create responses directory: %w", err)
+	}
+
+	// Collect all download tasks
+	type downloadTask struct {
+		url      string
+		filename string
+		dir      string
+	}
+	var tasks []downloadTask
+
+	for _, req := range logs.Requests {
+		if req.DownloadUrl != nil && *req.DownloadUrl != "" {
+			tasks = append(tasks, downloadTask{
+				url:      *req.DownloadUrl,
+				filename: req.Filename,
+				dir:      requestsDir,
+			})
+		}
+	}
+
+	for _, resp := range logs.Responses {
+		if resp.DownloadUrl != nil && *resp.DownloadUrl != "" {
+			tasks = append(tasks, downloadTask{
+				url:      *resp.DownloadUrl,
+				filename: resp.Filename,
+				dir:      responsesDir,
+			})
+		}
+	}
+
+	if len(tasks) == 0 {
+		return PrintResult(fmt.Sprintf("No network logs to download for session %s", logs.SessionId), map[string]any{
+			"session_id": logs.SessionId,
+			"path":       outDir,
+			"count":      0,
+		})
+	}
+
+	// Download all files in parallel
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(tasks))
+	successCount := 0
+	var successMu sync.Mutex
+
+	for _, task := range tasks {
+		wg.Add(1)
+		go func(t downloadTask) {
+			defer wg.Done()
+			if err := downloadFile(t.url, filepath.Join(t.dir, t.filename)); err != nil {
+				errChan <- fmt.Errorf("failed to download %s: %w", t.filename, err)
+				return
+			}
+			successMu.Lock()
+			successCount++
+			successMu.Unlock()
+		}(task)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	// Collect errors (only report first few)
+	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		// Print warning but don't fail if some downloads succeeded
+		if successCount > 0 {
+			PrintInfo(fmt.Sprintf("Warning: %d download(s) failed", len(errs)))
+		} else {
+			return fmt.Errorf("all downloads failed: %v", errs[0])
+		}
+	}
+
+	return PrintResult(fmt.Sprintf("Downloaded %d network logs to %s", successCount, outDir), map[string]any{
+		"session_id": logs.SessionId,
+		"path":       outDir,
+		"count":      successCount,
+		"requests":   len(logs.Requests),
+		"responses":  len(logs.Responses),
+	})
+}
+
+// downloadFile downloads a file from the given URL to the given path
+func downloadFile(url, destPath string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	out, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = out.Close() }()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// printNetworkURLs prints a nicely formatted list of network log URLs
+func printNetworkURLs(logs *api.NetworkLogsResponse) error {
+	if logs == nil {
+		return nil
+	}
+
+	fmt.Printf("Session: %s\n", logs.SessionId)
+	fmt.Printf("Total:   %d files\n\n", logs.TotalCount)
+
+	if len(logs.Requests) > 0 {
+		fmt.Printf("Requests (%d):\n", len(logs.Requests))
+		for _, req := range logs.Requests {
+			if req.DownloadUrl != nil && *req.DownloadUrl != "" {
+				fmt.Printf("  %s\n", *req.DownloadUrl)
+			}
+		}
+		fmt.Println()
+	}
+
+	if len(logs.Responses) > 0 {
+		fmt.Printf("Responses (%d):\n", len(logs.Responses))
+		for _, resp := range logs.Responses {
+			if resp.DownloadUrl != nil && *resp.DownloadUrl != "" {
+				fmt.Printf("  %s\n", *resp.DownloadUrl)
+			}
+		}
+	}
+
+	return nil
 }
 
 func runSessionReplay(cmd *cobra.Command, args []string) error {
