@@ -83,7 +83,7 @@ func PrintListOrEmpty(items any, emptyMsg string) (bool, error) {
 // In JSON mode, returns the full response. In text mode without instructions,
 // returns just the markdown. With instructions, checks data.success and returns
 // the extracted data or an error message.
-func PrintScrapeResponse(resp *api.ScrapeResponse, hasInstructions bool) error {
+func PrintScrapeResponse(resp *api.DataSpace, hasInstructions bool) error {
 	// JSON mode: return full response
 	if IsJSONOutput() {
 		return GetFormatter().Print(resp)

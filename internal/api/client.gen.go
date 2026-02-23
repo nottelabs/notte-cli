@@ -580,13 +580,11 @@ type ApiAgentStartRequest_ReasoningModel struct {
 type ApiExecutionResponse struct {
 	Action    ApiExecutionResponse_Action `json:"action"`
 	Data      *DataSpace                  `json:"data,omitempty"`
+	EndedAt   time.Time                   `json:"ended_at"`
 	Exception *string                     `json:"exception"`
 	Message   string                      `json:"message"`
-	Session   SessionResponse             `json:"session"`
+	StartedAt FlexibleTime                `json:"started_at"`
 	Success   bool                        `json:"success"`
-
-	// Timestamp Timestamp of the execution result
-	Timestamp *FlexibleTime `json:"timestamp,omitempty"`
 }
 
 // ApiExecutionResponse_Action defines model for ApiExecutionResponse.Action.
@@ -1750,6 +1748,15 @@ type NudgePromptResponse struct {
 	Prompt string `json:"prompt"`
 }
 
+// Observation defines model for Observation.
+type Observation struct {
+	EndedAt    time.Time        `json:"ended_at"`
+	Metadata   SnapshotMetadata `json:"metadata"`
+	Screenshot Screenshot       `json:"screenshot"`
+	Space      ActionSpace      `json:"space"`
+	StartedAt  time.Time        `json:"started_at"`
+}
+
 // ObserveRequest defines model for ObserveRequest.
 type ObserveRequest struct {
 	// Instructions Additional instructions to use for the observation.
@@ -1763,17 +1770,6 @@ type ObserveRequest struct {
 
 	// PerceptionType Whether to run with fast or deep perception
 	PerceptionType *string `json:"perception_type"`
-
-	// Url The URL to observe. If not provided, uses the current page URL.
-	Url *string `json:"url"`
-}
-
-// ObserveResponse defines model for ObserveResponse.
-type ObserveResponse struct {
-	Metadata   SnapshotMetadata `json:"metadata"`
-	Screenshot Screenshot       `json:"screenshot"`
-	Session    SessionResponse  `json:"session"`
-	Space      ActionSpace      `json:"space"`
 }
 
 // PaginatedResponseAgentResponse defines model for PaginatedResponse_AgentResponse_.
@@ -2069,17 +2065,6 @@ type ScrapeRequest struct {
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
-}
-
-// ScrapeResponse defines model for ScrapeResponse.
-type ScrapeResponse struct {
-	// Images List of images extracted from the page (ID and download link)
-	Images *[]ImageData `json:"images"`
-
-	// Markdown Markdown representation of the extracted data
-	Markdown   string                   `json:"markdown"`
-	Session    SessionResponse          `json:"session"`
-	Structured *StructuredDataBaseModel `json:"structured,omitempty"`
 }
 
 // ScrapeSchemaResponse defines model for ScrapeSchemaResponse.
@@ -14906,7 +14891,7 @@ func (r PageExecuteResult) StatusCode() int {
 type PageObserveResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ObserveResponse
+	JSON200      *Observation
 	JSON422      *HTTPValidationError
 }
 
@@ -14929,7 +14914,7 @@ func (r PageObserveResult) StatusCode() int {
 type PageScrapeResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ScrapeResponse
+	JSON200      *DataSpace
 	JSON422      *HTTPValidationError
 }
 
@@ -17319,7 +17304,7 @@ func ParsePageObserveResult(rsp *http.Response) (*PageObserveResult, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ObserveResponse
+		var dest Observation
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -17352,7 +17337,7 @@ func ParsePageScrapeResult(rsp *http.Response) (*PageScrapeResult, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ScrapeResponse
+		var dest DataSpace
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
