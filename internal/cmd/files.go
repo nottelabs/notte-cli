@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -56,8 +58,8 @@ func init() {
 	filesCmd.AddCommand(filesDownloadCmd)
 
 	// List command flags
-	filesListCmd.Flags().BoolVar(&filesListUploadsFlag, "uploads", true, "List uploaded files")
-	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", false, "List downloaded files from a session")
+	filesListCmd.Flags().BoolVar(&filesListUploadsFlag, "uploads", false, "List uploaded files")
+	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", true, "List downloaded files from a session")
 	filesListCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Download command flags
@@ -73,17 +75,13 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 
 	formatter := GetFormatter()
 
-	// If downloads flag is set, list downloads for a session
-	if filesListDownloadsFlag {
-		if err := RequireSessionID(); err != nil {
-			return err
-		}
-
+	// If uploads flag is set, list uploads
+	if filesListUploadsFlag {
 		ctx, cancel := GetContextWithTimeout(cmd.Context())
 		defer cancel()
 
-		params := &api.FileListDownloadsParams{}
-		resp, err := client.Client().FileListDownloadsWithResponse(ctx, sessionID, params)
+		params := &api.FileListUploadsParams{}
+		resp, err := client.Client().FileListUploadsWithResponse(ctx, params)
 		if err != nil {
 			return fmt.Errorf("API request failed: %w", err)
 		}
@@ -98,21 +96,28 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 				fileNames = append(fileNames, f.Name)
 			}
 		}
-		if printed, err := PrintListOrEmpty(fileNames, "No downloaded files in session."); err != nil {
+		if printed, err := PrintListOrEmpty(fileNames, "No uploaded files."); err != nil {
 			return err
 		} else if printed {
 			return nil
 		}
 
+		if !IsJSONOutput() {
+			fmt.Println("Your uploaded files:")
+		}
 		return formatter.Print(fileNames)
 	}
 
-	// Default: list uploads
+	// Default: list downloads for a session
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.FileListUploadsParams{}
-	resp, err := client.Client().FileListUploadsWithResponse(ctx, params)
+	params := &api.FileListDownloadsParams{}
+	resp, err := client.Client().FileListDownloadsWithResponse(ctx, sessionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
@@ -127,12 +132,17 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 			fileNames = append(fileNames, f.Name)
 		}
 	}
-	if printed, err := PrintListOrEmpty(fileNames, "No uploaded files."); err != nil {
+	if printed, err := PrintListOrEmpty(fileNames, fmt.Sprintf("No downloaded files in session %s.", sessionID)); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
+	if !IsJSONOutput() {
+		fmt.Printf("Downloaded files in session %s:\n", sessionID)
+		fmt.Println("Fetch locally with: notte files download <filename>")
+		fmt.Println()
+	}
 	return formatter.Print(fileNames)
 }
 
@@ -242,15 +252,44 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Parse the JSON response to get the presigned URL
+	var downloadResp struct {
+		URL string `json:"url"`
+	}
+	if err := json.Unmarshal(resp.Body, &downloadResp); err != nil {
+		return fmt.Errorf("failed to parse download response: %w", err)
+	}
+
+	if downloadResp.URL == "" {
+		return fmt.Errorf("no download URL in response")
+	}
+
+	// Download the actual file from the presigned URL
+	httpResp, err := http.Get(downloadResp.URL)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
+	}
+	defer func() { _ = httpResp.Body.Close() }()
+
+	if httpResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file: HTTP %d", httpResp.StatusCode)
+	}
+
 	// Determine output path
 	outputPath := filesDownloadOutput
 	if outputPath == "" {
 		outputPath = filename
 	}
 
-	// Write the file
-	err = os.WriteFile(outputPath, resp.Body, 0o644)
+	// Create the output file
+	outFile, err := os.Create(outputPath)
 	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer func() { _ = outFile.Close() }()
+
+	// Copy the downloaded content to the file
+	if _, err := io.Copy(outFile, httpResp.Body); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 

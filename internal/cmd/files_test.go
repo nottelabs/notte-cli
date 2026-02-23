@@ -23,13 +23,13 @@ func TestRunFilesListUploads(t *testing.T) {
 
 	server.AddResponse("/storage/uploads", 200, `{"files":[{"name":"a.txt","file_ext":".txt","size":100}]}`)
 
-	origDownloadsFlag := filesListDownloadsFlag
+	origUploadsFlag := filesListUploadsFlag
 	origSession := sessionID
 	t.Cleanup(func() {
-		filesListDownloadsFlag = origDownloadsFlag
+		filesListUploadsFlag = origUploadsFlag
 		sessionID = origSession
 	})
-	filesListDownloadsFlag = false
+	filesListUploadsFlag = true
 	sessionID = ""
 
 	origFormat := outputFormat
@@ -61,13 +61,13 @@ func TestRunFilesListUploadsEmpty(t *testing.T) {
 
 	server.AddResponse("/storage/uploads", 200, `{"files":[]}`)
 
-	origDownloadsFlag := filesListDownloadsFlag
+	origUploadsFlag := filesListUploadsFlag
 	origSession := sessionID
 	t.Cleanup(func() {
-		filesListDownloadsFlag = origDownloadsFlag
+		filesListUploadsFlag = origUploadsFlag
 		sessionID = origSession
 	})
-	filesListDownloadsFlag = false
+	filesListUploadsFlag = true
 	sessionID = ""
 
 	origFormat := outputFormat
@@ -217,6 +217,14 @@ func TestRunFilesDownload(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
+	// Create a server for the actual file content (simulating S3)
+	fileServer := testutil.NewMockServer()
+	defer fileServer.Close()
+	fileServer.AddResponseWithHeaders("/file.txt", 200, "filedata", map[string]string{
+		"Content-Type": "application/octet-stream",
+	})
+
+	// Create the API server that returns the presigned URL
 	server := testutil.NewMockServer()
 	defer server.Close()
 	env.SetEnv("NOTTE_API_URL", server.URL())
@@ -233,9 +241,8 @@ func TestRunFilesDownload(t *testing.T) {
 	outputPath := filepath.Join(outDir, "download.txt")
 	filesDownloadOutput = outputPath
 
-	server.AddResponseWithHeaders("/storage/sess_123/downloads/file.txt", 200, "filedata", map[string]string{
-		"Content-Type": "application/octet-stream",
-	})
+	// API returns JSON with the presigned URL pointing to our file server
+	server.AddResponse("/storage/sess_123/downloads/file.txt", 200, `{"url":"`+fileServer.URL()+`/file.txt"}`)
 
 	origFormat := outputFormat
 	outputFormat = "text"

@@ -287,7 +287,14 @@ func runPageDownload(cmd *cobra.Command, args []string) error {
 		action["selector"] = selector
 	}
 
-	return executePageAction(cmd, action)
+	if err := executePageAction(cmd, action); err != nil {
+		return err
+	}
+
+	if !IsJSONOutput() {
+		fmt.Println("List downloaded files with: notte files list")
+	}
+	return nil
 }
 
 var pageUploadCmd = &cobra.Command{
