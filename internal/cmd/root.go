@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -68,8 +69,10 @@ func init() {
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Printf("notte version %s\n", Version)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return PrintResult(fmt.Sprintf("notte version %s", Version), map[string]any{
+				"version": Version,
+			})
 		},
 	})
 }
