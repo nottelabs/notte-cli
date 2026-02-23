@@ -183,6 +183,55 @@ func TestTextFormatter_Print_Pointer(t *testing.T) {
 	})
 }
 
+func TestTextFormatter_Print_NestedStruct(t *testing.T) {
+	type InnerStruct struct {
+		Email    *string
+		Password string
+		Username *string
+	}
+
+	type OuterStruct struct {
+		Credentials InnerStruct
+	}
+
+	t.Run("nested struct with pointer fields", func(t *testing.T) {
+		var buf bytes.Buffer
+		f := &TextFormatter{Writer: &buf, NoColor: true}
+
+		username := "hello"
+		data := OuterStruct{
+			Credentials: InnerStruct{
+				Email:    nil,
+				Password: "secret",
+				Username: &username,
+			},
+		}
+		err := f.Print(data)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		output := buf.String()
+		// Should NOT contain <nil> or memory addresses
+		if strings.Contains(output, "<nil>") {
+			t.Errorf("expected nested struct to hide nil fields, got %q", output)
+		}
+		if strings.Contains(output, "0x") {
+			t.Errorf("expected nested struct to dereference pointers, got %q", output)
+		}
+		// Should contain the actual values
+		if !strings.Contains(output, "Credentials:") {
+			t.Errorf("expected Credentials label, got %q", output)
+		}
+		if !strings.Contains(output, "Password:") || !strings.Contains(output, "secret") {
+			t.Errorf("expected Password value, got %q", output)
+		}
+		if !strings.Contains(output, "Username:") || !strings.Contains(output, "hello") {
+			t.Errorf("expected Username value, got %q", output)
+		}
+	})
+}
+
 func TestTextFormatter_Print_PointerField(t *testing.T) {
 	type TestStruct struct {
 		Name  *string
