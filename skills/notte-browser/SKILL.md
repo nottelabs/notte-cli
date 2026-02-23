@@ -121,6 +121,22 @@ notte page download "@L5"
 
 # Upload file to input
 notte page upload "#file-input" --file /path/to/file
+
+# Run JavaScript in the Page
+- Escape single quotes if needed.
+- Don’t use logging (output won’t be captured).
+- Use a single statement or a function that returns a value.
+
+# Single expression
+notte page eval-js 'document.title'
+
+# Function with return value
+notte page eval-js '
+() => {
+  const els = document.querySelectorAll("a");
+  return els.length;
+}
+'
 ```
 
 **Navigation:**
