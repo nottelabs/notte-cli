@@ -880,7 +880,7 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 		if req.DownloadUrl != nil && *req.DownloadUrl != "" {
 			tasks = append(tasks, downloadTask{
 				url:      *req.DownloadUrl,
-				filename: req.Filename,
+				filename: sanitizeFilename(req.Filename),
 				dir:      requestsDir,
 			})
 		}
@@ -890,7 +890,7 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 		if resp.DownloadUrl != nil && *resp.DownloadUrl != "" {
 			tasks = append(tasks, downloadTask{
 				url:      *resp.DownloadUrl,
-				filename: resp.Filename,
+				filename: sanitizeFilename(resp.Filename),
 				dir:      responsesDir,
 			})
 		}
@@ -951,9 +951,18 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 	})
 }
 
+// httpClient is a shared HTTP client with timeout for downloading files
+var httpClient = &http.Client{Timeout: 60 * time.Second}
+
+// sanitizeFilename removes path traversal components from a filename
+func sanitizeFilename(filename string) string {
+	// Get only the base name to prevent directory traversal
+	return filepath.Base(filename)
+}
+
 // downloadFile downloads a file from the given URL to the given path
 func downloadFile(url, destPath string) error {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return err
 	}
