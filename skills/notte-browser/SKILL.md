@@ -46,7 +46,6 @@ Control browser session lifecycle:
 # Start a new session
 notte sessions start [flags]
   --headless                 Run in headless mode (default: true)
-  --browser-type             Browser type: chromium, chrome, firefox (default: chromium)
   --idle-timeout-minutes     Idle timeout in minutes
   --max-duration-minutes     Maximum session lifetime in minutes
   --proxies                  Use default proxies
@@ -185,7 +184,7 @@ notte page scrape --instructions "Extract all links" [--only-main-content]
 notte page wait 1000
 
 # Solve CAPTCHA
-notte page captcha-solve "recaptcha_v2"
+notte page captcha-solve "recaptcha"
 
 # Mark task complete
 notte page complete "Task finished successfully" [--success=true]
@@ -277,14 +276,14 @@ notte functions fork --function-id <shared-function-id>
 
 ### Account Management
 
-**Personas** - Auto-generated identities with email/phone:
+**Personas** - Auto-generated identities with email:
 
 ```bash
 # List personas (with optional pagination and filters)
 notte personas list [--page N] [--page-size N] [--only-active]
 
 # Create a persona
-notte personas create [--create-phone-number] [--create-vault]
+notte personas create [--create-vault]
 
 # Show persona details
 notte personas show --persona-id <persona-id>
@@ -485,31 +484,12 @@ notte sessions viewer
 
 ### Bot Detection / Stealth
 
-If you're getting blocked or seeing CAPTCHAs, try these approaches (requires restarting the session with new parameters):
+If you're getting blocked or seeing CAPTCHAs, try enabling our residential proxies:
 
-1. **Change browser type**: Some sites have different detection for different browsers
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox
-   ```
-
-2. **Enable proxies**: Rotate IP addresses to avoid rate limiting
-   ```bash
-   notte sessions stop
-   notte sessions start --proxies
-   ```
-
-3. **Firefox + CAPTCHA solving**: The `--solve-captchas` flag works best with Firefox
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox --solve-captchas
-   ```
-
-4. **Combine strategies**: For heavily protected sites, combine multiple options
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox --proxies --solve-captchas
-   ```
+ ```bash
+ notte sessions stop
+ notte sessions start --proxies
+ ```
 
 **Note**: Always stop the current session before starting a new one with different parameters. Session configuration cannot be changed mid-session.
 
