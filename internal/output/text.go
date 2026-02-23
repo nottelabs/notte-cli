@@ -67,6 +67,10 @@ func (f *TextFormatter) printKeyValue(data any) error {
 }
 
 func (f *TextFormatter) printStruct(data any) error {
+	return f.printStructWithIndent(data, "")
+}
+
+func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 	v := reflect.ValueOf(data)
 	t := v.Type()
 	w := tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
@@ -87,18 +91,25 @@ func (f *TextFormatter) printStruct(data any) error {
 			}
 		}
 
-		label := f.colorize(field.Name+":", termenv.ANSICyan)
-
-		var displayValue any
+		label := f.colorize(indent+field.Name+":", termenv.ANSICyan)
 
 		// Handle pointer fields by dereferencing
 		if fieldValue.Kind() == reflect.Ptr {
-			displayValue = fieldValue.Elem().Interface()
-		} else {
-			displayValue = fieldValue.Interface()
+			fieldValue = fieldValue.Elem()
 		}
 
-		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, displayValue)
+		// Handle nested structs recursively
+		if fieldValue.Kind() == reflect.Struct {
+			_, _ = fmt.Fprintln(w, label)
+			_ = w.Flush()
+			if err := f.printStructWithIndent(fieldValue.Interface(), indent+"  "); err != nil {
+				return err
+			}
+			w = tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
+			continue
+		}
+
+		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, fieldValue.Interface())
 	}
 
 	return w.Flush()
