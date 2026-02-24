@@ -18,7 +18,7 @@ notte auth login
 # 2. Start a browser session
 notte sessions start
 
-# 3. Navigate and observe
+# 3. Goto and observe
 notte page goto "https://example.com"
 notte page observe
 notte page screenshot
