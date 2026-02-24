@@ -622,9 +622,17 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// JSON mode: return full response
+	// JSON mode: return filtered response (exclude screenshot and space.actions)
 	if IsJSONOutput() {
-		return GetFormatter().Print(resp.JSON200)
+		filtered := map[string]any{
+			"ended_at":   resp.JSON200.EndedAt,
+			"metadata":   resp.JSON200.Metadata,
+			"started_at": resp.JSON200.StartedAt,
+			"space": map[string]any{
+				"description": resp.JSON200.Space.Description,
+			},
+		}
+		return GetFormatter().Print(filtered)
 	}
 
 	// Text mode: return only the page description
