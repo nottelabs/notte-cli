@@ -57,7 +57,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "text", "Output format (text, json)")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
-	rootCmd.PersistentFlags().IntVar(&requestTimeout, "timeout", 30, "API request timeout in seconds")
+	rootCmd.PersistentFlags().IntVar(&requestTimeout, "timeout", 60, "API request timeout in seconds")
 	rootCmd.PersistentFlags().BoolVarP(&yesFlag, "yes", "y", false, "Skip confirmation prompts")
 
 	// Set up confirmation state before each command
