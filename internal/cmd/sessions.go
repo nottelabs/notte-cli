@@ -21,8 +21,9 @@ import (
 	"github.com/nottelabs/notte-cli/internal/config"
 )
 
-// Manual flag for proxies (union type not auto-generated)
-var sessionsStartProxies bool
+// Manual flags for proxies (union type not auto-generated)
+var sessionsStartProxy bool
+var sessionsStartProxyCountry string
 
 var (
 	sessionID                 string
@@ -324,10 +325,11 @@ func init() {
 	sessionsCmd.AddCommand(sessionsCodeCmd)
 	sessionsCmd.AddCommand(sessionsViewerCmd)
 
-	// Start command flags (auto-generated + manual proxies)
+	// Start command flags (auto-generated + manual proxy)
 	RegisterSessionStartFlags(sessionsStartCmd)
-	// Manual flag for proxies (union type: bool | array of proxy objects)
-	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxies, "proxies", false, "Use default proxies")
+	// Manual flags for proxies (union type: bool | array of proxy objects)
+	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
 
 	// Status command flags
 	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -481,9 +483,23 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	}
 
 	// Handle proxies manually (union type: bool | array of proxy objects)
-	if cmd.Flags().Changed("proxies") {
+	// --proxy-country takes precedence over --proxy
+	if cmd.Flags().Changed("proxy-country") {
+		country := api.ProxyGeolocationCountry(sessionsStartProxyCountry)
+		notteProxy := api.NotteProxy{Country: &country}
+		var item api.ApiSessionStartRequest_Proxies_0_Item
+		if err := item.FromNotteProxy(notteProxy); err != nil {
+			return fmt.Errorf("failed to create proxy: %w", err)
+		}
+		proxyList := api.ApiSessionStartRequestProxies0{item}
 		var proxies api.ApiSessionStartRequest_Proxies
-		if err := proxies.FromApiSessionStartRequestProxies1(sessionsStartProxies); err != nil {
+		if err := proxies.FromApiSessionStartRequestProxies0(proxyList); err != nil {
+			return fmt.Errorf("failed to set proxies: %w", err)
+		}
+		body.Proxies = &proxies
+	} else if cmd.Flags().Changed("proxy") {
+		var proxies api.ApiSessionStartRequest_Proxies
+		if err := proxies.FromApiSessionStartRequestProxies1(sessionsStartProxy); err != nil {
 			return fmt.Errorf("failed to set proxies: %w", err)
 		}
 		body.Proxies = &proxies
