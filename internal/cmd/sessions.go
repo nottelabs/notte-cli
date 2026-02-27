@@ -22,8 +22,10 @@ import (
 )
 
 // Manual flags for proxies (union type not auto-generated)
-var sessionsStartProxy bool
-var sessionsStartProxyCountry string
+var (
+	sessionsStartProxy        bool
+	sessionsStartProxyCountry string
+)
 
 var (
 	sessionID                 string
