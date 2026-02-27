@@ -147,8 +147,10 @@ func TestZZZ_CleanupPersonas(t *testing.T) {
 	}
 
 	deleted := 0
+	skipped := 0
 	for _, p := range personas {
 		if importantPersonas[p.PersonaID] {
+			skipped++
 			continue
 		}
 		r := runCLI(t, "personas", "delete", "--persona-id", p.PersonaID)
@@ -158,5 +160,5 @@ func TestZZZ_CleanupPersonas(t *testing.T) {
 			t.Logf("Warning: failed to delete persona %s: %s", p.PersonaID, r.Stderr)
 		}
 	}
-	t.Logf("Cleanup complete: deleted %d personas, kept %d important", deleted, len(personas)-deleted)
+	t.Logf("Cleanup complete: deleted %d, skipped %d important, %d failures", deleted, skipped, len(personas)-deleted-skipped)
 }
