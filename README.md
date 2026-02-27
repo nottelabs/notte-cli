@@ -99,7 +99,8 @@ notte sessions start \
   --user-agent <string>                   # Custom user agent
   --viewport-width <pixels>               # Viewport width
   --viewport-height <pixels>              # Viewport height
-  --proxies                               # Use default proxy rotation
+  --proxy                                  # Use default proxy rotation
+  --proxy-country <code>                  # Proxy with specific country (e.g. us, gb, fr)
   --solve-captchas                        # Automatically solve captchas
   --use-file-storage                      # Enable file storage for downloads
   --cdp-url <url>                         # CDP URL of remote session provider

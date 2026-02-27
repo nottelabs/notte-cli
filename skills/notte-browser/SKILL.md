@@ -48,7 +48,8 @@ notte sessions start [flags]
   --headless                 Run in headless mode (default: true)
   --idle-timeout-minutes     Idle timeout in minutes
   --max-duration-minutes     Maximum session lifetime in minutes
-  --proxies                  Use default proxies
+  --proxy                    Use default proxies
+  --proxy-country <code>     Proxy country code (e.g. us, gb, fr)
   --solve-captchas           Automatically solve captchas
   --viewport-width           Viewport width in pixels
   --viewport-height          Viewport height in pixels
@@ -488,7 +489,7 @@ If you're getting blocked or seeing CAPTCHAs, try enabling our residential proxi
 
  ```bash
  notte sessions stop
- notte sessions start --proxies
+ notte sessions start --proxy
  ```
 
 **Note**: Always stop the current session before starting a new one with different parameters. Session configuration cannot be changed mid-session.

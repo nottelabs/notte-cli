@@ -49,7 +49,7 @@ notte sessions start \
   --browser-type chromium \       # Browser type
   --idle-timeout-minutes 10 \     # Close after 10 min of inactivity
   --max-duration-minutes 60 \     # Maximum 60 min session lifetime
-  --proxies \                     # Use rotating proxies
+  --proxy \                       # Use rotating proxies
   --solve-captchas \              # Auto-solve CAPTCHAs
   --viewport-width 1920 \         # Custom viewport
   --viewport-height 1080 \
