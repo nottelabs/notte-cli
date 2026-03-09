@@ -511,7 +511,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	}
 
 	// Handle extra HTTP headers (map type not auto-generated)
-	if sessionsStartExtraHttpHeaders != "" {
+	if cmd.Flags().Changed("extra-http-headers") {
 		var headers map[string]interface{}
 		if err := json.Unmarshal([]byte(sessionsStartExtraHttpHeaders), &headers); err != nil {
 			return fmt.Errorf("invalid JSON for --extra-http-headers: %w", err)
