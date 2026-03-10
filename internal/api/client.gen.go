@@ -394,7 +394,7 @@ const (
 
 // ActionParameter defines model for ActionParameter.
 type ActionParameter struct {
-	Default *string   `json:"default"`
+	Default *string   `json:"default,omitempty"`
 	Name    string    `json:"name"`
 	Type    string    `json:"type"`
 	Values  *[]string `json:"values,omitempty"`
@@ -467,13 +467,13 @@ type AgentResponse struct {
 	AgentId string `json:"agent_id"`
 
 	// ClosedAt The closing time of the agent
-	ClosedAt *string `json:"closed_at"`
+	ClosedAt *string `json:"closed_at,omitempty"`
 
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage"`
+	CreditUsage *float32 `json:"credit_usage,omitempty"`
 
 	// Saved Whether the agent is saved as a workflow
 	Saved *bool `json:"saved,omitempty"`
@@ -492,19 +492,19 @@ type AgentStatusResponse struct {
 	AgentId string `json:"agent_id"`
 
 	// Answer The answer to the agent task. None if the agent is still running
-	Answer *string `json:"answer"`
+	Answer *string `json:"answer,omitempty"`
 
 	// ClosedAt The closing time of the agent
-	ClosedAt *string `json:"closed_at"`
+	ClosedAt *string `json:"closed_at,omitempty"`
 
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage"`
+	CreditUsage *float32 `json:"credit_usage,omitempty"`
 
 	// Replay The session replay in `.webp` format
-	Replay *string `json:"replay"`
+	Replay *string `json:"replay,omitempty"`
 
 	// ReplayStartOffset The start offset of the replay
 	ReplayStartOffset int `json:"replay_start_offset"`
@@ -523,13 +523,13 @@ type AgentStatusResponse struct {
 	Steps *[]map[string]interface{} `json:"steps,omitempty"`
 
 	// Success Whether the agent task was successful. None if the agent is still running
-	Success *bool `json:"success"`
+	Success *bool `json:"success,omitempty"`
 
 	// Task The task that the agent is currently running
 	Task string `json:"task"`
 
 	// Url The URL that the agent started on
-	Url *string `json:"url"`
+	Url *string `json:"url,omitempty"`
 }
 
 // ApiAgentStartRequest defines model for ApiAgentStartRequest.
@@ -538,10 +538,10 @@ type ApiAgentStartRequest struct {
 	MaxSteps *int `json:"max_steps,omitempty"`
 
 	// NotifierConfig Config used for the notifier
-	NotifierConfig *map[string]interface{} `json:"notifier_config"`
+	NotifierConfig *map[string]interface{} `json:"notifier_config,omitempty"`
 
 	// PersonaId The persona to use for the agent
-	PersonaId *string `json:"persona_id"`
+	PersonaId *string `json:"persona_id,omitempty"`
 
 	// ReasoningModel The reasoning model to use
 	ReasoningModel *ApiAgentStartRequest_ReasoningModel `json:"reasoning_model,omitempty"`
@@ -553,19 +553,19 @@ type ApiAgentStartRequest struct {
 	SessionId string `json:"session_id"`
 
 	// SessionOffset [Experimental] The step from which the agent should gather information from in the session. If none, fresh memory
-	SessionOffset *int `json:"session_offset"`
+	SessionOffset *int `json:"session_offset,omitempty"`
 
 	// Task The task that the agent should perform
 	Task string `json:"task"`
 
 	// Url The URL that the agent should start on (optional)
-	Url *string `json:"url"`
+	Url *string `json:"url,omitempty"`
 
 	// UseVision Whether to use vision for the agent. Not all reasoning models support vision.
 	UseVision *bool `json:"use_vision,omitempty"`
 
 	// VaultId The vault to use for the agent
-	VaultId *string `json:"vault_id"`
+	VaultId *string `json:"vault_id,omitempty"`
 }
 
 // ApiAgentStartRequestReasoningModel1 defines model for .
@@ -581,7 +581,7 @@ type ApiExecutionResponse struct {
 	Action    ApiExecutionResponse_Action `json:"action"`
 	Data      *DataSpace                  `json:"data,omitempty"`
 	EndedAt   time.Time                   `json:"ended_at"`
-	Exception *string                     `json:"exception"`
+	Exception *string                     `json:"exception,omitempty"`
 	Message   string                      `json:"message"`
 	StartedAt FlexibleTime                `json:"started_at"`
 	Success   bool                        `json:"success"`
@@ -598,10 +598,10 @@ type ApiSessionStartRequest struct {
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
-	CdpUrl *string `json:"cdp_url"`
+	CdpUrl *string `json:"cdp_url,omitempty"`
 
 	// ChromeArgs Overwrite the chrome instance arguments
-	ChromeArgs *[]string `json:"chrome_args"`
+	ChromeArgs *[]string `json:"chrome_args,omitempty"`
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
@@ -629,13 +629,13 @@ type ApiSessionStartRequest struct {
 	UseFileStorage *bool `json:"use_file_storage,omitempty"`
 
 	// UserAgent The user agent to use for the session
-	UserAgent *string `json:"user_agent"`
+	UserAgent *string `json:"user_agent,omitempty"`
 
 	// ViewportHeight The height of the viewport
-	ViewportHeight *int `json:"viewport_height"`
+	ViewportHeight *int `json:"viewport_height,omitempty"`
 
 	// ViewportWidth The width of the viewport
-	ViewportWidth *int `json:"viewport_width"`
+	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
@@ -678,9 +678,9 @@ type BodyFileUploadStorageUploadsFilenamePost struct {
 
 // BodyFunctionCreateFunctionsPost defines model for Body_function_create_functions_post.
 type BodyFunctionCreateFunctionsPost struct {
-	Description *string            `json:"description"`
+	Description *string            `json:"description,omitempty"`
 	File        openapi_types.File `json:"file"`
-	Name        *string            `json:"name"`
+	Name        *string            `json:"name,omitempty"`
 	Shared      *bool              `json:"shared,omitempty"`
 }
 
@@ -699,7 +699,7 @@ type BoundingBox struct {
 	Height         float32  `json:"height"`
 	IframeOffsetX  *float32 `json:"iframe_offset_x,omitempty"`
 	IframeOffsetY  *float32 `json:"iframe_offset_y,omitempty"`
-	NotteId        *string  `json:"notte_id"`
+	NotteId        *string  `json:"notte_id,omitempty"`
 	ScrollX        float32  `json:"scroll_x"`
 	ScrollY        float32  `json:"scroll_y"`
 	ViewportHeight float32  `json:"viewport_height"`
@@ -711,7 +711,7 @@ type BoundingBox struct {
 
 // CaptchaSolveAction defines model for CaptchaSolveAction.
 type CaptchaSolveAction struct {
-	CaptchaType *string `json:"captcha_type"`
+	CaptchaType *string `json:"captcha_type,omitempty"`
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
@@ -723,9 +723,9 @@ type CheckActionInput struct {
 	Description *string                    `json:"description,omitempty"`
 	Id          *string                    `json:"id,omitempty"`
 	Param       *ActionParameter           `json:"param,omitempty"`
-	PressEnter  *bool                      `json:"press_enter"`
-	Selector    *CheckActionInput_Selector `json:"selector"`
-	TextLabel   *string                    `json:"text_label"`
+	PressEnter  *bool                      `json:"press_enter,omitempty"`
+	Selector    *CheckActionInput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -746,9 +746,9 @@ type CheckActionOutput struct {
 	Category    *string                     `json:"category,omitempty"`
 	Description *string                     `json:"description,omitempty"`
 	Id          *string                     `json:"id,omitempty"`
-	PressEnter  *bool                       `json:"press_enter"`
-	Selector    *CheckActionOutput_Selector `json:"selector"`
-	TextLabel   *string                     `json:"text_label"`
+	PressEnter  *bool                       `json:"press_enter,omitempty"`
+	Selector    *CheckActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                     `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -770,9 +770,9 @@ type ClickActionInput struct {
 	Description *string                    `json:"description,omitempty"`
 	Id          *string                    `json:"id,omitempty"`
 	Param       *ActionParameter           `json:"param,omitempty"`
-	PressEnter  *bool                      `json:"press_enter"`
-	Selector    *ClickActionInput_Selector `json:"selector"`
-	TextLabel   *string                    `json:"text_label"`
+	PressEnter  *bool                      `json:"press_enter,omitempty"`
+	Selector    *ClickActionInput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -792,9 +792,9 @@ type ClickActionOutput struct {
 	Category    *string                     `json:"category,omitempty"`
 	Description *string                     `json:"description,omitempty"`
 	Id          *string                     `json:"id,omitempty"`
-	PressEnter  *bool                       `json:"press_enter"`
-	Selector    *ClickActionOutput_Selector `json:"selector"`
-	TextLabel   *string                     `json:"text_label"`
+	PressEnter  *bool                       `json:"press_enter,omitempty"`
+	Selector    *ClickActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                     `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -828,25 +828,25 @@ type CompletionAction struct {
 // Cookie defines model for Cookie.
 type Cookie struct {
 	Domain         string   `json:"domain"`
-	ExpirationDate *float32 `json:"expirationDate"`
-	Expires        *float32 `json:"expires"`
-	HostOnly       *bool    `json:"hostOnly"`
+	ExpirationDate *float32 `json:"expirationDate,omitempty"`
+	Expires        *float32 `json:"expires,omitempty"`
+	HostOnly       *bool    `json:"hostOnly,omitempty"`
 	HttpOnly       bool     `json:"httpOnly"`
 	Name           string   `json:"name"`
-	PartitionKey   *string  `json:"partitionKey"`
+	PartitionKey   *string  `json:"partitionKey,omitempty"`
 	Path           string   `json:"path"`
-	SameSite       *string  `json:"sameSite"`
-	Secure         *bool    `json:"secure"`
-	Session        *bool    `json:"session"`
-	StoreId        *string  `json:"storeId"`
+	SameSite       *string  `json:"sameSite,omitempty"`
+	Secure         *bool    `json:"secure,omitempty"`
+	Session        *bool    `json:"session,omitempty"`
+	StoreId        *string  `json:"storeId,omitempty"`
 	Value          string   `json:"value"`
 }
 
 // Credential defines model for Credential.
 type Credential struct {
-	Email    *string `json:"email"`
+	Email    *string `json:"email,omitempty"`
 	Url      string  `json:"url"`
-	Username *string `json:"username"`
+	Username *string `json:"username,omitempty"`
 }
 
 // CredentialsDictInput defines model for CredentialsDict-Input.
@@ -884,7 +884,7 @@ type CreditCardDictOutput struct {
 // DataSpace defines model for DataSpace.
 type DataSpace struct {
 	// Images List of images extracted from the page (ID and download link)
-	Images *[]ImageData `json:"images"`
+	Images *[]ImageData `json:"images,omitempty"`
 
 	// Markdown Markdown representation of the extracted data
 	Markdown   string                   `json:"markdown"`
@@ -957,9 +957,9 @@ type DownloadFileActionInput struct {
 	Description *string                           `json:"description,omitempty"`
 	Id          *string                           `json:"id,omitempty"`
 	Param       *ActionParameter                  `json:"param,omitempty"`
-	PressEnter  *bool                             `json:"press_enter"`
-	Selector    *DownloadFileActionInput_Selector `json:"selector"`
-	TextLabel   *string                           `json:"text_label"`
+	PressEnter  *bool                             `json:"press_enter,omitempty"`
+	Selector    *DownloadFileActionInput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                           `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -979,9 +979,9 @@ type DownloadFileActionOutput struct {
 	Category    *string                            `json:"category,omitempty"`
 	Description *string                            `json:"description,omitempty"`
 	Id          *string                            `json:"id,omitempty"`
-	PressEnter  *bool                              `json:"press_enter"`
-	Selector    *DownloadFileActionOutput_Selector `json:"selector"`
-	TextLabel   *string                            `json:"text_label"`
+	PressEnter  *bool                              `json:"press_enter,omitempty"`
+	Selector    *DownloadFileActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                            `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -1008,7 +1008,7 @@ type EmailReadAction struct {
 	OnlyUnread *bool `json:"only_unread,omitempty"`
 
 	// Timedelta Return only emails that are not older than `timedelta`
-	Timedelta *string `json:"timedelta"`
+	Timedelta *string `json:"timedelta,omitempty"`
 	Type      *string `json:"type,omitempty"`
 }
 
@@ -1021,19 +1021,19 @@ type EmailResponse struct {
 	EmailId string `json:"email_id"`
 
 	// HtmlContent HTML body, can be uncorrelated with raw content
-	HtmlContent *string `json:"html_content"`
+	HtmlContent *string `json:"html_content,omitempty"`
 
 	// SenderEmail Email address of the sender
-	SenderEmail *string `json:"sender_email"`
+	SenderEmail *string `json:"sender_email,omitempty"`
 
 	// SenderName Name (if available) of the sender
-	SenderName *string `json:"sender_name"`
+	SenderName *string `json:"sender_name,omitempty"`
 
 	// Subject Subject of the email
 	Subject string `json:"subject"`
 
 	// TextContent Raw textual body, can be uncorrelated with html content
-	TextContent *string `json:"text_content"`
+	TextContent *string `json:"text_content,omitempty"`
 }
 
 // EvaluateJsAction defines model for EvaluateJsAction.
@@ -1057,11 +1057,11 @@ type ExecutionResponse struct {
 
 // ExternalProxy defines model for ExternalProxy.
 type ExternalProxy struct {
-	Bypass   *string `json:"bypass"`
-	Password *string `json:"password"`
+	Bypass   *string `json:"bypass,omitempty"`
+	Password *string `json:"password,omitempty"`
 	Server   string  `json:"server"`
 	Type     *string `json:"type,omitempty"`
-	Username *string `json:"username"`
+	Username *string `json:"username,omitempty"`
 }
 
 // FallbackFillActionInput defines model for FallbackFillAction-Input.
@@ -1071,9 +1071,9 @@ type FallbackFillActionInput struct {
 	Description     *string                           `json:"description,omitempty"`
 	Id              *string                           `json:"id,omitempty"`
 	Param           *ActionParameter                  `json:"param,omitempty"`
-	PressEnter      *bool                             `json:"press_enter"`
-	Selector        *FallbackFillActionInput_Selector `json:"selector"`
-	TextLabel       *string                           `json:"text_label"`
+	PressEnter      *bool                             `json:"press_enter,omitempty"`
+	Selector        *FallbackFillActionInput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                           `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                          `json:"timeout,omitempty"`
@@ -1106,9 +1106,9 @@ type FallbackFillActionOutput struct {
 	ClearBeforeFill *bool                              `json:"clear_before_fill,omitempty"`
 	Description     *string                            `json:"description,omitempty"`
 	Id              *string                            `json:"id,omitempty"`
-	PressEnter      *bool                              `json:"press_enter"`
-	Selector        *FallbackFillActionOutput_Selector `json:"selector"`
-	TextLabel       *string                            `json:"text_label"`
+	PressEnter      *bool                              `json:"press_enter,omitempty"`
+	Selector        *FallbackFillActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                            `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                           `json:"timeout,omitempty"`
@@ -1140,7 +1140,7 @@ type FileInfo struct {
 	FileExt   string  `json:"file_ext"`
 	Name      string  `json:"name"`
 	Size      int     `json:"size"`
-	UpdatedAt *string `json:"updated_at"`
+	UpdatedAt *string `json:"updated_at,omitempty"`
 }
 
 // FileLinkResponse defines model for FileLinkResponse.
@@ -1162,9 +1162,9 @@ type FillActionInput struct {
 	Description     *string                   `json:"description,omitempty"`
 	Id              *string                   `json:"id,omitempty"`
 	Param           *ActionParameter          `json:"param,omitempty"`
-	PressEnter      *bool                     `json:"press_enter"`
-	Selector        *FillActionInput_Selector `json:"selector"`
-	TextLabel       *string                   `json:"text_label"`
+	PressEnter      *bool                     `json:"press_enter,omitempty"`
+	Selector        *FillActionInput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                   `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                  `json:"timeout,omitempty"`
@@ -1197,9 +1197,9 @@ type FillActionOutput struct {
 	ClearBeforeFill *bool                      `json:"clear_before_fill,omitempty"`
 	Description     *string                    `json:"description,omitempty"`
 	Id              *string                    `json:"id,omitempty"`
-	PressEnter      *bool                      `json:"press_enter"`
-	Selector        *FillActionOutput_Selector `json:"selector"`
-	TextLabel       *string                    `json:"text_label"`
+	PressEnter      *bool                      `json:"press_enter,omitempty"`
+	Selector        *FillActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                   `json:"timeout,omitempty"`
@@ -1263,13 +1263,13 @@ type FunctionRunUpdateRequest struct {
 	Result interface{} `json:"result"`
 
 	// SessionId The ID of the session
-	SessionId *string `json:"session_id"`
+	SessionId *string `json:"session_id,omitempty"`
 
 	// Status The status of the workflow run
 	Status FunctionRunUpdateRequestStatus `json:"status"`
 
 	// Variables The variables of the workflow run
-	Variables *map[string]interface{} `json:"variables"`
+	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
 
 // FunctionRunUpdateRequestStatus The status of the workflow run
@@ -1296,7 +1296,7 @@ type GetFunctionResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Description The description of the workflow
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -1305,10 +1305,10 @@ type GetFunctionResponse struct {
 	LatestVersion string `json:"latest_version"`
 
 	// Name The name of the workflow
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 
 	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
-	ReferenceWorkflowId *string `json:"reference_workflow_id"`
+	ReferenceWorkflowId *string `json:"reference_workflow_id,omitempty"`
 
 	// Shared Whether the workflow is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
@@ -1320,7 +1320,7 @@ type GetFunctionResponse struct {
 	UpdatedAt FlexibleTime `json:"updated_at"`
 
 	// Variables The variables to run the workflow with
-	Variables *[]ParameterInfo `json:"variables"`
+	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the workflow
 	Versions   []string `json:"versions"`
@@ -1344,15 +1344,15 @@ type GetFunctionRunResponse struct {
 	Logs *[]string `json:"logs,omitempty"`
 
 	// Result The result of the workflow run (if any)
-	Result *string `json:"result"`
+	Result *string `json:"result,omitempty"`
 
 	// SessionId The ID of the session
-	SessionId *string                      `json:"session_id"`
+	SessionId *string                      `json:"session_id,omitempty"`
 	Status    GetFunctionRunResponseStatus `json:"status"`
 	UpdatedAt FlexibleTime                 `json:"updated_at"`
 
 	// Variables The variables of the workflow run
-	Variables     *map[string]interface{} `json:"variables"`
+	Variables     *map[string]interface{} `json:"variables,omitempty"`
 	WorkflowId    *string                 `json:"workflow_id,omitempty"`
 	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
 }
@@ -1366,7 +1366,7 @@ type GetFunctionWithLinkResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Description The description of the workflow
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -1375,10 +1375,10 @@ type GetFunctionWithLinkResponse struct {
 	LatestVersion string `json:"latest_version"`
 
 	// Name The name of the workflow
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 
 	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
-	ReferenceWorkflowId *string `json:"reference_workflow_id"`
+	ReferenceWorkflowId *string `json:"reference_workflow_id,omitempty"`
 
 	// Shared Whether the workflow is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
@@ -1393,7 +1393,7 @@ type GetFunctionWithLinkResponse struct {
 	Url string `json:"url"`
 
 	// Variables The variables to run the workflow with
-	Variables *[]ParameterInfo `json:"variables"`
+	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the workflow
 	Versions   []string `json:"versions"`
@@ -1406,10 +1406,10 @@ type GlobalScrapeRequest struct {
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
-	CdpUrl *string `json:"cdp_url"`
+	CdpUrl *string `json:"cdp_url,omitempty"`
 
 	// ChromeArgs Overwrite the chrome instance arguments
-	ChromeArgs *[]string `json:"chrome_args"`
+	ChromeArgs *[]string `json:"chrome_args,omitempty"`
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
@@ -1421,10 +1421,10 @@ type GlobalScrapeRequest struct {
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]string `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags,omitempty"`
 
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
-	Instructions *string `json:"instructions"`
+	Instructions *string `json:"instructions,omitempty"`
 
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
@@ -1452,7 +1452,7 @@ type GlobalScrapeRequest struct {
 	ScreenshotType *GlobalScrapeRequestScreenshotType `json:"screenshot_type,omitempty"`
 
 	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
-	Selector *string `json:"selector"`
+	Selector *string `json:"selector,omitempty"`
 
 	// SolveCaptchas Whether to try to automatically solve captchas
 	SolveCaptchas *bool  `json:"solve_captchas,omitempty"`
@@ -1465,13 +1465,13 @@ type GlobalScrapeRequest struct {
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
 
 	// UserAgent The user agent to use for the session
-	UserAgent *string `json:"user_agent"`
+	UserAgent *string `json:"user_agent,omitempty"`
 
 	// ViewportHeight The height of the viewport
-	ViewportHeight *int `json:"viewport_height"`
+	ViewportHeight *int `json:"viewport_height,omitempty"`
 
 	// ViewportWidth The width of the viewport
-	ViewportWidth *int `json:"viewport_width"`
+	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
@@ -1557,10 +1557,10 @@ type ImageData struct {
 	Category *ImageCategory `json:"category,omitempty"`
 
 	// Description Description of the image
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// Url URL of the image
-	Url *string `json:"url"`
+	Url *string `json:"url,omitempty"`
 }
 
 // ImprovePromptRequest defines model for ImprovePromptRequest.
@@ -1571,7 +1571,7 @@ type ImprovePromptRequest struct {
 // ImprovePromptResponse defines model for ImprovePromptResponse.
 type ImprovePromptResponse struct {
 	Prompt    string    `json:"prompt"`
-	Variables *[]string `json:"variables"`
+	Variables *[]string `json:"variables,omitempty"`
 }
 
 // LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
@@ -1580,19 +1580,19 @@ type LegacyAgentStatusResponse struct {
 	AgentId string `json:"agent_id"`
 
 	// Answer The answer to the agent task. None if the agent is still running
-	Answer *string `json:"answer"`
+	Answer *string `json:"answer,omitempty"`
 
 	// ClosedAt The closing time of the agent
-	ClosedAt *string `json:"closed_at"`
+	ClosedAt *string `json:"closed_at,omitempty"`
 
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage"`
+	CreditUsage *float32 `json:"credit_usage,omitempty"`
 
 	// Replay The session replay in `.webp` format
-	Replay *string `json:"replay"`
+	Replay *string `json:"replay,omitempty"`
 
 	// ReplayStartOffset The start offset of the replay
 	ReplayStartOffset int `json:"replay_start_offset"`
@@ -1609,13 +1609,13 @@ type LegacyAgentStatusResponse struct {
 	Steps     *[]map[string]interface{} `json:"steps,omitempty"`
 
 	// Success Whether the agent task was successful. None if the agent is still running
-	Success *bool `json:"success"`
+	Success *bool `json:"success,omitempty"`
 
 	// Task The task that the agent is currently running
 	Task string `json:"task"`
 
 	// Url The URL that the agent started on
-	Url *string `json:"url"`
+	Url *string `json:"url,omitempty"`
 }
 
 // ListCredentialsResponse defines model for ListCredentialsResponse.
@@ -1640,9 +1640,9 @@ type MultiFactorFillActionInput struct {
 	Description     *string                              `json:"description,omitempty"`
 	Id              *string                              `json:"id,omitempty"`
 	Param           *ActionParameter                     `json:"param,omitempty"`
-	PressEnter      *bool                                `json:"press_enter"`
-	Selector        *MultiFactorFillActionInput_Selector `json:"selector"`
-	TextLabel       *string                              `json:"text_label"`
+	PressEnter      *bool                                `json:"press_enter,omitempty"`
+	Selector        *MultiFactorFillActionInput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                              `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                             `json:"timeout,omitempty"`
@@ -1675,9 +1675,9 @@ type MultiFactorFillActionOutput struct {
 	ClearBeforeFill *bool                                 `json:"clear_before_fill,omitempty"`
 	Description     *string                               `json:"description,omitempty"`
 	Id              *string                               `json:"id,omitempty"`
-	PressEnter      *bool                                 `json:"press_enter"`
-	Selector        *MultiFactorFillActionOutput_Selector `json:"selector"`
-	TextLabel       *string                               `json:"text_label"`
+	PressEnter      *bool                                 `json:"press_enter,omitempty"`
+	Selector        *MultiFactorFillActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel       *string                               `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                              `json:"timeout,omitempty"`
@@ -1706,8 +1706,8 @@ type MultiFactorFillActionOutput_Value struct {
 
 // NetworkLogFile defines model for NetworkLogFile.
 type NetworkLogFile struct {
-	DownloadUrl                 *string            `json:"download_url"`
-	DownloadUrlExpiresInSeconds *int               `json:"download_url_expires_in_seconds"`
+	DownloadUrl                 *string            `json:"download_url,omitempty"`
+	DownloadUrlExpiresInSeconds *int               `json:"download_url_expires_in_seconds,omitempty"`
 	Filename                    string             `json:"filename"`
 	Path                        string             `json:"path"`
 	Type                        NetworkLogFileType `json:"type"`
@@ -1730,16 +1730,16 @@ type NodeSelectors struct {
 	IframeParentCssSelectors []string `json:"iframe_parent_css_selectors"`
 	InIframe                 bool     `json:"in_iframe"`
 	InShadowRoot             bool     `json:"in_shadow_root"`
-	NotteSelector            *string  `json:"notte_selector"`
-	PlaywrightSelector       *string  `json:"playwright_selector"`
-	PythonSelector           *string  `json:"python_selector"`
+	NotteSelector            *string  `json:"notte_selector,omitempty"`
+	PlaywrightSelector       *string  `json:"playwright_selector,omitempty"`
+	PythonSelector           *string  `json:"python_selector,omitempty"`
 	XpathSelector            string   `json:"xpath_selector"`
 }
 
 // NotteProxy defines model for NotteProxy.
 type NotteProxy struct {
 	Country *ProxyGeolocationCountry `json:"country,omitempty"`
-	Id      *string                  `json:"id"`
+	Id      *string                  `json:"id,omitempty"`
 	Type    *string                  `json:"type,omitempty"`
 }
 
@@ -1766,16 +1766,16 @@ type Observation struct {
 // ObserveRequest defines model for ObserveRequest.
 type ObserveRequest struct {
 	// Instructions Additional instructions to use for the observation.
-	Instructions *string `json:"instructions"`
+	Instructions *string `json:"instructions,omitempty"`
 
 	// MaxNbActions The maximum number of actions to list after which the listing will stop. Used when min_nb_actions is not provided.
 	MaxNbActions *int `json:"max_nb_actions,omitempty"`
 
 	// MinNbActions The minimum number of actions to list before stopping. If not provided, the listing will continue until the maximum number of actions is reached.
-	MinNbActions *int `json:"min_nb_actions"`
+	MinNbActions *int `json:"min_nb_actions,omitempty"`
 
 	// PerceptionType Whether to run with fast or deep perception
-	PerceptionType *string `json:"perception_type"`
+	PerceptionType *string `json:"perception_type,omitempty"`
 }
 
 // PaginatedResponseAgentResponse defines model for PaginatedResponse_AgentResponse_.
@@ -1852,9 +1852,9 @@ type PaginatedResponseVault struct {
 
 // ParameterInfo defines model for ParameterInfo.
 type ParameterInfo struct {
-	Default *string `json:"default"`
+	Default *string `json:"default,omitempty"`
 	Name    string  `json:"name"`
-	Type    *string `json:"type"`
+	Type    *string `json:"type,omitempty"`
 }
 
 // PersonaCreateRequest defines model for PersonaCreateRequest.
@@ -1881,13 +1881,13 @@ type PersonaResponse struct {
 	PersonaId string `json:"persona_id"`
 
 	// PhoneNumber Phone number of the persona (optional)
-	PhoneNumber *string `json:"phone_number"`
+	PhoneNumber *string `json:"phone_number,omitempty"`
 
 	// Status Status of the persona (active, closed)
 	Status string `json:"status"`
 
 	// VaultId ID of the vault
-	VaultId *string `json:"vault_id"`
+	VaultId *string `json:"vault_id,omitempty"`
 }
 
 // PressKeyAction defines model for PressKeyAction.
@@ -1901,7 +1901,7 @@ type PressKeyAction struct {
 // ProfileCreateRequest defines model for ProfileCreateRequest.
 type ProfileCreateRequest struct {
 	// Name Name of the profile
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 }
 
 // ProfileDeleteResponse defines model for ProfileDeleteResponse.
@@ -1916,7 +1916,7 @@ type ProfileResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Name Profile name
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 
 	// PersistedDomains List of domains with persisted browser state (cookies, localStorage, sessionStorage)
 	PersistedDomains *[]string `json:"persisted_domains,omitempty"`
@@ -1970,7 +1970,7 @@ type SMSResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Sender SMS sender phone number
-	Sender *string `json:"sender"`
+	Sender *string `json:"sender,omitempty"`
 
 	// SmsId SMS UUID
 	SmsId string `json:"sms_id"`
@@ -1988,8 +1988,8 @@ type ScheduleResponse struct {
 
 // SchemaGenerationResponse defines model for SchemaGenerationResponse.
 type SchemaGenerationResponse struct {
-	Error       *string                 `json:"error"`
-	ModelSchema *map[string]interface{} `json:"model_schema"`
+	Error       *string                 `json:"error,omitempty"`
+	ModelSchema *map[string]interface{} `json:"model_schema,omitempty"`
 	Success     bool                    `json:"success"`
 }
 
@@ -1999,8 +1999,8 @@ type ScrapeAction struct {
 	Description *string `json:"description,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page.
-	IgnoredTags  *[]string `json:"ignored_tags"`
-	Instructions *string   `json:"instructions"`
+	IgnoredTags  *[]string `json:"ignored_tags,omitempty"`
+	Instructions *string   `json:"instructions,omitempty"`
 
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
@@ -2009,7 +2009,7 @@ type ScrapeAction struct {
 	OnlyMainContent *bool `json:"only_main_content,omitempty"`
 
 	// ResponseFormat JSON schema dict for structured output. Agent can provide a schema to extract structured data.
-	ResponseFormat *map[string]interface{} `json:"response_format"`
+	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
 
 	// ScrapeImages Whether to scrape images from the page.
 	ScrapeImages *bool `json:"scrape_images,omitempty"`
@@ -2018,7 +2018,7 @@ type ScrapeAction struct {
 	ScrapeLinks *bool `json:"scrape_links,omitempty"`
 
 	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
-	Selector *string `json:"selector"`
+	Selector *string `json:"selector,omitempty"`
 	Type     *string `json:"type,omitempty"`
 }
 
@@ -2028,7 +2028,7 @@ type ScrapeFromHtmlRequest struct {
 	Frames *[]FrameData `json:"frames,omitempty"`
 
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]string `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags,omitempty"`
 
 	// Instructions User description as to what needs to be scraped
 	Instructions *string `json:"instructions,omitempty"`
@@ -2049,7 +2049,7 @@ type ScrapeFromHtmlRequest struct {
 	ScrapeLinks *bool `json:"scrape_links,omitempty"`
 
 	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
-	Selector *string `json:"selector"`
+	Selector *string `json:"selector,omitempty"`
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
@@ -2058,10 +2058,10 @@ type ScrapeFromHtmlRequest struct {
 // ScrapeRequest defines model for ScrapeRequest.
 type ScrapeRequest struct {
 	// IgnoredTags HTML tags to ignore from the page
-	IgnoredTags *[]string `json:"ignored_tags"`
+	IgnoredTags *[]string `json:"ignored_tags,omitempty"`
 
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
-	Instructions *string `json:"instructions"`
+	Instructions *string `json:"instructions,omitempty"`
 
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
@@ -2079,7 +2079,7 @@ type ScrapeRequest struct {
 	ScrapeLinks *bool `json:"scrape_links,omitempty"`
 
 	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
-	Selector *string `json:"selector"`
+	Selector *string `json:"selector,omitempty"`
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
@@ -2094,13 +2094,13 @@ type ScrapeSchemaResponse struct {
 // Screenshot defines model for Screenshot.
 type Screenshot struct {
 	Bboxes       *[]BoundingBox     `json:"bboxes,omitempty"`
-	LastActionId *string            `json:"last_action_id"`
+	LastActionId *string            `json:"last_action_id,omitempty"`
 	Raw          openapi_types.File `json:"raw"`
 }
 
 // ScrollDownAction defines model for ScrollDownAction.
 type ScrollDownAction struct {
-	Amount      *int    `json:"amount"`
+	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
@@ -2108,7 +2108,7 @@ type ScrollDownAction struct {
 
 // ScrollUpAction defines model for ScrollUpAction.
 type ScrollUpAction struct {
-	Amount      *int    `json:"amount"`
+	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
@@ -2120,9 +2120,9 @@ type SelectDropdownOptionActionInput struct {
 	Description *string                                   `json:"description,omitempty"`
 	Id          *string                                   `json:"id,omitempty"`
 	Param       *ActionParameter                          `json:"param,omitempty"`
-	PressEnter  *bool                                     `json:"press_enter"`
-	Selector    *SelectDropdownOptionActionInput_Selector `json:"selector"`
-	TextLabel   *string                                   `json:"text_label"`
+	PressEnter  *bool                                     `json:"press_enter,omitempty"`
+	Selector    *SelectDropdownOptionActionInput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                                   `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                                  `json:"timeout,omitempty"`
@@ -2154,9 +2154,9 @@ type SelectDropdownOptionActionOutput struct {
 	Category    *string                                    `json:"category,omitempty"`
 	Description *string                                    `json:"description,omitempty"`
 	Id          *string                                    `json:"id,omitempty"`
-	PressEnter  *bool                                      `json:"press_enter"`
-	Selector    *SelectDropdownOptionActionOutput_Selector `json:"selector"`
-	TextLabel   *string                                    `json:"text_label"`
+	PressEnter  *bool                                      `json:"press_enter,omitempty"`
+	Selector    *SelectDropdownOptionActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                                   `json:"timeout,omitempty"`
@@ -2210,22 +2210,22 @@ type SessionResponse struct {
 	BrowserType *SessionResponseBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The URL to connect to the CDP server.
-	CdpUrl *string `json:"cdp_url"`
+	CdpUrl *string `json:"cdp_url,omitempty"`
 
 	// ClosedAt Session closing time
-	ClosedAt *string `json:"closed_at"`
+	ClosedAt *string `json:"closed_at,omitempty"`
 
 	// CreatedAt Session creation time
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// CreditUsage Credit usage for the session. None
-	CreditUsage *float32 `json:"credit_usage"`
+	CreditUsage *float32 `json:"credit_usage,omitempty"`
 
 	// Duration Session duration
 	Duration *string `json:"duration,omitempty"`
 
 	// Error Error message if the operation failed to complete
-	Error *string `json:"error"`
+	Error *string `json:"error,omitempty"`
 
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
@@ -2252,7 +2252,7 @@ type SessionResponse struct {
 	SessionId string `json:"session_id"`
 
 	// SolveCaptchas Whether to solve captchas.
-	SolveCaptchas *bool `json:"solve_captchas"`
+	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
 
 	// Status Session status
 	Status SessionResponseStatus `json:"status"`
@@ -2266,16 +2266,16 @@ type SessionResponse struct {
 	UseFileStorage *bool `json:"use_file_storage,omitempty"`
 
 	// UserAgent The user agent to use for the session
-	UserAgent *string `json:"user_agent"`
+	UserAgent *string `json:"user_agent,omitempty"`
 
 	// ViewerUrl The remote session viewer URL.
-	ViewerUrl *string `json:"viewer_url"`
+	ViewerUrl *string `json:"viewer_url,omitempty"`
 
 	// ViewportHeight The height of the viewport
-	ViewportHeight *int `json:"viewport_height"`
+	ViewportHeight *int `json:"viewport_height,omitempty"`
 
 	// ViewportWidth The width of the viewport
-	ViewportWidth *int `json:"viewport_width"`
+	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
@@ -2299,7 +2299,7 @@ type SmsReadAction struct {
 	OnlyUnread *bool `json:"only_unread,omitempty"`
 
 	// Timedelta Return only sms that are not older than `timedelta`
-	Timedelta *string `json:"timedelta"`
+	Timedelta *string `json:"timedelta,omitempty"`
 	Type      *string `json:"type,omitempty"`
 }
 
@@ -2320,10 +2320,10 @@ type SpaceCategory string
 // StructuredDataBaseModel defines model for StructuredData_BaseModel_.
 type StructuredDataBaseModel struct {
 	// Data Structured data extracted from the page in JSON format
-	Data *StructuredDataBaseModel_Data `json:"data"`
+	Data *StructuredDataBaseModel_Data `json:"data,omitempty"`
 
 	// Error Error message if the data was not extracted successfully
-	Error *string `json:"error"`
+	Error *string `json:"error,omitempty"`
 
 	// Success Whether the data was extracted successfully
 	Success *bool `json:"success,omitempty"`
@@ -2382,9 +2382,9 @@ type UploadFileActionInput struct {
 	FilePath    string                          `json:"file_path"`
 	Id          *string                         `json:"id,omitempty"`
 	Param       *ActionParameter                `json:"param,omitempty"`
-	PressEnter  *bool                           `json:"press_enter"`
-	Selector    *UploadFileActionInput_Selector `json:"selector"`
-	TextLabel   *string                         `json:"text_label"`
+	PressEnter  *bool                           `json:"press_enter,omitempty"`
+	Selector    *UploadFileActionInput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                         `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -2405,9 +2405,9 @@ type UploadFileActionOutput struct {
 	Description *string                          `json:"description,omitempty"`
 	FilePath    string                           `json:"file_path"`
 	Id          *string                          `json:"id,omitempty"`
-	PressEnter  *bool                            `json:"press_enter"`
-	Selector    *UploadFileActionOutput_Selector `json:"selector"`
-	TextLabel   *string                          `json:"text_label"`
+	PressEnter  *bool                            `json:"press_enter,omitempty"`
+	Selector    *UploadFileActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel   *string                          `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -2526,7 +2526,7 @@ type WebSocketUrls struct {
 // WorkflowScheduleCreateRequest defines model for WorkflowScheduleCreateRequest.
 type WorkflowScheduleCreateRequest struct {
 	Cron      string                  `json:"cron"`
-	Variables *map[string]interface{} `json:"variables"`
+	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
 
 // ListAgentsParams defines parameters for ListAgents.
