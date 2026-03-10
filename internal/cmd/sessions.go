@@ -36,6 +36,7 @@ var (
 	sessionCookiesSetFile     string
 	sessionNetworkURLsOnly    bool
 	sessionNetworkPath        string
+	sessionReplayOutput       string
 )
 
 // GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
@@ -273,9 +274,14 @@ var sessionsNetworkCmd = &cobra.Command{
 
 var sessionsReplayCmd = &cobra.Command{
 	Use:   "replay",
-	Short: "Get replay URL/data for the session",
-	Args:  cobra.NoArgs,
-	RunE:  runSessionReplay,
+	Short: "Download session replay video",
+	Long: `Download the replay video (MP4) for a session.
+
+Examples:
+  notte sessions replay                       # saves to temp directory
+  notte sessions replay --path replay.mp4    # saves to specified path`,
+	Args: cobra.NoArgs,
+	RunE: runSessionReplay,
 }
 
 var sessionsOffsetCmd = &cobra.Command{
@@ -371,6 +377,7 @@ func init() {
 
 	// Replay command flags
 	sessionsReplayCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsReplayCmd.Flags().StringVar(&sessionReplayOutput, "path", "", "Output path for the replay video (defaults to temp directory)")
 
 	// Offset command flags
 	sessionsOffsetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -1074,12 +1081,36 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Wrap raw body for formatter compatibility
-	result := map[string]interface{}{
-		"session_id":  sessionID,
-		"replay_data": string(resp.Body),
+	// Determine output path
+	outputPath := sessionReplayOutput
+	if outputPath == "" {
+		// Default to temp directory
+		tmpDir := os.TempDir()
+		outputPath = filepath.Join(tmpDir, fmt.Sprintf("notte-replay-%s.mp4", sessionID))
 	}
-	return GetFormatter().Print(result)
+
+	// Clean the path to resolve any ".." components
+	outputPath = filepath.Clean(outputPath)
+
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(outputPath)
+	if dir != "." && dir != "/" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
+
+	// Write the replay video file
+	err = os.WriteFile(outputPath, resp.Body, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write replay video: %w", err)
+	}
+
+	return PrintResult(fmt.Sprintf("Replay video saved: %s", outputPath), map[string]any{
+		"path":       outputPath,
+		"session_id": sessionID,
+		"success":    true,
+	})
 }
 
 func runSessionOffset(cmd *cobra.Command, args []string) error {
