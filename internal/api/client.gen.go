@@ -604,7 +604,7 @@ type ApiSessionStartRequest struct {
 	ChromeArgs *[]string `json:"chrome_args"`
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
-	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers"`
+	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
 
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
@@ -1412,7 +1412,7 @@ type GlobalScrapeRequest struct {
 	ChromeArgs *[]string `json:"chrome_args"`
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
-	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers"`
+	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
 
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
