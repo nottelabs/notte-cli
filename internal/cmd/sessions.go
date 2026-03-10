@@ -21,10 +21,11 @@ import (
 	"github.com/nottelabs/notte-cli/internal/config"
 )
 
-// Manual flags for proxies (union type not auto-generated)
+// Manual flags for proxies and extra headers (union types not auto-generated)
 var (
-	sessionsStartProxy        bool
-	sessionsStartProxyCountry string
+	sessionsStartProxy            bool
+	sessionsStartProxyCountry     string
+	sessionsStartExtraHttpHeaders string
 )
 
 var (
@@ -332,6 +333,8 @@ func init() {
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
+	// Manual flag for extra HTTP headers (map type not auto-generated)
+	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
 
 	// Status command flags
 	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -505,6 +508,15 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to set proxies: %w", err)
 		}
 		body.Proxies = &proxies
+	}
+
+	// Handle extra HTTP headers (map type not auto-generated)
+	if cmd.Flags().Changed("extra-http-headers") {
+		var headers map[string]interface{}
+		if err := json.Unmarshal([]byte(sessionsStartExtraHttpHeaders), &headers); err != nil {
+			return fmt.Errorf("invalid JSON for --extra-http-headers: %w", err)
+		}
+		body.ExtraHttpHeaders = &headers
 	}
 
 	params := &api.SessionStartParams{}

@@ -603,6 +603,9 @@ type ApiSessionStartRequest struct {
 	// ChromeArgs Overwrite the chrome instance arguments
 	ChromeArgs *[]string `json:"chrome_args"`
 
+	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
+	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers"`
+
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
 
@@ -1408,6 +1411,9 @@ type GlobalScrapeRequest struct {
 	// ChromeArgs Overwrite the chrome instance arguments
 	ChromeArgs *[]string `json:"chrome_args"`
 
+	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
+	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers"`
+
 	// Headless Whether to run the session in headless mode.
 	Headless *bool `json:"headless,omitempty"`
 
@@ -1942,6 +1948,18 @@ type RootModelUnionDictStrAnyListDictStrAny0 map[string]interface{}
 
 // RootModelUnionDictStrAnyListDictStrAny1 defines model for .
 type RootModelUnionDictStrAnyListDictStrAny1 = []map[string]interface{}
+
+// RunFunctionRequest defines model for RunFunctionRequest.
+type RunFunctionRequest struct {
+	// Stream Whether to stream logs, or only return final response
+	Stream *bool `json:"stream,omitempty"`
+
+	// Variables The variables to run the workflow with
+	Variables map[string]interface{} `json:"variables"`
+
+	// WorkflowId The ID of the function to run
+	WorkflowId string `json:"workflow_id"`
+}
 
 // SMSResponse defines model for SMSResponse.
 type SMSResponse struct {
@@ -3019,6 +3037,9 @@ type FunctionCreateMultipartRequestBody = BodyFunctionCreateFunctionsPost
 
 // FunctionUpdateMultipartRequestBody defines body for FunctionUpdate for multipart/form-data ContentType.
 type FunctionUpdateMultipartRequestBody = BodyFunctionUpdateFunctionsFunctionIdPost
+
+// FunctionRunStartJSONRequestBody defines body for FunctionRunStart for application/json ContentType.
+type FunctionRunStartJSONRequestBody = RunFunctionRequest
 
 // FunctionRunUpdateMetadataJSONRequestBody defines body for FunctionRunUpdateMetadata for application/json ContentType.
 type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
@@ -8054,8 +8075,10 @@ type ClientInterface interface {
 	// ListFunctionRunsByFunctionId request
 	ListFunctionRunsByFunctionId(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// FunctionRunStart request
-	FunctionRunStart(ctx context.Context, functionId string, params *FunctionRunStartParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// FunctionRunStartWithBody request with any body
+	FunctionRunStartWithBody(ctx context.Context, functionId string, params *FunctionRunStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionRunStart(ctx context.Context, functionId string, params *FunctionRunStartParams, body FunctionRunStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FunctionRunStop request
 	FunctionRunStop(ctx context.Context, functionId string, runId string, params *FunctionRunStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8388,8 +8411,20 @@ func (c *Client) ListFunctionRunsByFunctionId(ctx context.Context, functionId st
 	return c.Client.Do(req)
 }
 
-func (c *Client) FunctionRunStart(ctx context.Context, functionId string, params *FunctionRunStartParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFunctionRunStartRequest(c.Server, functionId, params)
+func (c *Client) FunctionRunStartWithBody(ctx context.Context, functionId string, params *FunctionRunStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionRunStartRequestWithBody(c.Server, functionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionRunStart(ctx context.Context, functionId string, params *FunctionRunStartParams, body FunctionRunStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionRunStartRequest(c.Server, functionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -10241,8 +10276,19 @@ func NewListFunctionRunsByFunctionIdRequest(server string, functionId string, pa
 	return req, nil
 }
 
-// NewFunctionRunStartRequest generates requests for FunctionRunStart
-func NewFunctionRunStartRequest(server string, functionId string, params *FunctionRunStartParams) (*http.Request, error) {
+// NewFunctionRunStartRequest calls the generic FunctionRunStart builder with application/json body
+func NewFunctionRunStartRequest(server string, functionId string, params *FunctionRunStartParams, body FunctionRunStartJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionRunStartRequestWithBody(server, functionId, params, "application/json", bodyReader)
+}
+
+// NewFunctionRunStartRequestWithBody generates requests for FunctionRunStart with any type of body
+func NewFunctionRunStartRequestWithBody(server string, functionId string, params *FunctionRunStartParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10267,10 +10313,12 @@ func NewFunctionRunStartRequest(server string, functionId string, params *Functi
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -13827,8 +13875,10 @@ type ClientWithResponsesInterface interface {
 	// ListFunctionRunsByFunctionIdWithResponse request
 	ListFunctionRunsByFunctionIdWithResponse(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*ListFunctionRunsByFunctionIdResult, error)
 
-	// FunctionRunStartWithResponse request
-	FunctionRunStartWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error)
+	// FunctionRunStartWithBodyWithResponse request with any body
+	FunctionRunStartWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error)
+
+	FunctionRunStartWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, body FunctionRunStartJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error)
 
 	// FunctionRunStopWithResponse request
 	FunctionRunStopWithResponse(ctx context.Context, functionId string, runId string, params *FunctionRunStopParams, reqEditors ...RequestEditorFn) (*FunctionRunStopResult, error)
@@ -15497,9 +15547,17 @@ func (c *ClientWithResponses) ListFunctionRunsByFunctionIdWithResponse(ctx conte
 	return ParseListFunctionRunsByFunctionIdResult(rsp)
 }
 
-// FunctionRunStartWithResponse request returning *FunctionRunStartResult
-func (c *ClientWithResponses) FunctionRunStartWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error) {
-	rsp, err := c.FunctionRunStart(ctx, functionId, params, reqEditors...)
+// FunctionRunStartWithBodyWithResponse request with arbitrary body returning *FunctionRunStartResult
+func (c *ClientWithResponses) FunctionRunStartWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error) {
+	rsp, err := c.FunctionRunStartWithBody(ctx, functionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionRunStartResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionRunStartWithResponse(ctx context.Context, functionId string, params *FunctionRunStartParams, body FunctionRunStartJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRunStartResult, error) {
+	rsp, err := c.FunctionRunStart(ctx, functionId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
