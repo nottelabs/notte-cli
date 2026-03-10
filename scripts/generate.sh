@@ -124,6 +124,9 @@ sed -i.bak 's/NewClient(server, opts\.\.\.)/newGeneratedClient(server, opts...)/
 sed -i.bak 's/\(	[A-Za-z]*\) time\.Time /\1 FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
 sed -i.bak 's/\(	[A-Za-z]*\) \*time\.Time /\1 *FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
 
+# Add omitempty to pointer fields that don't have it (optional fields shouldn't serialize as null)
+sed -i.bak -E 's/(\*[^`]+`json:"[^",]+)"`/\1,omitempty"`/g' "$OUTPUT_DIR/client.gen.go"
+
 # Remove backup files
 rm -f "$OUTPUT_DIR/client.gen.go.bak"
 
