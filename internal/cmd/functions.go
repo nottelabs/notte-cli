@@ -559,11 +559,7 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	// so we need to make a manual request with the function_id in the body
 	requestBody := map[string]interface{}{
 		"function_id": functionID,
-	}
-
-	// Add variables if any were provided
-	if len(variables) > 0 {
-		requestBody["variables"] = variables
+		"variables":   variables,
 	}
 
 	bodyJSON, err := json.Marshal(requestBody)
@@ -783,8 +779,10 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
+	emptyVars := make(map[string]interface{})
 	body := api.FunctionScheduleSetJSONRequestBody{
-		Cron: functionCronExpression,
+		Cron:      functionCronExpression,
+		Variables: &emptyVars,
 	}
 
 	params := &api.FunctionScheduleSetParams{}
