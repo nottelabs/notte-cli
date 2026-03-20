@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -668,25 +667,25 @@ type BaseModel = map[string]interface{}
 
 // BodyFileUploadDownloadedFileStorageSessionIdDownloadsFilenamePost defines model for Body_file_upload_downloaded_file_storage__session_id__downloads__filename__post.
 type BodyFileUploadDownloadedFileStorageSessionIdDownloadsFilenamePost struct {
-	File openapi_types.File `json:"file"`
+	File string `json:"file"`
 }
 
 // BodyFileUploadStorageUploadsFilenamePost defines model for Body_file_upload_storage_uploads__filename__post.
 type BodyFileUploadStorageUploadsFilenamePost struct {
-	File openapi_types.File `json:"file"`
+	File string `json:"file"`
 }
 
 // BodyFunctionCreateFunctionsPost defines model for Body_function_create_functions_post.
 type BodyFunctionCreateFunctionsPost struct {
-	Description *string            `json:"description,omitempty"`
-	File        openapi_types.File `json:"file"`
-	Name        *string            `json:"name,omitempty"`
-	Shared      *bool              `json:"shared,omitempty"`
+	Description *string `json:"description,omitempty"`
+	File        string  `json:"file"`
+	Name        *string `json:"name,omitempty"`
+	Shared      *bool   `json:"shared,omitempty"`
 }
 
 // BodyFunctionUpdateFunctionsFunctionIdPost defines model for Body_function_update_functions__function_id__post.
 type BodyFunctionUpdateFunctionsFunctionIdPost struct {
-	File openapi_types.File `json:"file"`
+	File string `json:"file"`
 }
 
 // BodySessionCookiesSetSessionsSessionIdCookiesPost defines model for Body_session_cookies_set_sessions__session_id__cookies_post.
@@ -2093,9 +2092,9 @@ type ScrapeSchemaResponse struct {
 
 // Screenshot defines model for Screenshot.
 type Screenshot struct {
-	Bboxes       *[]BoundingBox     `json:"bboxes,omitempty"`
-	LastActionId *string            `json:"last_action_id,omitempty"`
-	Raw          openapi_types.File `json:"raw"`
+	Bboxes       *[]BoundingBox `json:"bboxes,omitempty"`
+	LastActionId *string        `json:"last_action_id,omitempty"`
+	Raw          string         `json:"raw"`
 }
 
 // ScrollDownAction defines model for ScrollDownAction.
@@ -2456,9 +2455,11 @@ type UsageResponse_PlanType struct {
 
 // ValidationError defines model for ValidationError.
 type ValidationError struct {
-	Loc  []ValidationError_Loc_Item `json:"loc"`
-	Msg  string                     `json:"msg"`
-	Type string                     `json:"type"`
+	Ctx   *map[string]interface{}    `json:"ctx,omitempty"`
+	Input interface{}                `json:"input,omitempty"`
+	Loc   []ValidationError_Loc_Item `json:"loc"`
+	Msg   string                     `json:"msg"`
+	Type  string                     `json:"type"`
 }
 
 // ValidationErrorLoc0 defines model for .
