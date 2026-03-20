@@ -42,6 +42,41 @@ func TestLoadConfig_WithValues(t *testing.T) {
 	}
 }
 
+func TestDir_EnvOverride(t *testing.T) {
+	customDir := t.TempDir()
+	t.Setenv("NOTTE_CONFIG_DIR", customDir)
+
+	dir, err := Dir()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := filepath.Join(customDir, ConfigDirName)
+	if dir != expected {
+		t.Errorf("expected %q, got %q", expected, dir)
+	}
+}
+
+func TestDir_DefaultUsesHome(t *testing.T) {
+	// Ensure env var is not set
+	t.Setenv("NOTTE_CONFIG_DIR", "")
+
+	dir, err := Dir()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("unexpected error getting home dir: %v", err)
+	}
+
+	expected := filepath.Join(homeDir, ConfigDirName)
+	if dir != expected {
+		t.Errorf("expected %q, got %q", expected, dir)
+	}
+}
+
 func TestSaveConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfgPath := filepath.Join(tmpDir, "config.json")

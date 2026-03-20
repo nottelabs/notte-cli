@@ -17,6 +17,7 @@ const (
 	CurrentViewerURLFile     = "current_viewer_url"
 	CurrentAgentFile         = "current_agent"
 	CurrentSessionExpiryFile = "current_session_expiry"
+	EnvConfigDir             = "NOTTE_CONFIG_DIR"
 	EnvAPIURL                = "NOTTE_API_URL"
 	EnvConsoleURL            = "NOTTE_CONSOLE_URL"
 	EnvSessionID             = "NOTTE_SESSION_ID"
@@ -44,6 +45,9 @@ type Config struct {
 func Dir() (string, error) {
 	if testConfigDir != "" {
 		return filepath.Join(testConfigDir, ConfigDirName), nil
+	}
+	if envDir := os.Getenv(EnvConfigDir); envDir != "" {
+		return filepath.Join(envDir, ConfigDirName), nil
 	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
