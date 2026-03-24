@@ -405,6 +405,9 @@ func runAgentReplay(cmd *cobra.Command, args []string) error {
 	}
 
 	agentSessionID := statusResp.JSON200.SessionId
+	if agentSessionID == "" {
+		return fmt.Errorf("agent %s has no associated session ID", agentID)
+	}
 
 	// Get session replay using the agent's session ID
 	replayParams := &api.GetSessionReplayParams{}
