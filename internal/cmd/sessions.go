@@ -1071,14 +1071,28 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.SessionReplayParams{}
-	resp, err := client.Client().SessionReplayWithResponse(ctx, sessionID, params)
+	params := &api.GetSessionReplayParams{}
+	resp, err := client.Client().GetSessionReplayWithResponse(ctx, sessionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
+	}
+
+	if resp.JSON200 == nil {
+		return fmt.Errorf("unexpected empty response from replay API")
+	}
+
+	replay := resp.JSON200
+
+	// If no mp4_url, return the raw response data
+	if replay.Mp4Url == nil || *replay.Mp4Url == "" {
+		return PrintResult("No replay video available for this session.", map[string]any{
+			"session_id": sessionID,
+			"success":    false,
+		})
 	}
 
 	// Determine output path
@@ -1100,8 +1114,24 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Download the replay video from the presigned URL
+	httpResp, err := http.Get(*replay.Mp4Url) //nolint:gosec // URL is from trusted API response
+	if err != nil {
+		return fmt.Errorf("failed to download replay video: %w", err)
+	}
+	defer func() { _ = httpResp.Body.Close() }()
+
+	if httpResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download replay video: HTTP %d", httpResp.StatusCode)
+	}
+
+	videoData, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read replay video: %w", err)
+	}
+
 	// Write the replay video file
-	err = os.WriteFile(outputPath, resp.Body, 0o644)
+	err = os.WriteFile(outputPath, videoData, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write replay video: %w", err)
 	}

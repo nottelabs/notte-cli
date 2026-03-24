@@ -389,8 +389,26 @@ func runAgentReplay(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.AgentReplayParams{}
-	resp, err := client.Client().AgentReplayWithResponse(ctx, agentID, params)
+	// Get agent status to find the session ID
+	statusParams := &api.AgentStatusParams{}
+	statusResp, err := client.Client().AgentStatusWithResponse(ctx, agentID, statusParams)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(statusResp.HTTPResponse, statusResp.Body); err != nil {
+		return err
+	}
+
+	if statusResp.JSON200 == nil {
+		return fmt.Errorf("unexpected empty response from agent status API")
+	}
+
+	agentSessionID := statusResp.JSON200.SessionId
+
+	// Get session replay using the agent's session ID
+	replayParams := &api.GetSessionReplayParams{}
+	resp, err := client.Client().GetSessionReplayWithResponse(ctx, agentSessionID, replayParams)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
@@ -399,10 +417,9 @@ func runAgentReplay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Wrap raw body for formatter compatibility
-	result := map[string]interface{}{
-		"agent_id":    agentID,
-		"replay_data": string(resp.Body),
+	if resp.JSON200 == nil {
+		return fmt.Errorf("unexpected empty response from replay API")
 	}
-	return GetFormatter().Print(result)
+
+	return GetFormatter().Print(resp.JSON200)
 }

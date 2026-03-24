@@ -269,7 +269,10 @@ func TestRunAgentWorkflowCode(t *testing.T) {
 
 func TestRunAgentReplay(t *testing.T) {
 	server := setupAgentTest(t)
-	server.AddResponse("/agents/"+agentIDTest+"/replay", 200, "replay-data")
+	// Mock agent status to return session_id
+	server.AddResponse("/agents/"+agentIDTest, 200, `{"agent_id":"agent_123","session_id":"sess_456","created_at":"2024-01-01T00:00:00Z","status":"closed","task":"test","replay_start_offset":0,"replay_stop_offset":100,"steps":[]}`)
+	// Mock session replay endpoint
+	server.AddResponse("/sessions/sess_456/replay", 200, `{"mp4_url":"https://example.com/video.mp4","expires_at":"2099-01-01T00:00:00Z"}`)
 
 	origFormat := outputFormat
 	outputFormat = "json"
