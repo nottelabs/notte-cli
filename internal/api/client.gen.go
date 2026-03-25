@@ -121,12 +121,14 @@ const (
 	DeepseekdeepseekR1                    LlmModel = "deepseek/deepseek-r1"
 	Geminigemini25Flash                   LlmModel = "gemini/gemini-2.5-flash"
 	GroqgptOss120b                        LlmModel = "groq/gpt-oss-120b"
+	MinimaxminimaxM25                     LlmModel = "minimax/minimax-m2.5"
 	MoonshotkimiK25                       LlmModel = "moonshot/kimi-k2.5"
 	Openaigpt4o                           LlmModel = "openai/gpt-4o"
 	Openroutergooglegemma327bIt           LlmModel = "openrouter/google/gemma-3-27b-it"
 	PerplexitysonarPro                    LlmModel = "perplexity/sonar-pro"
 	TogetherAimetaLlamallama3370bInstruct LlmModel = "together_ai/meta-llama/llama-3.3-70b-instruct"
 	VertexAigemini25Flash                 LlmModel = "vertex_ai/gemini-2.5-flash"
+	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
 // Defines values for NetworkLogFileType.
@@ -529,6 +531,11 @@ type AgentStatusResponse struct {
 
 	// Url The URL that the agent started on
 	Url *string `json:"url,omitempty"`
+}
+
+// AnythingStartRequest defines model for AnythingStartRequest.
+type AnythingStartRequest struct {
+	Task string `json:"task"`
 }
 
 // ApiAgentStartRequest defines model for ApiAgentStartRequest.
@@ -1274,6 +1281,12 @@ type FunctionRunUpdateRequest struct {
 // FunctionRunUpdateRequestStatus The status of the workflow run
 type FunctionRunUpdateRequestStatus string
 
+// FunctionScheduleCreateRequest defines model for FunctionScheduleCreateRequest.
+type FunctionScheduleCreateRequest struct {
+	Cron      string                  `json:"cron"`
+	Variables *map[string]interface{} `json:"variables,omitempty"`
+}
+
 // GetCookiesResponse defines model for GetCookiesResponse.
 type GetCookiesResponse struct {
 	Cookies []Cookie `json:"cookies"`
@@ -1937,6 +1950,15 @@ type ReloadAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
+// ReplayResponse defines model for ReplayResponse.
+type ReplayResponse struct {
+	ExpiresAt       string  `json:"expires_at"`
+	Mp4Url          *string `json:"mp4_url,omitempty"`
+	PlaylistContent *string `json:"playlist_content,omitempty"`
+	VideoDurationMs *int    `json:"video_duration_ms,omitempty"`
+	VideoStartMs    *int    `json:"video_start_ms,omitempty"`
+}
+
 // RootModelUnionDictStrAnyListDictStrAny defines model for RootModel_Union_dict_str__Any___list_dict_str__Any____.
 type RootModelUnionDictStrAnyListDictStrAny struct {
 	union json.RawMessage
@@ -2524,12 +2546,6 @@ type WebSocketUrls struct {
 	Recording string `json:"recording"`
 }
 
-// WorkflowScheduleCreateRequest defines model for WorkflowScheduleCreateRequest.
-type WorkflowScheduleCreateRequest struct {
-	Cron      string                  `json:"cron"`
-	Variables *map[string]interface{} `json:"variables,omitempty"`
-}
-
 // ListAgentsParams defines parameters for ListAgents.
 type ListAgentsParams struct {
 	// Page Page number
@@ -2562,12 +2578,6 @@ type AgentStatusParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// AgentReplayParams defines parameters for AgentReplay.
-type AgentReplayParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
 // AgentStopParams defines parameters for AgentStop.
 type AgentStopParams struct {
 	SessionId           string  `form:"session_id" json:"session_id"`
@@ -2582,6 +2592,12 @@ type GetScriptParams struct {
 
 	// InferResponseFormat Whether to infer response_format schema for scrape calls that have instructions but no schema
 	InferResponseFormat *bool   `form:"infer_response_format,omitempty" json:"infer_response_format,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// AnythingStartParams defines parameters for AnythingStart.
+type AnythingStartParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2605,7 +2621,7 @@ type ListFunctionsParams struct {
 
 // FunctionCreateParams defines parameters for FunctionCreate.
 type FunctionCreateParams struct {
-	// Restricted Whether to restrict the workflow code
+	// Restricted Whether to restrict the function code
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
@@ -2886,8 +2902,8 @@ type PageScreenshotParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// SessionReplayParams defines parameters for SessionReplay.
-type SessionReplayParams struct {
+// GetSessionReplayParams defines parameters for GetSessionReplay.
+type GetSessionReplayParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3033,6 +3049,9 @@ type VaultCredentialsAddParams struct {
 // AgentStartJSONRequestBody defines body for AgentStart for application/json ContentType.
 type AgentStartJSONRequestBody = ApiAgentStartRequest
 
+// AnythingStartJSONRequestBody defines body for AnythingStart for application/json ContentType.
+type AnythingStartJSONRequestBody = AnythingStartRequest
+
 // FunctionCreateMultipartRequestBody defines body for FunctionCreate for multipart/form-data ContentType.
 type FunctionCreateMultipartRequestBody = BodyFunctionCreateFunctionsPost
 
@@ -3046,7 +3065,7 @@ type FunctionRunStartJSONRequestBody = RunFunctionRequest
 type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
 
 // FunctionScheduleSetJSONRequestBody defines body for FunctionScheduleSet for application/json ContentType.
-type FunctionScheduleSetJSONRequestBody = WorkflowScheduleCreateRequest
+type FunctionScheduleSetJSONRequestBody = FunctionScheduleCreateRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -8046,14 +8065,16 @@ type ClientInterface interface {
 	// AgentStatus request
 	AgentStatus(ctx context.Context, agentId string, params *AgentStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// AgentReplay request
-	AgentReplay(ctx context.Context, agentId string, params *AgentReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// AgentStop request
 	AgentStop(ctx context.Context, agentId string, params *AgentStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetScript request
 	GetScript(ctx context.Context, agentId string, params *GetScriptParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AnythingStartWithBody request with any body
+	AnythingStartWithBody(ctx context.Context, params *AnythingStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AnythingStart(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFunctions request
 	ListFunctions(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8183,8 +8204,8 @@ type ClientInterface interface {
 	// PageScreenshot request
 	PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SessionReplay request
-	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetSessionReplay request
+	GetSessionReplay(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SessionStop request
 	SessionStop(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8292,18 +8313,6 @@ func (c *Client) AgentStatus(ctx context.Context, agentId string, params *AgentS
 	return c.Client.Do(req)
 }
 
-func (c *Client) AgentReplay(ctx context.Context, agentId string, params *AgentReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAgentReplayRequest(c.Server, agentId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) AgentStop(ctx context.Context, agentId string, params *AgentStopParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAgentStopRequest(c.Server, agentId, params)
 	if err != nil {
@@ -8318,6 +8327,30 @@ func (c *Client) AgentStop(ctx context.Context, agentId string, params *AgentSto
 
 func (c *Client) GetScript(ctx context.Context, agentId string, params *GetScriptParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetScriptRequest(c.Server, agentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AnythingStartWithBody(ctx context.Context, params *AnythingStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnythingStartRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AnythingStart(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnythingStartRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -8880,8 +8913,8 @@ func (c *Client) PageScreenshot(ctx context.Context, sessionId string, params *P
 	return c.Client.Do(req)
 }
 
-func (c *Client) SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSessionReplayRequest(c.Server, sessionId, params)
+func (c *Client) GetSessionReplay(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSessionReplayRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -9397,66 +9430,6 @@ func NewAgentStatusRequest(server string, agentId string, params *AgentStatusPar
 	return req, nil
 }
 
-// NewAgentReplayRequest generates requests for AgentReplay
-func NewAgentReplayRequest(server string, agentId string, params *AgentReplayParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "agent_id", runtime.ParamLocationPath, agentId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/agents/%s/replay", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
 // NewAgentStopRequest generates requests for AgentStop
 func NewAgentStopRequest(server string, agentId string, params *AgentStopParams) (*http.Request, error) {
 	var err error
@@ -9599,6 +9572,72 @@ func NewGetScriptRequest(server string, agentId string, params *GetScriptParams)
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewAnythingStartRequest calls the generic AnythingStart builder with application/json body
+func NewAnythingStartRequest(server string, params *AnythingStartParams, body AnythingStartJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAnythingStartRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewAnythingStartRequestWithBody generates requests for AnythingStart with any type of body
+func NewAnythingStartRequestWithBody(server string, params *AnythingStartParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/anything/start")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -12442,8 +12481,8 @@ func NewPageScreenshotRequest(server string, sessionId string, params *PageScree
 	return req, nil
 }
 
-// NewSessionReplayRequest generates requests for SessionReplay
-func NewSessionReplayRequest(server string, sessionId string, params *SessionReplayParams) (*http.Request, error) {
+// NewGetSessionReplayRequest generates requests for GetSessionReplay
+func NewGetSessionReplayRequest(server string, sessionId string, params *GetSessionReplayParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -13846,14 +13885,16 @@ type ClientWithResponsesInterface interface {
 	// AgentStatusWithResponse request
 	AgentStatusWithResponse(ctx context.Context, agentId string, params *AgentStatusParams, reqEditors ...RequestEditorFn) (*AgentStatusResult, error)
 
-	// AgentReplayWithResponse request
-	AgentReplayWithResponse(ctx context.Context, agentId string, params *AgentReplayParams, reqEditors ...RequestEditorFn) (*AgentReplayResult, error)
-
 	// AgentStopWithResponse request
 	AgentStopWithResponse(ctx context.Context, agentId string, params *AgentStopParams, reqEditors ...RequestEditorFn) (*AgentStopResult, error)
 
 	// GetScriptWithResponse request
 	GetScriptWithResponse(ctx context.Context, agentId string, params *GetScriptParams, reqEditors ...RequestEditorFn) (*GetScriptResult, error)
+
+	// AnythingStartWithBodyWithResponse request with any body
+	AnythingStartWithBodyWithResponse(ctx context.Context, params *AnythingStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnythingStartResult, error)
+
+	AnythingStartWithResponse(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*AnythingStartResult, error)
 
 	// ListFunctionsWithResponse request
 	ListFunctionsWithResponse(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResult, error)
@@ -13983,8 +14024,8 @@ type ClientWithResponsesInterface interface {
 	// PageScreenshotWithResponse request
 	PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error)
 
-	// SessionReplayWithResponse request
-	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
+	// GetSessionReplayWithResponse request
+	GetSessionReplayWithResponse(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*GetSessionReplayResult, error)
 
 	// SessionStopWithResponse request
 	SessionStopWithResponse(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*SessionStopResult, error)
@@ -14113,28 +14154,6 @@ func (r AgentStatusResult) StatusCode() int {
 	return 0
 }
 
-type AgentReplayResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r AgentReplayResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AgentReplayResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type AgentStopResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -14175,6 +14194,29 @@ func (r GetScriptResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetScriptResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AnythingStartResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r AnythingStartResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AnythingStartResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15008,14 +15050,15 @@ func (r PageScreenshotResult) StatusCode() int {
 	return 0
 }
 
-type SessionReplayResult struct {
+type GetSessionReplayResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ReplayResponse
 	JSON422      *HTTPValidationError
 }
 
 // Status returns HTTPResponse.Status
-func (r SessionReplayResult) Status() string {
+func (r GetSessionReplayResult) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -15023,7 +15066,7 @@ func (r SessionReplayResult) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SessionReplayResult) StatusCode() int {
+func (r GetSessionReplayResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15458,15 +15501,6 @@ func (c *ClientWithResponses) AgentStatusWithResponse(ctx context.Context, agent
 	return ParseAgentStatusResult(rsp)
 }
 
-// AgentReplayWithResponse request returning *AgentReplayResult
-func (c *ClientWithResponses) AgentReplayWithResponse(ctx context.Context, agentId string, params *AgentReplayParams, reqEditors ...RequestEditorFn) (*AgentReplayResult, error) {
-	rsp, err := c.AgentReplay(ctx, agentId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAgentReplayResult(rsp)
-}
-
 // AgentStopWithResponse request returning *AgentStopResult
 func (c *ClientWithResponses) AgentStopWithResponse(ctx context.Context, agentId string, params *AgentStopParams, reqEditors ...RequestEditorFn) (*AgentStopResult, error) {
 	rsp, err := c.AgentStop(ctx, agentId, params, reqEditors...)
@@ -15483,6 +15517,23 @@ func (c *ClientWithResponses) GetScriptWithResponse(ctx context.Context, agentId
 		return nil, err
 	}
 	return ParseGetScriptResult(rsp)
+}
+
+// AnythingStartWithBodyWithResponse request with arbitrary body returning *AnythingStartResult
+func (c *ClientWithResponses) AnythingStartWithBodyWithResponse(ctx context.Context, params *AnythingStartParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnythingStartResult, error) {
+	rsp, err := c.AnythingStartWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnythingStartResult(rsp)
+}
+
+func (c *ClientWithResponses) AnythingStartWithResponse(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*AnythingStartResult, error) {
+	rsp, err := c.AnythingStart(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnythingStartResult(rsp)
 }
 
 // ListFunctionsWithResponse request returning *ListFunctionsResult
@@ -15889,13 +15940,13 @@ func (c *ClientWithResponses) PageScreenshotWithResponse(ctx context.Context, se
 	return ParsePageScreenshotResult(rsp)
 }
 
-// SessionReplayWithResponse request returning *SessionReplayResult
-func (c *ClientWithResponses) SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error) {
-	rsp, err := c.SessionReplay(ctx, sessionId, params, reqEditors...)
+// GetSessionReplayWithResponse request returning *GetSessionReplayResult
+func (c *ClientWithResponses) GetSessionReplayWithResponse(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*GetSessionReplayResult, error) {
+	rsp, err := c.GetSessionReplay(ctx, sessionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSessionReplayResult(rsp)
+	return ParseGetSessionReplayResult(rsp)
 }
 
 // SessionStopWithResponse request returning *SessionStopResult
@@ -16174,32 +16225,6 @@ func ParseAgentStatusResult(rsp *http.Response) (*AgentStatusResult, error) {
 	return response, nil
 }
 
-// ParseAgentReplayResult parses an HTTP response from a AgentReplayWithResponse call
-func ParseAgentReplayResult(rsp *http.Response) (*AgentReplayResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &AgentReplayResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseAgentStopResult parses an HTTP response from a AgentStopWithResponse call
 func ParseAgentStopResult(rsp *http.Response) (*AgentStopResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -16249,6 +16274,39 @@ func ParseGetScriptResult(rsp *http.Response) (*GetScriptResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest AgentFunctionCodeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAnythingStartResult parses an HTTP response from a AnythingStartWithResponse call
+func ParseAnythingStartResult(rsp *http.Response) (*AnythingStartResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AnythingStartResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -17447,20 +17505,27 @@ func ParsePageScreenshotResult(rsp *http.Response) (*PageScreenshotResult, error
 	return response, nil
 }
 
-// ParseSessionReplayResult parses an HTTP response from a SessionReplayWithResponse call
-func ParseSessionReplayResult(rsp *http.Response) (*SessionReplayResult, error) {
+// ParseGetSessionReplayResult parses an HTTP response from a GetSessionReplayWithResponse call
+func ParseGetSessionReplayResult(rsp *http.Response) (*GetSessionReplayResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SessionReplayResult{
+	response := &GetSessionReplayResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReplayResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

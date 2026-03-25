@@ -748,7 +748,11 @@ func TestRunSessionNetwork(t *testing.T) {
 
 func TestRunSessionReplay(t *testing.T) {
 	server := setupSessionTest(t)
-	server.AddResponse("/sessions/"+sessionIDTest+"/replay", 200, `replay-data`)
+	// Mock the mp4 download endpoint
+	server.AddResponseWithHeaders("/replay-video.mp4", 200, "fake-video-data", map[string]string{"Content-Type": "video/mp4"})
+	// Return ReplayResponse JSON with mp4_url pointing to mock server
+	replayJSON := fmt.Sprintf(`{"mp4_url":"%s/replay-video.mp4","expires_at":"2099-01-01T00:00:00Z"}`, server.URL())
+	server.AddResponse("/sessions/"+sessionIDTest+"/replay", 200, replayJSON)
 
 	origFormat := outputFormat
 	outputFormat = "json"
