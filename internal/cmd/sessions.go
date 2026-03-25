@@ -1115,7 +1115,11 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 	}
 
 	// Download the replay video from the presigned URL
-	httpResp, err := http.Get(*replay.Mp4Url) //nolint:gosec // URL is from trusted API response
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *replay.Mp4Url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create download request: %w", err)
+	}
+	httpResp, err := http.DefaultClient.Do(req) //nolint:gosec // URL is from trusted API response
 	if err != nil {
 		return fmt.Errorf("failed to download replay video: %w", err)
 	}
