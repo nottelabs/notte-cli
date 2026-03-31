@@ -304,13 +304,12 @@ func TestPageFormFill(t *testing.T) {
 	sessionID := startTestSession(t)
 	defer cleanupSession(t, sessionID)
 
-	// Navigate to a page with a form (using httpbin for testing)
-	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://httpbin.org/forms/post", "--session-id", sessionID)
+	// Navigate to a page with a login/signup form
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://practicetestautomation.com/practice-test-login/", "--session-id", sessionID)
 	requireSuccess(t, result)
 
-	// Fill form with JSON data using valid field names from API schema
-	// Valid fields: first_name, last_name, email, phone, etc.
-	formData := `{"first_name":"Test","last_name":"User","email":"test@example.com","phone":"555-1234"}`
+	// Fill form using valid API field names matching the login form
+	formData := `{"username":"student","password":"Password123"}`
 	result = runCLIWithTimeout(t, 120*time.Second, "page", "form-fill", "--data", formData, "--session-id", sessionID)
 	requireSuccess(t, result)
 	t.Log("Successfully executed page form-fill")

@@ -571,6 +571,15 @@ func runPageFormFill(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid JSON data: %w", err)
 	}
 
+	// Validate keys against generated enum from OpenAPI spec
+	keys := make([]string, 0, len(formData))
+	for key := range formData {
+		keys = append(keys, key)
+	}
+	if err := api.ValidateFormFillActionKeys(keys); err != nil {
+		return err
+	}
+
 	action := map[string]any{
 		"type":  "form_fill",
 		"value": formData,

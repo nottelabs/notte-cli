@@ -4,6 +4,8 @@ package integration
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -187,6 +189,78 @@ func TestSessionsList(t *testing.T) {
 	result := runCLI(t, "sessions", "list")
 	requireSuccess(t, result)
 	t.Log("Successfully listed sessions")
+}
+
+func TestSessionsReplay(t *testing.T) {
+	// Start a headless session
+	result := runCLI(t, "sessions", "start", "--headless")
+	requireSuccess(t, result)
+
+	var startResp struct {
+		SessionID string `json:"session_id"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &startResp); err != nil {
+		t.Fatalf("Failed to parse session start response: %v", err)
+	}
+	sessionID := startResp.SessionID
+	if sessionID == "" {
+		t.Fatal("No session ID returned from start command")
+	}
+	t.Logf("Started session: %s", sessionID)
+
+	// Safe cleanup — cleanupSession ignores errors if already stopped
+	defer cleanupSession(t, sessionID)
+
+	// Wait for session to be fully ready
+	time.Sleep(2 * time.Second)
+
+	// Navigate to a page to generate replay content
+	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com", "--session-id", sessionID)
+	requireSuccess(t, result)
+
+	// Stop the session — replay is only available after stop
+	result = runCLI(t, "sessions", "stop", "--session-id", sessionID)
+	requireSuccess(t, result)
+	t.Log("Session stopped, waiting for replay generation...")
+
+	// Wait for replay to be generated
+	time.Sleep(10 * time.Second)
+
+	// Download the replay video
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "replay.mp4")
+	result = runCLIWithTimeout(t, 120*time.Second, "sessions", "replay", "--session-id", sessionID, "--path", outputPath)
+	requireSuccess(t, result)
+
+	// Validate JSON response
+	var replayResp struct {
+		Success   bool   `json:"success"`
+		SessionID string `json:"session_id"`
+		Path      string `json:"path"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &replayResp); err != nil {
+		t.Fatalf("Failed to parse replay response: %v", err)
+	}
+
+	if !replayResp.Success {
+		t.Fatal("Replay response indicates failure")
+	}
+	if replayResp.SessionID != sessionID {
+		t.Fatalf("Expected session_id '%s', got '%s'", sessionID, replayResp.SessionID)
+	}
+	if replayResp.Path == "" {
+		t.Fatal("Replay path is empty")
+	}
+
+	// Verify the file was actually downloaded
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		t.Fatalf("Replay file not found at %s: %v", outputPath, err)
+	}
+	if info.Size() == 0 {
+		t.Fatal("Replay file is empty")
+	}
+	t.Logf("Replay video downloaded: %s (%d bytes)", outputPath, info.Size())
 }
 
 func TestSessionsStatusNonexistent(t *testing.T) {
