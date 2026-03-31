@@ -131,12 +131,6 @@ const (
 	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
-// Defines values for NetworkLogFileType.
-const (
-	Request  NetworkLogFileType = "request"
-	Response NetworkLogFileType = "response"
-)
-
 // Defines values for ProxyGeolocationCountry.
 const (
 	Ad ProxyGeolocationCountry = "ad"
@@ -1716,24 +1710,20 @@ type MultiFactorFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
-// NetworkLogFile defines model for NetworkLogFile.
-type NetworkLogFile struct {
-	DownloadUrl                 *string            `json:"download_url,omitempty"`
-	DownloadUrlExpiresInSeconds *int               `json:"download_url_expires_in_seconds,omitempty"`
-	Filename                    string             `json:"filename"`
-	Path                        string             `json:"path"`
-	Type                        NetworkLogFileType `json:"type"`
+// NetworkBatchFile defines model for NetworkBatchFile.
+type NetworkBatchFile struct {
+	DownloadUrl                 *string `json:"download_url,omitempty"`
+	DownloadUrlExpiresInSeconds *int    `json:"download_url_expires_in_seconds,omitempty"`
+	Key                         string  `json:"key"`
+	Size                        int     `json:"size"`
 }
-
-// NetworkLogFileType defines model for NetworkLogFile.Type.
-type NetworkLogFileType string
 
 // NetworkLogsResponse defines model for NetworkLogsResponse.
 type NetworkLogsResponse struct {
-	Requests   []NetworkLogFile `json:"requests"`
-	Responses  []NetworkLogFile `json:"responses"`
-	SessionId  string           `json:"session_id"`
-	TotalCount int              `json:"total_count"`
+	Batches         []NetworkBatchFile `json:"batches"`
+	Format          *string            `json:"format,omitempty"`
+	SessionId       string             `json:"session_id"`
+	TotalBatchCount int                `json:"total_batch_count"`
 }
 
 // NodeSelectors defines model for NodeSelectors.
@@ -2452,19 +2442,21 @@ type UsageLog struct {
 
 // UsageResponse defines model for UsageResponse.
 type UsageResponse struct {
-	AdditionalCredits          int                    `json:"additional_credits"`
-	BrowserUsageCost           float32                `json:"browser_usage_cost"`
-	IsUsageLimitExceeded       bool                   `json:"is_usage_limit_exceeded"`
-	LlmUsageCost               float32                `json:"llm_usage_cost"`
-	MonthlyCreditsLimit        int                    `json:"monthly_credits_limit"`
-	MonthlyCreditsUsage        float32                `json:"monthly_credits_usage"`
-	MonthlySessionCount        int                    `json:"monthly_session_count"`
-	MonthlySessionUsageMinutes float32                `json:"monthly_session_usage_minutes"`
-	Period                     string                 `json:"period"`
-	PlanType                   UsageResponse_PlanType `json:"plan_type"`
-	ProxyUsageCost             float32                `json:"proxy_usage_cost"`
-	ProxyUsageGb               float32                `json:"proxy_usage_gb"`
-	TotalCost                  float32                `json:"total_cost"`
+	BalanceAmount             float32                `json:"balance_amount"`
+	BrowserUsageCost          float32                `json:"browser_usage_cost"`
+	FunctionCount             int                    `json:"function_count"`
+	FunctionUsageCost         float32                `json:"function_usage_cost"`
+	IsUsageLimitExceeded      bool                   `json:"is_usage_limit_exceeded"`
+	LlmUsageCost              float32                `json:"llm_usage_cost"`
+	Period                    string                 `json:"period"`
+	PlanType                  UsageResponse_PlanType `json:"plan_type"`
+	ProxyUsageCost            float32                `json:"proxy_usage_cost"`
+	SessionCount              int                    `json:"session_count"`
+	SubscriptionBalanceAmount float32                `json:"subscription_balance_amount"`
+	SubscriptionLimitAmount   float32                `json:"subscription_limit_amount"`
+	TopupBalanceAmount        float32                `json:"topup_balance_amount"`
+	TopupLimitAmount          float32                `json:"topup_limit_amount"`
+	TotalCost                 float32                `json:"total_cost"`
 }
 
 // UsageResponsePlanType1 defines model for .
@@ -2858,7 +2850,7 @@ type SessionDebugInfoParams struct {
 
 // SessionNetworkLogsParams defines parameters for SessionNetworkLogs.
 type SessionNetworkLogsParams struct {
-	// Limit Maximum number of logs to return
+	// Limit Maximum number of batch files to return
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Download Whether to include download URLs for the logs
@@ -2902,8 +2894,8 @@ type PageScreenshotParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// GetSessionReplayParams defines parameters for GetSessionReplay.
-type GetSessionReplayParams struct {
+// SessionReplayParams defines parameters for SessionReplay.
+type SessionReplayParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -8204,8 +8196,8 @@ type ClientInterface interface {
 	// PageScreenshot request
 	PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetSessionReplay request
-	GetSessionReplay(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SessionReplay request
+	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SessionStop request
 	SessionStop(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8913,8 +8905,8 @@ func (c *Client) PageScreenshot(ctx context.Context, sessionId string, params *P
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSessionReplay(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSessionReplayRequest(c.Server, sessionId, params)
+func (c *Client) SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionReplayRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -12481,8 +12473,8 @@ func NewPageScreenshotRequest(server string, sessionId string, params *PageScree
 	return req, nil
 }
 
-// NewGetSessionReplayRequest generates requests for GetSessionReplay
-func NewGetSessionReplayRequest(server string, sessionId string, params *GetSessionReplayParams) (*http.Request, error) {
+// NewSessionReplayRequest generates requests for SessionReplay
+func NewSessionReplayRequest(server string, sessionId string, params *SessionReplayParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -14024,8 +14016,8 @@ type ClientWithResponsesInterface interface {
 	// PageScreenshotWithResponse request
 	PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error)
 
-	// GetSessionReplayWithResponse request
-	GetSessionReplayWithResponse(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*GetSessionReplayResult, error)
+	// SessionReplayWithResponse request
+	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
 
 	// SessionStopWithResponse request
 	SessionStopWithResponse(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*SessionStopResult, error)
@@ -15050,7 +15042,7 @@ func (r PageScreenshotResult) StatusCode() int {
 	return 0
 }
 
-type GetSessionReplayResult struct {
+type SessionReplayResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ReplayResponse
@@ -15058,7 +15050,7 @@ type GetSessionReplayResult struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetSessionReplayResult) Status() string {
+func (r SessionReplayResult) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -15066,7 +15058,7 @@ func (r GetSessionReplayResult) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetSessionReplayResult) StatusCode() int {
+func (r SessionReplayResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15940,13 +15932,13 @@ func (c *ClientWithResponses) PageScreenshotWithResponse(ctx context.Context, se
 	return ParsePageScreenshotResult(rsp)
 }
 
-// GetSessionReplayWithResponse request returning *GetSessionReplayResult
-func (c *ClientWithResponses) GetSessionReplayWithResponse(ctx context.Context, sessionId string, params *GetSessionReplayParams, reqEditors ...RequestEditorFn) (*GetSessionReplayResult, error) {
-	rsp, err := c.GetSessionReplay(ctx, sessionId, params, reqEditors...)
+// SessionReplayWithResponse request returning *SessionReplayResult
+func (c *ClientWithResponses) SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error) {
+	rsp, err := c.SessionReplay(ctx, sessionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetSessionReplayResult(rsp)
+	return ParseSessionReplayResult(rsp)
 }
 
 // SessionStopWithResponse request returning *SessionStopResult
@@ -17505,15 +17497,15 @@ func ParsePageScreenshotResult(rsp *http.Response) (*PageScreenshotResult, error
 	return response, nil
 }
 
-// ParseGetSessionReplayResult parses an HTTP response from a GetSessionReplayWithResponse call
-func ParseGetSessionReplayResult(rsp *http.Response) (*GetSessionReplayResult, error) {
+// ParseSessionReplayResult parses an HTTP response from a SessionReplayWithResponse call
+func ParseSessionReplayResult(rsp *http.Response) (*SessionReplayResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetSessionReplayResult{
+	response := &SessionReplayResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
