@@ -903,16 +903,6 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 		}
 	}
 
-	// Create subdirectories for requests and responses
-	requestsDir := filepath.Join(outDir, "requests")
-	responsesDir := filepath.Join(outDir, "responses")
-	if err := os.MkdirAll(requestsDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create requests directory: %w", err)
-	}
-	if err := os.MkdirAll(responsesDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create responses directory: %w", err)
-	}
-
 	// Collect all download tasks
 	type downloadTask struct {
 		url      string
@@ -921,22 +911,12 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 	}
 	var tasks []downloadTask
 
-	for _, req := range logs.Requests {
-		if req.DownloadUrl != nil && *req.DownloadUrl != "" {
+	for _, batch := range logs.Batches {
+		if batch.DownloadUrl != nil && *batch.DownloadUrl != "" {
 			tasks = append(tasks, downloadTask{
-				url:      *req.DownloadUrl,
-				filename: sanitizeFilename(req.Filename),
-				dir:      requestsDir,
-			})
-		}
-	}
-
-	for _, resp := range logs.Responses {
-		if resp.DownloadUrl != nil && *resp.DownloadUrl != "" {
-			tasks = append(tasks, downloadTask{
-				url:      *resp.DownloadUrl,
-				filename: sanitizeFilename(resp.Filename),
-				dir:      responsesDir,
+				url:      *batch.DownloadUrl,
+				filename: sanitizeFilename(batch.Key),
+				dir:      outDir,
 			})
 		}
 	}
@@ -991,8 +971,7 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 		"session_id": logs.SessionId,
 		"path":       outDir,
 		"count":      successCount,
-		"requests":   len(logs.Requests),
-		"responses":  len(logs.Responses),
+		"batches":    len(logs.Batches),
 	})
 }
 
@@ -1034,23 +1013,13 @@ func printNetworkURLs(logs *api.NetworkLogsResponse) error {
 	}
 
 	fmt.Printf("Session: %s\n", logs.SessionId)
-	fmt.Printf("Total:   %d files\n\n", logs.TotalCount)
+	fmt.Printf("Total:   %d files\n\n", logs.TotalBatchCount)
 
-	if len(logs.Requests) > 0 {
-		fmt.Printf("Requests (%d):\n", len(logs.Requests))
-		for _, req := range logs.Requests {
-			if req.DownloadUrl != nil && *req.DownloadUrl != "" {
-				fmt.Printf("  %s\n", *req.DownloadUrl)
-			}
-		}
-		fmt.Println()
-	}
-
-	if len(logs.Responses) > 0 {
-		fmt.Printf("Responses (%d):\n", len(logs.Responses))
-		for _, resp := range logs.Responses {
-			if resp.DownloadUrl != nil && *resp.DownloadUrl != "" {
-				fmt.Printf("  %s\n", *resp.DownloadUrl)
+	if len(logs.Batches) > 0 {
+		fmt.Printf("Batches (%d):\n", len(logs.Batches))
+		for _, batch := range logs.Batches {
+			if batch.DownloadUrl != nil && *batch.DownloadUrl != "" {
+				fmt.Printf("  %s\n", *batch.DownloadUrl)
 			}
 		}
 	}
@@ -1071,8 +1040,8 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.GetSessionReplayParams{}
-	resp, err := client.Client().GetSessionReplayWithResponse(ctx, sessionID, params)
+	params := &api.SessionReplayParams{}
+	resp, err := client.Client().SessionReplayWithResponse(ctx, sessionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

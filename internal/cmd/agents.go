@@ -410,8 +410,8 @@ func runAgentReplay(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get session replay using the agent's session ID
-	replayParams := &api.GetSessionReplayParams{}
-	resp, err := client.Client().GetSessionReplayWithResponse(ctx, agentSessionID, replayParams)
+	replayParams := &api.SessionReplayParams{}
+	resp, err := client.Client().SessionReplayWithResponse(ctx, agentSessionID, replayParams)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

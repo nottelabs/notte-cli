@@ -135,6 +135,15 @@ gofmt -w "$OUTPUT_DIR/client.gen.go"
 
 echo "Done! Generated $OUTPUT_DIR/client.gen.go"
 
+# Generate propertyNames enums from the spec
+echo ""
+echo "Generating propertyNames enums..."
+python3 "$SCRIPT_DIR/gen-property-names.py" \
+  /tmp/notte-openapi-3.0.json \
+  "$OUTPUT_DIR/property_names.gen.go"
+gofmt -w "$OUTPUT_DIR/property_names.gen.go"
+echo "Done! Generated $OUTPUT_DIR/property_names.gen.go"
+
 # Generate CLI flags
 echo ""
 echo "Generating CLI flags..."
@@ -157,5 +166,6 @@ echo "════════════════════════�
 echo ""
 echo "Generated files:"
 echo "  - $OUTPUT_DIR/client.gen.go"
+echo "  - $OUTPUT_DIR/property_names.gen.go"
 echo "  - $CMD_OUTPUT_DIR/*_flags.gen.go"
 echo ""

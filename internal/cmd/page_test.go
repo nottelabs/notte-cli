@@ -674,7 +674,7 @@ func TestRunPageFormFill(t *testing.T) {
 	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
 
 	origData := pageFormFillData
-	pageFormFillData = `{"name": "John", "email": "john@example.com"}`
+	pageFormFillData = `{"first_name": "John", "email": "john@example.com"}`
 	t.Cleanup(func() { pageFormFillData = origData })
 
 	cmd := &cobra.Command{}
@@ -689,6 +689,28 @@ func TestRunPageFormFill(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunPageFormFill_InvalidKeys(t *testing.T) {
+	_ = setupPageTest(t)
+
+	origData := pageFormFillData
+	pageFormFillData = `{"name": "John", "favorite_color": "blue"}`
+	t.Cleanup(func() { pageFormFillData = origData })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runPageFormFill(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error for invalid form field keys")
+	}
+	if !strings.Contains(err.Error(), "invalid FormFillActionKey") {
+		t.Fatalf("expected FormFillActionKey validation error, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "name") {
+		t.Fatalf("expected error to mention invalid key 'name', got: %v", err)
 	}
 }
 
