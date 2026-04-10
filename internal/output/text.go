@@ -112,7 +112,9 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 		// Handle slices of structs with readable formatting
 		if fieldValue.Kind() == reflect.Slice {
 			_ = w.Flush()
-			f.printSliceField(fieldValue, label, indent)
+			if err := f.printSliceField(fieldValue, label, indent); err != nil {
+				return err
+			}
 			w = tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
 			continue
 		}
@@ -123,10 +125,10 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 	return w.Flush()
 }
 
-func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent string) {
+func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent string) error {
 	if v.Len() == 0 {
-		_, _ = fmt.Fprintf(f.Writer, "%s\t[]\n", label)
-		return
+		_, err := fmt.Fprintf(f.Writer, "%s\t[]\n", label)
+		return err
 	}
 
 	// Check if it's a slice of structs
@@ -135,18 +137,24 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 		elemType = elemType.Elem()
 	}
 	if elemType.Kind() == reflect.Struct {
-		_, _ = fmt.Fprintln(f.Writer, label)
+		if _, err := fmt.Fprintln(f.Writer, label); err != nil {
+			return err
+		}
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i)
 			if elem.Kind() == reflect.Ptr {
 				elem = elem.Elem()
 			}
 			if i > 0 {
-				_, _ = fmt.Fprintln(f.Writer)
+				if _, err := fmt.Fprintln(f.Writer); err != nil {
+					return err
+				}
 			}
-			_ = f.printStructWithIndent(elem.Interface(), indent+"  ")
+			if err := f.printStructWithIndent(elem.Interface(), indent+"  "); err != nil {
+				return err
+			}
 		}
-		return
+		return nil
 	}
 
 	// For slices of primitives, join as comma-separated
@@ -154,7 +162,8 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 	for i := 0; i < v.Len(); i++ {
 		items[i] = fmt.Sprintf("%v", v.Index(i).Interface())
 	}
-	_, _ = fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
+	_, err := fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
+	return err
 }
 
 func (f *TextFormatter) printSlice(data any) error {
