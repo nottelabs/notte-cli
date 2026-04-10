@@ -125,7 +125,7 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 
 func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent string) {
 	if v.Len() == 0 {
-		fmt.Fprintf(f.Writer, "%s\t[]\n", label)
+		_, _ = fmt.Fprintf(f.Writer, "%s\t[]\n", label)
 		return
 	}
 
@@ -135,14 +135,14 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 		elemType = elemType.Elem()
 	}
 	if elemType.Kind() == reflect.Struct {
-		fmt.Fprintln(f.Writer, label)
+		_, _ = fmt.Fprintln(f.Writer, label)
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i)
 			if elem.Kind() == reflect.Ptr {
 				elem = elem.Elem()
 			}
 			if i > 0 {
-				fmt.Fprintln(f.Writer)
+				_, _ = fmt.Fprintln(f.Writer)
 			}
 			_ = f.printStructWithIndent(elem.Interface(), indent+"  ")
 		}
@@ -154,7 +154,7 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 	for i := 0; i < v.Len(); i++ {
 		items[i] = fmt.Sprintf("%v", v.Index(i).Interface())
 	}
-	fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
+	_, _ = fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
 }
 
 func (f *TextFormatter) printSlice(data any) error {
