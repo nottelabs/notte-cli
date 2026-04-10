@@ -467,9 +467,6 @@ type AgentResponse struct {
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
 
-	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage,omitempty"`
-
 	// Saved Whether the agent is saved as a workflow
 	Saved *bool `json:"saved,omitempty"`
 
@@ -494,18 +491,6 @@ type AgentStatusResponse struct {
 
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
-
-	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage,omitempty"`
-
-	// Replay The session replay in `.webp` format
-	Replay *string `json:"replay,omitempty"`
-
-	// ReplayStartOffset The start offset of the replay
-	ReplayStartOffset int `json:"replay_start_offset"`
-
-	// ReplayStopOffset The stop offset of the replay
-	ReplayStopOffset int `json:"replay_stop_offset"`
 
 	// Saved Whether the agent is saved as a workflow
 	Saved *bool `json:"saved,omitempty"`
@@ -1594,18 +1579,6 @@ type LegacyAgentStatusResponse struct {
 	// CreatedAt The creation time of the agent
 	CreatedAt FlexibleTime `json:"created_at"`
 
-	// CreditUsage Credit usage for the agent. None if the agent is still running
-	CreditUsage *float32 `json:"credit_usage,omitempty"`
-
-	// Replay The session replay in `.webp` format
-	Replay *string `json:"replay,omitempty"`
-
-	// ReplayStartOffset The start offset of the replay
-	ReplayStartOffset int `json:"replay_start_offset"`
-
-	// ReplayStopOffset The stop offset of the replay
-	ReplayStopOffset int `json:"replay_stop_offset"`
-
 	// Saved Whether the agent is saved as a workflow
 	Saved *bool `json:"saved,omitempty"`
 
@@ -2228,9 +2201,6 @@ type SessionResponse struct {
 
 	// CreatedAt Session creation time
 	CreatedAt FlexibleTime `json:"created_at"`
-
-	// CreditUsage Credit usage for the session. None
-	CreditUsage *float32 `json:"credit_usage,omitempty"`
 
 	// Duration Session duration
 	Duration *string `json:"duration,omitempty"`

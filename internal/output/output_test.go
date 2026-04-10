@@ -274,6 +274,121 @@ func TestTextFormatter_Print_PointerField(t *testing.T) {
 	})
 }
 
+func TestTextFormatter_Print_StructWithSliceOfStructs(t *testing.T) {
+	type ParameterInfo struct {
+		Default *string
+		Name    string
+		Type    *string
+	}
+
+	type FunctionResponse struct {
+		Name      string
+		Variables []ParameterInfo
+		Versions  []string
+	}
+
+	t.Run("slice of structs with pointer fields", func(t *testing.T) {
+		var buf bytes.Buffer
+		f := &TextFormatter{Writer: &buf, NoColor: true}
+
+		typeStr := "string"
+		defaultVal := "today"
+		data := FunctionResponse{
+			Name: "my-function",
+			Variables: []ParameterInfo{
+				{Name: "restaurant_id"},
+				{Name: "date", Type: &typeStr, Default: &defaultVal},
+				{Name: "party_size"},
+			},
+			Versions: []string{"v1", "v2"},
+		}
+
+		err := f.Print(data)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		output := buf.String()
+
+		// Must NOT contain memory addresses
+		if strings.Contains(output, "0x") {
+			t.Errorf("expected no memory addresses in output, got %q", output)
+		}
+
+		// Must contain the variable names
+		if !strings.Contains(output, "restaurant_id") {
+			t.Errorf("expected 'restaurant_id' in output, got %q", output)
+		}
+		if !strings.Contains(output, "date") {
+			t.Errorf("expected 'date' in output, got %q", output)
+		}
+		if !strings.Contains(output, "party_size") {
+			t.Errorf("expected 'party_size' in output, got %q", output)
+		}
+
+		// Must contain optional fields when set
+		if !strings.Contains(output, "string") {
+			t.Errorf("expected Type 'string' in output, got %q", output)
+		}
+		if !strings.Contains(output, "today") {
+			t.Errorf("expected Default 'today' in output, got %q", output)
+		}
+
+		// Must still contain the Versions field properly
+		if !strings.Contains(output, "v1") || !strings.Contains(output, "v2") {
+			t.Errorf("expected versions in output, got %q", output)
+		}
+
+		// Must contain the Variables label
+		if !strings.Contains(output, "Variables:") {
+			t.Errorf("expected 'Variables:' label in output, got %q", output)
+		}
+	})
+
+	t.Run("empty slice of structs", func(t *testing.T) {
+		var buf bytes.Buffer
+		f := &TextFormatter{Writer: &buf, NoColor: true}
+
+		data := FunctionResponse{
+			Name:      "my-function",
+			Variables: []ParameterInfo{},
+			Versions:  []string{"v1"},
+		}
+
+		err := f.Print(data)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		output := buf.String()
+		if strings.Contains(output, "0x") {
+			t.Errorf("expected no memory addresses in output, got %q", output)
+		}
+	})
+
+	t.Run("nil slice of structs is hidden", func(t *testing.T) {
+		var buf bytes.Buffer
+		f := &TextFormatter{Writer: &buf, NoColor: true}
+
+		data := FunctionResponse{
+			Name:      "my-function",
+			Variables: nil,
+			Versions:  []string{"v1"},
+		}
+
+		err := f.Print(data)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		output := buf.String()
+		// Nil slices should be skipped entirely
+		if strings.Contains(output, "Variables:") {
+			t.Errorf("expected nil Variables to be hidden, got %q", output)
+		}
+	})
+}
+
 func TestTextFormatter_PrintError(t *testing.T) {
 	var buf bytes.Buffer
 	f := &TextFormatter{Writer: &buf, NoColor: true}
