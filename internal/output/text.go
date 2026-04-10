@@ -109,10 +109,61 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 			continue
 		}
 
+		// Handle slices of structs with readable formatting
+		if fieldValue.Kind() == reflect.Slice {
+			_ = w.Flush()
+			if err := f.printSliceField(fieldValue, label, indent); err != nil {
+				return err
+			}
+			w = tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
+			continue
+		}
+
 		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, fieldValue.Interface())
 	}
 
 	return w.Flush()
+}
+
+func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent string) error {
+	if v.Len() == 0 {
+		_, err := fmt.Fprintf(f.Writer, "%s\t[]\n", label)
+		return err
+	}
+
+	// Check if it's a slice of structs
+	elemType := v.Type().Elem()
+	if elemType.Kind() == reflect.Ptr {
+		elemType = elemType.Elem()
+	}
+	if elemType.Kind() == reflect.Struct {
+		if _, err := fmt.Fprintln(f.Writer, label); err != nil {
+			return err
+		}
+		for i := 0; i < v.Len(); i++ {
+			elem := v.Index(i)
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem()
+			}
+			if i > 0 {
+				if _, err := fmt.Fprintln(f.Writer); err != nil {
+					return err
+				}
+			}
+			if err := f.printStructWithIndent(elem.Interface(), indent+"  "); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// For slices of primitives, join as comma-separated
+	items := make([]string, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		items[i] = fmt.Sprintf("%v", v.Index(i).Interface())
+	}
+	_, err := fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
+	return err
 }
 
 func (f *TextFormatter) printSlice(data any) error {
