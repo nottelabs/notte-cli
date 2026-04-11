@@ -119,6 +119,34 @@ func TestResilientTransport_AddsTrackingHeaders(t *testing.T) {
 	}
 }
 
+func TestResilientTransport_CustomRequestOrigin(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("x-notte-request-origin")
+		if origin != "my-custom-app" {
+			t.Errorf("got x-notte-request-origin %q, want %q", origin, "my-custom-app")
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClientWithURL("test-api-key", server.URL, "v1.2.3", WithRequestOrigin("my-custom-app"))
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+	resp, err := client.httpClient.Do(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("got status %d, want 200", resp.StatusCode)
+	}
+}
+
 func TestResilientTransport_RecordsFailureOn5xx(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

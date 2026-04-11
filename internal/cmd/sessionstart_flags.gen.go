@@ -45,6 +45,9 @@ var (
 	// The user agent to use for the session
 	SessionStartUserAgent string
 
+	// The vault to use for the session
+	SessionStartVaultId string
+
 	// The height of the viewport
 	SessionStartViewportHeight int
 
@@ -70,6 +73,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas")
 	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "Whether FileStorage should be attached to the session.")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
+	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
 	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
 	cmd.Flags().BoolVar(&SessionStartWebBotAuth, "web-bot-auth", false, "Whether to use web bot authentication.")
@@ -135,6 +139,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartUserAgent != "" {
 		body.UserAgent = &SessionStartUserAgent
+	}
+
+	if SessionStartVaultId != "" {
+		body.VaultId = &SessionStartVaultId
 	}
 
 	if SessionStartViewportHeight > 0 {

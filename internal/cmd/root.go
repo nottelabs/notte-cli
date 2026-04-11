@@ -112,7 +112,12 @@ func GetClient() (*api.NotteClient, error) {
 		baseURL = api.DefaultBaseURL
 	}
 
-	return api.NewClientWithURL(apiKey, baseURL, Version)
+	var opts []api.NotteClientOption
+	if origin := os.Getenv(config.EnvRequestOrigin); origin != "" {
+		opts = append(opts, api.WithRequestOrigin(origin))
+	}
+
+	return api.NewClientWithURL(apiKey, baseURL, Version, opts...)
 }
 
 // GetContextWithTimeout wraps the provided context with a timeout
