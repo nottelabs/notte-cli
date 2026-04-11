@@ -616,6 +616,9 @@ type ApiSessionStartRequest struct {
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
 
+	// VaultId The vault to use for the session
+	VaultId *string `json:"vault_id,omitempty"`
+
 	// ViewportHeight The height of the viewport
 	ViewportHeight *int `json:"viewport_height,omitempty"`
 
@@ -1457,6 +1460,9 @@ type GlobalScrapeRequest struct {
 
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
+
+	// VaultId The vault to use for the session
+	VaultId *string `json:"vault_id,omitempty"`
 
 	// ViewportHeight The height of the viewport
 	ViewportHeight *int `json:"viewport_height,omitempty"`
