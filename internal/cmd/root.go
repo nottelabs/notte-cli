@@ -12,6 +12,7 @@ import (
 	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/config"
 	"github.com/nottelabs/notte-cli/internal/output"
+	"github.com/nottelabs/notte-cli/internal/update"
 )
 
 var (
@@ -43,7 +44,24 @@ Get started:
 
 // Execute runs the CLI
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	// Start background update check (nil-safe; returns nil for dev builds)
+	checker := update.NewChecker(Version)
+	if checker != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		go checker.Run(ctx)
+	}
+
+	err := rootCmd.Execute()
+
+	// Show update notification after command output
+	if checker != nil {
+		if result := checker.GetResult(); result != nil {
+			update.PrintUpdateNotification(result, os.Stderr, os.Stdin, yesFlag, IsJSONOutput(), noColor)
+		}
+	}
+
+	if err != nil {
 		formatter := GetFormatter()
 		formatter.PrintError(err)
 		os.Exit(1)
