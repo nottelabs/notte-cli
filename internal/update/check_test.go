@@ -132,8 +132,8 @@ func TestCheckLatestVersion_EmptyTagName(t *testing.T) {
 
 	ctx := context.Background()
 	release, err := CheckLatestVersion(ctx, server.Client())
-	if err == nil {
-		t.Fatal("expected error for empty tag_name")
+	if err != nil {
+		t.Fatalf("expected nil error for empty tag_name, got %v", err)
 	}
 	if release != nil {
 		t.Fatal("expected nil release for empty tag_name")

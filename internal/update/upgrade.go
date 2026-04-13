@@ -3,7 +3,6 @@ package update
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 )
 
@@ -48,7 +47,7 @@ func RunUpgrade(out io.Writer, method UpgradeMethod) error {
 func runHomebrewUpgrade(out io.Writer) error {
 	cmd := exec.Command("brew", "upgrade", "notte")
 	cmd.Stdout = out
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = out
 	return cmd.Run()
 }
 
