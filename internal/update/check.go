@@ -3,7 +3,6 @@ package update
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -48,7 +47,7 @@ func CheckLatestVersion(ctx context.Context, httpClient *http.Client) (*ReleaseI
 	}
 
 	if release.TagName == "" {
-		return nil, fmt.Errorf("empty tag_name in GitHub response")
+		return nil, nil // silent failure: treat missing tag same as other failures
 	}
 
 	return &release, nil

@@ -105,11 +105,15 @@ func (c *Checker) Run(ctx context.Context) {
 	}
 }
 
-// GetResult blocks until the check completes and returns the result.
-// Returns nil if no update is available or the check failed.
+// GetResult returns the update check result if it is ready,
+// or nil if the check has not yet completed.
 func (c *Checker) GetResult() *Result {
-	<-c.done
-	return c.result
+	select {
+	case <-c.done:
+		return c.result
+	default:
+		return nil
+	}
 }
 
 // PrintUpdateNotification displays the update message and optionally
