@@ -2,7 +2,6 @@ package update
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 )
@@ -23,9 +22,8 @@ func TestNewChecker_EnvDisabled(t *testing.T) {
 }
 
 func TestNewChecker_ValidVersion(t *testing.T) {
+	// Set to empty string so the check is not disabled
 	t.Setenv("NOTTE_NO_UPDATE_CHECK", "")
-	// Unset the env var completely to ensure it doesn't interfere
-	os.Unsetenv("NOTTE_NO_UPDATE_CHECK")
 
 	checker := NewChecker("0.0.10")
 	if checker == nil {

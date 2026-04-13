@@ -36,7 +36,7 @@ func CheckLatestVersion(ctx context.Context, httpClient *http.Client) (*ReleaseI
 	if err != nil {
 		return nil, nil //nolint:nilerr // silent failure by design
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, nil // silent failure for non-200 responses

@@ -131,12 +131,12 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 	}
 
 	// Print a blank line to separate from command output
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out)
 
 	// Update available message (yellow)
 	current := formatVersion(result.CurrentVersion)
 	latest := formatVersion(result.LatestVersion)
-	fmt.Fprintln(out, colorize(
+	_, _ = fmt.Fprintln(out, colorize(
 		fmt.Sprintf("Update available for Notte CLI (%s \u2192 %s) The latest update may fix any errors that occurred.", current, latest),
 		termenv.ANSIYellow,
 	))
@@ -146,7 +146,7 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 	if changelogURL == "" {
 		changelogURL = fmt.Sprintf("https://github.com/nottelabs/notte-cli/releases/tag/%s", latest)
 	}
-	fmt.Fprintln(out, colorize(
+	_, _ = fmt.Fprintln(out, colorize(
 		fmt.Sprintf("Changelog: %s", changelogURL),
 		termenv.ANSICyan,
 	))
@@ -164,9 +164,9 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 
 	// Prompt for upgrade
 	if skipConfirm {
-		fmt.Fprintln(out, "? Would you like to upgrade now? yes")
+		_, _ = fmt.Fprintln(out, "? Would you like to upgrade now? yes")
 	} else {
-		fmt.Fprint(out, "? Would you like to upgrade now? [Y/n]: ")
+		_, _ = fmt.Fprint(out, "? Would you like to upgrade now? [Y/n]: ")
 		reader := bufio.NewReader(in)
 		response, err := reader.ReadString('\n')
 		if err != nil {
@@ -180,14 +180,14 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 
 	// Perform upgrade
 	method := DetectInstallMethod()
-	fmt.Fprintln(out, colorize("> Upgrading Notte CLI...", termenv.ANSIGreen))
+	_, _ = fmt.Fprintln(out, colorize("> Upgrading Notte CLI...", termenv.ANSIGreen))
 
 	if err := RunUpgrade(out, method); err != nil {
-		fmt.Fprintln(out, colorize(fmt.Sprintf("> Upgrade failed: %s", err), termenv.ANSIRed))
+		_, _ = fmt.Fprintln(out, colorize(fmt.Sprintf("> Upgrade failed: %s", err), termenv.ANSIRed))
 		return
 	}
 
 	if method == UpgradeHomebrew {
-		fmt.Fprintln(out, colorize("> Success! Notte CLI has been upgraded successfully!", termenv.ANSIGreen))
+		_, _ = fmt.Fprintln(out, colorize("> Success! Notte CLI has been upgraded successfully!", termenv.ANSIGreen))
 	}
 }
