@@ -25,6 +25,7 @@ const (
 	EnvSessionID             = "NOTTE_SESSION_ID"
 	EnvFunctionID            = "NOTTE_FUNCTION_ID"
 	EnvAgentID               = "NOTTE_AGENT_ID"
+	EnvNoUpdateCheck         = "NOTTE_NO_UPDATE_CHECK"
 )
 
 // testConfigDir allows overriding the config directory for testing.
