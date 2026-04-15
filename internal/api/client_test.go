@@ -390,14 +390,14 @@ func TestNotteClient_APIKey(t *testing.T) {
 	}
 }
 
-func TestCheckMinVersion_WarnsWhenOutdated(t *testing.T) {
-	versionWarningOnce = sync.Once{}
-	var buf strings.Builder
-	versionWarningWriter = &buf
-	t.Cleanup(func() {
-		versionWarningOnce = sync.Once{}
-		versionWarningWriter = nil
-	})
+func resetDetectOnce() {
+	detectOnce = sync.Once{}
+	detectedMinVersion = ""
+}
+
+func TestCheckMinVersion_StoresWhenOutdated(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
 
 	rt := &resilientTransport{version: "0.0.10"}
 	resp := &http.Response{
@@ -405,23 +405,14 @@ func TestCheckMinVersion_WarnsWhenOutdated(t *testing.T) {
 	}
 	rt.checkMinVersion(resp)
 
-	output := buf.String()
-	if !strings.Contains(output, "older than the minimum required") {
-		t.Errorf("expected outdated warning, got: %q", output)
-	}
-	if !strings.Contains(output, "0.0.10") || !strings.Contains(output, "0.0.12") {
-		t.Errorf("warning should mention both versions, got: %q", output)
+	if got := DetectedMinVersion(); got != "0.0.12" {
+		t.Errorf("DetectedMinVersion() = %q, want %q", got, "0.0.12")
 	}
 }
 
-func TestCheckMinVersion_SilentWhenCurrent(t *testing.T) {
-	versionWarningOnce = sync.Once{}
-	var buf strings.Builder
-	versionWarningWriter = &buf
-	t.Cleanup(func() {
-		versionWarningOnce = sync.Once{}
-		versionWarningWriter = nil
-	})
+func TestCheckMinVersion_EmptyWhenCurrent(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
 
 	rt := &resilientTransport{version: "0.0.12"}
 	resp := &http.Response{
@@ -429,37 +420,27 @@ func TestCheckMinVersion_SilentWhenCurrent(t *testing.T) {
 	}
 	rt.checkMinVersion(resp)
 
-	if buf.Len() > 0 {
-		t.Errorf("expected no output for current version, got: %q", buf.String())
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
 	}
 }
 
-func TestCheckMinVersion_SilentWhenNoHeader(t *testing.T) {
-	versionWarningOnce = sync.Once{}
-	var buf strings.Builder
-	versionWarningWriter = &buf
-	t.Cleanup(func() {
-		versionWarningOnce = sync.Once{}
-		versionWarningWriter = nil
-	})
+func TestCheckMinVersion_EmptyWhenNoHeader(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
 
 	rt := &resilientTransport{version: "0.0.10"}
 	resp := &http.Response{Header: http.Header{}}
 	rt.checkMinVersion(resp)
 
-	if buf.Len() > 0 {
-		t.Errorf("expected no output without header, got: %q", buf.String())
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
 	}
 }
 
-func TestCheckMinVersion_SkipsDevVersion(t *testing.T) {
-	versionWarningOnce = sync.Once{}
-	var buf strings.Builder
-	versionWarningWriter = &buf
-	t.Cleanup(func() {
-		versionWarningOnce = sync.Once{}
-		versionWarningWriter = nil
-	})
+func TestCheckMinVersion_EmptyForDevVersion(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
 
 	rt := &resilientTransport{version: "dev"}
 	resp := &http.Response{
@@ -467,8 +448,8 @@ func TestCheckMinVersion_SkipsDevVersion(t *testing.T) {
 	}
 	rt.checkMinVersion(resp)
 
-	if buf.Len() > 0 {
-		t.Errorf("expected no output for dev version, got: %q", buf.String())
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
 	}
 }
 

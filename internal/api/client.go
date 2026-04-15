@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -20,12 +18,16 @@ const DefaultBaseURL = "https://api.notte.cc"
 // minimum CLI version required for full compatibility.
 const MinCLIVersionHeader = "x-notte-min-cli-version"
 
-// versionWarningOnce ensures the outdated-CLI warning prints at most once per process.
-var versionWarningOnce sync.Once
+// detectedMinVersion stores the minimum CLI version returned by the API.
+// Set once by checkMinVersion; read by root.go to trigger the upgrade prompt.
+var detectedMinVersion string
+var detectOnce sync.Once
 
-// versionWarningWriter is the destination for the version mismatch warning.
-// Defaults to os.Stderr; overridden in tests.
-var versionWarningWriter io.Writer
+// DetectedMinVersion returns the API-required minimum CLI version, or "" if
+// the header was not seen or the CLI is already up to date.
+func DetectedMinVersion() string {
+	return detectedMinVersion
+}
 
 // NotteClient wraps the generated client with auth and resilience
 type NotteClient struct {
@@ -164,29 +166,19 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 // checkMinVersion inspects the x-notte-min-cli-version response header and
-// prints a single stderr warning if the running CLI is older than required.
+// stores the required version so the root command can prompt for upgrade.
 func (t *resilientTransport) checkMinVersion(resp *http.Response) {
 	minVersion := resp.Header.Get(MinCLIVersionHeader)
 	if minVersion == "" || t.version == "" || t.version == "dev" {
 		return
 	}
 
-	outdated, err := update.IsNewer(t.version, minVersion)
-	if err != nil || !outdated {
-		return
-	}
-
-	versionWarningOnce.Do(func() {
-		w := versionWarningWriter
-		if w == nil {
-			w = os.Stderr
+	detectOnce.Do(func() {
+		outdated, err := update.IsNewer(t.version, minVersion)
+		if err != nil || !outdated {
+			return
 		}
-		fmt.Fprintf(w,
-			"\nWarning: this CLI version (%s) is older than the minimum required by the API (%s).\n"+
-				"Some commands may return incomplete or incorrect results.\n"+
-				"Run `brew upgrade notte` or visit https://github.com/nottelabs/notte-cli/releases to update.\n\n",
-			t.version, minVersion,
-		)
+		detectedMinVersion = minVersion
 	})
 }
 
