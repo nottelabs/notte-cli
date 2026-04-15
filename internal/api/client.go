@@ -4,13 +4,28 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 
 	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
+	"github.com/nottelabs/notte-cli/internal/update"
 )
 
 const DefaultBaseURL = "https://api.notte.cc"
+
+// MinCLIVersionHeader is the response header the API uses to advertise the
+// minimum CLI version required for full compatibility.
+const MinCLIVersionHeader = "x-notte-min-cli-version"
+
+// versionWarningOnce ensures the outdated-CLI warning prints at most once per process.
+var versionWarningOnce sync.Once
+
+// versionWarningWriter is the destination for the version mismatch warning.
+// Defaults to os.Stderr; overridden in tests.
+var versionWarningWriter io.Writer
 
 // NotteClient wraps the generated client with auth and resilience
 type NotteClient struct {
@@ -142,7 +157,37 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		t.circuitBreaker.RecordSuccess()
 	}
 
+	// Check if the API requires a newer CLI version
+	t.checkMinVersion(resp)
+
 	return resp, nil
+}
+
+// checkMinVersion inspects the x-notte-min-cli-version response header and
+// prints a single stderr warning if the running CLI is older than required.
+func (t *resilientTransport) checkMinVersion(resp *http.Response) {
+	minVersion := resp.Header.Get(MinCLIVersionHeader)
+	if minVersion == "" || t.version == "" || t.version == "dev" {
+		return
+	}
+
+	outdated, err := update.IsNewer(t.version, minVersion)
+	if err != nil || !outdated {
+		return
+	}
+
+	versionWarningOnce.Do(func() {
+		w := versionWarningWriter
+		if w == nil {
+			w = os.Stderr
+		}
+		fmt.Fprintf(w,
+			"\nWarning: this CLI version (%s) is older than the minimum required by the API (%s).\n"+
+				"Some commands may return incomplete or incorrect results.\n"+
+				"Run `brew upgrade notte` or visit https://github.com/nottelabs/notte-cli/releases to update.\n\n",
+			t.version, minVersion,
+		)
+	})
 }
 
 func (t *resilientTransport) doWithRetry(req *http.Request) (*http.Response, error) {

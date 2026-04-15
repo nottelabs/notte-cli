@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -386,6 +387,88 @@ func TestNotteClient_APIKey(t *testing.T) {
 
 	if got := client.APIKey(); got != "test-api-key-123" {
 		t.Errorf("APIKey() = %q, want %q", got, "test-api-key-123")
+	}
+}
+
+func TestCheckMinVersion_WarnsWhenOutdated(t *testing.T) {
+	versionWarningOnce = sync.Once{}
+	var buf strings.Builder
+	versionWarningWriter = &buf
+	t.Cleanup(func() {
+		versionWarningOnce = sync.Once{}
+		versionWarningWriter = nil
+	})
+
+	rt := &resilientTransport{version: "0.0.10"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	output := buf.String()
+	if !strings.Contains(output, "older than the minimum required") {
+		t.Errorf("expected outdated warning, got: %q", output)
+	}
+	if !strings.Contains(output, "0.0.10") || !strings.Contains(output, "0.0.12") {
+		t.Errorf("warning should mention both versions, got: %q", output)
+	}
+}
+
+func TestCheckMinVersion_SilentWhenCurrent(t *testing.T) {
+	versionWarningOnce = sync.Once{}
+	var buf strings.Builder
+	versionWarningWriter = &buf
+	t.Cleanup(func() {
+		versionWarningOnce = sync.Once{}
+		versionWarningWriter = nil
+	})
+
+	rt := &resilientTransport{version: "0.0.12"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	if buf.Len() > 0 {
+		t.Errorf("expected no output for current version, got: %q", buf.String())
+	}
+}
+
+func TestCheckMinVersion_SilentWhenNoHeader(t *testing.T) {
+	versionWarningOnce = sync.Once{}
+	var buf strings.Builder
+	versionWarningWriter = &buf
+	t.Cleanup(func() {
+		versionWarningOnce = sync.Once{}
+		versionWarningWriter = nil
+	})
+
+	rt := &resilientTransport{version: "0.0.10"}
+	resp := &http.Response{Header: http.Header{}}
+	rt.checkMinVersion(resp)
+
+	if buf.Len() > 0 {
+		t.Errorf("expected no output without header, got: %q", buf.String())
+	}
+}
+
+func TestCheckMinVersion_SkipsDevVersion(t *testing.T) {
+	versionWarningOnce = sync.Once{}
+	var buf strings.Builder
+	versionWarningWriter = &buf
+	t.Cleanup(func() {
+		versionWarningOnce = sync.Once{}
+		versionWarningWriter = nil
+	})
+
+	rt := &resilientTransport{version: "dev"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	if buf.Len() > 0 {
+		t.Errorf("expected no output for dev version, got: %q", buf.String())
 	}
 }
 
