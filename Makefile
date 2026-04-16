@@ -74,13 +74,13 @@ generate: ## Generate code (API client, etc.)
 
 check: ## Verify generated code is up to date (fails if `make generate` would produce a diff)
 	@echo "Checking for local changes in generated files..."
-	@git diff --quiet -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go' || \
-		(echo "Error: generated files have uncommitted local changes. Commit or stash them before running 'make check'." && exit 2)
+	@[ -z "$$(git status --porcelain -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go')" ] || \
+		(echo "Error: generated files have uncommitted local changes (including staged or untracked). Commit or stash them before running 'make check'." && exit 2)
 	@echo "Running code generation..."
 	@./scripts/generate.sh >/dev/null
 	@echo "Checking for diffs in generated files..."
-	@git diff --exit-code -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go' || \
-		(echo "Generated code is out of date. Run 'make generate' and commit the changes." && exit 1)
+	@[ -z "$$(git status --porcelain -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go')" ] || \
+		(echo "Generated code is out of date. Run 'make generate' and commit the changes." && git status --short -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go' && exit 1)
 	@echo "✓ Generated code is up to date"
 
 .DEFAULT_GOAL := build
