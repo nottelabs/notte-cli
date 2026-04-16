@@ -1,7 +1,7 @@
 ---
 name: notte-browser
 description: Command-line interface for browser automation, web scraping, and AI-powered web interactions using the notte.cc platform.
-version: 1.0.0
+version: 1.4.0
 allowed-tools: Bash(notte:*)
 ---
 
@@ -32,9 +32,18 @@ notte page fill "@I1" "hello world"
 # 5. Scrape content
 notte page scrape --instructions "Extract all product names and prices"
 
-# 6. Stop the session
+# 6. Stop the session (uses current session; pass --session-id only for another)
 notte sessions stop
 ```
+
+> **There is no top-level `notte scrape <url>` command** despite what `notte --help` implies. Scraping always goes through `notte page scrape` inside an active session (after `goto`).
+>
+> **All resource IDs are passed as named flags** (`--session-id`, `--agent-id`, `--persona-id`, `--profile-id`, `--vault-id`, `--function-id`, `--run-id`), never positional. `notte personas delete <id>` fails with `unknown command`; use `notte personas delete --persona-id <id>`.
+>
+> **Flag-name traps:** `notte page scrape` takes `--instructions` (plural),
+> not `--instruction`. `notte sessions start` has **no `--url`** flag — start
+> the session, then `notte page goto <url>`. `notte page goto` takes a
+> positional URL, not `--url`.
 
 ## Command Categories
 
@@ -68,6 +77,33 @@ notte sessions list [--page N] [--page-size N] [--only-active]
 ```
 
 **Note:** When you start a session, it automatically becomes the "current" session (i.e NOTTE_SESSION_ID environment variable is set). All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
+
+> **Stale current-session trap (common in fresh shells / CI / eval runs).** The
+> "current session" pointer persists across shells and can outlive the session
+> it points to. Symptoms:
+> - `Error 410: Session not found` on a command that worked seconds ago.
+> - `Error 500: Browser or context expired or closed`.
+> - `Error 422: Extra inputs are not permitted` on `observe` *right after* a
+>   successful `goto` (the 422 the skill flags elsewhere for missing goto, but
+>   here the real cause is a dead session).
+> - `observe` returning content from a completely different site than you just
+>   navigated to (a leftover session was reused).
+> - `sessions start` printing `"Session <old-id> is currently active. A new
+>   session will be created either way"` — the pointer was stale.
+>
+> **Recovery pattern.** Capture the fresh session id from `-o json` and pass
+> `--session-id` explicitly on every dependent call. Chain dependent commands
+> in a single shell so the session can't die between invocations:
+>
+> ```bash
+> SID=$(notte sessions start -y -o json | python3 -c "import sys,json;print(json.load(sys.stdin)['session_id'])")
+> notte page goto "https://example.com" --session-id "$SID" \
+>   && notte page observe --session-id "$SID" \
+>   && notte page click "@L1" --session-id "$SID"
+> ```
+>
+> Use `-y` on `sessions start` to skip the confirmation prompt when a prior
+> session is still marked "current".
 
 Session debugging and export:
 
@@ -125,6 +161,7 @@ notte page upload "#file-input" --file /path/to/file
 
 **Navigation:**
 ```bash
+# URL is a positional argument — do NOT use --url
 notte page goto "https://example.com"
 notte page new-tab "https://example.com"
 notte page back
@@ -132,11 +169,18 @@ notte page forward
 notte page reload
 ```
 
+> **`page observe` before a `goto` returns HTTP 422** with the misleading message `Extra inputs are not permitted ... ('body', 'url')`. The error is about server state (no page loaded), **not** about the `--url` flag. Always `notte page goto <url>` first, then `notte page observe`.
+
 **Scrolling:**
 ```bash
 notte page scroll-down [amount]
 notte page scroll-up [amount]
 ```
+
+> If `scroll-down`/`scroll-up` returns `"Scroll failed. Either the page is not
+> scrollable or there is a focused element blocking the scroll"`, use the
+> keyboard instead — keys always work: `notte page press "PageDown"` /
+> `"PageUp"` / `"End"` / `"Home"`.
 
 **Keyboard:**
 ```bash
@@ -150,6 +194,10 @@ notte page press "Tab"
 notte page switch-tab 1
 notte page close-tab
 ```
+
+> Tabs re-index immediately after `close-tab`. If you close tab 1, the only
+> remaining tab is index 0 — `switch-tab 1` will then fail with "Tab index out
+> of range". Track expected count, or call `notte page observe` in between.
 
 **Page State:**
 ```bash
@@ -174,9 +222,34 @@ notte page captcha-solve "recaptcha_v2"
 # Mark task complete
 notte page complete "Task finished successfully" [--success=true]
 
-# Fill form with JSON data
-notte page form-fill --data '{"email": "test@example.com", "name": "John"}'
+# Fill form with JSON data.
+# `form-fill` only accepts a fixed schema of semantic keys, NOT arbitrary field labels.
+# Valid keys include: title, first_name, middle_name, last_name, full_name, email,
+#   company, address1, address2, address3, city, state, zip, country, phone, username,
+#   password, dob (and similar identity/address fields).
+# For fields outside this schema (radios, checkboxes, non-standard labels), use
+# `notte page fill "#selector" "value"` / `notte page check` / `notte page select` instead.
+notte page form-fill --data '{"full_name": "Alice", "email": "a@b.c", "phone": "555-0100"}'
 ```
+
+### File Storage
+
+Upload and manage files in notte.cc account-scoped storage (not per-session):
+
+```bash
+notte files upload <local-path>            # Upload a file
+notte files list [--uploads|--downloads]   # List files (default: --uploads)
+notte files download <filename>            # Download a file
+```
+
+> **No `delete` subcommand exists.** `notte files` supports only `upload`,
+> `list`, and `download`. The REST endpoint `DELETE /storage/uploads/<name>`
+> is also not implemented (returns 405). If a task requires deleting an
+> uploaded file, report "not supported via CLI" rather than chasing
+> browser-agent or raw-API workarounds — they don't work either.
+>
+> `list --uploads` works without an active session. `list --downloads`
+> requires an active session (downloads are session-scoped).
 
 ### AI Agents
 
@@ -214,6 +287,8 @@ notte agents replay
 2. `NOTTE_AGENT_ID` environment variable
 3. `~/.notte/cli/current_agent` file (lowest priority)
 
+> **One agent per session.** A session can run only one agent at a time. If `notte agents start` returns HTTP 409 `"already has an active agent"`, call `notte agents stop` (or wait with `notte agents status`) before starting a new one.
+
 ### Functions (Workflow Automation)
 
 Create, manage, and schedule reusable workflows:
@@ -246,8 +321,8 @@ notte functions run-stop --run-id <run-id>
 # Get run logs and results
 notte functions run-metadata --run-id <run-id>
 
-# Schedule current function with cron expression
-notte functions schedule --cron "0 9 * * *"
+# Schedule current function — cron is 6-field AWS-style (min hour dom month dow year)
+notte functions schedule --cron "0 9 * * ? *"
 
 # Remove schedule from current function
 notte functions unschedule
@@ -258,6 +333,12 @@ notte functions fork --function-id <shared-function-id>
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function (like when forking a shared function).
 
+> **Function file contract** (enforced by `functions create`/`update`; each violation is a separate 400):
+> - File must be `.py` (not `.yaml`, `.json`, `.sh`).
+> - Must define a top-level **synchronous** `def run(...)`. `async def run` is rejected (`AsyncFunctionDef not allowed`). `def _run` is rejected (names can't start with `_`).
+> - Must create a notte session using one of: `notte.Session(...)`, `n.Session(...)`, `c.Session(...)`, `cli.Session(...)`, `client.Session(...)`.
+> - **Cron is 6-field AWS-style**, not standard 5-field: `"minute hour day-of-month month day-of-week year"`. Example: `--cron "0 9 * * ? *"` for daily at 09:00 UTC. `"0 9 * * *"` (5 fields) is rejected.
+
 
 ### Account Management
 
@@ -267,7 +348,7 @@ notte functions fork --function-id <shared-function-id>
 # List personas (with optional pagination and filters)
 notte personas list [--page N] [--page-size N] [--only-active]
 
-# Create a persona
+# Create a persona (identity is auto-generated; there is no --name flag)
 notte personas create [--create-phone-number] [--create-vault]
 
 # Show persona details
@@ -403,99 +484,11 @@ notte functions runs --function-id <function-id>
 
 ## Tips & Troubleshooting
 
-### Handling Inconsistent `observe` Output
+### Troubleshooting
 
-The `observe` command may sometimes return stale or partial DOM state, especially with dynamic content, modals, or single-page applications. If the output seems wrong:
-
-1. **Use screenshots to verify**: `notte page screenshot` always shows the current visual state
-2. **Fall back to Playwright selectors**: Instead of `@ID` references, use standard selectors like `#id`, `.class`, or `button:has-text('Submit')`
-3. **Add a brief wait**: `notte page wait 500` before observing can help with dynamic content
-
-### Selector Syntax
-
-Both element IDs from `observe` and Playwright selectors are supported:
-
-```bash
-# Using element IDs from observe output
-notte page click "@B3"
-notte page fill "@I1" "text"
-
-# Using Playwright selectors (recommended when @IDs don't work)
-notte page click "#submit-button"
-notte page click ".btn-primary"
-notte page click "button:has-text('Submit')"
-notte page click "[data-testid='login']"
-notte page fill "input[name='email']" "user@example.com"
-```
-
-**Handling multiple matches** - Use `>> nth=0` to select the first match:
-
-```bash
-# When multiple elements match, select by index
-notte page click "button:has-text('OK') >> nth=0"
-notte page click ".submit-btn >> nth=0"
-```
-
-### Working with Modals and Dialogs
-
-Modals and popups can interfere with page interactions. Tips:
-
-- **Close modals with Escape**: `notte page press "Escape"` reliably dismisses most dialogs and modals
-- **Wait after modal actions**: Add `notte page wait 500` after closing a modal before the next action
-- **Check for overlays**: If clicks aren't working, a modal or overlay might be blocking - use screenshot to verify
-
-```bash
-# Common pattern for handling unexpected modals
-notte page press "Escape"
-notte page wait 500
-notte page click "#target-element"
-```
-
-### Viewing Headless Sessions
-
-Running with `--headless` (the default) doesn't mean you can't see the browser:
-
-- **ViewerUrl**: When you start a session, the output includes a `ViewerUrl` - open it in your browser to watch the session live
-- **Viewer command**: `notte sessions viewer` opens the viewer directly
-- **Non-headless mode**: Use `--headless=false` only if you need a local browser window (not available on remote/CI environments)
-
-```bash
-# Start headless session and get viewer URL
-notte sessions start -o json | jq -r '.viewer_url'
-
-# Or open viewer for current session
-notte sessions viewer
-```
-
-### Bot Detection / Stealth
-
-If you're getting blocked or seeing CAPTCHAs, try these approaches (requires restarting the session with new parameters):
-
-1. **Change browser type**: Some sites have different detection for different browsers
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox
-   ```
-
-2. **Enable proxies**: Rotate IP addresses to avoid rate limiting
-   ```bash
-   notte sessions stop
-   notte sessions start --proxies
-   ```
-
-3. **Firefox + CAPTCHA solving**: The `--solve-captchas` flag works best with Firefox
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox --solve-captchas
-   ```
-
-4. **Combine strategies**: For heavily protected sites, combine multiple options
-   ```bash
-   notte sessions stop
-   notte sessions start --browser-type firefox --proxies --solve-captchas
-   ```
-
-**Note**: Always stop the current session before starting a new one with different parameters. Session configuration cannot be changed mid-session.
+For stale `observe` output, selector syntax (`@ID` vs Playwright, `>> nth=0`),
+modals/dialogs, viewing headless sessions via `ViewerUrl`, and bot-detection
+/ CAPTCHA / proxy strategies, see [references/troubleshooting.md](references/troubleshooting.md).
 
 ## Additional Resources
 
