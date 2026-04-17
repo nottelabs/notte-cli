@@ -54,8 +54,15 @@ func Execute() {
 
 	err := rootCmd.Execute()
 
-	// Show update notification after command output
-	if checker != nil {
+	// If the API told us our CLI is too old, prompt to upgrade (takes priority)
+	if minVer := api.DetectedMinVersion(); minVer != "" {
+		update.PrintUpdateNotification(&update.Result{
+			CurrentVersion:  Version,
+			LatestVersion:   minVer,
+			UpdateAvailable: true,
+		}, os.Stderr, os.Stdin, yesFlag, IsJSONOutput(), noColor)
+	} else if checker != nil {
+		// Otherwise fall back to the GitHub-based update check
 		if result := checker.GetResult(); result != nil {
 			update.PrintUpdateNotification(result, os.Stderr, os.Stdin, yesFlag, IsJSONOutput(), noColor)
 		}
