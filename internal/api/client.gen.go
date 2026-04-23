@@ -2346,6 +2346,13 @@ type TabsData struct {
 	Url   string `json:"url"`
 }
 
+// TailnetProxy defines model for TailnetProxy.
+type TailnetProxy struct {
+	OauthClientId     string  `json:"oauth_client_id"`
+	OauthClientSecret *string `json:"oauth_client_secret,omitempty"`
+	Type              *string `json:"type,omitempty"`
+}
+
 // UpdateFunctionRunResponse defines model for UpdateFunctionRunResponse.
 type UpdateFunctionRunResponse struct {
 	// FunctionId The ID of the function
@@ -5901,6 +5908,36 @@ func (t *ApiSessionStartRequest_Proxies_0_Item) MergeExternalProxy(v ExternalPro
 	return err
 }
 
+// AsTailnetProxy returns the union data inside the ApiSessionStartRequest_Proxies_0_Item as a TailnetProxy
+func (t ApiSessionStartRequest_Proxies_0_Item) AsTailnetProxy() (TailnetProxy, error) {
+	var body TailnetProxy
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromTailnetProxy overwrites any union data inside the ApiSessionStartRequest_Proxies_0_Item as the provided TailnetProxy
+func (t *ApiSessionStartRequest_Proxies_0_Item) FromTailnetProxy(v TailnetProxy) error {
+	tmp := "tailnet"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeTailnetProxy performs a merge with any union data inside the ApiSessionStartRequest_Proxies_0_Item, using the provided TailnetProxy
+func (t *ApiSessionStartRequest_Proxies_0_Item) MergeTailnetProxy(v TailnetProxy) error {
+	tmp := "tailnet"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t ApiSessionStartRequest_Proxies_0_Item) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -5919,6 +5956,8 @@ func (t ApiSessionStartRequest_Proxies_0_Item) ValueByDiscriminator() (interface
 		return t.AsExternalProxy()
 	case "notte":
 		return t.AsNotteProxy()
+	case "tailnet":
+		return t.AsTailnetProxy()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -6986,6 +7025,36 @@ func (t *GlobalScrapeRequest_Proxies_0_Item) MergeExternalProxy(v ExternalProxy)
 	return err
 }
 
+// AsTailnetProxy returns the union data inside the GlobalScrapeRequest_Proxies_0_Item as a TailnetProxy
+func (t GlobalScrapeRequest_Proxies_0_Item) AsTailnetProxy() (TailnetProxy, error) {
+	var body TailnetProxy
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromTailnetProxy overwrites any union data inside the GlobalScrapeRequest_Proxies_0_Item as the provided TailnetProxy
+func (t *GlobalScrapeRequest_Proxies_0_Item) FromTailnetProxy(v TailnetProxy) error {
+	tmp := "tailnet"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeTailnetProxy performs a merge with any union data inside the GlobalScrapeRequest_Proxies_0_Item, using the provided TailnetProxy
+func (t *GlobalScrapeRequest_Proxies_0_Item) MergeTailnetProxy(v TailnetProxy) error {
+	tmp := "tailnet"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t GlobalScrapeRequest_Proxies_0_Item) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -7004,6 +7073,8 @@ func (t GlobalScrapeRequest_Proxies_0_Item) ValueByDiscriminator() (interface{},
 		return t.AsExternalProxy()
 	case "notte":
 		return t.AsNotteProxy()
+	case "tailnet":
+		return t.AsTailnetProxy()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
