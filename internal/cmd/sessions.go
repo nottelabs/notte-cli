@@ -23,9 +23,14 @@ import (
 
 // Manual flags for proxies and extra headers (union types not auto-generated)
 var (
-	sessionsStartProxy            bool
-	sessionsStartProxyCountry     string
-	sessionsStartExtraHttpHeaders string
+	sessionsStartProxy                 bool
+	sessionsStartProxyCountry          string
+	sessionsStartProxyExtServer        string
+	sessionsStartProxyExtUsername      string
+	sessionsStartProxyExtPassword      string
+	sessionsStartProxyTailClientID     string
+	sessionsStartProxyTailClientSecret string
+	sessionsStartExtraHttpHeaders      string
 )
 
 var (
@@ -339,6 +344,11 @@ func init() {
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtServer, "proxy-external-server", "", "External proxy server URL (e.g. http://proxy:8080). Enables external proxy")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtUsername, "proxy-external-username", "", "External proxy username")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtPassword, "proxy-external-password", "", "External proxy password")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyTailClientID, "proxy-tailnet-client-id", "", "Tailnet OAuth client ID. Enables Tailscale proxy")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyTailClientSecret, "proxy-tailnet-client-secret", "", "Tailnet OAuth client secret")
 	// Manual flag for extra HTTP headers (map type not auto-generated)
 	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
 
@@ -494,18 +504,60 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Handle proxies manually (union type: bool | array of proxy objects)
-	// --proxy-country takes precedence over --proxy
+	// Handle proxies manually (union type: bool | array of proxy objects).
+	// At most one proxy kind may be selected per call.
+	var setProxyFlags []string
+	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id"} {
+		if cmd.Flags().Changed(name) {
+			setProxyFlags = append(setProxyFlags, "--"+name)
+		}
+	}
+	if len(setProxyFlags) > 1 {
+		return fmt.Errorf("proxy flags are mutually exclusive, got: %s", strings.Join(setProxyFlags, ", "))
+	}
+
+	var proxyItems api.ApiSessionStartRequestProxies0
+
 	if cmd.Flags().Changed("proxy-country") {
 		country := api.ProxyGeolocationCountry(sessionsStartProxyCountry)
 		notteProxy := api.NotteProxy{Country: &country}
 		var item api.ApiSessionStartRequest_Proxies_0_Item
 		if err := item.FromNotteProxy(notteProxy); err != nil {
-			return fmt.Errorf("failed to create proxy: %w", err)
+			return fmt.Errorf("failed to create notte proxy: %w", err)
 		}
-		proxyList := api.ApiSessionStartRequestProxies0{item}
+		proxyItems = append(proxyItems, item)
+	}
+
+	if cmd.Flags().Changed("proxy-external-server") {
+		ext := api.ExternalProxy{Server: sessionsStartProxyExtServer}
+		if cmd.Flags().Changed("proxy-external-username") {
+			ext.Username = &sessionsStartProxyExtUsername
+		}
+		if cmd.Flags().Changed("proxy-external-password") {
+			ext.Password = &sessionsStartProxyExtPassword
+		}
+		var item api.ApiSessionStartRequest_Proxies_0_Item
+		if err := item.FromExternalProxy(ext); err != nil {
+			return fmt.Errorf("failed to create external proxy: %w", err)
+		}
+		proxyItems = append(proxyItems, item)
+	}
+
+	if cmd.Flags().Changed("proxy-tailnet-client-id") {
+		tail := api.TailnetProxy{OauthClientId: sessionsStartProxyTailClientID}
+		if cmd.Flags().Changed("proxy-tailnet-client-secret") {
+			tail.OauthClientSecret = &sessionsStartProxyTailClientSecret
+		}
+		var item api.ApiSessionStartRequest_Proxies_0_Item
+		if err := item.FromTailnetProxy(tail); err != nil {
+			return fmt.Errorf("failed to create tailnet proxy: %w", err)
+		}
+		proxyItems = append(proxyItems, item)
+	}
+
+	if len(proxyItems) > 0 {
 		var proxies api.ApiSessionStartRequest_Proxies
-		if err := proxies.FromApiSessionStartRequestProxies0(proxyList); err != nil {
+		if err := proxies.FromApiSessionStartRequestProxies0(proxyItems); err != nil {
 			return fmt.Errorf("failed to set proxies: %w", err)
 		}
 		body.Proxies = &proxies
