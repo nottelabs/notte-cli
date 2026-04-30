@@ -2104,6 +2104,19 @@ type ScrollUpAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
+// SearchRequest defines model for SearchRequest.
+type SearchRequest struct {
+	// Depth Search depth: 'standard', 'fast', or 'deep'
+	Depth *string `json:"depth,omitempty"`
+
+	// OutputType Output type: 'searchResults', 'sourcedAnswer', or 'structured'
+	OutputType *string `json:"outputType,omitempty"`
+
+	// Q The search query
+	Q                    string                 `json:"q"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
 // SelectDropdownOptionActionInput defines model for SelectDropdownOptionAction-Input.
 type SelectDropdownOptionActionInput struct {
 	Category    *string                                   `json:"category,omitempty"`
@@ -2761,7 +2774,13 @@ type ProfileListParams struct {
 	PageSize *int `form:"page_size,omitempty" json:"page_size,omitempty"`
 
 	// Name Filter profiles by name
-	Name                *string `form:"name,omitempty" json:"name,omitempty"`
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// OnlyActive Whether to only return active profiles
+	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
+
+	// OnlyCurrentToken Whether to only return profiles for the current token (apikey)
+	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2780,6 +2799,12 @@ type ProfileDeleteParams struct {
 
 // ProfileGetParams defines parameters for ProfileGet.
 type ProfileGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SearchWebParams defines parameters for SearchWeb.
+type SearchWebParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3048,6 +3073,9 @@ type PersonaCreateJSONRequestBody = PersonaCreateRequest
 // ProfileCreateJSONRequestBody defines body for ProfileCreate for application/json ContentType.
 type ProfileCreateJSONRequestBody = ProfileCreateRequest
 
+// SearchWebJSONRequestBody defines body for SearchWeb for application/json ContentType.
+type SearchWebJSONRequestBody = SearchRequest
+
 // SessionStartJSONRequestBody defines body for SessionStart for application/json ContentType.
 type SessionStartJSONRequestBody = ApiSessionStartRequest
 
@@ -3077,6 +3105,102 @@ type VaultUpdateJSONRequestBody = VaultUpdateRequest
 
 // VaultCredentialsAddJSONRequestBody defines body for VaultCredentialsAdd for application/json ContentType.
 type VaultCredentialsAddJSONRequestBody = AddCredentialsRequest
+
+// Getter for additional properties for SearchRequest. Returns the specified
+// element and whether it was found
+func (a SearchRequest) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for SearchRequest
+func (a *SearchRequest) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for SearchRequest to handle AdditionalProperties
+func (a *SearchRequest) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["depth"]; found {
+		err = json.Unmarshal(raw, &a.Depth)
+		if err != nil {
+			return fmt.Errorf("error reading 'depth': %w", err)
+		}
+		delete(object, "depth")
+	}
+
+	if raw, found := object["outputType"]; found {
+		err = json.Unmarshal(raw, &a.OutputType)
+		if err != nil {
+			return fmt.Errorf("error reading 'outputType': %w", err)
+		}
+		delete(object, "outputType")
+	}
+
+	if raw, found := object["q"]; found {
+		err = json.Unmarshal(raw, &a.Q)
+		if err != nil {
+			return fmt.Errorf("error reading 'q': %w", err)
+		}
+		delete(object, "q")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for SearchRequest to handle AdditionalProperties
+func (a SearchRequest) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Depth != nil {
+		object["depth"], err = json.Marshal(a.Depth)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'depth': %w", err)
+		}
+	}
+
+	if a.OutputType != nil {
+		object["outputType"], err = json.Marshal(a.OutputType)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'outputType': %w", err)
+		}
+	}
+
+	object["q"], err = json.Marshal(a.Q)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'q': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
 
 // AsFormFillAction returns the union data inside the ActionSpace_Actions_Item as a FormFillAction
 func (t ActionSpace_Actions_Item) AsFormFillAction() (FormFillAction, error) {
@@ -8197,6 +8321,11 @@ type ClientInterface interface {
 	// ProfileGet request
 	ProfileGet(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SearchWebWithBody request with any body
+	SearchWebWithBody(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SearchWeb(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListSessions request
 	ListSessions(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8738,6 +8867,30 @@ func (c *Client) ProfileDelete(ctx context.Context, profileId string, params *Pr
 
 func (c *Client) ProfileGet(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProfileGetRequest(c.Server, profileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SearchWebWithBody(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchWebRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SearchWeb(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchWebRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11418,6 +11571,38 @@ func NewProfileListRequest(server string, params *ProfileListParams) (*http.Requ
 
 		}
 
+		if params.OnlyActive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "only_active", runtime.ParamLocationQuery, *params.OnlyActive); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyCurrentToken != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "only_current_token", runtime.ParamLocationQuery, *params.OnlyCurrentToken); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11611,6 +11796,72 @@ func NewProfileGetRequest(server string, profileId string, params *ProfileGetPar
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewSearchWebRequest calls the generic SearchWeb builder with application/json body
+func NewSearchWebRequest(server string, params *SearchWebParams, body SearchWebJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSearchWebRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSearchWebRequestWithBody generates requests for SearchWeb with any type of body
+func NewSearchWebRequestWithBody(server string, params *SearchWebParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -14017,6 +14268,11 @@ type ClientWithResponsesInterface interface {
 	// ProfileGetWithResponse request
 	ProfileGetWithResponse(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*ProfileGetResult, error)
 
+	// SearchWebWithBodyWithResponse request with any body
+	SearchWebWithBodyWithResponse(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SearchWebResult, error)
+
+	SearchWebWithResponse(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*SearchWebResult, error)
+
 	// ListSessionsWithResponse request
 	ListSessionsWithResponse(ctx context.Context, params *ListSessionsParams, reqEditors ...RequestEditorFn) (*ListSessionsResult, error)
 
@@ -14807,6 +15063,29 @@ func (r ProfileGetResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ProfileGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SearchWebResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchWebResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchWebResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -15829,6 +16108,23 @@ func (c *ClientWithResponses) ProfileGetWithResponse(ctx context.Context, profil
 		return nil, err
 	}
 	return ParseProfileGetResult(rsp)
+}
+
+// SearchWebWithBodyWithResponse request with arbitrary body returning *SearchWebResult
+func (c *ClientWithResponses) SearchWebWithBodyWithResponse(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SearchWebResult, error) {
+	rsp, err := c.SearchWebWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchWebResult(rsp)
+}
+
+func (c *ClientWithResponses) SearchWebWithResponse(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*SearchWebResult, error) {
+	rsp, err := c.SearchWeb(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchWebResult(rsp)
 }
 
 // ListSessionsWithResponse request returning *ListSessionsResult
@@ -17131,6 +17427,39 @@ func ParseProfileGetResult(rsp *http.Response) (*ProfileGetResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ProfileResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSearchWebResult parses an HTTP response from a SearchWebWithResponse call
+func ParseSearchWebResult(rsp *http.Response) (*SearchWebResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchWebResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
