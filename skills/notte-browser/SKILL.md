@@ -389,7 +389,7 @@ notte vaults credentials add --vault-id <vault-id> \
   --url "https://myservice.com" \
   --email "me@example.com" \
   --password "$MYSERVICE_PASSWORD" \
-  --mfa-secret "EXAMPLEMFASECRET2FA"   # placeholder — replace with your real base32 TOTP seed
+  --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 
 # Use in automation (vault credentials auto-fill on matching URLs)
 notte sessions start
@@ -503,7 +503,7 @@ Two risk classes are inherent to "browser automation driven by an agent." The sk
 Don't pass real secrets as CLI arguments. `--password` and `--mfa-secret` read from `argv`, which leaks to `ps`, shell history, and process snapshots.
 
 - **DO** expand from env vars: `--password "$MY_PASSWORD"`, or load into a vault once from a file you control and rely on the vault thereafter.
-- **DON'T** type real credentials inline. The values in this skill (`$MYSERVICE_PASSWORD`, `EXAMPLEMFASECRET2FA`, etc.) are placeholders — substitute your own secrets via environment variables.
+- **DON'T** type real credentials inline. The values in this skill (`$MYSERVICE_PASSWORD`, `EXAMPLEMFASECRET`, etc.) are placeholders — substitute your own secrets via environment variables.
 
 ### Untrusted page content
 

@@ -189,7 +189,7 @@ notte vaults credentials add \
   --url "https://example.com" \
   --email "user@example.com" \
   --password "$MYSITE_PASSWORD" \
-  --mfa-secret "EXAMPLEMFASECRET2FA"   # placeholder — replace with your real base32 TOTP seed
+  --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 ```
 
 > **Security note:** Real passwords and MFA seeds should not be typed
@@ -229,7 +229,7 @@ notte vaults credentials add \
   --url "https://secure.example.com" \
   --email "user@example.com" \
   --password "$SECURE_EXAMPLE_PASSWORD" \
-  --mfa-secret "EXAMPLEMFASECRET2FA"   # placeholder — replace with your real base32 TOTP seed
+  --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 
 # During automation, TOTP codes are generated automatically
 # when the site requests 2FA

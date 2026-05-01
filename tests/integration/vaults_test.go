@@ -159,7 +159,7 @@ func TestVaultsCredentialsWithMFA(t *testing.T) {
 		"--url", "https://secure-site.com",
 		"--email", "mfa@example.com",
 		"--password", "securepassword",
-		"--mfa-secret", "EXAMPLEMFASECRET2FA",
+		"--mfa-secret", "EXAMPLEMFASECRET",
 	)
 	requireSuccess(t, result)
 	t.Log("Successfully added credentials with MFA secret")
