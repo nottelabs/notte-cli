@@ -192,7 +192,7 @@ notte vaults credentials add \
   --mfa-secret "EXAMPLEMFASECRET2FA"   # placeholder — replace with your real base32 TOTP seed
 ```
 
-> **Security note (W007):** Real passwords and MFA seeds should not be typed
+> **Security note:** Real passwords and MFA seeds should not be typed
 > directly into argv — they leak into `ps`, shell history, and process snapshots.
 > Prefer environment variables, as shown above, or load from a file you own.
 
