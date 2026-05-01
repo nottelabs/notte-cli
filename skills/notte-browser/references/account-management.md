@@ -174,14 +174,14 @@ notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://example.com" \
   --email "user@example.com" \
-  --password "mypassword"
+  --password "$MYSITE_PASSWORD"
 
 # With username (for sites that use username instead of email)
 notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://example.com" \
   --username "myusername" \
-  --password "mypassword"
+  --password "$MYSITE_PASSWORD"
 
 # With MFA secret for TOTP
 notte vaults credentials add \
