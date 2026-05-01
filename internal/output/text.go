@@ -25,7 +25,7 @@ func (f *TextFormatter) Print(data any) error {
 	v := reflect.ValueOf(data)
 
 	// Handle pointers by dereferencing
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			_, err := fmt.Fprintln(f.Writer, "<nil>")
 			return err
@@ -85,7 +85,7 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 
 		// Skip nil pointers, nil slices, nil maps, and nil interfaces
 		switch fieldValue.Kind() {
-		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface:
+		case reflect.Pointer, reflect.Slice, reflect.Map, reflect.Interface:
 			if fieldValue.IsNil() {
 				continue
 			}
@@ -94,7 +94,7 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 		label := f.colorize(indent+field.Name+":", termenv.ANSICyan)
 
 		// Handle pointer fields by dereferencing
-		if fieldValue.Kind() == reflect.Ptr {
+		if fieldValue.Kind() == reflect.Pointer {
 			fieldValue = fieldValue.Elem()
 		}
 
@@ -133,7 +133,7 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 
 	// Check if it's a slice of structs
 	elemType := v.Type().Elem()
-	if elemType.Kind() == reflect.Ptr {
+	if elemType.Kind() == reflect.Pointer {
 		elemType = elemType.Elem()
 	}
 	if elemType.Kind() == reflect.Struct {
@@ -142,7 +142,7 @@ func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent st
 		}
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i)
-			if elem.Kind() == reflect.Ptr {
+			if elem.Kind() == reflect.Pointer {
 				elem = elem.Elem()
 			}
 			if i > 0 {

@@ -159,14 +159,14 @@ func printSessionStatus(resp *api.SessionResponse) error {
 
 		// Skip nil pointers, nil slices, nil maps, and nil interfaces
 		switch fieldValue.Kind() {
-		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface:
+		case reflect.Pointer, reflect.Slice, reflect.Map, reflect.Interface:
 			if fieldValue.IsNil() {
 				continue
 			}
 		}
 
 		var displayValue any
-		if fieldValue.Kind() == reflect.Ptr {
+		if fieldValue.Kind() == reflect.Pointer {
 			displayValue = fieldValue.Elem().Interface()
 		} else {
 			displayValue = fieldValue.Interface()
