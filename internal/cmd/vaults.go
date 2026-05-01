@@ -75,7 +75,7 @@ For real credentials, prefer expanding from an environment variable, e.g.:
   notte vaults credentials add --vault-id <id> --url <url> \
     --email me@example.com --password "$MY_PASSWORD"
 
-Example values shown in the docs (e.g. EXAMPLEMFASECRET2FA) are placeholders, not
+Example values shown in the docs (e.g. EXAMPLEMFASECRET) are placeholders, not
 real secrets.`,
 	Args: cobra.NoArgs,
 	RunE: runVaultCredentialsAdd,
