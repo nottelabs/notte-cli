@@ -66,8 +66,19 @@ var vaultsCredentialsListCmd = &cobra.Command{
 var vaultsCredentialsAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add credentials to the vault",
-	Args:  cobra.NoArgs,
-	RunE:  runVaultCredentialsAdd,
+	Long: `Add credentials (password and optional MFA secret) to a vault.
+
+Security note: values passed via --password and --mfa-secret are read from argv,
+which makes them visible in 'ps' output, shell history, and process snapshots.
+For real credentials, prefer expanding from an environment variable, e.g.:
+
+  notte vaults credentials add --vault-id <id> --url <url> \
+    --email me@example.com --password "$MY_PASSWORD"
+
+Example values shown in the docs (e.g. EXAMPLEMFASECRET2FA) are placeholders, not
+real secrets.`,
+	Args: cobra.NoArgs,
+	RunE: runVaultCredentialsAdd,
 }
 
 var vaultsCredentialsGetCmd = &cobra.Command{
