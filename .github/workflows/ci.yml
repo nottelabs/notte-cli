@@ -20,7 +20,9 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          # Pinned (rather than `latest`) so new linter releases can't silently
+          # break CI by enabling new analyzers. Bump intentionally.
+          version: v2.12.0
 
       - name: Build
         run: go build -v ./...
