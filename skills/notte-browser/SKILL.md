@@ -391,12 +391,26 @@ notte vaults credentials add --vault-id <vault-id> \
   --password "$MYSERVICE_PASSWORD" \
   --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 
-# Use in automation (vault credentials auto-fill on matching URLs)
-notte sessions start
+# Attach the vault to the session, then fill with sentinel placeholders.
+# When a vault is attached, the sentinels below are substituted with the
+# matching real credential at run-time, so the script never contains the
+# secret itself.
+notte sessions start --vault-id <vault-id>
 notte page goto "https://myservice.com/login"
-# Credentials from vault are used automatically
+notte page fill "input[name='email']" "user@example.org"
+notte page fill "input[name='password']" "mycoolpassword"
+notte page fill "input[name='otp']" "999779"
 notte sessions stop
 ```
+
+**Sentinel placeholders.** Use these exact strings as the value for `notte page fill` (and agent fill actions); they're replaced with the matching vault credential before the keystrokes hit the page. Any other string is filled as-is, so the match must be exact.
+
+| Field    | Sentinel             |
+|----------|----------------------|
+| email    | `user@example.org`   |
+| username | `cooljohnny1567`     |
+| password | `mycoolpassword`     |
+| MFA code | `999779`             |
 
 ### Scheduled Data Collection
 
