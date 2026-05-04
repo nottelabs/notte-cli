@@ -579,6 +579,9 @@ type ApiExecutionResponse_Action struct {
 
 // ApiSessionStartRequest defines model for ApiSessionStartRequest.
 type ApiSessionStartRequest struct {
+	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
+	AspectRatio *string `json:"aspect_ratio,omitempty"`
+
 	// BrowserType The browser type to use. Can be chromium, chrome or firefox.
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
 
@@ -1396,6 +1399,9 @@ type GetFunctionWithLinkResponse struct {
 
 // GlobalScrapeRequest defines model for GlobalScrapeRequest.
 type GlobalScrapeRequest struct {
+	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
+	AspectRatio *string `json:"aspect_ratio,omitempty"`
+
 	// BrowserType The browser type to use. Can be chromium, chrome or firefox.
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
 
