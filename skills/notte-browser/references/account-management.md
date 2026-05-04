@@ -174,23 +174,27 @@ notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://example.com" \
   --email "user@example.com" \
-  --password "mypassword"
+  --password "$MYSITE_PASSWORD"
 
 # With username (for sites that use username instead of email)
 notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://example.com" \
   --username "myusername" \
-  --password "mypassword"
+  --password "$MYSITE_PASSWORD"
 
 # With MFA secret for TOTP
 notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://example.com" \
   --email "user@example.com" \
-  --password "mypassword" \
-  --mfa-secret "JBSWY3DPEHPK3PXP"
+  --password "$MYSITE_PASSWORD" \
+  --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 ```
+
+> **Security note:** Real passwords and MFA seeds should not be typed
+> directly into argv — they leak into `ps`, shell history, and process snapshots.
+> Prefer environment variables, as shown above, or load from a file you own.
 
 ### Listing Credentials
 
@@ -224,8 +228,8 @@ notte vaults credentials add \
   --vault-id <vault-id> \
   --url "https://secure.example.com" \
   --email "user@example.com" \
-  --password "password123" \
-  --mfa-secret "JBSWY3DPEHPK3PXP"
+  --password "$SECURE_EXAMPLE_PASSWORD" \
+  --mfa-secret "EXAMPLEMFASECRET"   # placeholder — replace with your real base32 TOTP seed
 
 # During automation, TOTP codes are generated automatically
 # when the site requests 2FA
