@@ -1,8 +1,22 @@
-# Notte CLI
+# Notte CLI - Browser automation in your terminal
 
-Browser automation in your terminal.
+<div align="center">
+  <p>
+    Control browser sessions, AI agents, and web scraping through intuitive <strong>resource-based commands</strong> <br/>
+    → Read more at: <a href="https://notte.cc?ref=github" target="_blank" rel="noopener noreferrer">Landing</a> • <a href="https://console.notte.cc/?ref=github" target="_blank" rel="noopener noreferrer">Console</a> • <a href="https://docs.notte.cc?ref=github" target="_blank" rel="noopener noreferrer">Docs</a> • <a href="https://x.com/nottecore?ref=github" target="_blank" rel="noopener noreferrer">X</a> • <a href="https://www.linkedin.com/company/nottelabsinc/?ref=github" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+  </p>
+</div>
 
-Control browser sessions, AI agents, and web scraping through intuitive resource-based commands.
+[![GitHub stars](https://img.shields.io/github/stars/nottelabs/notte-cli?style=social)](https://github.com/nottelabs/notte-cli/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Go 1.25+](https://img.shields.io/badge/go-1.25+-blue.svg)](https://go.dev/)
+[![Homebrew](https://img.shields.io/badge/homebrew-nottelabs%2Fnotte--cli-blue.svg)](https://github.com/nottelabs/notte-cli)
+
+---
+
+# What is Notte CLI?
+
+The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) to your terminal — letting you drive browser sessions, AI agents, and web scraping pipelines from the command line. Pair it with shell scripts, CI/CD pipelines, or AI coding assistants for repeatable, scriptable web automation.
 
 ## Features
 
@@ -444,8 +458,13 @@ This installs [lefthook](https://github.com/evilmartians/lefthook) pre-commit an
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
 
 ## Links
 
-- [Notte API Documentation](https://notte.cc/docs)
+- [Landing](https://notte.cc?ref=github)
+- [Console](https://console.notte.cc/?ref=github)
+- [Documentation](https://docs.notte.cc?ref=github)
+- [Main repository (nottelabs/notte)](https://github.com/nottelabs/notte)
+
+Copyright © 2025 Notte Labs, Inc.
