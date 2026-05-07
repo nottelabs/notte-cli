@@ -37,6 +37,7 @@ for browser automation, AI agents, and web scraping.
 Get started:
   notte auth login        # Authenticate with your API key
   notte sessions start    # Start a browser session
+  notte search <query>    # Search the web
   notte scrape <url>      # Quick scrape a webpage`,
 	SilenceUsage:  true,
 	SilenceErrors: true,

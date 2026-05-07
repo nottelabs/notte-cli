@@ -84,6 +84,18 @@ notte auth logout                    # Remove API key from keychain
 notte auth status                    # Show authentication status
 ```
 
+### Web Search
+
+```bash
+notte search <query>                                    # Search the web for a query
+notte search <query> --depth fast|standard|deep         # Tune search depth (default: standard)
+notte search <query> --output-type sourcedAnswer        # Get an LLM answer with sources
+```
+
+The query may be quoted (`notte search "what is anthropic"`) or passed as separate
+words (`notte search what is anthropic`). Use `--output json` to get the raw API
+response for scripting.
+
 ### Browser Sessions
 
 ```bash
