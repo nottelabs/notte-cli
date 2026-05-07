@@ -1,0 +1,4 @@
+[submodule "notte-skills"]
+	path = notte-skills
+	url = https://github.com/nottelabs/notte-skills.git
+	branch = main

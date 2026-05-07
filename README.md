@@ -393,7 +393,7 @@ Core workflow:
 
 ### Skills Documentation
 
-For comprehensive documentation including templates and reference guides, see the [skills/notte-browser](skills/notte-browser/SKILL.md) folder.
+For comprehensive documentation including templates and reference guides, see the [notte-skills/plugins/notte-cli/skills/notte-browser](notte-skills/plugins/notte-cli/skills/notte-browser/SKILL.md) folder (vendored as a submodule from [nottelabs/notte-skills](https://github.com/nottelabs/notte-skills)).
 
 ## Security
 
