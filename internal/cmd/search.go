@@ -16,6 +16,14 @@ import (
 var (
 	searchDepth      string
 	searchOutputType string
+
+	validSearchDepths      = map[string]bool{"standard": true, "fast": true, "deep": true}
+	validSearchOutputTypes = map[string]bool{"searchResults": true, "sourcedAnswer": true, "structured": true}
+
+	// termenvOutput is shared so we don't allocate a fresh termenv.Output for
+	// every colorize call (the color profile / TTY detection doesn't change
+	// during a single command run).
+	termenvOutput = termenv.NewOutput(os.Stdout)
 )
 
 var searchCmd = &cobra.Command{
@@ -38,13 +46,19 @@ Examples:
 func init() {
 	rootCmd.AddCommand(searchCmd)
 	searchCmd.Flags().StringVar(&searchDepth, "depth", "", "Search depth: standard, fast, or deep")
-	searchCmd.Flags().StringVar(&searchOutputType, "output-type", "", "Output type: searchResults or sourcedAnswer")
+	searchCmd.Flags().StringVar(&searchOutputType, "output-type", "", "Output type: searchResults, sourcedAnswer, or structured")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
 	query := strings.TrimSpace(strings.Join(args, " "))
 	if query == "" {
 		return fmt.Errorf("search query cannot be empty")
+	}
+	if searchDepth != "" && !validSearchDepths[searchDepth] {
+		return fmt.Errorf("invalid --depth %q: must be standard, fast, or deep", searchDepth)
+	}
+	if searchOutputType != "" && !validSearchOutputTypes[searchOutputType] {
+		return fmt.Errorf("invalid --output-type %q: must be searchResults, sourcedAnswer, or structured", searchOutputType)
 	}
 
 	client, err := GetClient()
@@ -207,5 +221,5 @@ func colorizeText(s string, color termenv.ANSIColor) string {
 	if noColor {
 		return s
 	}
-	return termenv.NewOutput(os.Stdout).String(s).Foreground(color).String()
+	return termenvOutput.String(s).Foreground(color).String()
 }

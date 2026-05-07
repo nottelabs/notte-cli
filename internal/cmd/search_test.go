@@ -221,6 +221,80 @@ func TestRunSearch_EmptyQueryAfterTrim(t *testing.T) {
 	}
 }
 
+func TestRunSearch_RejectsInvalidDepth(t *testing.T) {
+	setupSearchTest(t)
+	withFormat(t, "text")
+	searchDepth = "turbo"
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runSearch(cmd, []string{"anthropic"})
+	if err == nil {
+		t.Fatal("expected error for invalid depth, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid --depth") {
+		t.Errorf("expected 'invalid --depth' in error, got: %v", err)
+	}
+}
+
+func TestRunSearch_RejectsInvalidOutputType(t *testing.T) {
+	setupSearchTest(t)
+	withFormat(t, "text")
+	searchOutputType = "bogus"
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runSearch(cmd, []string{"anthropic"})
+	if err == nil {
+		t.Fatal("expected error for invalid output type, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid --output-type") {
+		t.Errorf("expected 'invalid --output-type' in error, got: %v", err)
+	}
+}
+
+func TestRunSearch_AcceptsAllValidDepths(t *testing.T) {
+	for _, depth := range []string{"standard", "fast", "deep"} {
+		t.Run(depth, func(t *testing.T) {
+			server := setupSearchTest(t)
+			server.AddResponse("/search", 200, searchResultsBody)
+			withFormat(t, "json")
+			searchDepth = depth
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+
+			_, _ = testutil.CaptureOutput(func() {
+				if err := runSearch(cmd, []string{"anthropic"}); err != nil {
+					t.Errorf("depth=%q should be accepted, got error: %v", depth, err)
+				}
+			})
+		})
+	}
+}
+
+func TestRunSearch_AcceptsAllValidOutputTypes(t *testing.T) {
+	for _, ot := range []string{"searchResults", "sourcedAnswer", "structured"} {
+		t.Run(ot, func(t *testing.T) {
+			server := setupSearchTest(t)
+			server.AddResponse("/search", 200, searchResultsBody)
+			withFormat(t, "json")
+			searchOutputType = ot
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+
+			_, _ = testutil.CaptureOutput(func() {
+				if err := runSearch(cmd, []string{"anthropic"}); err != nil {
+					t.Errorf("output-type=%q should be accepted, got error: %v", ot, err)
+				}
+			})
+		})
+	}
+}
+
 func TestSearchCmd_RequiresArgs(t *testing.T) {
 	if err := searchCmd.Args(searchCmd, nil); err == nil {
 		t.Error("expected error when called with no args")
