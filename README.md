@@ -1,4 +1,4 @@
-# Browser automation in your terminal
+# Notte CLI - Browser automation in your terminal
 
 <div align="center">
   <p>
