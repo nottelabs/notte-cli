@@ -5,7 +5,6 @@ import (
 )
 
 func TestSkillCommandStructure(t *testing.T) {
-	// Verify skill command exists and has correct properties
 	if skillCmd == nil {
 		t.Fatal("skillCmd is nil")
 	}
@@ -20,7 +19,6 @@ func TestSkillCommandStructure(t *testing.T) {
 }
 
 func TestSkillAddCommandStructure(t *testing.T) {
-	// Verify skill add command exists and has correct properties
 	if skillAddCmd == nil {
 		t.Fatal("skillAddCmd is nil")
 	}
@@ -38,8 +36,20 @@ func TestSkillAddCommandStructure(t *testing.T) {
 	}
 }
 
+func TestSkillAddUpgradeFlag(t *testing.T) {
+	upgrade := skillAddCmd.Flags().Lookup("upgrade")
+	if upgrade == nil {
+		t.Fatal("skillAddCmd should have an --upgrade flag")
+	}
+	if upgrade.Shorthand != "f" {
+		t.Errorf("expected --upgrade shorthand to be 'f', got %q", upgrade.Shorthand)
+	}
+	if upgrade.Value.Type() != "bool" {
+		t.Errorf("expected --upgrade to be a bool flag, got %s", upgrade.Value.Type())
+	}
+}
+
 func TestSkillRemoveCommandStructure(t *testing.T) {
-	// Verify skill remove command exists and has correct properties
 	if skillRemoveCmd == nil {
 		t.Fatal("skillRemoveCmd is nil")
 	}
@@ -56,7 +66,6 @@ func TestSkillRemoveCommandStructure(t *testing.T) {
 		t.Error("skillRemoveCmd.RunE should not be nil")
 	}
 
-	// Check that 'rm' is an alias
 	hasAlias := false
 	for _, alias := range skillRemoveCmd.Aliases {
 		if alias == "rm" {
@@ -70,7 +79,6 @@ func TestSkillRemoveCommandStructure(t *testing.T) {
 }
 
 func TestSkillSubcommands(t *testing.T) {
-	// Verify both add and remove are registered as subcommands of skill
 	subcommands := make(map[string]bool)
 	for _, cmd := range skillCmd.Commands() {
 		subcommands[cmd.Use] = true
@@ -82,5 +90,19 @@ func TestSkillSubcommands(t *testing.T) {
 
 	if !subcommands["remove"] {
 		t.Error("'remove' command should be a subcommand of 'skill'")
+	}
+}
+
+func TestSkillSourcePointsToSkillsRepo(t *testing.T) {
+	// Regression guard: the npx skills tool clones whatever repo this points
+	// at and searches it for SKILL.md files. The skill content lives in
+	// nottelabs/notte-skills; pointing at nottelabs/notte-cli (the CLI repo)
+	// would find only the empty submodule directory and report "No skills
+	// found".
+	if skillSource != "nottelabs/notte-skills" {
+		t.Errorf("skillSource should be 'nottelabs/notte-skills', got %q", skillSource)
+	}
+	if skillName != "notte-browser" {
+		t.Errorf("skillName should be 'notte-browser', got %q", skillName)
 	}
 }
