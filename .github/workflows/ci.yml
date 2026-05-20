@@ -72,7 +72,8 @@ jobs:
           workdir="$(mktemp -d)"
           cp notte "$workdir/notte"
           cd "$workdir"
-          ./notte skill add
+          # --yes skips the interactive agent picker (no TTY in CI).
+          ./notte --yes skill add
           if [ ! -f .agents/skills/notte-browser/SKILL.md ]; then
             echo "::error::notte skill add did not install notte-browser/SKILL.md"
             ls -laR .agents || true
@@ -85,8 +86,8 @@ jobs:
           workdir="$(mktemp -d)"
           cp notte "$workdir/notte"
           cd "$workdir"
-          ./notte skill add
-          ./notte skill add --upgrade
+          ./notte --yes skill add
+          ./notte --yes skill add --upgrade
           if [ ! -f .agents/skills/notte-browser/SKILL.md ]; then
             echo "::error::notte skill add --upgrade did not leave notte-browser/SKILL.md installed"
             exit 1

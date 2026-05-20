@@ -38,6 +38,10 @@ This command runs: npx skills add nottelabs/notte-skills
 With --upgrade (or -f), it runs: npx skills update notte-browser
 to refresh an already-installed skill to the latest version.
 
+npx skills prompts interactively to pick which AI assistants to install
+to. Pass --yes (-y) to skip that prompt and install to all detected
+assistants — required when running non-interactively (CI, scripts).
+
 The skill enables AI coding assistants (like Cursor, Claude Code, etc.)
 to control browser sessions through natural language commands.`,
 	RunE: runSkillAdd,
@@ -77,10 +81,21 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 
 func runSkillRemove(cmd *cobra.Command, args []string) error {
 	PrintInfo("Removing Notte skill via npx...")
-	return runNpx(cmd, "skill removal", []string{"skills", "remove", "--skill", skillName, "-y"})
+	return runNpx(cmd, "skill removal", []string{"skills", "remove", "--skill", skillName})
 }
 
+// runNpx executes `npx <args>` wired to the current stdio.
+//
+// `npx skills` prompts interactively (an agent picker for `add`, a scope
+// prompt for `update`/`remove`). With no terminal to answer them those
+// prompts silently abort and nothing is installed — which is how a previous
+// CI run "succeeded" while installing nothing. Forward the global --yes flag
+// as `-y` so non-interactive callers can opt into skipping the prompts.
 func runNpx(cmd *cobra.Command, action string, args []string) error {
+	if yesFlag {
+		args = append(args, "-y")
+	}
+
 	npxCmd := exec.CommandContext(cmd.Context(), "npx", args...)
 
 	npxCmd.Stdout = os.Stdout
