@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -109,6 +110,64 @@ func TestFunctionsCreateThenDelete(t *testing.T) {
 	t.Logf("Created function: %s (version: %s)", functionID, createResp.LatestVersion)
 
 	t.Log("Function create then delete test completed successfully")
+}
+
+func TestFunctionSecretsLifecycle(t *testing.T) {
+	secretName := "INTEGRATION_SECRET_" + strings.NewReplacer("-", "_", ":", "_", ".", "_").Replace(time.Now().UTC().Format(time.RFC3339Nano))
+	secretValue := "integration-secret-value"
+
+	result := runCLI(t, "function", "secrets", "set", secretName, secretValue)
+	requireSuccess(t, result)
+
+	var setResp struct {
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &setResp); err != nil {
+		t.Fatalf("Failed to parse secret set response: %v", err)
+	}
+	if setResp.ID == "" {
+		t.Fatal("No secret ID returned from set command")
+	}
+	if setResp.Name != secretName {
+		t.Errorf("Expected secret name %q, got %q", secretName, setResp.Name)
+	}
+	if setResp.Namespace != "function_env" {
+		t.Errorf("Expected namespace function_env, got %q", setResp.Namespace)
+	}
+	deleted := false
+	defer func() {
+		if !deleted {
+			result := runCLI(t, "function", "secrets", "delete", setResp.ID)
+			if result.ExitCode != 0 {
+				t.Logf("Warning: failed to cleanup function secret %s: %s", setResp.ID, result.Stderr)
+			}
+		}
+	}()
+
+	result = runCLI(t, "function", "secrets", "get", secretName)
+	requireSuccess(t, result)
+	var getResp struct {
+		Value string `json:"value"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &getResp); err != nil {
+		t.Fatalf("Failed to parse secret get response: %v", err)
+	}
+	if getResp.Value != secretValue {
+		t.Errorf("Expected secret value %q, got %q", secretValue, getResp.Value)
+	}
+
+	result = runCLI(t, "function", "secrets", "list")
+	requireSuccess(t, result)
+	if !containsString(result.Stdout, secretName) {
+		t.Errorf("Function secrets list did not contain %q", secretName)
+	}
+
+	result = runCLI(t, "function", "secrets", "delete", setResp.ID)
+	requireSuccess(t, result)
+	deleted = true
+	t.Log("Function secrets lifecycle test completed successfully")
 }
 
 func TestFunctionsLifecycle(t *testing.T) {

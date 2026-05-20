@@ -33,6 +33,7 @@ var (
 	functionCronExpression   string
 	functionRunVariables     []string // Variables as key=value pairs
 	functionRunVariablesJSON string   // Variables as JSON string
+	functionSecretValue      string
 )
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
@@ -95,9 +96,10 @@ func RequireFunctionID() error {
 }
 
 var functionsCmd = &cobra.Command{
-	Use:   "functions",
-	Short: "Manage functions",
-	Long:  "List, create, and operate on functions.",
+	Use:     "functions",
+	Aliases: []string{"function"},
+	Short:   "Manage functions",
+	Long:    "List, create, and operate on functions.",
 }
 
 var functionsListCmd = &cobra.Command{
@@ -198,6 +200,40 @@ var functionsUnscheduleCmd = &cobra.Command{
 	RunE:  runFunctionUnschedule,
 }
 
+var functionSecretsCmd = &cobra.Command{
+	Use:   "secrets",
+	Short: "Manage function environment secrets",
+}
+
+var functionSecretsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List function environment secrets",
+	Args:  cobra.NoArgs,
+	RunE:  runFunctionSecretsList,
+}
+
+var functionSecretsGetCmd = &cobra.Command{
+	Use:   "get <name>",
+	Short: "Get a function environment secret value",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runFunctionSecretsGet,
+}
+
+var functionSecretsSetCmd = &cobra.Command{
+	Use:   "set <name> [value]",
+	Short: "Set a function environment secret",
+	Args:  cobra.RangeArgs(1, 2),
+	RunE:  runFunctionSecretsSet,
+}
+
+var functionSecretsDeleteCmd = &cobra.Command{
+	Use:     "delete <secret-id>",
+	Aliases: []string{"rm"},
+	Short:   "Delete a function environment secret",
+	Args:    cobra.ExactArgs(1),
+	RunE:    runFunctionSecretsDelete,
+}
+
 func init() {
 	rootCmd.AddCommand(functionsCmd)
 	functionsCmd.AddCommand(functionsListCmd)
@@ -219,6 +255,11 @@ func init() {
 	functionsCmd.AddCommand(functionsRunMetadataUpdateCmd)
 	functionsCmd.AddCommand(functionsScheduleCmd)
 	functionsCmd.AddCommand(functionsUnscheduleCmd)
+	functionsCmd.AddCommand(functionSecretsCmd)
+	functionSecretsCmd.AddCommand(functionSecretsListCmd)
+	functionSecretsCmd.AddCommand(functionSecretsGetCmd)
+	functionSecretsCmd.AddCommand(functionSecretsSetCmd)
+	functionSecretsCmd.AddCommand(functionSecretsDeleteCmd)
 
 	// Create command flags
 	functionsCreateCmd.Flags().StringVar(&functionsCreateFile, "file", "", "Path to function file (required)")
@@ -272,6 +313,9 @@ func init() {
 
 	// Unschedule command flags
 	functionsUnscheduleCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
+
+	// Function secrets command flags
+	functionSecretsSetCmd.Flags().StringVar(&functionSecretValue, "value", "", "Secret value")
 }
 
 func runFunctionsList(cmd *cobra.Command, args []string) error {
@@ -827,5 +871,134 @@ func runFunctionUnschedule(cmd *cobra.Command, args []string) error {
 	return PrintResult(fmt.Sprintf("Function %s schedule removed.", functionID), map[string]any{
 		"id":     functionID,
 		"status": "unscheduled",
+	})
+}
+
+func functionSecretsNamespace() api.SecretNamespace {
+	return api.FunctionEnv
+}
+
+func runFunctionSecretsList(cmd *cobra.Command, args []string) error {
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	namespace := functionSecretsNamespace()
+	params := &api.ListSecretsParams{Namespace: &namespace}
+	resp, err := client.Client().ListSecretsWithResponse(ctx, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	var items []api.SecretMetadata
+	if resp.JSON200 != nil {
+		items = resp.JSON200.Items
+	}
+	if printed, err := PrintListOrEmpty(items, "No function environment secrets found."); err != nil {
+		return err
+	} else if printed {
+		return nil
+	}
+
+	return GetFormatter().Print(items)
+}
+
+func runFunctionSecretsGet(cmd *cobra.Command, args []string) error {
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.GetSecretParams{Namespace: functionSecretsNamespace()}
+	resp, err := client.Client().GetSecretWithResponse(ctx, args[0], params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
+func runFunctionSecretsSet(cmd *cobra.Command, args []string) error {
+	value := functionSecretValue
+	if len(args) == 2 {
+		value = args[1]
+	}
+	if value == "" && !cmd.Flags().Changed("value") {
+		return fmt.Errorf("secret value required: pass it as an argument or with --value")
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	body := api.StoreSecretJSONRequestBody{
+		Name:      args[0],
+		Namespace: functionSecretsNamespace(),
+		Value:     value,
+	}
+	params := &api.StoreSecretParams{}
+	resp, err := client.Client().StoreSecretWithResponse(ctx, params, body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON201)
+}
+
+func runFunctionSecretsDelete(cmd *cobra.Command, args []string) error {
+	secretID := args[0]
+
+	confirmed, err := ConfirmAction("function environment secret", secretID)
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		return PrintResult("Cancelled.", map[string]any{"cancelled": true})
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.DeleteSecretParams{}
+	resp, err := client.Client().DeleteSecretWithResponse(ctx, secretID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return PrintResult(fmt.Sprintf("Function environment secret %s deleted.", secretID), map[string]any{
+		"id":     secretID,
+		"status": "deleted",
 	})
 }

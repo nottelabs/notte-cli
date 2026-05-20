@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,11 +30,14 @@ func setupFunctionTest(t *testing.T) *testutil.MockServer {
 
 	origFunctionID := functionID
 	origRunID := functionRunID
+	origSecretValue := functionSecretValue
 	functionID = functionIDTest
 	functionRunID = functionRunIDTest
+	functionSecretValue = ""
 	t.Cleanup(func() {
 		functionID = origFunctionID
 		functionRunID = origRunID
+		functionSecretValue = origSecretValue
 	})
 
 	return server
@@ -53,6 +57,10 @@ func functionRunJSON() string {
 
 func updateFunctionRunJSON() string {
 	return `{"function_id":"` + functionIDTest + `","function_run_id":"` + functionRunIDTest + `","updated_at":"2020-01-01T00:00:00Z","status":"STOPPED"}`
+}
+
+func secretMetadataJSON() string {
+	return `{"id":"sec_123","name":"API_KEY","namespace":"function_env","key_hint":"API***","created_at":"2020-01-01T00:00:00Z"}`
 }
 
 func TestRunFunctionsList_Success(t *testing.T) {
@@ -110,6 +118,149 @@ func TestRunFunctionsList_Empty(t *testing.T) {
 
 	if !strings.Contains(stdout, "No functions found.") {
 		t.Errorf("expected empty message, got %q", stdout)
+	}
+}
+
+func TestRunFunctionSecretsList_Success(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/secrets", 200, `{"items":[`+secretMetadataJSON()+`]}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runFunctionSecretsList(cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"namespace":"function_env"`) {
+		t.Errorf("expected function_env secret in output, got %q", stdout)
+	}
+
+	requests := server.Requests("/secrets")
+	if len(requests) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(requests))
+	}
+	if requests[0].Method != "GET" {
+		t.Errorf("method = %q, want GET", requests[0].Method)
+	}
+	if !strings.Contains(requests[0].Query, "namespace=function_env") {
+		t.Errorf("query = %q, want namespace=function_env", requests[0].Query)
+	}
+}
+
+func TestRunFunctionSecretsGet_Success(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/secrets/API_KEY", 200, `{"value":"secret-value"}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runFunctionSecretsGet(cmd, []string{"API_KEY"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"value":"secret-value"`) {
+		t.Errorf("expected secret value in output, got %q", stdout)
+	}
+
+	requests := server.Requests("/secrets/API_KEY")
+	if len(requests) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(requests))
+	}
+	if requests[0].Method != "GET" {
+		t.Errorf("method = %q, want GET", requests[0].Method)
+	}
+	if !strings.Contains(requests[0].Query, "namespace=function_env") {
+		t.Errorf("query = %q, want namespace=function_env", requests[0].Query)
+	}
+}
+
+func TestRunFunctionSecretsSet_Success(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/secrets", 201, secretMetadataJSON())
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runFunctionSecretsSet(cmd, []string{"API_KEY", "secret-value"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"id":"sec_123"`) {
+		t.Errorf("expected secret metadata in output, got %q", stdout)
+	}
+
+	requests := server.Requests("/secrets")
+	if len(requests) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(requests))
+	}
+	if requests[0].Method != "POST" {
+		t.Errorf("method = %q, want POST", requests[0].Method)
+	}
+
+	var body map[string]string
+	if err := json.Unmarshal([]byte(requests[0].Body), &body); err != nil {
+		t.Fatalf("failed to parse request body: %v", err)
+	}
+	if body["namespace"] != "function_env" {
+		t.Errorf("namespace = %q, want function_env", body["namespace"])
+	}
+	if body["name"] != "API_KEY" || body["value"] != "secret-value" {
+		t.Errorf("unexpected request body: %#v", body)
+	}
+}
+
+func TestRunFunctionSecretsDelete_Success(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/secrets/sec_123", 204, ``)
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		err := runFunctionSecretsDelete(cmd, []string{"sec_123"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"status":"deleted"`) {
+		t.Errorf("expected deleted status in output, got %q", stdout)
+	}
+
+	requests := server.Requests("/secrets/sec_123")
+	if len(requests) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(requests))
+	}
+	if requests[0].Method != "DELETE" {
+		t.Errorf("method = %q, want DELETE", requests[0].Method)
 	}
 }
 
