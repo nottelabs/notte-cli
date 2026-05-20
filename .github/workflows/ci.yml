@@ -45,3 +45,50 @@ jobs:
         with:
           files: ./coverage.out
           fail_ci_if_error: false
+
+  skill-add:
+    # End-to-end check that `notte skill add` actually installs the skill from
+    # the nottelabs/notte-skills repo. Catches regressions where the npx
+    # source URL or skill name drifts and the tool reports "No skills found".
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Build CLI
+        run: go build -o notte ./cmd/notte
+
+      - name: notte skill add
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          cp notte "$workdir/notte"
+          cd "$workdir"
+          # --yes skips the interactive agent picker (no TTY in CI).
+          ./notte --yes skill add
+          if [ ! -f .agents/skills/notte-browser/SKILL.md ]; then
+            echo "::error::notte skill add did not install notte-browser/SKILL.md"
+            ls -laR .agents || true
+            exit 1
+          fi
+
+      - name: notte skill add --upgrade (re-runs against installed skill)
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          cp notte "$workdir/notte"
+          cd "$workdir"
+          ./notte --yes skill add
+          ./notte --yes skill add --upgrade
+          if [ ! -f .agents/skills/notte-browser/SKILL.md ]; then
+            echo "::error::notte skill add --upgrade did not leave notte-browser/SKILL.md installed"
+            exit 1
+          fi

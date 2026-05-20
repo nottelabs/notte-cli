@@ -373,7 +373,7 @@ The `--help` output is comprehensive and most agents can figure it out from ther
 Add the skill to your AI coding assistant for richer context:
 
 ```bash
-npx skills add nottelabs/notte-cli
+npx skills add nottelabs/notte-skills
 ```
 
 This works with Claude Code, Cursor, Windsurf, and other MCP-compatible assistants.
