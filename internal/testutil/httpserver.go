@@ -2,6 +2,8 @@
 package testutil
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -18,6 +20,7 @@ type MockResponse struct {
 type RecordedRequest struct {
 	Method  string
 	Path    string
+	Query   string
 	Headers http.Header
 	Body    string
 }
@@ -61,13 +64,22 @@ func NewMockServer() *MockServer {
 }
 
 func (ms *MockServer) recordRequest(r *http.Request) {
+	var body []byte
+	if r.Body != nil {
+		body, _ = io.ReadAll(r.Body)
+		_ = r.Body.Close()
+		r.Body = io.NopCloser(bytes.NewReader(body))
+	}
+
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	rec := RecordedRequest{
 		Method:  r.Method,
 		Path:    r.URL.Path,
+		Query:   r.URL.RawQuery,
 		Headers: r.Header.Clone(),
+		Body:    string(body),
 	}
 
 	ms.requests[r.URL.Path] = append(ms.requests[r.URL.Path], rec)
