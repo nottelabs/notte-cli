@@ -181,3 +181,89 @@ func TestConfirmReplaceAgentWithIO_Errors(t *testing.T) {
 		t.Fatal("expected read error")
 	}
 }
+
+// withNonInteractiveStdin temporarily overrides isInteractiveStdin to report false.
+func withNonInteractiveStdin(t *testing.T) {
+	t.Helper()
+	prev := isInteractiveStdin
+	isInteractiveStdin = func() bool { return false }
+	t.Cleanup(func() { isInteractiveStdin = prev })
+}
+
+func TestConfirmReplaceSession_NonTTYDefaultsToFalse(t *testing.T) {
+	withNonInteractiveStdin(t)
+
+	ok, err := confirmReplaceSession("sess_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ok {
+		t.Fatal("expected non-TTY confirm to default to false")
+	}
+}
+
+func TestConfirmReplaceSession_NonTTYSkipConfirmationStillReturnsTrue(t *testing.T) {
+	withNonInteractiveStdin(t)
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	ok, err := confirmReplaceSession("sess_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected --yes to still return true even on non-TTY stdin")
+	}
+}
+
+func TestConfirmReplaceAgent_NonTTYDefaultsToFalse(t *testing.T) {
+	withNonInteractiveStdin(t)
+
+	ok, err := confirmReplaceAgent("agent_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ok {
+		t.Fatal("expected non-TTY confirm to default to false")
+	}
+}
+
+func TestConfirmReplaceAgent_NonTTYSkipConfirmationStillReturnsTrue(t *testing.T) {
+	withNonInteractiveStdin(t)
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	ok, err := confirmReplaceAgent("agent_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected --yes to still return true even on non-TTY stdin")
+	}
+}
+
+func TestConfirmStop_NonTTYDefaultsToFalse(t *testing.T) {
+	withNonInteractiveStdin(t)
+
+	ok, err := ConfirmStop("session", "sess_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ok {
+		t.Fatal("expected non-TTY confirm to default to false")
+	}
+}
+
+func TestConfirmStop_NonTTYSkipConfirmationStillReturnsTrue(t *testing.T) {
+	withNonInteractiveStdin(t)
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	ok, err := ConfirmStop("session", "sess_123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected --yes to still return true even on non-TTY stdin")
+	}
+}

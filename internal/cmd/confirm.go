@@ -7,10 +7,18 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/term"
 )
 
 // skipConfirmation is set by --yes flag to skip prompts
 var skipConfirmation bool
+
+// isInteractiveStdin reports whether stdin is connected to a terminal.
+// Indirected through a variable so tests can override it.
+var isInteractiveStdin = func() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
 
 // ConfirmAction prompts the user to confirm a destructive action.
 // Returns true if confirmed, false otherwise.
@@ -38,10 +46,14 @@ func ConfirmActionWithIO(in io.Reader, out io.Writer, resource, id string) (bool
 }
 
 // confirmReplaceSession prompts the user to confirm stopping an existing session before starting a new one.
-// Defaults to "yes" if user just presses Enter.
+// Defaults to "yes" if the user just presses Enter on an interactive terminal.
+// Returns false (do nothing destructive) when stdin is not a terminal, unless --yes was passed.
 func confirmReplaceSession(id string) (bool, error) {
 	if skipConfirmation {
 		return true, nil
+	}
+	if !isInteractiveStdin() {
+		return false, nil
 	}
 	return confirmReplaceSessionWithIO(os.Stdin, os.Stderr, id)
 }
@@ -63,10 +75,14 @@ func confirmReplaceSessionWithIO(in io.Reader, out io.Writer, id string) (bool, 
 }
 
 // confirmReplaceAgent prompts the user to confirm stopping an existing agent before starting a new one.
-// Defaults to "yes" if user just presses Enter.
+// Defaults to "yes" if the user just presses Enter on an interactive terminal.
+// Returns false (do nothing destructive) when stdin is not a terminal, unless --yes was passed.
 func confirmReplaceAgent(id string) (bool, error) {
 	if skipConfirmation {
 		return true, nil
+	}
+	if !isInteractiveStdin() {
+		return false, nil
 	}
 	return confirmReplaceAgentWithIO(os.Stdin, os.Stderr, id)
 }
@@ -93,11 +109,14 @@ func SetSkipConfirmation(skip bool) {
 }
 
 // ConfirmStop prompts the user to confirm stopping a resource.
-// Defaults to "yes" if user just presses Enter.
-// Returns true if confirmed, false otherwise.
+// Defaults to "yes" if the user just presses Enter on an interactive terminal.
+// Returns false (do nothing destructive) when stdin is not a terminal, unless --yes was passed.
 func ConfirmStop(resource, id string) (bool, error) {
 	if skipConfirmation {
 		return true, nil
+	}
+	if !isInteractiveStdin() {
+		return false, nil
 	}
 	return ConfirmStopWithIO(os.Stdin, os.Stderr, resource, id)
 }

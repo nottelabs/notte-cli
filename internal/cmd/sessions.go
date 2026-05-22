@@ -588,8 +588,12 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Save session ID as current session
-	if resp.JSON200 != nil {
+	// Save session ID as current session, but only when running interactively.
+	// In non-TTY contexts (scripts, CI, parallel workers) writing to the shared
+	// ~/.notte/cli/current_session file is the root of a race where sibling
+	// processes can read each other's IDs and stop them. Scripted callers should
+	// thread the session ID explicitly via --session-id or NOTTE_SESSION_ID.
+	if resp.JSON200 != nil && isInteractiveStdin() {
 		if err := setCurrentSession(resp.JSON200.SessionId); err != nil {
 			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
 		}

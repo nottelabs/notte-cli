@@ -546,6 +546,8 @@ func TestRequireAgentID_FromFile(t *testing.T) {
 }
 
 func TestAgentsStart_SetsCurrentAgent(t *testing.T) {
+	withInteractiveStdinForTest(t)
+
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 

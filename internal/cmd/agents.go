@@ -266,8 +266,10 @@ func runAgentsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Save agent ID as current agent
-	if resp.JSON200 != nil {
+	// Save agent ID as current agent, but only when running interactively.
+	// In non-TTY contexts (scripts, CI, parallel workers) writing to the shared
+	// ~/.notte/cli/current_agent file races with sibling processes.
+	if resp.JSON200 != nil && isInteractiveStdin() {
 		if err := setCurrentAgent(resp.JSON200.AgentId); err != nil {
 			PrintInfo(fmt.Sprintf("Warning: could not save current agent: %v", err))
 		}

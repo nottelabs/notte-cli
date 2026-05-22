@@ -819,6 +819,132 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 	}
 }
 
+// withNonInteractiveStdinForTest forces isInteractiveStdin to report non-TTY for the test duration.
+func withNonInteractiveStdinForTest(t *testing.T) {
+	t.Helper()
+	prev := isInteractiveStdin
+	isInteractiveStdin = func() bool { return false }
+	t.Cleanup(func() { isInteractiveStdin = prev })
+}
+
+// withInteractiveStdinForTest forces isInteractiveStdin to report TTY for the test duration.
+// Use when verifying behaviors that are gated on interactive mode (e.g. writing to
+// the global current_session/current_agent file).
+func withInteractiveStdinForTest(t *testing.T) {
+	t.Helper()
+	prev := isInteractiveStdin
+	isInteractiveStdin = func() bool { return true }
+	t.Cleanup(func() { isInteractiveStdin = prev })
+}
+
+// TestRunSessionsStart_NonTTYDoesNotStopExistingSession verifies the core bug fix:
+// when stdin is not a terminal, runSessionsStart must not stop the session
+// referenced by ~/.notte/cli/current_session, since that ID may belong to a
+// concurrent worker process. Without the fix, the EOF stdin causes the
+// confirmation prompt to default to "yes" and issues a DELETE on a sibling
+// process's live session.
+func TestRunSessionsStart_NonTTYDoesNotStopExistingSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
+	// If the bug regresses, the CLI will call this endpoint with sess_existing.
+	server.AddResponse("/sessions/sess_existing/stop", 200, `{"session_id":"sess_existing","status":"CLOSED","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":0}`)
+
+	tmpDir := setupSessionFileTest(t)
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("sess_existing"), 0o600); err != nil {
+		t.Fatalf("failed to seed current_session: %v", err)
+	}
+
+	withNonInteractiveStdinForTest(t)
+
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	var runErr error
+	_, _ = testutil.CaptureOutput(func() {
+		runErr = runSessionsStart(cmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("unexpected error: %v", runErr)
+	}
+
+	if reqs := server.Requests("/sessions/sess_existing/stop"); len(reqs) > 0 {
+		t.Fatalf("non-TTY runSessionsStart must not stop the existing session, but called %d times", len(reqs))
+	}
+
+	// Current-session file should NOT have been overwritten with the new ID,
+	// otherwise a concurrent sibling process could later read it and target sess_new.
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("failed to read current_session file: %v", err)
+	}
+	if got := strings.TrimSpace(string(data)); got != "sess_existing" {
+		t.Fatalf("non-TTY runSessionsStart must not overwrite current_session; got %q, want %q", got, "sess_existing")
+	}
+}
+
+// TestRunSessionsStart_NonTTYNewSessionDoesNotWriteFile verifies that on a clean
+// machine (no current_session) a non-TTY runSessionsStart does not write the
+// global state file - so a sibling process in a separate worker doesn't later
+// pick up the ID and stop it.
+func TestRunSessionsStart_NonTTYNewSessionDoesNotWriteFile(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
+
+	tmpDir := setupSessionFileTest(t)
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+
+	withNonInteractiveStdinForTest(t)
+
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	var runErr error
+	_, _ = testutil.CaptureOutput(func() {
+		runErr = runSessionsStart(cmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("unexpected error: %v", runErr)
+	}
+
+	if _, err := os.Stat(sessionFile); !os.IsNotExist(err) {
+		t.Fatalf("non-TTY runSessionsStart must not write current_session; stat err=%v", err)
+	}
+}
+
 // Tests for session ID resolution (file-based tracking)
 
 func setupSessionFileTest(t *testing.T) string {
@@ -1032,6 +1158,8 @@ func TestRequireSessionID_FromFile(t *testing.T) {
 }
 
 func TestSessionsStart_SetsCurrentSession(t *testing.T) {
+	withInteractiveStdinForTest(t)
+
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
@@ -1238,6 +1366,8 @@ func TestClearCurrentSessionExpiry_NoFile(t *testing.T) {
 }
 
 func TestSessionsStart_SavesExpiry(t *testing.T) {
+	withInteractiveStdinForTest(t)
+
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
@@ -1289,6 +1419,8 @@ func TestSessionsStart_SavesExpiry(t *testing.T) {
 }
 
 func TestSessionsStart_AutoClearsExpiredSession(t *testing.T) {
+	withInteractiveStdinForTest(t)
+
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
@@ -1354,6 +1486,8 @@ func TestSessionsStart_AutoClearsExpiredSession(t *testing.T) {
 }
 
 func TestSessionsStart_DoesNotAutoClearNonExpiredSession(t *testing.T) {
+	withInteractiveStdinForTest(t)
+
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
