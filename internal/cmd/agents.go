@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -15,7 +13,8 @@ import (
 
 var agentID string
 
-// GetCurrentAgentID returns the agent ID from flag, env var, or file (in priority order)
+// GetCurrentAgentID returns the agent ID from flag, env var, or file (in priority order).
+// The file is per-API-key (see state_scope.go) with a legacy unscoped fallback.
 func GetCurrentAgentID() string {
 	if agentID != "" {
 		return agentID
@@ -23,55 +22,31 @@ func GetCurrentAgentID() string {
 	if envID := os.Getenv(config.EnvAgentID); envID != "" {
 		return envID
 	}
-	configDir, err := config.Dir()
+	id, err := readStateFile(config.CurrentAgentFile)
 	if err != nil {
 		return ""
 	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentAgentFile))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
+	return id
 }
 
 func setCurrentAgent(id string) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentAgentFile), []byte(id), 0o600)
+	return writeStateFile(config.CurrentAgentFile, id)
 }
 
 func clearCurrentAgent() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentAgentFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+	return clearStateFile(config.CurrentAgentFile)
 }
 
+// clearCurrentAgentIfMatches removes the per-API-key current_agent file (and any
+// legacy unscoped file) only when its contents match expectedID. This avoids
+// clobbering a more recent value written by a later command.
 func clearCurrentAgentIfMatches(expectedID string) error {
-	configDir, err := config.Dir()
+	id, err := readStateFile(config.CurrentAgentFile)
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(configDir, config.CurrentAgentFile)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	if strings.TrimSpace(string(data)) == expectedID {
-		return os.Remove(path)
+	if id != "" && id == expectedID {
+		return clearStateFile(config.CurrentAgentFile)
 	}
 	return nil
 }
