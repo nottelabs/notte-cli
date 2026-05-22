@@ -44,7 +44,8 @@ var (
 	sessionReplayOutput       string
 )
 
-// GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
+// GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order).
+// The file is per-API-key (see state_scope.go) with a legacy unscoped fallback.
 func GetCurrentSessionID() string {
 	// 1. Check --session-id flag (already in sessionID variable if set)
 	if sessionID != "" {
@@ -56,118 +57,69 @@ func GetCurrentSessionID() string {
 		return envID
 	}
 
-	// 3. Check current_session file
-	configDir, err := config.Dir()
+	// 3. Check current_session file (per-API-key, with legacy fallback)
+	id, err := readStateFile(config.CurrentSessionFile)
 	if err != nil {
 		return ""
 	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
+	return id
 }
 
-// setCurrentSession saves the session ID to the current_session file
+// setCurrentSession saves the session ID to the per-API-key current_session file.
 func setCurrentSession(id string) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	// Ensure directory exists
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionFile), []byte(id), 0o600)
+	return writeStateFile(config.CurrentSessionFile, id)
 }
 
-// clearCurrentSession removes the current_session file
+// clearCurrentSession removes the per-API-key current_session file and any
+// legacy unscoped file left over from a prior CLI version.
 func clearCurrentSession() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentSessionFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+	return clearStateFile(config.CurrentSessionFile)
 }
 
-// setCurrentViewerURL saves the viewer URL to the current_viewer_url file
+// setCurrentViewerURL saves the viewer URL to the per-API-key current_viewer_url file.
 func setCurrentViewerURL(url string) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentViewerURLFile), []byte(url), 0o600)
+	return writeStateFile(config.CurrentViewerURLFile, url)
 }
 
-// getCurrentViewerURL reads the viewer URL from the current_viewer_url file
+// getCurrentViewerURL reads the viewer URL from the per-API-key current_viewer_url
+// file, with a legacy unscoped fallback.
 func getCurrentViewerURL() string {
-	configDir, err := config.Dir()
+	url, err := readStateFile(config.CurrentViewerURLFile)
 	if err != nil {
 		return ""
 	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentViewerURLFile))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
+	return url
 }
 
-// clearCurrentViewerURL removes the current_viewer_url file
+// clearCurrentViewerURL removes the per-API-key current_viewer_url file and any
+// legacy unscoped file.
 func clearCurrentViewerURL() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentViewerURLFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+	return clearStateFile(config.CurrentViewerURLFile)
 }
 
-// setCurrentSessionExpiry saves the session expiry timestamp to the current_session_expiry file
+// setCurrentSessionExpiry saves the session expiry timestamp to the per-API-key
+// current_session_expiry file.
 func setCurrentSessionExpiry(t time.Time) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionExpiryFile), []byte(t.Format(time.RFC3339)), 0o600)
+	return writeStateFile(config.CurrentSessionExpiryFile, t.Format(time.RFC3339))
 }
 
-// getCurrentSessionExpiry reads the session expiry timestamp from the current_session_expiry file
+// getCurrentSessionExpiry reads the session expiry timestamp from the per-API-key
+// current_session_expiry file, with a legacy unscoped fallback.
 func getCurrentSessionExpiry() (time.Time, error) {
-	configDir, err := config.Dir()
+	raw, err := readStateFile(config.CurrentSessionExpiryFile)
 	if err != nil {
 		return time.Time{}, err
 	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionExpiryFile))
-	if err != nil {
-		return time.Time{}, err
+	if raw == "" {
+		return time.Time{}, os.ErrNotExist
 	}
-	return time.Parse(time.RFC3339, strings.TrimSpace(string(data)))
+	return time.Parse(time.RFC3339, raw)
 }
 
-// clearCurrentSessionExpiry removes the current_session_expiry file
+// clearCurrentSessionExpiry removes the per-API-key current_session_expiry file
+// and any legacy unscoped file.
 func clearCurrentSessionExpiry() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentSessionExpiryFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+	return clearStateFile(config.CurrentSessionExpiryFile)
 }
 
 // RequireSessionID ensures a session ID is available from flag, env, or file
