@@ -5,12 +5,29 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
+	"github.com/nottelabs/notte-cli/internal/update"
 )
 
 const DefaultBaseURL = "https://api.notte.cc"
+
+// MinCLIVersionHeader is the response header the API uses to advertise the
+// minimum CLI version required for full compatibility.
+const MinCLIVersionHeader = "x-notte-min-cli-version"
+
+// detectedMinVersion stores the minimum CLI version returned by the API.
+// Set once by checkMinVersion; read by root.go to trigger the upgrade prompt.
+var detectedMinVersion string
+var detectOnce sync.Once
+
+// DetectedMinVersion returns the API-required minimum CLI version, or "" if
+// the header was not seen or the CLI is already up to date.
+func DetectedMinVersion() string {
+	return detectedMinVersion
+}
 
 // NotteClient wraps the generated client with auth and resilience
 type NotteClient struct {
@@ -142,7 +159,27 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		t.circuitBreaker.RecordSuccess()
 	}
 
+	// Check if the API requires a newer CLI version
+	t.checkMinVersion(resp)
+
 	return resp, nil
+}
+
+// checkMinVersion inspects the x-notte-min-cli-version response header and
+// stores the required version so the root command can prompt for upgrade.
+func (t *resilientTransport) checkMinVersion(resp *http.Response) {
+	minVersion := resp.Header.Get(MinCLIVersionHeader)
+	if minVersion == "" || t.version == "" || t.version == "dev" {
+		return
+	}
+
+	detectOnce.Do(func() {
+		outdated, err := update.IsNewer(t.version, minVersion)
+		if err != nil || !outdated {
+			return
+		}
+		detectedMinVersion = minVersion
+	})
 }
 
 func (t *resilientTransport) doWithRetry(req *http.Request) (*http.Response, error) {

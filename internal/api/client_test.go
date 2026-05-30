@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -386,6 +387,69 @@ func TestNotteClient_APIKey(t *testing.T) {
 
 	if got := client.APIKey(); got != "test-api-key-123" {
 		t.Errorf("APIKey() = %q, want %q", got, "test-api-key-123")
+	}
+}
+
+func resetDetectOnce() {
+	detectOnce = sync.Once{}
+	detectedMinVersion = ""
+}
+
+func TestCheckMinVersion_StoresWhenOutdated(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
+
+	rt := &resilientTransport{version: "0.0.10"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	if got := DetectedMinVersion(); got != "0.0.12" {
+		t.Errorf("DetectedMinVersion() = %q, want %q", got, "0.0.12")
+	}
+}
+
+func TestCheckMinVersion_EmptyWhenCurrent(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
+
+	rt := &resilientTransport{version: "0.0.12"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
+	}
+}
+
+func TestCheckMinVersion_EmptyWhenNoHeader(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
+
+	rt := &resilientTransport{version: "0.0.10"}
+	resp := &http.Response{Header: http.Header{}}
+	rt.checkMinVersion(resp)
+
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
+	}
+}
+
+func TestCheckMinVersion_EmptyForDevVersion(t *testing.T) {
+	resetDetectOnce()
+	t.Cleanup(resetDetectOnce)
+
+	rt := &resilientTransport{version: "dev"}
+	resp := &http.Response{
+		Header: http.Header{"X-Notte-Min-Cli-Version": []string{"0.0.12"}},
+	}
+	rt.checkMinVersion(resp)
+
+	if got := DetectedMinVersion(); got != "" {
+		t.Errorf("DetectedMinVersion() = %q, want empty", got)
 	}
 }
 
