@@ -131,6 +131,24 @@ const (
 	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
+// Defines values for ProfileCookiesImportRequestMode.
+const (
+	ProfileCookiesImportRequestModeAppend  ProfileCookiesImportRequestMode = "append"
+	ProfileCookiesImportRequestModeReplace ProfileCookiesImportRequestMode = "replace"
+)
+
+// Defines values for ProfileCookiesImportRequestSourceFormat.
+const (
+	ProfileCookiesImportRequestSourceFormatChrome     ProfileCookiesImportRequestSourceFormat = "chrome"
+	ProfileCookiesImportRequestSourceFormatPlaywright ProfileCookiesImportRequestSourceFormat = "playwright"
+)
+
+// Defines values for ProfileCookiesImportResponseMode.
+const (
+	ProfileCookiesImportResponseModeAppend  ProfileCookiesImportResponseMode = "append"
+	ProfileCookiesImportResponseModeReplace ProfileCookiesImportResponseMode = "replace"
+)
+
 // Defines values for ProxyGeolocationCountry.
 const (
 	Ad ProxyGeolocationCountry = "ad"
@@ -345,11 +363,11 @@ const (
 
 // Defines values for SessionResponseBrowserType.
 const (
-	Chrome        SessionResponseBrowserType = "chrome"
-	ChromeNightly SessionResponseBrowserType = "chrome-nightly"
-	ChromeTurbo   SessionResponseBrowserType = "chrome-turbo"
-	Chromium      SessionResponseBrowserType = "chromium"
-	Firefox       SessionResponseBrowserType = "firefox"
+	SessionResponseBrowserTypeChrome        SessionResponseBrowserType = "chrome"
+	SessionResponseBrowserTypeChromeNightly SessionResponseBrowserType = "chrome-nightly"
+	SessionResponseBrowserTypeChromeTurbo   SessionResponseBrowserType = "chrome-turbo"
+	SessionResponseBrowserTypeChromium      SessionResponseBrowserType = "chromium"
+	SessionResponseBrowserTypeFirefox       SessionResponseBrowserType = "firefox"
 )
 
 // Defines values for SessionResponseStatus.
@@ -1731,6 +1749,7 @@ type NodeSelectors struct {
 
 // NotteProxy defines model for NotteProxy.
 type NotteProxy struct {
+	City    *string                  `json:"city,omitempty"`
 	Country *ProxyGeolocationCountry `json:"country,omitempty"`
 	Id      *string                  `json:"id,omitempty"`
 	Type    *string                  `json:"type,omitempty"`
@@ -1890,6 +1909,30 @@ type PressKeyAction struct {
 	Key         string  `json:"key"`
 	Type        *string `json:"type,omitempty"`
 }
+
+// ProfileCookiesImportRequest defines model for ProfileCookiesImportRequest.
+type ProfileCookiesImportRequest struct {
+	Cookies      []Cookie                                 `json:"cookies"`
+	Mode         *ProfileCookiesImportRequestMode         `json:"mode,omitempty"`
+	SourceFormat *ProfileCookiesImportRequestSourceFormat `json:"source_format,omitempty"`
+}
+
+// ProfileCookiesImportRequestMode defines model for ProfileCookiesImportRequest.Mode.
+type ProfileCookiesImportRequestMode string
+
+// ProfileCookiesImportRequestSourceFormat defines model for ProfileCookiesImportRequest.SourceFormat.
+type ProfileCookiesImportRequestSourceFormat string
+
+// ProfileCookiesImportResponse defines model for ProfileCookiesImportResponse.
+type ProfileCookiesImportResponse struct {
+	CookiesCount int                              `json:"cookies_count"`
+	Message      string                           `json:"message"`
+	Mode         ProfileCookiesImportResponseMode `json:"mode"`
+	Success      bool                             `json:"success"`
+}
+
+// ProfileCookiesImportResponseMode defines model for ProfileCookiesImportResponse.Mode.
+type ProfileCookiesImportResponseMode string
 
 // ProfileCreateRequest defines model for ProfileCreateRequest.
 type ProfileCreateRequest struct {
@@ -2845,6 +2888,18 @@ type ProfileGetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// ProfileCookiesGetParams defines parameters for ProfileCookiesGet.
+type ProfileCookiesGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ProfileCookiesSetParams defines parameters for ProfileCookiesSet.
+type ProfileCookiesSetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // SearchWebParams defines parameters for SearchWeb.
 type SearchWebParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -3147,6 +3202,9 @@ type PersonaCreateJSONRequestBody = PersonaCreateRequest
 
 // ProfileCreateJSONRequestBody defines body for ProfileCreate for application/json ContentType.
 type ProfileCreateJSONRequestBody = ProfileCreateRequest
+
+// ProfileCookiesSetJSONRequestBody defines body for ProfileCookiesSet for application/json ContentType.
+type ProfileCookiesSetJSONRequestBody = ProfileCookiesImportRequest
 
 // SearchWebJSONRequestBody defines body for SearchWeb for application/json ContentType.
 type SearchWebJSONRequestBody = SearchRequest
@@ -8399,6 +8457,14 @@ type ClientInterface interface {
 	// ProfileGet request
 	ProfileGet(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ProfileCookiesGet request
+	ProfileCookiesGet(ctx context.Context, profileId string, params *ProfileCookiesGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProfileCookiesSetWithBody request with any body
+	ProfileCookiesSetWithBody(ctx context.Context, profileId string, params *ProfileCookiesSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ProfileCookiesSet(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SearchWebWithBody request with any body
 	SearchWebWithBody(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8959,6 +9025,42 @@ func (c *Client) ProfileDelete(ctx context.Context, profileId string, params *Pr
 
 func (c *Client) ProfileGet(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProfileGetRequest(c.Server, profileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProfileCookiesGet(ctx context.Context, profileId string, params *ProfileCookiesGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProfileCookiesGetRequest(c.Server, profileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProfileCookiesSetWithBody(ctx context.Context, profileId string, params *ProfileCookiesSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProfileCookiesSetRequestWithBody(c.Server, profileId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProfileCookiesSet(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProfileCookiesSetRequest(c.Server, profileId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11978,6 +12080,139 @@ func NewProfileGetRequest(server string, profileId string, params *ProfileGetPar
 	return req, nil
 }
 
+// NewProfileCookiesGetRequest generates requests for ProfileCookiesGet
+func NewProfileCookiesGetRequest(server string, profileId string, params *ProfileCookiesGetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "profile_id", runtime.ParamLocationPath, profileId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/profiles/%s/cookies", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewProfileCookiesSetRequest calls the generic ProfileCookiesSet builder with application/json body
+func NewProfileCookiesSetRequest(server string, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProfileCookiesSetRequestWithBody(server, profileId, params, "application/json", bodyReader)
+}
+
+// NewProfileCookiesSetRequestWithBody generates requests for ProfileCookiesSet with any type of body
+func NewProfileCookiesSetRequestWithBody(server string, profileId string, params *ProfileCookiesSetParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "profile_id", runtime.ParamLocationPath, profileId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/profiles/%s/cookies", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSearchWebRequest calls the generic SearchWeb builder with application/json body
 func NewSearchWebRequest(server string, params *SearchWebParams, body SearchWebJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -14853,6 +15088,14 @@ type ClientWithResponsesInterface interface {
 	// ProfileGetWithResponse request
 	ProfileGetWithResponse(ctx context.Context, profileId string, params *ProfileGetParams, reqEditors ...RequestEditorFn) (*ProfileGetResult, error)
 
+	// ProfileCookiesGetWithResponse request
+	ProfileCookiesGetWithResponse(ctx context.Context, profileId string, params *ProfileCookiesGetParams, reqEditors ...RequestEditorFn) (*ProfileCookiesGetResult, error)
+
+	// ProfileCookiesSetWithBodyWithResponse request with any body
+	ProfileCookiesSetWithBodyWithResponse(ctx context.Context, profileId string, params *ProfileCookiesSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProfileCookiesSetResult, error)
+
+	ProfileCookiesSetWithResponse(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*ProfileCookiesSetResult, error)
+
 	// SearchWebWithBodyWithResponse request with any body
 	SearchWebWithBodyWithResponse(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SearchWebResult, error)
 
@@ -15662,6 +15905,52 @@ func (r ProfileGetResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ProfileGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ProfileCookiesGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GetCookiesResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ProfileCookiesGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProfileCookiesGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ProfileCookiesSetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ProfileCookiesImportResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ProfileCookiesSetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProfileCookiesSetResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -16798,6 +17087,32 @@ func (c *ClientWithResponses) ProfileGetWithResponse(ctx context.Context, profil
 		return nil, err
 	}
 	return ParseProfileGetResult(rsp)
+}
+
+// ProfileCookiesGetWithResponse request returning *ProfileCookiesGetResult
+func (c *ClientWithResponses) ProfileCookiesGetWithResponse(ctx context.Context, profileId string, params *ProfileCookiesGetParams, reqEditors ...RequestEditorFn) (*ProfileCookiesGetResult, error) {
+	rsp, err := c.ProfileCookiesGet(ctx, profileId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProfileCookiesGetResult(rsp)
+}
+
+// ProfileCookiesSetWithBodyWithResponse request with arbitrary body returning *ProfileCookiesSetResult
+func (c *ClientWithResponses) ProfileCookiesSetWithBodyWithResponse(ctx context.Context, profileId string, params *ProfileCookiesSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProfileCookiesSetResult, error) {
+	rsp, err := c.ProfileCookiesSetWithBody(ctx, profileId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProfileCookiesSetResult(rsp)
+}
+
+func (c *ClientWithResponses) ProfileCookiesSetWithResponse(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*ProfileCookiesSetResult, error) {
+	rsp, err := c.ProfileCookiesSet(ctx, profileId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProfileCookiesSetResult(rsp)
 }
 
 // SearchWebWithBodyWithResponse request with arbitrary body returning *SearchWebResult
@@ -18161,6 +18476,72 @@ func ParseProfileGetResult(rsp *http.Response) (*ProfileGetResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ProfileResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProfileCookiesGetResult parses an HTTP response from a ProfileCookiesGetWithResponse call
+func ParseProfileCookiesGetResult(rsp *http.Response) (*ProfileCookiesGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProfileCookiesGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GetCookiesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProfileCookiesSetResult parses an HTTP response from a ProfileCookiesSetWithResponse call
+func ParseProfileCookiesSetResult(rsp *http.Response) (*ProfileCookiesSetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProfileCookiesSetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileCookiesImportResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
