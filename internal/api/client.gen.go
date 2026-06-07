@@ -1983,16 +1983,8 @@ type ReplayResponse struct {
 	VideoStartMs    *int    `json:"video_start_ms,omitempty"`
 }
 
-// RootModelUnionDictStrAnyListDictStrAny defines model for RootModel_Union_dict_str__Any___list_dict_str__Any____.
-type RootModelUnionDictStrAnyListDictStrAny struct {
-	union json.RawMessage
-}
-
-// RootModelUnionDictStrAnyListDictStrAny0 defines model for .
-type RootModelUnionDictStrAnyListDictStrAny0 map[string]interface{}
-
-// RootModelUnionDictStrAnyListDictStrAny1 defines model for .
-type RootModelUnionDictStrAnyListDictStrAny1 = []map[string]interface{}
+// RootModelAny defines model for RootModel_Any_.
+type RootModelAny = interface{}
 
 // RunFunctionRequest defines model for RunFunctionRequest.
 type RunFunctionRequest struct {
@@ -7660,68 +7652,6 @@ func (t *MultiFactorFillActionOutput_Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsRootModelUnionDictStrAnyListDictStrAny0 returns the union data inside the RootModelUnionDictStrAnyListDictStrAny as a RootModelUnionDictStrAnyListDictStrAny0
-func (t RootModelUnionDictStrAnyListDictStrAny) AsRootModelUnionDictStrAnyListDictStrAny0() (RootModelUnionDictStrAnyListDictStrAny0, error) {
-	var body RootModelUnionDictStrAnyListDictStrAny0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRootModelUnionDictStrAnyListDictStrAny0 overwrites any union data inside the RootModelUnionDictStrAnyListDictStrAny as the provided RootModelUnionDictStrAnyListDictStrAny0
-func (t *RootModelUnionDictStrAnyListDictStrAny) FromRootModelUnionDictStrAnyListDictStrAny0(v RootModelUnionDictStrAnyListDictStrAny0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRootModelUnionDictStrAnyListDictStrAny0 performs a merge with any union data inside the RootModelUnionDictStrAnyListDictStrAny, using the provided RootModelUnionDictStrAnyListDictStrAny0
-func (t *RootModelUnionDictStrAnyListDictStrAny) MergeRootModelUnionDictStrAnyListDictStrAny0(v RootModelUnionDictStrAnyListDictStrAny0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsRootModelUnionDictStrAnyListDictStrAny1 returns the union data inside the RootModelUnionDictStrAnyListDictStrAny as a RootModelUnionDictStrAnyListDictStrAny1
-func (t RootModelUnionDictStrAnyListDictStrAny) AsRootModelUnionDictStrAnyListDictStrAny1() (RootModelUnionDictStrAnyListDictStrAny1, error) {
-	var body RootModelUnionDictStrAnyListDictStrAny1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRootModelUnionDictStrAnyListDictStrAny1 overwrites any union data inside the RootModelUnionDictStrAnyListDictStrAny as the provided RootModelUnionDictStrAnyListDictStrAny1
-func (t *RootModelUnionDictStrAnyListDictStrAny) FromRootModelUnionDictStrAnyListDictStrAny1(v RootModelUnionDictStrAnyListDictStrAny1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRootModelUnionDictStrAnyListDictStrAny1 performs a merge with any union data inside the RootModelUnionDictStrAnyListDictStrAny, using the provided RootModelUnionDictStrAnyListDictStrAny1
-func (t *RootModelUnionDictStrAnyListDictStrAny) MergeRootModelUnionDictStrAnyListDictStrAny1(v RootModelUnionDictStrAnyListDictStrAny1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t RootModelUnionDictStrAnyListDictStrAny) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *RootModelUnionDictStrAnyListDictStrAny) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
 // AsSelectDropdownOptionActionInputSelector0 returns the union data inside the SelectDropdownOptionActionInput_Selector as a SelectDropdownOptionActionInputSelector0
 func (t SelectDropdownOptionActionInput_Selector) AsSelectDropdownOptionActionInputSelector0() (SelectDropdownOptionActionInputSelector0, error) {
 	var body SelectDropdownOptionActionInputSelector0
@@ -7996,22 +7926,22 @@ func (t *StructuredDataBaseModel_Data) MergeBaseModel(v BaseModel) error {
 	return err
 }
 
-// AsRootModelUnionDictStrAnyListDictStrAny returns the union data inside the StructuredDataBaseModel_Data as a RootModelUnionDictStrAnyListDictStrAny
-func (t StructuredDataBaseModel_Data) AsRootModelUnionDictStrAnyListDictStrAny() (RootModelUnionDictStrAnyListDictStrAny, error) {
-	var body RootModelUnionDictStrAnyListDictStrAny
+// AsRootModelAny returns the union data inside the StructuredDataBaseModel_Data as a RootModelAny
+func (t StructuredDataBaseModel_Data) AsRootModelAny() (RootModelAny, error) {
+	var body RootModelAny
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromRootModelUnionDictStrAnyListDictStrAny overwrites any union data inside the StructuredDataBaseModel_Data as the provided RootModelUnionDictStrAnyListDictStrAny
-func (t *StructuredDataBaseModel_Data) FromRootModelUnionDictStrAnyListDictStrAny(v RootModelUnionDictStrAnyListDictStrAny) error {
+// FromRootModelAny overwrites any union data inside the StructuredDataBaseModel_Data as the provided RootModelAny
+func (t *StructuredDataBaseModel_Data) FromRootModelAny(v RootModelAny) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeRootModelUnionDictStrAnyListDictStrAny performs a merge with any union data inside the StructuredDataBaseModel_Data, using the provided RootModelUnionDictStrAnyListDictStrAny
-func (t *StructuredDataBaseModel_Data) MergeRootModelUnionDictStrAnyListDictStrAny(v RootModelUnionDictStrAnyListDictStrAny) error {
+// MergeRootModelAny performs a merge with any union data inside the StructuredDataBaseModel_Data, using the provided RootModelAny
+func (t *StructuredDataBaseModel_Data) MergeRootModelAny(v RootModelAny) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
