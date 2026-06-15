@@ -450,16 +450,6 @@ type ActionSpace_InteractionActions_Item struct {
 
 // AddCredentialsRequest defines model for AddCredentialsRequest.
 type AddCredentialsRequest struct {
-	// Credentials Dictionary type for storing login credentials.
-	//
-	// At least one of email or username must be provided, but not both.
-	// Password is required. MFA secret is optional.
-	//
-	// Args:
-	//     email: The email address used for login. Cannot be used with username.
-	//     username: The username used for login. Cannot be used with email.
-	//     password: The password for the account. Required.
-	//     mfa_secret: Optional MFA/2FA secret key for generating one-time codes.
 	Credentials CredentialsDictInput `json:"credentials"`
 	Url         string               `json:"url"`
 }
@@ -472,13 +462,6 @@ type AddCredentialsResponse struct {
 
 // AddCreditCardRequest defines model for AddCreditCardRequest.
 type AddCreditCardRequest struct {
-	// CreditCard Dictionary type for storing credit card information.
-	//
-	// Args:
-	//     card_holder_name: The name of the credit card holder as it appears on the card
-	//     card_number: The credit card number
-	//     card_cvv: The 3 or 4 digit CVV security code on the back of the card
-	//     card_full_expiration: The card's expiration date in MM/YY or MM/YYYY format
 	CreditCard CreditCardDictInput `json:"credit_card"`
 }
 
@@ -602,7 +585,7 @@ type ApiAgentStartRequest_ReasoningModel struct {
 	union json.RawMessage
 }
 
-// ApiExecutionResponse API-specific execution response that excludes the exception field for OpenAPI schema generation
+// ApiExecutionResponse defines model for ApiExecutionResponse.
 type ApiExecutionResponse struct {
 	Action    ApiExecutionResponse_Action `json:"action"`
 	Data      *DataSpace                  `json:"data,omitempty"`
@@ -618,7 +601,7 @@ type ApiExecutionResponse_Action struct {
 	union json.RawMessage
 }
 
-// ApiSessionStartRequest Request to start a new browser session.
+// ApiSessionStartRequest defines model for ApiSessionStartRequest.
 type ApiSessionStartRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
@@ -726,7 +709,7 @@ type BodySessionCookiesSetSessionsSessionIdCookiesPost struct {
 	Cookies []Cookie `json:"cookies"`
 }
 
-// BoundingBox Represents element bounding box coordinates
+// BoundingBox defines model for BoundingBox.
 type BoundingBox struct {
 	Height         float32  `json:"height"`
 	IframeOffsetX  *float32 `json:"iframe_offset_x,omitempty"`
@@ -741,13 +724,7 @@ type BoundingBox struct {
 	Y              float32  `json:"y"`
 }
 
-// CaptchaSolveAction Solve a CAPTCHA challenge on the current page. CRITICAL: Use this action as soon as you notice a captcha.
-//
-// **Example:**
-// ```python
-// session.execute(type="captcha_solve", captcha_type="recaptcha")
-// session.execute(type="captcha_solve")  # Auto-detect captcha type
-// ```
+// CaptchaSolveAction defines model for CaptchaSolveAction.
 type CaptchaSolveAction struct {
 	CaptchaType *string `json:"captcha_type,omitempty"`
 	Category    *string `json:"category,omitempty"`
@@ -755,13 +732,7 @@ type CaptchaSolveAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// CheckActionInput Check a checkbox. Use `True` to check, `False` to uncheck.
-//
-// **Example:**
-// ```python
-// session.execute(type="check", id="terms-checkbox", value=True)
-// session.execute(type="check", id="newsletter-checkbox", value=False)
-// ```
+// CheckActionInput defines model for CheckAction-Input.
 type CheckActionInput struct {
 	Category    *string                    `json:"category,omitempty"`
 	Description *string                    `json:"description,omitempty"`
@@ -785,13 +756,7 @@ type CheckActionInput_Selector struct {
 	union json.RawMessage
 }
 
-// CheckActionOutput Check a checkbox. Use `True` to check, `False` to uncheck.
-//
-// **Example:**
-// ```python
-// session.execute(type="check", id="terms-checkbox", value=True)
-// session.execute(type="check", id="newsletter-checkbox", value=False)
-// ```
+// CheckActionOutput defines model for CheckAction-Output.
 type CheckActionOutput struct {
 	Category    *string                     `json:"category,omitempty"`
 	Description *string                     `json:"description,omitempty"`
@@ -814,12 +779,7 @@ type CheckActionOutput_Selector struct {
 	union json.RawMessage
 }
 
-// ClickActionInput Click on an element of the current page.
-//
-// **Example:**
-// ```python
-// session.execute(type="click", id="submit-button")
-// ```
+// ClickActionInput defines model for ClickAction-Input.
 type ClickActionInput struct {
 	Category    *string                    `json:"category,omitempty"`
 	Description *string                    `json:"description,omitempty"`
@@ -842,12 +802,7 @@ type ClickActionInput_Selector struct {
 	union json.RawMessage
 }
 
-// ClickActionOutput Click on an element of the current page.
-//
-// **Example:**
-// ```python
-// session.execute(type="click", id="submit-button")
-// ```
+// ClickActionOutput defines model for ClickAction-Output.
 type ClickActionOutput struct {
 	Category    *string                     `json:"category,omitempty"`
 	Description *string                     `json:"description,omitempty"`
@@ -869,20 +824,14 @@ type ClickActionOutput_Selector struct {
 	union json.RawMessage
 }
 
-// CloseTabAction Close the current tab.
+// CloseTabAction defines model for CloseTabAction.
 type CloseTabAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
 
-// CompletionAction Complete the task by returning the answer and terminate the browser session.
-//
-// **Example:**
-// ```python
-// session.execute(type="completion", success=True, answer="Task completed successfully")
-// session.execute(type="completion", success=False, answer="Could not complete task")
-// ```
+// CompletionAction defines model for CompletionAction.
 type CompletionAction struct {
 	Answer      string  `json:"answer"`
 	Category    *string `json:"category,omitempty"`
@@ -915,17 +864,7 @@ type Credential struct {
 	Username *string `json:"username,omitempty"`
 }
 
-// CredentialsDictInput Dictionary type for storing login credentials.
-//
-// At least one of email or username must be provided, but not both.
-// Password is required. MFA secret is optional.
-//
-// Args:
-//
-//	email: The email address used for login. Cannot be used with username.
-//	username: The username used for login. Cannot be used with email.
-//	password: The password for the account. Required.
-//	mfa_secret: Optional MFA/2FA secret key for generating one-time codes.
+// CredentialsDictInput defines model for CredentialsDict-Input.
 type CredentialsDictInput struct {
 	Email     *string `json:"email,omitempty"`
 	MfaSecret *string `json:"mfa_secret,omitempty"`
@@ -933,17 +872,7 @@ type CredentialsDictInput struct {
 	Username  *string `json:"username,omitempty"`
 }
 
-// CredentialsDictOutput Dictionary type for storing login credentials.
-//
-// At least one of email or username must be provided, but not both.
-// Password is required. MFA secret is optional.
-//
-// Args:
-//
-//	email: The email address used for login. Cannot be used with username.
-//	username: The username used for login. Cannot be used with email.
-//	password: The password for the account. Required.
-//	mfa_secret: Optional MFA/2FA secret key for generating one-time codes.
+// CredentialsDictOutput defines model for CredentialsDict-Output.
 type CredentialsDictOutput struct {
 	Email     *string `json:"email,omitempty"`
 	MfaSecret *string `json:"mfa_secret,omitempty"`
@@ -951,14 +880,7 @@ type CredentialsDictOutput struct {
 	Username  *string `json:"username,omitempty"`
 }
 
-// CreditCardDictInput Dictionary type for storing credit card information.
-//
-// Args:
-//
-//	card_holder_name: The name of the credit card holder as it appears on the card
-//	card_number: The credit card number
-//	card_cvv: The 3 or 4 digit CVV security code on the back of the card
-//	card_full_expiration: The card's expiration date in MM/YY or MM/YYYY format
+// CreditCardDictInput defines model for CreditCardDict-Input.
 type CreditCardDictInput struct {
 	CardCvv            string `json:"card_cvv"`
 	CardFullExpiration string `json:"card_full_expiration"`
@@ -966,14 +888,7 @@ type CreditCardDictInput struct {
 	CardNumber         string `json:"card_number"`
 }
 
-// CreditCardDictOutput Dictionary type for storing credit card information.
-//
-// Args:
-//
-//	card_holder_name: The name of the credit card holder as it appears on the card
-//	card_number: The credit card number
-//	card_cvv: The 3 or 4 digit CVV security code on the back of the card
-//	card_full_expiration: The card's expiration date in MM/YY or MM/YYYY format
+// CreditCardDictOutput defines model for CreditCardDict-Output.
 type CreditCardDictOutput struct {
 	CardCvv            string `json:"card_cvv"`
 	CardFullExpiration string `json:"card_full_expiration"`
@@ -1051,15 +966,7 @@ type DeleteVaultResponse struct {
 // DeleteVaultResponseStatus Status of the deletion
 type DeleteVaultResponseStatus string
 
-// DownloadFileActionInput Download files from interactive elements. Use with any clickable download file element, including button, a, span, div. CRITICAL: Use only this for file download, do not use click.
-//
-// **Example:**
-// ```python
-// session.execute(type="download_file", id="download-button")
-// session.execute(type="download_file", id="report-link")
-// # Use the following selection if you want to download a raw PDF, DOCX, file.
-// session.execute(type="download_file", id="html")
-// ```
+// DownloadFileActionInput defines model for DownloadFileAction-Input.
 type DownloadFileActionInput struct {
 	Category    *string                           `json:"category,omitempty"`
 	Description *string                           `json:"description,omitempty"`
@@ -1082,15 +989,7 @@ type DownloadFileActionInput_Selector struct {
 	union json.RawMessage
 }
 
-// DownloadFileActionOutput Download files from interactive elements. Use with any clickable download file element, including button, a, span, div. CRITICAL: Use only this for file download, do not use click.
-//
-// **Example:**
-// ```python
-// session.execute(type="download_file", id="download-button")
-// session.execute(type="download_file", id="report-link")
-// # Use the following selection if you want to download a raw PDF, DOCX, file.
-// session.execute(type="download_file", id="html")
-// ```
+// DownloadFileActionOutput defines model for DownloadFileAction-Output.
 type DownloadFileActionOutput struct {
 	Category    *string                            `json:"category,omitempty"`
 	Description *string                            `json:"description,omitempty"`
@@ -1112,15 +1011,7 @@ type DownloadFileActionOutput_Selector struct {
 	union json.RawMessage
 }
 
-// EmailReadAction Read recent emails from the mailbox.
-//
-// **Example:**
-// ```python
-// import datetime as dt
-//
-// session.execute(type="email_read", limit=5, only_unread=True)
-// session.execute(type="email_read", timedelta=dt.timedelta(minutes=5))
-// ```
+// EmailReadAction defines model for EmailReadAction.
 type EmailReadAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -1160,21 +1051,7 @@ type EmailResponse struct {
 	TextContent *string `json:"text_content,omitempty"`
 }
 
-// EvaluateJsAction Evaluate JavaScript code on the current page and return the result.
-// Useful for extracting structured data from a page without LLM processing.
-//
-// The code is evaluated as a JavaScript expression. For simple cases use a single expression.
-// For multi-statement logic, use an IIFE (Immediately Invoked Function Expression):
-// “(() => { /* statements */ return result; })()“
-//
-// # You will not get any output from console.log(), so simply use the return value if your goal is to gather information
-//
-// **Example:**
-// ```python
-// session.execute(type="evaluate_js", code="document.title")
-// session.execute(type="evaluate_js", code="Array.from(document.querySelectorAll('a')).map(a => a.href)")
-// session.execute(type="evaluate_js", code="(() => { const els = document.querySelectorAll('a'); return els.length; })()")
-// ```
+// EvaluateJsAction defines model for EvaluateJsAction.
 type EvaluateJsAction struct {
 	Category *string `json:"category,omitempty"`
 
@@ -1184,7 +1061,7 @@ type EvaluateJsAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// ExecutionResponse Used for page operation like setting cookies
+// ExecutionResponse defines model for ExecutionResponse.
 type ExecutionResponse struct {
 	// Message A message describing the operation
 	Message string `json:"message"`
@@ -1202,12 +1079,7 @@ type ExternalProxy struct {
 	Username *string `json:"username,omitempty"`
 }
 
-// FallbackFillActionInput Fill an input field with a value. Only use if explicitly asked, or you failed to input with the normal fill action.
-//
-// **Example:**
-// ```python
-// session.execute(type="fallback_fill", id="difficult-input", value="fallback text")
-// ```
+// FallbackFillActionInput defines model for FallbackFillAction-Input.
 type FallbackFillActionInput struct {
 	Category        *string                           `json:"category,omitempty"`
 	ClearBeforeFill *bool                             `json:"clear_before_fill,omitempty"`
@@ -1243,12 +1115,7 @@ type FallbackFillActionInput_Value struct {
 	union json.RawMessage
 }
 
-// FallbackFillActionOutput Fill an input field with a value. Only use if explicitly asked, or you failed to input with the normal fill action.
-//
-// **Example:**
-// ```python
-// session.execute(type="fallback_fill", id="difficult-input", value="fallback text")
-// ```
+// FallbackFillActionOutput defines model for FallbackFillAction-Output.
 type FallbackFillActionOutput struct {
 	Category        *string                            `json:"category,omitempty"`
 	ClearBeforeFill *bool                              `json:"clear_before_fill,omitempty"`
@@ -1283,7 +1150,7 @@ type FallbackFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
-// FileInfo File metadata for file listings.
+// FileInfo defines model for FileInfo.
 type FileInfo struct {
 	FileExt   string  `json:"file_ext"`
 	Name      string  `json:"name"`
@@ -1303,13 +1170,7 @@ type FileUploadResponse struct {
 	Success bool `json:"success"`
 }
 
-// FillActionInput Fill an input field with a value.
-//
-// **Example:**
-// ```python
-// session.execute(type="fill", id="email-input", value="user@example.com")
-// session.execute(type="fill", id="name-input", value="John Doe", clear_before_fill=False)
-// ```
+// FillActionInput defines model for FillAction-Input.
 type FillActionInput struct {
 	Category        *string                   `json:"category,omitempty"`
 	ClearBeforeFill *bool                     `json:"clear_before_fill,omitempty"`
@@ -1345,13 +1206,7 @@ type FillActionInput_Value struct {
 	union json.RawMessage
 }
 
-// FillActionOutput Fill an input field with a value.
-//
-// **Example:**
-// ```python
-// session.execute(type="fill", id="email-input", value="user@example.com")
-// session.execute(type="fill", id="name-input", value="John Doe", clear_before_fill=False)
-// ```
+// FillActionOutput defines model for FillAction-Output.
 type FillActionOutput struct {
 	Category        *string                    `json:"category,omitempty"`
 	ClearBeforeFill *bool                      `json:"clear_before_fill,omitempty"`
@@ -1386,17 +1241,7 @@ type FillActionOutput_Value struct {
 	union json.RawMessage
 }
 
-// FormFillAction Fill a form with multiple values. Critical: If you detect a form on a page, try to use this action at first, and otherwise use the regular fill action.
-//
-// The `form_fill` action requires field keys that match the page's actual field mapping.
-// Do not guess keys from labels or HTML alone; use live observation or generated workflow
-// code to confirm the field mapping first.
-//
-// **Example:**
-// ```python
-// # Field keys must come from the observed form mapping, not guesses.
-// session.execute(type="form_fill", value={"email": "user@example.com", "first_name": "John", "last_name": "Doe"})
-// ```
+// FormFillAction defines model for FormFillAction.
 type FormFillAction struct {
 	Category    *string                                              `json:"category,omitempty"`
 	Description *string                                              `json:"description,omitempty"`
@@ -1458,28 +1303,11 @@ type GetCookiesResponse struct {
 
 // GetCredentialsResponse defines model for GetCredentialsResponse.
 type GetCredentialsResponse struct {
-	// Credentials Dictionary type for storing login credentials.
-	//
-	// At least one of email or username must be provided, but not both.
-	// Password is required. MFA secret is optional.
-	//
-	// Args:
-	//     email: The email address used for login. Cannot be used with username.
-	//     username: The username used for login. Cannot be used with email.
-	//     password: The password for the account. Required.
-	//     mfa_secret: Optional MFA/2FA secret key for generating one-time codes.
 	Credentials CredentialsDictOutput `json:"credentials"`
 }
 
 // GetCreditCardResponse defines model for GetCreditCardResponse.
 type GetCreditCardResponse struct {
-	// CreditCard Dictionary type for storing credit card information.
-	//
-	// Args:
-	//     card_holder_name: The name of the credit card holder as it appears on the card
-	//     card_number: The credit card number
-	//     card_cvv: The 3 or 4 digit CVV security code on the back of the card
-	//     card_full_expiration: The card's expiration date in MM/YY or MM/YYYY format
 	CreditCard CreditCardDictOutput `json:"credit_card"`
 }
 
@@ -1516,10 +1344,8 @@ type GetFunctionResponse struct {
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the workflow
-	Versions []string `json:"versions"`
-
-	// WorkflowId Legacy key for serialization
-	WorkflowId *string `json:"workflow_id,omitempty"`
+	Versions   []string `json:"versions"`
+	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
 // GetFunctionRunResponse defines model for GetFunctionRunResponse.
@@ -1547,13 +1373,9 @@ type GetFunctionRunResponse struct {
 	UpdatedAt FlexibleTime                 `json:"updated_at"`
 
 	// Variables The variables of the workflow run
-	Variables *map[string]interface{} `json:"variables,omitempty"`
-
-	// WorkflowId Legacy key for serialization
-	WorkflowId *string `json:"workflow_id,omitempty"`
-
-	// WorkflowRunId Legacy key for serialization
-	WorkflowRunId *string `json:"workflow_run_id,omitempty"`
+	Variables     *map[string]interface{} `json:"variables,omitempty"`
+	WorkflowId    *string                 `json:"workflow_id,omitempty"`
+	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
 }
 
 // GetFunctionRunResponseStatus defines model for GetFunctionRunResponse.Status.
@@ -1595,10 +1417,8 @@ type GetFunctionWithLinkResponse struct {
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the workflow
-	Versions []string `json:"versions"`
-
-	// WorkflowId Legacy key for serialization
-	WorkflowId *string `json:"workflow_id,omitempty"`
+	Versions   []string `json:"versions"`
+	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
 // GlobalScrapeRequest defines model for GlobalScrapeRequest.
@@ -1706,36 +1526,21 @@ type GlobalScrapeRequest_Proxies struct {
 // GlobalScrapeRequestScreenshotType The type of screenshot to use for the session.
 type GlobalScrapeRequestScreenshotType string
 
-// GoBackAction Go back to the previous page (in current tab).
-//
-// **Example:**
-// ```python
-// session.execute(type="go_back")
-// ```
+// GoBackAction defines model for GoBackAction.
 type GoBackAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
 
-// GoForwardAction Go forward to the next page (in current tab).
-//
-// **Example:**
-// ```python
-// session.execute(type="go_forward")
-// ```
+// GoForwardAction defines model for GoForwardAction.
 type GoForwardAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
 
-// GotoAction Goto to a URL (in current tab).
-//
-// **Example:**
-// ```python
-// session.execute(type="goto", url="https://www.google.com")
-// ```
+// GotoAction defines model for GotoAction.
 type GotoAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -1743,12 +1548,7 @@ type GotoAction struct {
 	Url         string  `json:"url"`
 }
 
-// GotoNewTabAction Goto to a URL (in new tab).
-//
-// **Example:**
-// ```python
-// session.execute(type="goto_new_tab", url="https://www.example.com")
-// ```
+// GotoNewTabAction defines model for GotoNewTabAction.
 type GotoNewTabAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -1768,12 +1568,7 @@ type HealthResponse struct {
 	Version     *string `json:"version,omitempty"`
 }
 
-// HelpAction Ask for clarification.
-//
-// **Example:**
-// ```python
-// session.execute(type="help", reason="The page layout is unclear")
-// ```
+// HelpAction defines model for HelpAction.
 type HelpAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -1781,12 +1576,11 @@ type HelpAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// ImageCategory Category of the image.
+// ImageCategory defines model for ImageCategory.
 type ImageCategory string
 
 // ImageData defines model for ImageData.
 type ImageData struct {
-	// Category Category of the image.
 	Category *ImageCategory `json:"category,omitempty"`
 
 	// Description Description of the image
@@ -1807,9 +1601,7 @@ type ImprovePromptResponse struct {
 	Variables *[]string `json:"variables,omitempty"`
 }
 
-// LegacyAgentStatusResponse This class is used to handle the legacy agent status response.
-// The rationale is that we are likely to change the `AgentStepResponse` in the future and we want to be able to handle the legacy response.
-// This is a temporary solution to avoid breaking changes.
+// LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
 type LegacyAgentStatusResponse struct {
 	// AgentId The ID of the agent
 	AgentId string `json:"agent_id"`
@@ -1856,12 +1648,7 @@ type ListFilesResponse struct {
 // LlmModel defines model for LlmModel.
 type LlmModel string
 
-// MultiFactorFillActionInput Fill an MFA input field with a value. CRITICAL: Only use it when filling in an OTP.
-//
-// **Example:**
-// ```python
-// session.execute(type="multi_factor_fill", id="otp-input", value="123456")
-// ```
+// MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
 	Category        *string                              `json:"category,omitempty"`
 	ClearBeforeFill *bool                                `json:"clear_before_fill,omitempty"`
@@ -1897,12 +1684,7 @@ type MultiFactorFillActionInput_Value struct {
 	union json.RawMessage
 }
 
-// MultiFactorFillActionOutput Fill an MFA input field with a value. CRITICAL: Only use it when filling in an OTP.
-//
-// **Example:**
-// ```python
-// session.execute(type="multi_factor_fill", id="otp-input", value="123456")
-// ```
+// MultiFactorFillActionOutput defines model for MultiFactorFillAction-Output.
 type MultiFactorFillActionOutput struct {
 	Category        *string                               `json:"category,omitempty"`
 	ClearBeforeFill *bool                                 `json:"clear_before_fill,omitempty"`
@@ -1937,7 +1719,7 @@ type MultiFactorFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
-// NetworkBatchFile Represents a batched network log file in S3
+// NetworkBatchFile defines model for NetworkBatchFile.
 type NetworkBatchFile struct {
 	DownloadUrl                 *string `json:"download_url,omitempty"`
 	DownloadUrlExpiresInSeconds *int    `json:"download_url_expires_in_seconds,omitempty"`
@@ -1945,7 +1727,7 @@ type NetworkBatchFile struct {
 	Size                        int     `json:"size"`
 }
 
-// NetworkLogsResponse Response containing network logs for a session
+// NetworkLogsResponse defines model for NetworkLogsResponse.
 type NetworkLogsResponse struct {
 	Batches         []NetworkBatchFile `json:"batches"`
 	Format          *string            `json:"format,omitempty"`
@@ -2080,7 +1862,7 @@ type PaginatedResponseVault struct {
 	PageSize    int     `json:"page_size"`
 }
 
-// ParameterInfo Information about a function parameter
+// ParameterInfo defines model for ParameterInfo.
 type ParameterInfo struct {
 	Default *string `json:"default,omitempty"`
 	Name    string  `json:"name"`
@@ -2120,12 +1902,7 @@ type PersonaResponse struct {
 	VaultId *string `json:"vault_id,omitempty"`
 }
 
-// PressKeyAction Press a keyboard key: e.g. 'Enter', 'Backspace', 'Insert', 'Delete', etc.
-//
-// **Example:**
-// ```python
-// session.execute(type="press_key", key="Enter")
-// ```
+// PressKeyAction defines model for PressKeyAction.
 type PressKeyAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -2133,11 +1910,7 @@ type PressKeyAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// ProfileCookiesImportRequest Cookies to persist into a profile.
-//
-// The canonical schema is Playwright's cookie JSON shape. Chrome extension
-// exports are accepted when “source_format="chrome"“ and normalized before
-// storage.
+// ProfileCookiesImportRequest defines model for ProfileCookiesImportRequest.
 type ProfileCookiesImportRequest struct {
 	Cookies      []Cookie                                 `json:"cookies"`
 	Mode         *ProfileCookiesImportRequestMode         `json:"mode,omitempty"`
@@ -2194,19 +1967,14 @@ type ProfileResponse struct {
 // ProxyGeolocationCountry defines model for ProxyGeolocationCountry.
 type ProxyGeolocationCountry string
 
-// ReloadAction Reload the current page.
-//
-// **Example:**
-// ```python
-// session.execute(type="reload")
-// ```
+// ReloadAction defines model for ReloadAction.
 type ReloadAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
 
-// ReplayResponse Response containing presigned URLs for session replay.
+// ReplayResponse defines model for ReplayResponse.
 type ReplayResponse struct {
 	ExpiresAt       string  `json:"expires_at"`
 	Mp4Url          *string `json:"mp4_url,omitempty"`
@@ -2255,23 +2023,14 @@ type ScheduleResponse struct {
 	Status string `json:"status"`
 }
 
-// SchemaGenerationResponse Response from schema generation service
+// SchemaGenerationResponse defines model for SchemaGenerationResponse.
 type SchemaGenerationResponse struct {
 	Error       *string                 `json:"error,omitempty"`
 	ModelSchema *map[string]interface{} `json:"model_schema,omitempty"`
 	Success     bool                    `json:"success"`
 }
 
-// ScrapeAction Scrape the current page data in text format. If `instructions` is null then the whole page will be scraped. Otherwise, only the data that matches the instructions will be scraped. Instructions should be given as natural language, e.g. 'Extract the title and the price of the product'.
-//
-// **Example:**
-// ```python
-// session.execute(type="scrape", instructions="Extract product title and price")
-// session.execute(type="scrape", only_main_content=True)
-// session.execute(type="scrape")  # Scrape entire page
-// session.execute(type="scrape", only_images=True)  # Scrape only images
-// session.execute(type="scrape", response_format={"type": "object", "properties": {...}})  # With JSON schema
-// ```
+// ScrapeAction defines model for ScrapeAction.
 type ScrapeAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -2365,7 +2124,6 @@ type ScrapeRequest struct {
 
 // ScrapeSchemaResponse defines model for ScrapeSchemaResponse.
 type ScrapeSchemaResponse struct {
-	// ModelSchema Response from schema generation service
 	ModelSchema SchemaGenerationResponse `json:"model_schema"`
 	Scrape      StructuredDataBaseModel  `json:"scrape"`
 }
@@ -2377,13 +2135,7 @@ type Screenshot struct {
 	Raw          string         `json:"raw"`
 }
 
-// ScrollDownAction Scroll down by a given amount of pixels. Use `null` for scrolling down one page.
-//
-// **Example:**
-// ```python
-// session.execute(type="scroll_down", amount=500)  # Scroll down 500 pixels
-// session.execute(type="scroll_down")  # Scroll down one page
-// ```
+// ScrollDownAction defines model for ScrollDownAction.
 type ScrollDownAction struct {
 	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
@@ -2391,13 +2143,7 @@ type ScrollDownAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// ScrollUpAction Scroll up by a given amount of pixels. Use `None` for scrolling up one page.
-//
-// **Example:**
-// ```python
-// session.execute(type="scroll_up", amount=500)  # Scroll up 500 pixels
-// session.execute(type="scroll_up")  # Scroll up one page
-// ```
+// ScrollUpAction defines model for ScrollUpAction.
 type ScrollUpAction struct {
 	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
@@ -2448,13 +2194,7 @@ type SecretValueResponse struct {
 	Value string `json:"value"`
 }
 
-// SelectDropdownOptionActionInput Select an option from a dropdown. The `id` field should be set to the select element's id. Then you can either set the `value` field to the option's text or the `option_id` field to the option's `id`.
-//
-// **Example:**
-// ```python
-// session.execute(type="select_dropdown_option", id="country-select", value="United States")
-// session.execute(type="select_dropdown_option", id="size-select", value="Large")
-// ```
+// SelectDropdownOptionActionInput defines model for SelectDropdownOptionAction-Input.
 type SelectDropdownOptionActionInput struct {
 	Category    *string                                   `json:"category,omitempty"`
 	Description *string                                   `json:"description,omitempty"`
@@ -2489,13 +2229,7 @@ type SelectDropdownOptionActionInput_Value struct {
 	union json.RawMessage
 }
 
-// SelectDropdownOptionActionOutput Select an option from a dropdown. The `id` field should be set to the select element's id. Then you can either set the `value` field to the option's text or the `option_id` field to the option's `id`.
-//
-// **Example:**
-// ```python
-// session.execute(type="select_dropdown_option", id="country-select", value="United States")
-// session.execute(type="select_dropdown_option", id="size-select", value="Large")
-// ```
+// SelectDropdownOptionActionOutput defines model for SelectDropdownOptionAction-Output.
 type SelectDropdownOptionActionOutput struct {
 	Category    *string                                    `json:"category,omitempty"`
 	Description *string                                    `json:"description,omitempty"`
@@ -2602,8 +2336,6 @@ type SessionResponse struct {
 
 	// Steps Steps of the session
 	Steps *[]map[string]interface{} `json:"steps,omitempty"`
-
-	// TimeoutMinutes Deprecated: Use idle_timeout_minutes instead. Kept for backward compatibility.
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	TimeoutMinutes *int `json:"timeout_minutes,omitempty"`
 
@@ -2632,15 +2364,7 @@ type SessionResponseBrowserType string
 // SessionResponseStatus Session status
 type SessionResponseStatus string
 
-// SmsReadAction Read sms messages received recently.
-//
-// **Example:**
-// ```python
-// import datetime as dt
-//
-// session.execute(type="sms_read", limit=10, only_unread=True)
-// session.execute(type="sms_read", timedelta=dt.timedelta(minutes=5))
-// ```
+// SmsReadAction defines model for SmsReadAction.
 type SmsReadAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -2690,12 +2414,7 @@ type StructuredDataBaseModel_Data struct {
 // SubscriptionType defines model for SubscriptionType.
 type SubscriptionType string
 
-// SwitchTabAction Switch to a tab (identified by its index).
-//
-// **Example:**
-// ```python
-// session.execute(type="switch_tab", tab_index=1)
-// ```
+// SwitchTabAction defines model for SwitchTabAction.
 type SwitchTabAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -2733,24 +2452,14 @@ type UpdateFunctionRunResponse struct {
 	FunctionRunId string                           `json:"function_run_id"`
 	Status        *UpdateFunctionRunResponseStatus `json:"status,omitempty"`
 	UpdatedAt     time.Time                        `json:"updated_at"`
-
-	// WorkflowId Legacy key for serialization
-	WorkflowId *string `json:"workflow_id,omitempty"`
-
-	// WorkflowRunId Legacy key for serialization
-	WorkflowRunId *string `json:"workflow_run_id,omitempty"`
+	WorkflowId    *string                          `json:"workflow_id,omitempty"`
+	WorkflowRunId *string                          `json:"workflow_run_id,omitempty"`
 }
 
 // UpdateFunctionRunResponseStatus defines model for UpdateFunctionRunResponse.Status.
 type UpdateFunctionRunResponseStatus string
 
-// UploadFileActionInput Upload file to interactive element with file path. Use with any upload file element, including button, input, a, span, div. CRITICAL: Use only this for file upload, do not use click.
-//
-// **Example:**
-// ```python
-// session.execute(type="upload_file", id="file-input", file_path="/path/to/document.pdf")
-// session.execute(type="upload_file", id="image-upload", file_path="./image.jpg")
-// ```
+// UploadFileActionInput defines model for UploadFileAction-Input.
 type UploadFileActionInput struct {
 	Category    *string                         `json:"category,omitempty"`
 	Description *string                         `json:"description,omitempty"`
@@ -2774,13 +2483,7 @@ type UploadFileActionInput_Selector struct {
 	union json.RawMessage
 }
 
-// UploadFileActionOutput Upload file to interactive element with file path. Use with any upload file element, including button, input, a, span, div. CRITICAL: Use only this for file upload, do not use click.
-//
-// **Example:**
-// ```python
-// session.execute(type="upload_file", id="file-input", file_path="/path/to/document.pdf")
-// session.execute(type="upload_file", id="image-upload", file_path="./image.jpg")
-// ```
+// UploadFileActionOutput defines model for UploadFileAction-Output.
 type UploadFileActionOutput struct {
 	Category    *string                          `json:"category,omitempty"`
 	Description *string                          `json:"description,omitempty"`
@@ -2886,12 +2589,7 @@ type ViewportData struct {
 	ViewportWidth  int `json:"viewport_width"`
 }
 
-// WaitAction Wait for a given amount of time (in milliseconds).
-//
-// **Example:**
-// ```python
-// session.execute(type="wait", time_ms=2000)
-// ```
+// WaitAction defines model for WaitAction.
 type WaitAction struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
