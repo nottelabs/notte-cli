@@ -2900,26 +2900,36 @@ type SearchWebParams struct {
 
 // ListSecretsParams defines parameters for ListSecrets.
 type ListSecretsParams struct {
-	Namespace           *SecretNamespace `form:"namespace,omitempty" json:"namespace,omitempty"`
-	XNotteRequestOrigin *string          `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string          `json:"x-notte-sdk-version,omitempty"`
+	Namespace *SecretNamespace `form:"namespace,omitempty" json:"namespace,omitempty"`
+
+	// Period The montly period to get usage for, i.e May 2025
+	Period              *string `form:"period,omitempty" json:"period,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // StoreSecretParams defines parameters for StoreSecret.
 type StoreSecretParams struct {
+	// Period The montly period to get usage for, i.e May 2025
+	Period              *string `form:"period,omitempty" json:"period,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // GetSecretParams defines parameters for GetSecret.
 type GetSecretParams struct {
-	Namespace           SecretNamespace `form:"namespace" json:"namespace"`
-	XNotteRequestOrigin *string         `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string         `json:"x-notte-sdk-version,omitempty"`
+	Namespace SecretNamespace `form:"namespace" json:"namespace"`
+
+	// Period The montly period to get usage for, i.e May 2025
+	Period              *string `form:"period,omitempty" json:"period,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // DeleteSecretParams defines parameters for DeleteSecret.
 type DeleteSecretParams struct {
+	// Period The montly period to get usage for, i.e May 2025
+	Period              *string `form:"period,omitempty" json:"period,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -12247,6 +12257,22 @@ func NewListSecretsRequest(server string, params *ListSecretsParams) (*http.Requ
 
 		}
 
+		if params.Period != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12312,6 +12338,28 @@ func NewStoreSecretRequestWithBody(server string, params *StoreSecretParams, con
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Period != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -12391,6 +12439,22 @@ func NewGetSecretRequest(server string, name string, params *GetSecretParams) (*
 			}
 		}
 
+		if params.Period != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12452,6 +12516,28 @@ func NewDeleteSecretRequest(server string, secretId string, params *DeleteSecret
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Period != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
