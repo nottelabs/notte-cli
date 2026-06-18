@@ -80,12 +80,18 @@ func PrintListOrEmpty(items any, emptyMsg string) (bool, error) {
 }
 
 // PrintScrapeResponse formats scrape output consistently across all scrape commands.
-// In JSON mode, returns the full response. In text mode without instructions,
-// returns just the markdown. With instructions, checks data.success and returns
-// the extracted data or an error message.
+// In JSON mode without instructions, returns the full response. With instructions,
+// returns the extracted structured data directly. In text mode without instructions,
+// returns just the markdown.
 func PrintScrapeResponse(resp *api.DataSpace, hasInstructions bool) error {
-	// JSON mode: return full response
 	if IsJSONOutput() {
+		if hasInstructions {
+			data, err := extractScrapeStructuredData(resp)
+			if err != nil {
+				return err
+			}
+			return GetFormatter().Print(data)
+		}
 		return GetFormatter().Print(resp)
 	}
 
@@ -96,31 +102,21 @@ func PrintScrapeResponse(resp *api.DataSpace, hasInstructions bool) error {
 	}
 
 	// Structured mode: check data.success
-	if resp.Structured != nil {
-		// Check success field
-		if resp.Structured.Success != nil && !*resp.Structured.Success {
-			if resp.Structured.Error != nil {
-				return fmt.Errorf("%s", *resp.Structured.Error)
-			}
-			return fmt.Errorf("scrape failed")
+	data, err := extractScrapeStructuredData(resp)
+	if err == nil {
+		fmt.Println("Scraped content from the current page:")
+		fmt.Println()
+		jsonBytes, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			return GetFormatter().Print(data)
 		}
-		// Return data if present
-		if resp.Structured.Data != nil {
-			// Extract actual data from the union type wrapper
-			if data, err := resp.Structured.Data.AsBaseModel(); err == nil && data != nil {
-				// Print with a nice header for scrape results
-				fmt.Println("Scraped content from the current page:")
-				fmt.Println()
-				// Print as indented JSON for better readability
-				jsonBytes, err := json.MarshalIndent(data, "", "  ")
-				if err != nil {
-					return GetFormatter().Print(data)
-				}
-				fmt.Println(string(jsonBytes))
-				return nil
-			}
-		}
+		fmt.Println(string(jsonBytes))
+		return nil
 	}
+	if resp != nil && resp.Structured != nil && resp.Structured.Success != nil && !*resp.Structured.Success {
+		return err
+	}
+
 	fmt.Println("Scraped content from the current page:")
 	fmt.Println()
 	// Print as indented JSON for better readability
@@ -130,6 +126,33 @@ func PrintScrapeResponse(resp *api.DataSpace, hasInstructions bool) error {
 	}
 	fmt.Println(string(jsonBytes))
 	return nil
+}
+
+// extractScrapeStructuredData returns the direct payload from structured scrape
+// responses, matching the SDK default for instruction-based scrapes.
+func extractScrapeStructuredData(resp *api.DataSpace) (any, error) {
+	if resp == nil || resp.Structured == nil {
+		return nil, fmt.Errorf("scrape did not return structured data")
+	}
+	if resp.Structured.Success != nil && !*resp.Structured.Success {
+		if resp.Structured.Error != nil && *resp.Structured.Error != "" {
+			return nil, fmt.Errorf("%s", *resp.Structured.Error)
+		}
+		return nil, fmt.Errorf("scrape failed")
+	}
+	if resp.Structured.Data == nil {
+		return nil, fmt.Errorf("scrape did not return structured data")
+	}
+
+	raw, err := json.Marshal(resp.Structured.Data)
+	if err != nil {
+		return nil, err
+	}
+	var data any
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // printSessionStatus formats session status output with simplified Steps display.
