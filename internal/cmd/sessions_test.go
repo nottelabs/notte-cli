@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -391,7 +392,7 @@ func TestRunSessionExecute_InvalidJSON(t *testing.T) {
 
 func TestRunSessionScrape(t *testing.T) {
 	server := setupSessionTest(t)
-	scrapeResp := fmt.Sprintf(`{"markdown":"hi","structured":{},"session":%s}`, sessionJSON())
+	scrapeResp := fmt.Sprintf(`{"markdown":"hi","structured":{"data":{"result":"hi"},"success":true},"session":%s}`, sessionJSON())
 	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
 
 	origInstructions := sessionScrapeInstructions
@@ -457,7 +458,7 @@ func TestRunSessionScrape_Defaults(t *testing.T) {
 
 func TestRunSessionScrape_InstructionsOnly(t *testing.T) {
 	server := setupSessionTest(t)
-	scrapeResp := fmt.Sprintf(`{"markdown":"content","structured":{"data":"value"},"session":%s}`, sessionJSON())
+	scrapeResp := fmt.Sprintf(`{"markdown":"content","structured":{"data":{"title":"Extracted Title","count":2},"success":true},"session":%s}`, sessionJSON())
 	server.AddResponse("/sessions/"+sessionIDTest+"/page/scrape", 200, scrapeResp)
 
 	origInstructions := sessionScrapeInstructions
@@ -485,6 +486,20 @@ func TestRunSessionScrape_InstructionsOnly(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(stdout), &parsed); err != nil {
+		t.Fatalf("expected JSON output, got %q: %v", stdout, err)
+	}
+	if _, ok := parsed["markdown"]; ok {
+		t.Fatalf("expected structured data only, got markdown key in %v", parsed)
+	}
+	if parsed["title"] != "Extracted Title" {
+		t.Fatalf("expected structured title, got %v", parsed)
+	}
+	if parsed["count"] != float64(2) {
+		t.Fatalf("expected structured count, got %v", parsed)
 	}
 }
 
@@ -518,6 +533,14 @@ func TestRunSessionScrape_OnlyMainContentOnly(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(stdout), &parsed); err != nil {
+		t.Fatalf("expected JSON output, got %q: %v", stdout, err)
+	}
+	if parsed["markdown"] != "main content only" {
+		t.Fatalf("expected full scrape response with markdown, got %v", parsed)
 	}
 }
 
