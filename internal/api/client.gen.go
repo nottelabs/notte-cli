@@ -8395,6 +8395,9 @@ type ClientInterface interface {
 
 	ProfileCookiesSet(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ReadyCheck request
+	ReadyCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SearchWebWithBody request with any body
 	SearchWebWithBody(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8991,6 +8994,18 @@ func (c *Client) ProfileCookiesSetWithBody(ctx context.Context, profileId string
 
 func (c *Client) ProfileCookiesSet(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProfileCookiesSetRequest(c.Server, profileId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ReadyCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReadyCheckRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -12143,6 +12158,33 @@ func NewProfileCookiesSetRequestWithBody(server string, profileId string, params
 	return req, nil
 }
 
+// NewReadyCheckRequest generates requests for ReadyCheck
+func NewReadyCheckRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/ready")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSearchWebRequest calls the generic SearchWeb builder with application/json body
 func NewSearchWebRequest(server string, params *SearchWebParams, body SearchWebJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -15026,6 +15068,9 @@ type ClientWithResponsesInterface interface {
 
 	ProfileCookiesSetWithResponse(ctx context.Context, profileId string, params *ProfileCookiesSetParams, body ProfileCookiesSetJSONRequestBody, reqEditors ...RequestEditorFn) (*ProfileCookiesSetResult, error)
 
+	// ReadyCheckWithResponse request
+	ReadyCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ReadyCheckResult, error)
+
 	// SearchWebWithBodyWithResponse request with any body
 	SearchWebWithBodyWithResponse(ctx context.Context, params *SearchWebParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SearchWebResult, error)
 
@@ -15881,6 +15926,28 @@ func (r ProfileCookiesSetResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ProfileCookiesSetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ReadyCheckResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HealthResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ReadyCheckResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReadyCheckResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -17043,6 +17110,15 @@ func (c *ClientWithResponses) ProfileCookiesSetWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseProfileCookiesSetResult(rsp)
+}
+
+// ReadyCheckWithResponse request returning *ReadyCheckResult
+func (c *ClientWithResponses) ReadyCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ReadyCheckResult, error) {
+	rsp, err := c.ReadyCheck(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReadyCheckResult(rsp)
 }
 
 // SearchWebWithBodyWithResponse request with arbitrary body returning *SearchWebResult
@@ -18483,6 +18559,32 @@ func ParseProfileCookiesSetResult(rsp *http.Response) (*ProfileCookiesSetResult,
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseReadyCheckResult parses an HTTP response from a ReadyCheckWithResponse call
+func ParseReadyCheckResult(rsp *http.Response) (*ReadyCheckResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReadyCheckResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HealthResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
