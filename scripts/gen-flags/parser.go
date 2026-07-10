@@ -165,6 +165,8 @@ func extractCommandConfig(name, path, method string, op *Operation, schemas map[
 }
 
 func processField(commandName, fieldName string, field *Field, schemas map[string]*Field) (*FieldConfig, error) {
+	ApplyDescriptionOverride(commandName, fieldName, field)
+
 	category, err := ClassifyField(field, schemas)
 	if err != nil {
 		return nil, err

@@ -58,6 +58,14 @@ var FlattenWithoutPrefix = map[string]map[string]bool{
 	},
 }
 
+// FieldDescriptionOverrides contains command-scoped descriptions for fields
+// whose OpenAPI metadata is currently flattened away before flag generation.
+var FieldDescriptionOverrides = map[string]map[string]string{
+	"SessionStart": {
+		"browser_type": "The browser type to use. Can be chromium, chrome or firefox.",
+	},
+}
+
 // Field represents a field in an OpenAPI schema
 type Field struct {
 	Name        string
@@ -163,6 +171,17 @@ type FieldConfig struct {
 	SubFields []*FieldConfig // For flattened objects
 }
 
+func ApplyDescriptionOverride(commandName, fieldName string, field *Field) {
+	if field.Description != "" {
+		return
+	}
+	if commandOverrides, ok := FieldDescriptionOverrides[commandName]; ok {
+		if description, ok := commandOverrides[fieldName]; ok {
+			field.Description = description
+		}
+	}
+}
+
 // ClassifyField determines how to generate flags for a field
 func ClassifyField(field *Field, schemas map[string]*Field) (FieldCategory, error) {
 	// Check if field should be skipped entirely
@@ -183,8 +202,13 @@ func ClassifyField(field *Field, schemas map[string]*Field) (FieldCategory, erro
 		}
 		// Check if the referenced type is an enum
 		if len(refField.Enum) > 0 {
-			// Copy enum values to field for later use
+			// Copy enum metadata to field for later use. Some OpenAPI
+			// generators put enum descriptions on the referenced schema instead
+			// of the field itself.
 			field.Enum = refField.Enum
+			if field.Description == "" {
+				field.Description = refField.Description
+			}
 			field.Type = "string"
 			return CategoryEnumFlag, nil
 		}
