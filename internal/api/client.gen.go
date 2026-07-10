@@ -604,9 +604,7 @@ type ApiExecutionResponse_Action struct {
 // ApiSessionStartRequest defines model for ApiSessionStartRequest.
 type ApiSessionStartRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
-	AspectRatio *string `json:"aspect_ratio,omitempty"`
-
-	// BrowserType The browser type to use. Can be chromium, chrome or firefox.
+	AspectRatio *string                            `json:"aspect_ratio,omitempty"`
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
@@ -656,7 +654,7 @@ type ApiSessionStartRequest struct {
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
-// ApiSessionStartRequestBrowserType The browser type to use. Can be chromium, chrome or firefox.
+// ApiSessionStartRequestBrowserType defines model for ApiSessionStartRequest.BrowserType.
 type ApiSessionStartRequestBrowserType string
 
 // ApiSessionStartRequestProxies0 defines model for .
