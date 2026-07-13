@@ -14,7 +14,7 @@ var (
 	// Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	SessionStartAspectRatio string
 
-	// The browser type to use. Can be chromium, chrome or firefox.
+	// The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	SessionStartBrowserType string
 
 	// The CDP URL of another remote session provider.
@@ -64,7 +64,7 @@ var (
 // RegisterSessionStartFlags registers all flags for SessionStart command
 func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartAspectRatio, "aspect-ratio", "", "Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.")
-	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Can be chromium, chrome or firefox. (chromium, chrome, firefox, chrome-nightly, chrome-turbo)")
+	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome. (chromium, chrome, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode.")
