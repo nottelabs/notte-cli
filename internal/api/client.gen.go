@@ -34,7 +34,6 @@ const (
 	ApiSessionStartRequestBrowserTypeChromeNightly ApiSessionStartRequestBrowserType = "chrome-nightly"
 	ApiSessionStartRequestBrowserTypeChromeTurbo   ApiSessionStartRequestBrowserType = "chrome-turbo"
 	ApiSessionStartRequestBrowserTypeChromium      ApiSessionStartRequestBrowserType = "chromium"
-	ApiSessionStartRequestBrowserTypeFirefox       ApiSessionStartRequestBrowserType = "firefox"
 )
 
 // Defines values for ApiSessionStartRequestScreenshotType.
@@ -94,7 +93,6 @@ const (
 	GlobalScrapeRequestBrowserTypeChromeNightly GlobalScrapeRequestBrowserType = "chrome-nightly"
 	GlobalScrapeRequestBrowserTypeChromeTurbo   GlobalScrapeRequestBrowserType = "chrome-turbo"
 	GlobalScrapeRequestBrowserTypeChromium      GlobalScrapeRequestBrowserType = "chromium"
-	GlobalScrapeRequestBrowserTypeFirefox       GlobalScrapeRequestBrowserType = "firefox"
 )
 
 // Defines values for GlobalScrapeRequestScreenshotType.
@@ -604,7 +602,9 @@ type ApiExecutionResponse_Action struct {
 // ApiSessionStartRequest defines model for ApiSessionStartRequest.
 type ApiSessionStartRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
-	AspectRatio *string                            `json:"aspect_ratio,omitempty"`
+	AspectRatio *string `json:"aspect_ratio,omitempty"`
+
+	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
@@ -654,7 +654,7 @@ type ApiSessionStartRequest struct {
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
-// ApiSessionStartRequestBrowserType defines model for ApiSessionStartRequest.BrowserType.
+// ApiSessionStartRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 type ApiSessionStartRequestBrowserType string
 
 // ApiSessionStartRequestProxies0 defines model for .
@@ -1424,7 +1424,7 @@ type GlobalScrapeRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
-	// BrowserType The browser type to use. Can be chromium, chrome or firefox.
+	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
@@ -1502,7 +1502,7 @@ type GlobalScrapeRequest struct {
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
-// GlobalScrapeRequestBrowserType The browser type to use. Can be chromium, chrome or firefox.
+// GlobalScrapeRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 type GlobalScrapeRequestBrowserType string
 
 // GlobalScrapeRequestProxies0 defines model for .
