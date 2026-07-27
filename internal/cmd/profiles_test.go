@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -169,5 +171,48 @@ func TestRunProfileDelete(t *testing.T) {
 
 	if !strings.Contains(stdout, "deleted") {
 		t.Errorf("expected delete message, got %q", stdout)
+	}
+}
+
+func TestRunProfileDuplicate(t *testing.T) {
+	server := setupProfileTest(t)
+	path := "/profiles/" + profileIDTest + "/duplicate"
+	server.AddResponse(path, http.StatusOK, `{"profile_id":"notte-profile-copy123","name":"Copied Profile","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z"}`)
+
+	originalName := profileDuplicateName
+	profileDuplicateName = "Copied Profile"
+	t.Cleanup(func() { profileDuplicateName = originalName })
+
+	originalFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = originalFormat })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().String("name", "", "")
+	_ = cmd.Flags().Set("name", profileDuplicateName)
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runProfileDuplicate(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "notte-profile-copy123") {
+		t.Errorf("expected duplicate profile output, got %q", stdout)
+	}
+	requests := server.Requests(path)
+	if len(requests) != 1 {
+		t.Fatalf("expected one duplicate request, got %d", len(requests))
+	}
+	if requests[0].Method != http.MethodPost {
+		t.Errorf("expected POST, got %s", requests[0].Method)
+	}
+	var body map[string]string
+	if err := json.Unmarshal([]byte(requests[0].Body), &body); err != nil {
+		t.Fatalf("invalid request JSON: %v", err)
+	}
+	if body["name"] != "Copied Profile" {
+		t.Errorf("expected destination name, got %#v", body)
 	}
 }

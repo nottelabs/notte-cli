@@ -1,7 +1,12 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 
 	"github.com/spf13/cobra"
 
@@ -9,6 +14,7 @@ import (
 )
 
 var profileID string
+var profileDuplicateName string
 
 var profilesCmd = &cobra.Command{
 	Use:   "profiles",
@@ -42,6 +48,13 @@ var profilesDeleteCmd = &cobra.Command{
 	RunE:  runProfileDelete,
 }
 
+var profilesDuplicateCmd = &cobra.Command{
+	Use:   "duplicate",
+	Short: "Duplicate a profile and its persisted browser state",
+	Args:  cobra.NoArgs,
+	RunE:  runProfileDuplicate,
+}
+
 func init() {
 	rootCmd.AddCommand(profilesCmd)
 	profilesCmd.AddCommand(profilesListCmd)
@@ -51,6 +64,7 @@ func init() {
 	profilesCmd.AddCommand(profilesCreateCmd)
 	profilesCmd.AddCommand(profilesShowCmd)
 	profilesCmd.AddCommand(profilesDeleteCmd)
+	profilesCmd.AddCommand(profilesDuplicateCmd)
 
 	// Create command flags (auto-generated)
 	RegisterProfileCreateFlags(profilesCreateCmd)
@@ -62,6 +76,11 @@ func init() {
 	// Delete command flags
 	profilesDeleteCmd.Flags().StringVar(&profileID, "profile-id", "", "Profile ID (required)")
 	_ = profilesDeleteCmd.MarkFlagRequired("profile-id")
+
+	// Duplicate command flags
+	profilesDuplicateCmd.Flags().StringVar(&profileID, "profile-id", "", "Source profile ID (required)")
+	profilesDuplicateCmd.Flags().StringVar(&profileDuplicateName, "name", "", "Optional name for the duplicate")
+	_ = profilesDuplicateCmd.MarkFlagRequired("profile-id")
 }
 
 func runProfilesList(cmd *cobra.Command, args []string) error {
@@ -195,4 +214,50 @@ func runProfileDelete(cmd *cobra.Command, args []string) error {
 		"id":     profileID,
 		"status": "deleted",
 	})
+}
+
+func runProfileDuplicate(cmd *cobra.Command, args []string) error {
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	requestBody := map[string]string{}
+	if cmd.Flags().Changed("name") {
+		requestBody["name"] = profileDuplicateName
+	}
+	bodyJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal duplicate request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("%s/profiles/%s/duplicate", client.BaseURL(), url.PathEscape(profileID))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(bodyJSON))
+	if err != nil {
+		return fmt.Errorf("failed to create duplicate request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.HTTPClient().Do(req)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	if err := HandleAPIResponse(resp, body); err != nil {
+		return err
+	}
+
+	var duplicate api.ProfileResponse
+	if err := json.Unmarshal(body, &duplicate); err != nil {
+		return fmt.Errorf("failed to parse duplicate profile: %w", err)
+	}
+	return GetFormatter().Print(duplicate)
 }
