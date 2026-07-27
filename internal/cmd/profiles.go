@@ -13,8 +13,10 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 )
 
-var profileID string
-var profileDuplicateName string
+var (
+	profileID            string
+	profileDuplicateName string
+)
 
 var profilesCmd = &cobra.Command{
 	Use:   "profiles",
