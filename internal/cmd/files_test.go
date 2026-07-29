@@ -91,6 +91,44 @@ func TestDownloadFileWithContextPreservesDestinationOnFailure(t *testing.T) {
 	}
 }
 
+func TestDownloadFileWithContextPreservesDestinationSymlink(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("downloaded-content"))
+	}))
+	defer server.Close()
+
+	outputDir := t.TempDir()
+	targetPath := filepath.Join(outputDir, "target.txt")
+	if err := os.WriteFile(targetPath, []byte("existing-content"), 0o644); err != nil {
+		t.Fatalf("failed to create symlink target: %v", err)
+	}
+	linkPath := filepath.Join(outputDir, "download.txt")
+	if err := os.Symlink(filepath.Base(targetPath), linkPath); err != nil {
+		t.Skipf("symlinks are not available: %v", err)
+	}
+
+	if err := downloadFileWithContext(context.Background(), server.URL, linkPath); err != nil {
+		t.Fatalf("unexpected download error: %v", err)
+	}
+
+	linkInfo, err := os.Lstat(linkPath)
+	if err != nil {
+		t.Fatalf("failed to inspect destination symlink: %v", err)
+	}
+	if linkInfo.Mode()&os.ModeSymlink == 0 {
+		t.Fatal("destination symlink was replaced")
+	}
+
+	content, err := os.ReadFile(targetPath)
+	if err != nil {
+		t.Fatalf("failed to read symlink target: %v", err)
+	}
+	if string(content) != "downloaded-content" {
+		t.Fatalf("symlink target was not updated: %q", string(content))
+	}
+}
+
 func TestRunFilesListUploads(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")

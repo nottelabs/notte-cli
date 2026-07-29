@@ -105,6 +105,33 @@ func resolveFilesSource(from string, uploads, downloads bool) (string, error) {
 	}
 }
 
+func resolveDownloadOutputPath(outputPath string) (string, error) {
+	resolvedPath := outputPath
+	for range 255 {
+		info, err := os.Lstat(resolvedPath)
+		if os.IsNotExist(err) {
+			return resolvedPath, nil
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to inspect destination: %w", err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			return resolvedPath, nil
+		}
+
+		target, err := os.Readlink(resolvedPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read destination symlink: %w", err)
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(resolvedPath), target)
+		}
+		resolvedPath = filepath.Clean(target)
+	}
+
+	return "", fmt.Errorf("destination has too many symlink levels")
+}
+
 func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {
@@ -121,8 +148,13 @@ func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) er
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 
+	destinationPath, err := resolveDownloadOutputPath(outputPath)
+	if err != nil {
+		return err
+	}
+
 	fileMode := os.FileMode(0o644)
-	if info, statErr := os.Stat(outputPath); statErr == nil {
+	if info, statErr := os.Stat(destinationPath); statErr == nil {
 		if info.IsDir() {
 			return fmt.Errorf("destination path is a directory")
 		}
@@ -131,7 +163,10 @@ func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) er
 		return fmt.Errorf("failed to inspect destination: %w", statErr)
 	}
 
-	tempFile, err := os.CreateTemp(filepath.Dir(outputPath), "."+filepath.Base(outputPath)+".tmp-*")
+	tempFile, err := os.CreateTemp(
+		filepath.Dir(destinationPath),
+		"."+filepath.Base(destinationPath)+".tmp-*",
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
@@ -156,7 +191,7 @@ func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) er
 	if err := tempFile.Close(); err != nil {
 		return fmt.Errorf("failed to close temporary file: %w", err)
 	}
-	if err := os.Rename(tempPath, outputPath); err != nil {
+	if err := os.Rename(tempPath, destinationPath); err != nil {
 		return fmt.Errorf("failed to replace destination: %w", err)
 	}
 	committed = true
