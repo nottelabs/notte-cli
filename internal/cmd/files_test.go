@@ -24,12 +24,15 @@ func TestRunFilesListUploads(t *testing.T) {
 	server.AddResponse("/storage/uploads", 200, `{"files":[{"name":"a.txt","file_ext":".txt","size":100}]}`)
 
 	origUploadsFlag := filesListUploadsFlag
+	origFrom := filesListFrom
 	origSession := sessionID
 	t.Cleanup(func() {
 		filesListUploadsFlag = origUploadsFlag
+		filesListFrom = origFrom
 		sessionID = origSession
 	})
-	filesListUploadsFlag = true
+	filesListUploadsFlag = false
+	filesListFrom = filesSourceUploads
 	sessionID = ""
 
 	origFormat := outputFormat
@@ -62,12 +65,15 @@ func TestRunFilesListUploadsEmpty(t *testing.T) {
 	server.AddResponse("/storage/uploads", 200, `{"files":[]}`)
 
 	origUploadsFlag := filesListUploadsFlag
+	origFrom := filesListFrom
 	origSession := sessionID
 	t.Cleanup(func() {
 		filesListUploadsFlag = origUploadsFlag
+		filesListFrom = origFrom
 		sessionID = origSession
 	})
 	filesListUploadsFlag = true
+	filesListFrom = ""
 	sessionID = ""
 
 	origFormat := outputFormat
@@ -100,12 +106,15 @@ func TestRunFilesListDownloads(t *testing.T) {
 	server.AddResponse("/storage/sess_123/downloads", 200, `{"files":[{"name":"b.txt","file_ext":".txt","size":200}]}`)
 
 	origDownloadsFlag := filesListDownloadsFlag
+	origFrom := filesListFrom
 	origSession := sessionID
 	t.Cleanup(func() {
 		filesListDownloadsFlag = origDownloadsFlag
+		filesListFrom = origFrom
 		sessionID = origSession
 	})
 	filesListDownloadsFlag = true
+	filesListFrom = ""
 	sessionID = "sess_123"
 
 	origFormat := outputFormat
@@ -138,12 +147,15 @@ func TestRunFilesListDownloadsMissingSession(t *testing.T) {
 	t.Cleanup(func() { config.SetTestConfigDir("") })
 
 	origDownloadsFlag := filesListDownloadsFlag
+	origFrom := filesListFrom
 	origSession := sessionID
 	t.Cleanup(func() {
 		filesListDownloadsFlag = origDownloadsFlag
+		filesListFrom = origFrom
 		sessionID = origSession
 	})
 	filesListDownloadsFlag = true
+	filesListFrom = ""
 	sessionID = ""
 
 	cmd := &cobra.Command{}
@@ -230,12 +242,15 @@ func TestRunFilesDownload(t *testing.T) {
 	env.SetEnv("NOTTE_API_URL", server.URL())
 
 	origSession := sessionID
+	origFrom := filesDownloadFrom
 	origOutput := filesDownloadOutput
 	t.Cleanup(func() {
 		sessionID = origSession
+		filesDownloadFrom = origFrom
 		filesDownloadOutput = origOutput
 	})
 	sessionID = "sess_123"
+	filesDownloadFrom = ""
 
 	outDir := t.TempDir()
 	outputPath := filepath.Join(outDir, "download.txt")
@@ -270,6 +285,50 @@ func TestRunFilesDownload(t *testing.T) {
 	}
 }
 
+func TestRunFilesDownloadFromUploads(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	env.SetEnv("NOTTE_SESSION_ID", "")
+
+	fileServer := testutil.NewMockServer()
+	defer fileServer.Close()
+	fileServer.AddResponseWithHeaders("/input.txt", 200, "uploaded-file-data", map[string]string{
+		"Content-Type": "application/octet-stream",
+	})
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+	server.AddResponse("/storage/uploads/input.txt", 200, `{"url":"`+fileServer.URL()+`/input.txt"}`)
+
+	origSession := sessionID
+	origFrom := filesDownloadFrom
+	origOutput := filesDownloadOutput
+	t.Cleanup(func() {
+		sessionID = origSession
+		filesDownloadFrom = origFrom
+		filesDownloadOutput = origOutput
+	})
+	sessionID = ""
+	filesDownloadFrom = filesSourceUploads
+	filesDownloadOutput = filepath.Join(t.TempDir(), "input.txt")
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	if err := runFilesDownload(cmd, []string{"input.txt"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	got, err := os.ReadFile(filesDownloadOutput)
+	if err != nil {
+		t.Fatalf("failed to read downloaded file: %v", err)
+	}
+	if string(got) != "uploaded-file-data" {
+		t.Fatalf("unexpected file content: %q", string(got))
+	}
+}
+
 func TestRunFilesDownloadMissingSession(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_SESSION_ID", "") // Clear session env var
@@ -280,8 +339,11 @@ func TestRunFilesDownloadMissingSession(t *testing.T) {
 	t.Cleanup(func() { config.SetTestConfigDir("") })
 
 	origSession := sessionID
+	origFrom := filesDownloadFrom
 	t.Cleanup(func() { sessionID = origSession })
+	t.Cleanup(func() { filesDownloadFrom = origFrom })
 	sessionID = ""
+	filesDownloadFrom = ""
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
@@ -292,5 +354,43 @@ func TestRunFilesDownloadMissingSession(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "session ID required") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveFilesSource(t *testing.T) {
+	tests := []struct {
+		name      string
+		from      string
+		uploads   bool
+		downloads bool
+		want      string
+		wantErr   bool
+	}{
+		{name: "defaults to session", want: filesSourceSession},
+		{name: "from uploads", from: filesSourceUploads, want: filesSourceUploads},
+		{name: "from session", from: filesSourceSession, want: filesSourceSession},
+		{name: "legacy uploads", uploads: true, want: filesSourceUploads},
+		{name: "legacy downloads", downloads: true, want: filesSourceSession},
+		{name: "invalid source", from: "local", wantErr: true},
+		{name: "conflicting legacy flags", uploads: true, downloads: true, wantErr: true},
+		{name: "mixed source flags", from: filesSourceUploads, downloads: true, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveFilesSource(tt.from, tt.uploads, tt.downloads)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected an error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
