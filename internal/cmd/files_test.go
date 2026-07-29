@@ -2,16 +2,94 @@ package cmd
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/config"
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
+
+func TestDownloadFileWithContextHonorsCancellation(t *testing.T) {
+	requestStarted := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("partial"))
+		w.(http.Flusher).Flush()
+		close(requestStarted)
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	outputPath := filepath.Join(t.TempDir(), "download.txt")
+	result := make(chan error, 1)
+	go func() {
+		result <- downloadFileWithContext(ctx, server.URL, outputPath)
+	}()
+
+	select {
+	case <-requestStarted:
+		cancel()
+	case <-time.After(2 * time.Second):
+		cancel()
+		t.Fatal("download request did not start")
+	}
+
+	select {
+	case err := <-result:
+		if err == nil {
+			t.Fatal("expected canceled download to fail")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("download did not stop after context cancellation")
+	}
+
+	if _, err := os.Stat(outputPath); !os.IsNotExist(err) {
+		t.Fatalf("canceled download left destination file behind: %v", err)
+	}
+}
+
+func TestDownloadFileWithContextPreservesDestinationOnFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("partial"))
+	}))
+	defer server.Close()
+
+	outputPath := filepath.Join(t.TempDir(), "download.txt")
+	if err := os.WriteFile(outputPath, []byte("existing-content"), 0o644); err != nil {
+		t.Fatalf("failed to create destination: %v", err)
+	}
+
+	if err := downloadFileWithContext(context.Background(), server.URL, outputPath); err == nil {
+		t.Fatal("expected interrupted download to fail")
+	}
+
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("failed to read destination: %v", err)
+	}
+	if string(content) != "existing-content" {
+		t.Fatalf("destination was modified after failed download: %q", string(content))
+	}
+
+	tempFiles, err := filepath.Glob(filepath.Join(filepath.Dir(outputPath), ".download.txt.tmp-*"))
+	if err != nil {
+		t.Fatalf("failed to inspect temporary files: %v", err)
+	}
+	if len(tempFiles) != 0 {
+		t.Fatalf("temporary files were not cleaned up: %v", tempFiles)
+	}
+}
 
 func TestRunFilesListUploads(t *testing.T) {
 	env := testutil.SetupTestEnv(t)

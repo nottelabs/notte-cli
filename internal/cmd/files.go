@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -102,6 +103,64 @@ func resolveFilesSource(from string, uploads, downloads bool) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid --from value %q: must be uploads or session", from)
 	}
+}
+
+func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create download request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	fileMode := os.FileMode(0o644)
+	if info, statErr := os.Stat(outputPath); statErr == nil {
+		if info.IsDir() {
+			return fmt.Errorf("destination path is a directory")
+		}
+		fileMode = info.Mode().Perm()
+	} else if !os.IsNotExist(statErr) {
+		return fmt.Errorf("failed to inspect destination: %w", statErr)
+	}
+
+	tempFile, err := os.CreateTemp(filepath.Dir(outputPath), "."+filepath.Base(outputPath)+".tmp-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary file: %w", err)
+	}
+	tempPath := tempFile.Name()
+	committed := false
+	defer func() {
+		_ = tempFile.Close()
+		if !committed {
+			_ = os.Remove(tempPath)
+		}
+	}()
+
+	if _, err := io.Copy(tempFile, resp.Body); err != nil {
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+	if err := tempFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync temporary file: %w", err)
+	}
+	if err := tempFile.Chmod(fileMode); err != nil {
+		return fmt.Errorf("failed to set file permissions: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temporary file: %w", err)
+	}
+	if err := os.Rename(tempPath, outputPath); err != nil {
+		return fmt.Errorf("failed to replace destination: %w", err)
+	}
+	committed = true
+	return nil
 }
 
 func runFilesList(cmd *cobra.Command, args []string) error {
@@ -323,33 +382,14 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no download URL in response")
 	}
 
-	// Download the actual file from the presigned URL
-	httpResp, err := http.Get(downloadResp.URL)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer func() { _ = httpResp.Body.Close() }()
-
-	if httpResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: HTTP %d", httpResp.StatusCode)
-	}
-
 	// Determine output path
 	outputPath := filesDownloadOutput
 	if outputPath == "" {
 		outputPath = filename
 	}
 
-	// Create the output file
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer func() { _ = outFile.Close() }()
-
-	// Copy the downloaded content to the file
-	if _, err := io.Copy(outFile, httpResp.Body); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+	if err := downloadFileWithContext(ctx, downloadResp.URL, outputPath); err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
 	}
 
 	return PrintResult(fmt.Sprintf("File downloaded successfully: %s", outputPath), map[string]any{
