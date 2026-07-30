@@ -354,7 +354,7 @@ func runFunctionsList(cmd *cobra.Command, args []string) error {
 
 	formatter := GetFormatter()
 
-	var items []api.GetFunctionResponse
+	var items []api.FunctionResponse
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
