@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,20 +19,27 @@ import (
 var (
 	filesListUploadsFlag   bool
 	filesListDownloadsFlag bool
+	filesListFrom          string
+	filesDownloadFrom      string
 	filesDownloadOutput    string
+)
+
+const (
+	filesSourceUploads = "uploads"
+	filesSourceSession = "session"
 )
 
 var filesCmd = &cobra.Command{
 	Use:   "files",
-	Short: "Manage uploaded files",
+	Short: "Manage stored files",
 	Long:  "Upload, list, and download files from notte.cc storage.",
 }
 
 var filesListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List uploaded files",
-	Long: `List files in storage. Use --uploads to list uploaded files,
-or --downloads to list downloaded files from a session.`,
+	Short: "List stored files",
+	Long: `List user-uploaded files or files downloaded by a browser session.
+Use --from uploads for user uploads or --from session for session downloads.`,
 	RunE: runFilesList,
 }
 
@@ -46,9 +54,10 @@ var filesUploadCmd = &cobra.Command{
 var filesDownloadCmd = &cobra.Command{
 	Use:   "download <filename>",
 	Short: "Download a file by name",
-	Long:  "Download a file from a session by its filename.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runFilesDownload,
+	Long: `Download a user-uploaded file or a file produced by a browser session.
+Use --from uploads for user uploads or --from session for session downloads.`,
+	Args: cobra.ExactArgs(1),
+	RunE: runFilesDownload,
 }
 
 func init() {
@@ -59,15 +68,142 @@ func init() {
 
 	// List command flags
 	filesListCmd.Flags().BoolVar(&filesListUploadsFlag, "uploads", false, "List uploaded files")
-	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", true, "List downloaded files from a session")
+	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", false, "List downloaded files from a session")
+	filesListCmd.Flags().StringVar(&filesListFrom, "from", "", "File source: uploads or session (default session)")
 	filesListCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	_ = filesListCmd.Flags().MarkDeprecated("uploads", "use --from uploads instead")
+	_ = filesListCmd.Flags().MarkDeprecated("downloads", "use --from session instead")
 
 	// Download command flags
 	filesDownloadCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	filesDownloadCmd.Flags().StringVar(&filesDownloadFrom, "from", "", "File source: uploads or session (default session)")
 	filesDownloadCmd.Flags().StringVar(&filesDownloadOutput, "path", "", "Output file path (defaults to current directory)")
 }
 
+func resolveFilesSource(from string, uploads, downloads bool) (string, error) {
+	if uploads && downloads {
+		return "", fmt.Errorf("--uploads and --downloads cannot be used together")
+	}
+	if from != "" && (uploads || downloads) {
+		return "", fmt.Errorf("--from cannot be combined with --uploads or --downloads")
+	}
+
+	if uploads {
+		return filesSourceUploads, nil
+	}
+	if downloads {
+		return filesSourceSession, nil
+	}
+
+	switch from {
+	case "", filesSourceSession:
+		return filesSourceSession, nil
+	case filesSourceUploads:
+		return filesSourceUploads, nil
+	default:
+		return "", fmt.Errorf("invalid --from value %q: must be uploads or session", from)
+	}
+}
+
+func resolveDownloadOutputPath(outputPath string) (string, error) {
+	resolvedPath := outputPath
+	for range 255 {
+		info, err := os.Lstat(resolvedPath)
+		if os.IsNotExist(err) {
+			return resolvedPath, nil
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to inspect destination: %w", err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			return resolvedPath, nil
+		}
+
+		target, err := os.Readlink(resolvedPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read destination symlink: %w", err)
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(resolvedPath), target)
+		}
+		resolvedPath = filepath.Clean(target)
+	}
+
+	return "", fmt.Errorf("destination has too many symlink levels")
+}
+
+func downloadFileWithContext(ctx context.Context, fileURL, outputPath string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create download request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	destinationPath, err := resolveDownloadOutputPath(outputPath)
+	if err != nil {
+		return err
+	}
+
+	fileMode := os.FileMode(0o644)
+	if info, statErr := os.Stat(destinationPath); statErr == nil {
+		if info.IsDir() {
+			return fmt.Errorf("destination path is a directory")
+		}
+		fileMode = info.Mode().Perm()
+	} else if !os.IsNotExist(statErr) {
+		return fmt.Errorf("failed to inspect destination: %w", statErr)
+	}
+
+	tempFile, err := os.CreateTemp(
+		filepath.Dir(destinationPath),
+		"."+filepath.Base(destinationPath)+".tmp-*",
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create temporary file: %w", err)
+	}
+	tempPath := tempFile.Name()
+	committed := false
+	defer func() {
+		_ = tempFile.Close()
+		if !committed {
+			_ = os.Remove(tempPath)
+		}
+	}()
+
+	if _, err := io.Copy(tempFile, resp.Body); err != nil {
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+	if err := tempFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync temporary file: %w", err)
+	}
+	if err := tempFile.Chmod(fileMode); err != nil {
+		return fmt.Errorf("failed to set file permissions: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temporary file: %w", err)
+	}
+	if err := os.Rename(tempPath, destinationPath); err != nil {
+		return fmt.Errorf("failed to replace destination: %w", err)
+	}
+	committed = true
+	return nil
+}
+
 func runFilesList(cmd *cobra.Command, args []string) error {
+	source, err := resolveFilesSource(filesListFrom, filesListUploadsFlag, filesListDownloadsFlag)
+	if err != nil {
+		return err
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -75,8 +211,7 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 
 	formatter := GetFormatter()
 
-	// If uploads flag is set, list uploads
-	if filesListUploadsFlag {
+	if source == filesSourceUploads {
 		ctx, cancel := GetContextWithTimeout(cmd.Context())
 		defer cancel()
 
@@ -225,8 +360,15 @@ func runFilesUpload(cmd *cobra.Command, args []string) error {
 func runFilesDownload(cmd *cobra.Command, args []string) error {
 	filename := args[0]
 
-	if err := RequireSessionID(); err != nil {
+	source, err := resolveFilesSource(filesDownloadFrom, false, false)
+	if err != nil {
 		return err
+	}
+
+	if source == filesSourceSession {
+		if err := RequireSessionID(); err != nil {
+			return err
+		}
 	}
 
 	client, err := GetClient()
@@ -237,18 +379,29 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	params := &api.FileDownloadParams{}
-	resp, err := client.Client().FileDownloadWithResponse(
-		ctx,
-		sessionID,
-		filename,
-		params,
-	)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
+	var httpResponse *http.Response
+	var responseBody []byte
+	if source == filesSourceUploads {
+		httpResponse, responseBody, err = client.DownloadUploadedFile(ctx, filename)
+		if err != nil {
+			return fmt.Errorf("API request failed: %w", err)
+		}
+	} else {
+		params := &api.FileDownloadParams{}
+		resp, err := client.Client().FileDownloadWithResponse(
+			ctx,
+			sessionID,
+			filename,
+			params,
+		)
+		if err != nil {
+			return fmt.Errorf("API request failed: %w", err)
+		}
+		httpResponse = resp.HTTPResponse
+		responseBody = resp.Body
 	}
 
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+	if err := HandleAPIResponse(httpResponse, responseBody); err != nil {
 		return err
 	}
 
@@ -256,23 +409,12 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 	var downloadResp struct {
 		URL string `json:"url"`
 	}
-	if err := json.Unmarshal(resp.Body, &downloadResp); err != nil {
+	if err := json.Unmarshal(responseBody, &downloadResp); err != nil {
 		return fmt.Errorf("failed to parse download response: %w", err)
 	}
 
 	if downloadResp.URL == "" {
 		return fmt.Errorf("no download URL in response")
-	}
-
-	// Download the actual file from the presigned URL
-	httpResp, err := http.Get(downloadResp.URL)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer func() { _ = httpResp.Body.Close() }()
-
-	if httpResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: HTTP %d", httpResp.StatusCode)
 	}
 
 	// Determine output path
@@ -281,16 +423,8 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 		outputPath = filename
 	}
 
-	// Create the output file
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer func() { _ = outFile.Close() }()
-
-	// Copy the downloaded content to the file
-	if _, err := io.Copy(outFile, httpResp.Body); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+	if err := downloadFileWithContext(ctx, downloadResp.URL, outputPath); err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
 	}
 
 	return PrintResult(fmt.Sprintf("File downloaded successfully: %s", outputPath), map[string]any{

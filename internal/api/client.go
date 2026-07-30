@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
@@ -219,6 +222,28 @@ func (c *NotteClient) BaseURL() string {
 // APIKey returns the API key used by the client
 func (c *NotteClient) APIKey() string {
 	return c.apiKey
+}
+
+// DownloadUploadedFile requests a temporary download link for a user-uploaded file.
+// This endpoint is kept here until it is available in the generated OpenAPI client.
+func (c *NotteClient) DownloadUploadedFile(ctx context.Context, filename string) (*http.Response, []byte, error) {
+	endpoint := strings.TrimRight(c.baseURL, "/") + "/storage/uploads/" + url.PathEscape(filename)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create uploaded file download request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("failed to read uploaded file download response: %w", err)
+	}
+	return resp, body, nil
 }
 
 // Context helper for commands

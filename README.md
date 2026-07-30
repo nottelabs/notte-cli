@@ -233,9 +233,11 @@ notte profiles delete --profile-id <id>  # Delete a profile
 ### Files
 
 ```bash
-notte files list                     # List uploaded files
-notte files upload <path>            # Upload a file
-notte files download <id>            # Download a file by ID
+notte files upload <path>                                      # Upload a persistent input file
+notte files list --from uploads                                # List persistent input files
+notte files download <filename> --from uploads                 # Download a persistent input file
+notte files list --from session [--session-id <id>]            # List files produced by a session
+notte files download <filename> [--session-id <id>]            # Download a file produced by a session
 ```
 
 ### Utilities

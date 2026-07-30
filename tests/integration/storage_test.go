@@ -17,7 +17,7 @@ func TestStorageListUploads(t *testing.T) {
 	t.Log("Successfully listed uploads")
 }
 
-func TestStorageUploadAndList(t *testing.T) {
+func TestStorageUploadListAndDownload(t *testing.T) {
 	// Create a temporary file to upload
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test-upload.txt")
@@ -38,6 +38,20 @@ func TestStorageUploadAndList(t *testing.T) {
 		t.Log("Upload might use different filename, but list succeeded")
 	}
 	t.Log("Successfully verified file in uploads list")
+
+	// Download the uploaded file again
+	downloadPath := filepath.Join(tmpDir, "downloaded-test-upload.txt")
+	result = runCLI(t, "files", "download", "test-upload.txt", "--from", "uploads", "--path", downloadPath)
+	requireSuccess(t, result)
+
+	downloadedContent, err := os.ReadFile(downloadPath)
+	if err != nil {
+		t.Fatalf("Failed to read downloaded file: %v", err)
+	}
+	if string(downloadedContent) != string(testContent) {
+		t.Fatalf("Downloaded content does not match uploaded content")
+	}
+	t.Log("Successfully downloaded uploaded file")
 }
 
 func TestStorageDownloadFromSession(t *testing.T) {
