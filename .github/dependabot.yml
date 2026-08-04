@@ -1,3 +1,6 @@
+# Dependabot proposes a release as soon as it is published; the cooldown
+# blocks below make a version age first, so a compromised or yanked release
+# has time to be caught. Security updates are exempt and are not delayed.
 version: 2
 updates:
   # Go modules
@@ -5,6 +8,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     commit-message:
       prefix: "deps"
     groups:
@@ -17,6 +25,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     commit-message:
       prefix: "ci"
     groups:
