@@ -60,7 +60,7 @@ func init() {
 	rootCmd.AddCommand(personasCmd)
 	personasCmd.AddCommand(personasListCmd)
 	registerPaginationFlags(personasListCmd)
-	personasListCmd.Flags().Bool("only-active", false, "Only return active personas")
+	registerFilterFlag(personasListCmd, flagIncludeDeleted, "", "Include deleted personas")
 
 	personasCmd.AddCommand(personasCreateCmd)
 	personasCmd.AddCommand(personasShowCmd)
@@ -109,10 +109,7 @@ func runPersonasList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagIncludeDeleted, true)
 	resp, err := client.Client().ListPersonasWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

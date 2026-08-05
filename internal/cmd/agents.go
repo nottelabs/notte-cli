@@ -132,7 +132,7 @@ func init() {
 	rootCmd.AddCommand(agentsCmd)
 	agentsCmd.AddCommand(agentsListCmd)
 	registerPaginationFlags(agentsListCmd)
-	agentsListCmd.Flags().Bool("only-active", false, "Only return active agents")
+	registerFilterFlag(agentsListCmd, flagAll, "a", "Include finished agents")
 	agentsListCmd.Flags().Bool("only-saved", false, "Only return saved agents")
 
 	agentsCmd.AddCommand(agentsStartCmd)
@@ -179,14 +179,8 @@ func runAgentsList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
-	if cmd.Flags().Changed("only-saved") {
-		v, _ := cmd.Flags().GetBool("only-saved")
-		params.OnlySaved = &v
-	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagAll, true)
+	params.OnlySaved = alwaysSend(cmd, "only-saved")
 	resp, err := client.Client().ListAgentsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
