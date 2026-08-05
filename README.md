@@ -21,7 +21,7 @@ The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) t
 ## Features
 
 - **AI agents** - run and monitor AI-powered browser functions
-- **Browser sessions** - headless or headed Chrome/Firefox with full control
+- **Browser sessions** - headless or headed Chromium/Chrome with full control
 - **Files** - upload and download files to notte.cc
 - **Output formats** - human-readable text or JSON for scripting
 - **Personas** - create and manage digital identities with email, phone, and SMS
@@ -118,7 +118,7 @@ notte sessions code                   # Get Python script for session steps
 
 ```bash
 notte sessions start \
-  --browser-type chromium|chrome|firefox  # Browser type (default: chromium)
+  --browser-type chromium|chrome  # Browser type (default: chromium)
   --headless                              # Run in headless mode (default: true)
   --idle-timeout-minutes <minutes>        # Idle timeout (closes after inactivity)
   --max-duration-minutes <minutes>        # Maximum session lifetime

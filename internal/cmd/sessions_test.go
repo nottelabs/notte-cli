@@ -130,7 +130,7 @@ func TestRunSessionsStart(t *testing.T) {
 	})
 
 	SessionStartHeadless = false
-	SessionStartBrowserType = "firefox"
+	SessionStartBrowserType = "chrome"
 	SessionStartIdleTimeoutMinutes = 5
 	sessionsStartProxy = true
 	SessionStartSolveCaptchas = true

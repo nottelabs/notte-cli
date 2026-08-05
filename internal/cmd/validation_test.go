@@ -65,8 +65,11 @@ func TestValidateBrowser(t *testing.T) {
 		wantErr bool
 	}{
 		{"chromium", "chromium", false},
-		{"firefox", "firefox", false},
-		{"webkit", "webkit", false},
+		{"chrome", "chrome", false},
+		{"chrome-nightly", "chrome-nightly", false},
+		{"chrome-turbo", "chrome-turbo", false},
+		{"firefox", "firefox", true},
+		{"webkit", "webkit", true},
 		{"invalid", "safari", true},
 		{"empty", "", true},
 	}

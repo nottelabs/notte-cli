@@ -59,10 +59,12 @@ func TestBrowser(t *testing.T) {
 		wantErr bool
 	}{
 		{"chromium", false},
-		{"firefox", false},
-		{"webkit", false},
-		{"chrome", true}, // Not valid - should be chromium
-		{"safari", true}, // Not valid - should be webkit
+		{"chrome", false},
+		{"chrome-nightly", false}, // legacy alias for chrome
+		{"chrome-turbo", false},   // legacy alias for chrome
+		{"firefox", true},         // the API rejects Firefox sessions outright
+		{"webkit", true},          // never supported
+		{"safari", true},
 		{"", true},
 	}
 

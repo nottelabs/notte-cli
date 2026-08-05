@@ -62,7 +62,7 @@ var FlattenWithoutPrefix = map[string]map[string]bool{
 // whose OpenAPI metadata is currently flattened away before flag generation.
 var FieldDescriptionOverrides = map[string]map[string]string{
 	"SessionStart": {
-		"browser_type": "The browser type to use. Can be chromium, chrome or firefox.",
+		"browser_type": "The browser type to use. Supported values are chromium and chrome.",
 	},
 }
 
