@@ -37,11 +37,11 @@ func TestAPIError_Unwrap(t *testing.T) {
 func TestValidationError_Error(t *testing.T) {
 	err := &ValidationError{
 		Field:   "browser",
-		Message: "expected chromium|firefox|webkit, got 'chrome'",
+		Message: "expected chromium|chrome, got 'firefox'",
 	}
 
 	got := err.Error()
-	want := "validation error: browser: expected chromium|firefox|webkit, got 'chrome'"
+	want := "validation error: browser: expected chromium|chrome, got 'firefox'"
 
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)

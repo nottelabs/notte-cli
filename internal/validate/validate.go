@@ -45,16 +45,23 @@ func JSON(s string) error {
 	return nil
 }
 
-// Browser validates browser type
+// Browser validates browser type.
+//
+// Notte runs Chromium-family browsers only. Firefox and WebKit are not
+// supported - the API rejects a Firefox session with "Firefox sessions are not
+// supported. Please use 'chromium' or 'chrome' as `browser_type`" - and
+// `chrome` is valid despite an earlier version of this list omitting it.
+// chrome-nightly and chrome-turbo are accepted as legacy aliases for chrome.
 func Browser(s string) error {
 	valid := map[string]bool{
-		"chromium": true,
-		"firefox":  true,
-		"webkit":   true,
+		"chromium":       true,
+		"chrome":         true,
+		"chrome-nightly": true,
+		"chrome-turbo":   true,
 	}
 
 	if !valid[s] {
-		return fmt.Errorf("invalid browser: expected chromium|firefox|webkit, got %q", s)
+		return fmt.Errorf("invalid browser: expected chromium|chrome, got %q", s)
 	}
 
 	return nil

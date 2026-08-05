@@ -142,7 +142,7 @@ func TestErrorParsing_ValidationErrorContainsDetails(t *testing.T) {
 	stderr := result.Stderr
 
 	// Check that error mentions at least one valid browser type
-	validBrowsers := []string{"chromium", "chrome", "firefox"}
+	validBrowsers := []string{"chromium", "chrome"}
 	foundValidBrowser := false
 	for _, browser := range validBrowsers {
 		if containsString(stderr, browser) {
