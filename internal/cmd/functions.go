@@ -238,7 +238,7 @@ func init() {
 	rootCmd.AddCommand(functionsCmd)
 	functionsCmd.AddCommand(functionsListCmd)
 	registerPaginationFlags(functionsListCmd)
-	functionsListCmd.Flags().Bool("only-active", false, "Only return active functions")
+	registerFilterFlag(functionsListCmd, flagIncludeDeleted, "", "Include deleted functions")
 
 	functionsCmd.AddCommand(functionsCreateCmd)
 	functionsCmd.AddCommand(functionsShowCmd)
@@ -247,7 +247,7 @@ func init() {
 	functionsCmd.AddCommand(functionsRunCmd)
 	functionsCmd.AddCommand(functionsRunsCmd)
 	registerPaginationFlags(functionsRunsCmd)
-	functionsRunsCmd.Flags().Bool("only-active", false, "Only return active runs")
+	registerFilterFlag(functionsRunsCmd, flagRunning, "", "Only show runs that are still executing")
 
 	functionsCmd.AddCommand(functionsForkCmd)
 	functionsCmd.AddCommand(functionsRunStopCmd)
@@ -339,10 +339,7 @@ func runFunctionsList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagIncludeDeleted, true)
 	resp, err := client.Client().ListFunctionsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -669,10 +666,9 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
+	// Runs default to the full history: "active" here means still executing, so
+	// filtering by it would make run history permanently empty.
+	params.OnlyActive = resolveOnlyActive(cmd, flagRunning, false)
 	resp, err := client.Client().ListFunctionRunsByFunctionIdWithResponse(ctx, functionID, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

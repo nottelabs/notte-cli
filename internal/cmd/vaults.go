@@ -99,7 +99,7 @@ func init() {
 	rootCmd.AddCommand(vaultsCmd)
 	vaultsCmd.AddCommand(vaultsListCmd)
 	registerPaginationFlags(vaultsListCmd)
-	vaultsListCmd.Flags().Bool("only-active", false, "Only return active vaults")
+	registerFilterFlag(vaultsListCmd, flagIncludeDeleted, "", "Include deleted vaults")
 
 	vaultsCmd.AddCommand(vaultsCreateCmd)
 	vaultsCmd.AddCommand(vaultsUpdateCmd)
@@ -163,10 +163,7 @@ func runVaultsList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagIncludeDeleted, true)
 	resp, err := client.Client().ListVaultsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)

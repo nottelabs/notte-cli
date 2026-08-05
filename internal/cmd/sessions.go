@@ -321,7 +321,7 @@ func init() {
 	rootCmd.AddCommand(sessionsCmd)
 	sessionsCmd.AddCommand(sessionsListCmd)
 	registerPaginationFlags(sessionsListCmd)
-	sessionsListCmd.Flags().Bool("only-active", false, "Only return active sessions")
+	registerFilterFlag(sessionsListCmd, flagAll, "a", "Include stopped sessions")
 
 	sessionsCmd.AddCommand(sessionsStartCmd)
 	sessionsCmd.AddCommand(sessionsStatusCmd)
@@ -423,10 +423,7 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
-	if cmd.Flags().Changed("only-active") {
-		v, _ := cmd.Flags().GetBool("only-active")
-		params.OnlyActive = &v
-	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagAll, true)
 	resp, err := client.Client().ListSessionsWithResponse(ctx, params)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
