@@ -121,7 +121,7 @@ func TestPaginatedListCommandsHaveFlags(t *testing.T) {
 		{functionsListCmd, "functions list", []string{"page", "page-size", "only-active"}},
 		{functionsRunsCmd, "functions runs", []string{"page", "page-size", "only-active"}},
 		{personasListCmd, "personas list", []string{"page", "page-size", "only-active"}},
-		{profilesListCmd, "profiles list", []string{"page", "page-size", "name"}},
+		{profilesListCmd, "profiles list", []string{"page", "page-size", "name", "include-deleted"}},
 		{vaultsListCmd, "vaults list", []string{"page", "page-size", "only-active"}},
 	}
 

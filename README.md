@@ -224,7 +224,7 @@ notte personas sms --persona-id <id>     # List SMS messages
 ### Profiles
 
 ```bash
-notte profiles list [--page N] [--page-size N] [--name "..."]  # List all profiles
+notte profiles list [--page N] [--page-size N] [--name "..."] [--include-deleted]  # List all profiles
 notte profiles create                    # Create a new profile
 notte profiles show --profile-id <id>    # View profile details
 notte profiles delete --profile-id <id>  # Delete a profile
