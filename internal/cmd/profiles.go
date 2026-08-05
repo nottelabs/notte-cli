@@ -46,6 +46,7 @@ func init() {
 	rootCmd.AddCommand(profilesCmd)
 	profilesCmd.AddCommand(profilesListCmd)
 	registerPaginationFlags(profilesListCmd)
+	registerFilterFlag(profilesListCmd, flagIncludeDeleted, "", "Include deleted profiles")
 	profilesListCmd.Flags().String("name", "", "Filter profiles by name")
 
 	profilesCmd.AddCommand(profilesCreateCmd)
@@ -85,6 +86,7 @@ func runProfilesList(cmd *cobra.Command, args []string) error {
 		Page:     page,
 		PageSize: pageSize,
 	}
+	params.OnlyActive = resolveOnlyActive(cmd, flagIncludeDeleted, true)
 	if cmd.Flags().Changed("name") {
 		v, _ := cmd.Flags().GetString("name")
 		params.Name = &v
