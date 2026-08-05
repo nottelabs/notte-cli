@@ -129,6 +129,68 @@ const (
 	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
+// Defines values for ManagedAuthAdminTemplateStatus.
+const (
+	ManagedAuthAdminTemplateStatusAvailable  ManagedAuthAdminTemplateStatus = "available"
+	ManagedAuthAdminTemplateStatusBeta       ManagedAuthAdminTemplateStatus = "beta"
+	ManagedAuthAdminTemplateStatusComingSoon ManagedAuthAdminTemplateStatus = "coming_soon"
+)
+
+// Defines values for ManagedAuthConnectionReauthMode.
+const (
+	Auto   ManagedAuthConnectionReauthMode = "auto"
+	Manual ManagedAuthConnectionReauthMode = "manual"
+)
+
+// Defines values for ManagedAuthConnectionStatus.
+const (
+	ManagedAuthConnectionStatusAuthenticated ManagedAuthConnectionStatus = "authenticated"
+	ManagedAuthConnectionStatusDisconnected  ManagedAuthConnectionStatus = "disconnected"
+	ManagedAuthConnectionStatusError         ManagedAuthConnectionStatus = "error"
+	ManagedAuthConnectionStatusNeedsReauth   ManagedAuthConnectionStatus = "needs_reauth"
+	ManagedAuthConnectionStatusProvisioning  ManagedAuthConnectionStatus = "provisioning"
+	ManagedAuthConnectionStatusResetting     ManagedAuthConnectionStatus = "resetting"
+	ManagedAuthConnectionStatusSetupRequired ManagedAuthConnectionStatus = "setup_required"
+)
+
+// Defines values for ManagedAuthFunctionCodeRole.
+const (
+	ManagedAuthFunctionCodeRoleLogin    ManagedAuthFunctionCodeRole = "login"
+	ManagedAuthFunctionCodeRoleVerifier ManagedAuthFunctionCodeRole = "verifier"
+)
+
+// Defines values for ManagedAuthRunResponseStatus.
+const (
+	ManagedAuthRunResponseStatusAuthenticated ManagedAuthRunResponseStatus = "authenticated"
+	ManagedAuthRunResponseStatusDisconnected  ManagedAuthRunResponseStatus = "disconnected"
+	ManagedAuthRunResponseStatusError         ManagedAuthRunResponseStatus = "error"
+	ManagedAuthRunResponseStatusNeedsReauth   ManagedAuthRunResponseStatus = "needs_reauth"
+	ManagedAuthRunResponseStatusProvisioning  ManagedAuthRunResponseStatus = "provisioning"
+	ManagedAuthRunResponseStatusResetting     ManagedAuthRunResponseStatus = "resetting"
+	ManagedAuthRunResponseStatusSetupRequired ManagedAuthRunResponseStatus = "setup_required"
+)
+
+// Defines values for ManagedAuthRuntimeFunctionDiagnosticRole.
+const (
+	ManagedAuthRuntimeFunctionDiagnosticRoleLogin    ManagedAuthRuntimeFunctionDiagnosticRole = "login"
+	ManagedAuthRuntimeFunctionDiagnosticRoleRefresh  ManagedAuthRuntimeFunctionDiagnosticRole = "refresh"
+	ManagedAuthRuntimeFunctionDiagnosticRoleVerifier ManagedAuthRuntimeFunctionDiagnosticRole = "verifier"
+)
+
+// Defines values for ManagedAuthTemplateStatus.
+const (
+	ManagedAuthTemplateStatusAvailable  ManagedAuthTemplateStatus = "available"
+	ManagedAuthTemplateStatusBeta       ManagedAuthTemplateStatus = "beta"
+	ManagedAuthTemplateStatusComingSoon ManagedAuthTemplateStatus = "coming_soon"
+)
+
+// Defines values for ManagedAuthTemplateImportResponseAction.
+const (
+	Create   ManagedAuthTemplateImportResponseAction = "create"
+	NoChange ManagedAuthTemplateImportResponseAction = "no_change"
+	Update   ManagedAuthTemplateImportResponseAction = "update"
+)
+
 // Defines values for ProfileCookiesImportRequestMode.
 const (
 	ProfileCookiesImportRequestModeAppend  ProfileCookiesImportRequestMode = "append"
@@ -409,6 +471,18 @@ const (
 	Updated UpdateFunctionRunResponseStatus = "updated"
 )
 
+// Defines values for ManagedAuthConnectionFunctionGetParamsRole.
+const (
+	ManagedAuthConnectionFunctionGetParamsRoleLogin    ManagedAuthConnectionFunctionGetParamsRole = "login"
+	ManagedAuthConnectionFunctionGetParamsRoleVerifier ManagedAuthConnectionFunctionGetParamsRole = "verifier"
+)
+
+// Defines values for ManagedAuthConnectionFunctionUpdateParamsRole.
+const (
+	ManagedAuthConnectionFunctionUpdateParamsRoleLogin    ManagedAuthConnectionFunctionUpdateParamsRole = "login"
+	ManagedAuthConnectionFunctionUpdateParamsRoleVerifier ManagedAuthConnectionFunctionUpdateParamsRole = "verifier"
+)
+
 // ActionParameter defines model for ActionParameter.
 type ActionParameter struct {
 	Default *string   `json:"default,omitempty"`
@@ -604,6 +678,9 @@ type ApiSessionStartRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
+	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Authentication finishes before the session is returned unless wait_for_authentication is false.
+	AuthIds *[]string `json:"auth_ids,omitempty"`
+
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
 
@@ -649,6 +726,9 @@ type ApiSessionStartRequest struct {
 
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width,omitempty"`
+
+	// WaitForAuthentication Whether to wait for Managed Auth profile restoration and authentication before returning the session. When false, authentication continues in the background after the browser is ready.
+	WaitForAuthentication *bool `json:"wait_for_authentication,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
@@ -1434,6 +1514,9 @@ type GlobalScrapeRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
+	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session before it is returned.
+	AuthIds *[]string `json:"auth_ids,omitempty"`
+
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
 
@@ -1507,6 +1590,9 @@ type GlobalScrapeRequest struct {
 
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width,omitempty"`
+
+	// WaitForAuthentication Whether to wait for Managed Auth before returning the session. Defaults to true. When true, authentication failure or timeout fails session creation; when false, authentication continues in the background after the browser is ready.
+	WaitForAuthentication *bool `json:"wait_for_authentication,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
@@ -1655,6 +1741,267 @@ type ListFilesResponse struct {
 
 // LlmModel defines model for LlmModel.
 type LlmModel string
+
+// ManagedAuthAdminTemplate defines model for ManagedAuthAdminTemplate.
+type ManagedAuthAdminTemplate struct {
+	AllowedDomains   *[]string                      `json:"allowed_domains,omitempty"`
+	Category         string                         `json:"category"`
+	Color            string                         `json:"color"`
+	Connectable      bool                           `json:"connectable"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	Description      string                         `json:"description"`
+	Domain           string                         `json:"domain"`
+	Id               string                         `json:"id"`
+	LoginFunction    *ManagedAuthLinkedFunction     `json:"login_function,omitempty"`
+	LoginUrl         *string                        `json:"login_url,omitempty"`
+	Method           string                         `json:"method"`
+	Name             string                         `json:"name"`
+	Slug             string                         `json:"slug"`
+	Status           ManagedAuthAdminTemplateStatus `json:"status"`
+	SupportsTotp     *bool                          `json:"supports_totp,omitempty"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+	VerifierFunction *ManagedAuthLinkedFunction     `json:"verifier_function,omitempty"`
+}
+
+// ManagedAuthAdminTemplateStatus defines model for ManagedAuthAdminTemplate.Status.
+type ManagedAuthAdminTemplateStatus string
+
+// ManagedAuthConnection defines model for ManagedAuthConnection.
+type ManagedAuthConnection struct {
+	AllowedDomains                *[]string                       `json:"allowed_domains,omitempty"`
+	CreatedAt                     time.Time                       `json:"created_at"`
+	DisconnectedAt                *string                         `json:"disconnected_at,omitempty"`
+	Domain                        string                          `json:"domain"`
+	FunctionsEditable             *bool                           `json:"functions_editable,omitempty"`
+	Id                            string                          `json:"id"`
+	Label                         string                          `json:"label"`
+	LastCheckedAt                 *string                         `json:"last_checked_at,omitempty"`
+	LastError                     *string                         `json:"last_error,omitempty"`
+	LoginSourceFunctionId         *string                         `json:"login_source_function_id,omitempty"`
+	LoginSourceFunctionVersion    *string                         `json:"login_source_function_version,omitempty"`
+	LoginUrl                      *string                         `json:"login_url,omitempty"`
+	ProfileId                     *string                         `json:"profile_id,omitempty"`
+	ReauthMode                    ManagedAuthConnectionReauthMode `json:"reauth_mode"`
+	Status                        ManagedAuthConnectionStatus     `json:"status"`
+	TemplateId                    *string                         `json:"template_id,omitempty"`
+	TemplateName                  *string                         `json:"template_name,omitempty"`
+	TemplateSlug                  *string                         `json:"template_slug,omitempty"`
+	UpdatedAt                     time.Time                       `json:"updated_at"`
+	VaultId                       *string                         `json:"vault_id,omitempty"`
+	VerifierSourceFunctionId      *string                         `json:"verifier_source_function_id,omitempty"`
+	VerifierSourceFunctionVersion *string                         `json:"verifier_source_function_version,omitempty"`
+}
+
+// ManagedAuthConnectionReauthMode defines model for ManagedAuthConnection.ReauthMode.
+type ManagedAuthConnectionReauthMode string
+
+// ManagedAuthConnectionStatus defines model for ManagedAuthConnection.Status.
+type ManagedAuthConnectionStatus string
+
+// ManagedAuthConnectionCreateRequest defines model for ManagedAuthConnectionCreateRequest.
+type ManagedAuthConnectionCreateRequest struct {
+	AllowedDomains *[]string              `json:"allowed_domains,omitempty"`
+	Credentials    ManagedAuthCredentials `json:"credentials"`
+	Domain         *string                `json:"domain,omitempty"`
+	Label          string                 `json:"label"`
+	LoginSource    interface{}            `json:"login_source"`
+	LoginUrl       *string                `json:"login_url,omitempty"`
+	Schedule       *bool                  `json:"schedule,omitempty"`
+	TemplateId     *string                `json:"template_id,omitempty"`
+	VerifierSource interface{}            `json:"verifier_source"`
+}
+
+// ManagedAuthConnectionUpdateRequest defines model for ManagedAuthConnectionUpdateRequest.
+type ManagedAuthConnectionUpdateRequest struct {
+	Label    *string `json:"label,omitempty"`
+	Schedule *bool   `json:"schedule,omitempty"`
+}
+
+// ManagedAuthCredentials defines model for ManagedAuthCredentials.
+type ManagedAuthCredentials struct {
+	Email     *string `json:"email,omitempty"`
+	MfaSecret *string `json:"mfa_secret,omitempty"`
+	Password  *string `json:"password,omitempty"`
+	Username  *string `json:"username,omitempty"`
+}
+
+// ManagedAuthDiagnostics defines model for ManagedAuthDiagnostics.
+type ManagedAuthDiagnostics struct {
+	ConnectionId  string                                  `json:"connection_id"`
+	Functions     *[]ManagedAuthRuntimeFunctionDiagnostic `json:"functions,omitempty"`
+	LastCheckedAt *string                                 `json:"last_checked_at,omitempty"`
+	LastError     *string                                 `json:"last_error,omitempty"`
+}
+
+// ManagedAuthExistingFunctionSource defines model for ManagedAuthExistingFunctionSource.
+type ManagedAuthExistingFunctionSource struct {
+	FunctionId string `json:"function_id"`
+	Kind       string `json:"kind"`
+}
+
+// ManagedAuthFunctionCode defines model for ManagedAuthFunctionCode.
+type ManagedAuthFunctionCode struct {
+	Role                  ManagedAuthFunctionCodeRole `json:"role"`
+	Source                string                      `json:"source"`
+	SourceFunctionId      *string                     `json:"source_function_id,omitempty"`
+	SourceFunctionVersion *string                     `json:"source_function_version,omitempty"`
+	Version               string                      `json:"version"`
+}
+
+// ManagedAuthFunctionCodeRole defines model for ManagedAuthFunctionCode.Role.
+type ManagedAuthFunctionCodeRole string
+
+// ManagedAuthFunctionCodeUpdateRequest defines model for ManagedAuthFunctionCodeUpdateRequest.
+type ManagedAuthFunctionCodeUpdateRequest struct {
+	Source string `json:"source"`
+}
+
+// ManagedAuthFunctionRunDiagnostic defines model for ManagedAuthFunctionRunDiagnostic.
+type ManagedAuthFunctionRunDiagnostic struct {
+	CreatedAt     time.Time `json:"created_at"`
+	FunctionRunId string    `json:"function_run_id"`
+	Result        *string   `json:"result,omitempty"`
+	SessionId     *string   `json:"session_id,omitempty"`
+	Status        string    `json:"status"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// ManagedAuthFunctionTemplates defines model for ManagedAuthFunctionTemplates.
+type ManagedAuthFunctionTemplates struct {
+	LoginSource    string   `json:"login_source"`
+	Placeholders   []string `json:"placeholders"`
+	VerifierSource string   `json:"verifier_source"`
+}
+
+// ManagedAuthInlineFunctionSource defines model for ManagedAuthInlineFunctionSource.
+type ManagedAuthInlineFunctionSource struct {
+	Kind   string `json:"kind"`
+	Source string `json:"source"`
+}
+
+// ManagedAuthLinkedFunction defines model for ManagedAuthLinkedFunction.
+type ManagedAuthLinkedFunction struct {
+	Id            string `json:"id"`
+	LatestVersion string `json:"latest_version"`
+	Name          string `json:"name"`
+	Published     bool   `json:"published"`
+	Status        string `json:"status"`
+}
+
+// ManagedAuthRunResponse defines model for ManagedAuthRunResponse.
+type ManagedAuthRunResponse struct {
+	ConnectionId string                       `json:"connection_id"`
+	Message      string                       `json:"message"`
+	Status       ManagedAuthRunResponseStatus `json:"status"`
+}
+
+// ManagedAuthRunResponseStatus defines model for ManagedAuthRunResponse.Status.
+type ManagedAuthRunResponseStatus string
+
+// ManagedAuthRuntimeFunctionDiagnostic defines model for ManagedAuthRuntimeFunctionDiagnostic.
+type ManagedAuthRuntimeFunctionDiagnostic struct {
+	FunctionId    string                                   `json:"function_id"`
+	LatestRun     *ManagedAuthFunctionRunDiagnostic        `json:"latest_run,omitempty"`
+	LatestVersion *string                                  `json:"latest_version,omitempty"`
+	Name          *string                                  `json:"name,omitempty"`
+	Role          ManagedAuthRuntimeFunctionDiagnosticRole `json:"role"`
+}
+
+// ManagedAuthRuntimeFunctionDiagnosticRole defines model for ManagedAuthRuntimeFunctionDiagnostic.Role.
+type ManagedAuthRuntimeFunctionDiagnosticRole string
+
+// ManagedAuthTemplate defines model for ManagedAuthTemplate.
+type ManagedAuthTemplate struct {
+	AllowedDomains *[]string                 `json:"allowed_domains,omitempty"`
+	Category       string                    `json:"category"`
+	Color          string                    `json:"color"`
+	Connectable    bool                      `json:"connectable"`
+	CreatedAt      time.Time                 `json:"created_at"`
+	Description    string                    `json:"description"`
+	Domain         string                    `json:"domain"`
+	Id             string                    `json:"id"`
+	LoginUrl       *string                   `json:"login_url,omitempty"`
+	Method         string                    `json:"method"`
+	Name           string                    `json:"name"`
+	Slug           string                    `json:"slug"`
+	Status         ManagedAuthTemplateStatus `json:"status"`
+	SupportsTotp   *bool                     `json:"supports_totp,omitempty"`
+	UpdatedAt      time.Time                 `json:"updated_at"`
+}
+
+// ManagedAuthTemplateStatus defines model for ManagedAuthTemplate.Status.
+type ManagedAuthTemplateStatus string
+
+// ManagedAuthTemplateBundle defines model for ManagedAuthTemplateBundle.
+type ManagedAuthTemplateBundle struct {
+	BundleSha256     string                            `json:"bundle_sha256"`
+	LoginFunction    ManagedAuthTemplateBundleFunction `json:"login_function"`
+	Revision         int                               `json:"revision"`
+	SchemaVersion    *int                              `json:"schema_version,omitempty"`
+	Template         ManagedAuthTemplateCreateRequest  `json:"template"`
+	VerifierFunction ManagedAuthTemplateBundleFunction `json:"verifier_function"`
+}
+
+// ManagedAuthTemplateBundleFunction defines model for ManagedAuthTemplateBundleFunction.
+type ManagedAuthTemplateBundleFunction struct {
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+	Sha256      string  `json:"sha256"`
+	Source      string  `json:"source"`
+}
+
+// ManagedAuthTemplateCreateRequest defines model for ManagedAuthTemplateCreateRequest.
+type ManagedAuthTemplateCreateRequest struct {
+	AllowedDomains *[]string `json:"allowed_domains,omitempty"`
+	Category       string    `json:"category"`
+	Color          string    `json:"color"`
+	Description    *string   `json:"description,omitempty"`
+	Domain         string    `json:"domain"`
+	LoginUrl       *string   `json:"login_url,omitempty"`
+	Method         *string   `json:"method,omitempty"`
+	Name           string    `json:"name"`
+	Slug           string    `json:"slug"`
+	SupportsTotp   *bool     `json:"supports_totp,omitempty"`
+}
+
+// ManagedAuthTemplateImportResponse defines model for ManagedAuthTemplateImportResponse.
+type ManagedAuthTemplateImportResponse struct {
+	Action            ManagedAuthTemplateImportResponseAction `json:"action"`
+	BundleSha256      string                                  `json:"bundle_sha256"`
+	DryRun            bool                                    `json:"dry_run"`
+	LoginChanged      bool                                    `json:"login_changed"`
+	MetadataChanges   *[]string                               `json:"metadata_changes,omitempty"`
+	PreviousRevision  *int                                    `json:"previous_revision,omitempty"`
+	Revision          int                                     `json:"revision"`
+	Slug              string                                  `json:"slug"`
+	TargetStateSha256 string                                  `json:"target_state_sha256"`
+	VerifierChanged   bool                                    `json:"verifier_changed"`
+}
+
+// ManagedAuthTemplateImportResponseAction defines model for ManagedAuthTemplateImportResponse.Action.
+type ManagedAuthTemplateImportResponseAction string
+
+// ManagedAuthTemplatePromoteRequest defines model for ManagedAuthTemplatePromoteRequest.
+type ManagedAuthTemplatePromoteRequest struct {
+	Category     string  `json:"category"`
+	Color        string  `json:"color"`
+	Description  *string `json:"description,omitempty"`
+	Method       *string `json:"method,omitempty"`
+	Name         string  `json:"name"`
+	Slug         string  `json:"slug"`
+	SupportsTotp *bool   `json:"supports_totp,omitempty"`
+}
+
+// ManagedAuthTemplatePublishRequest defines model for ManagedAuthTemplatePublishRequest.
+type ManagedAuthTemplatePublishRequest struct {
+	LoginFunctionId    string `json:"login_function_id"`
+	VerifierFunctionId string `json:"verifier_function_id"`
+}
+
+// ManagedAuthTemplateUpdateRequest defines model for ManagedAuthTemplateUpdateRequest.
+type ManagedAuthTemplateUpdateRequest struct {
+	SupportsTotp bool `json:"supports_totp"`
+}
 
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
@@ -2301,6 +2648,8 @@ type SessionProfile struct {
 
 // SessionResponse defines model for SessionResponse.
 type SessionResponse struct {
+	// AuthIds Managed Auth connection IDs attached to this session.
+	AuthIds     *[]string                   `json:"auth_ids,omitempty"`
 	BrowserType *SessionResponseBrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The URL to connect to the CDP server.
@@ -2350,6 +2699,9 @@ type SessionResponse struct {
 
 	// Steps Steps of the session
 	Steps *[]map[string]interface{} `json:"steps,omitempty"`
+
+	// SystemHidden Whether this session is an internal system run. Internal system runs are omitted from session.list() unless include_system=True is requested.
+	SystemHidden *bool `json:"system_hidden,omitempty"`
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	TimeoutMinutes *int `json:"timeout_minutes,omitempty"`
 
@@ -2693,7 +3045,10 @@ type ListFunctionsParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2751,7 +3106,10 @@ type ListFunctionRunsByFunctionIdParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2793,6 +3151,140 @@ type FunctionScheduleSetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// ManagedAuthConnectionsListParams defines parameters for ManagedAuthConnectionsList.
+type ManagedAuthConnectionsListParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionCreateParams defines parameters for ManagedAuthConnectionCreate.
+type ManagedAuthConnectionCreateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionDisconnectParams defines parameters for ManagedAuthConnectionDisconnect.
+type ManagedAuthConnectionDisconnectParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionGetParams defines parameters for ManagedAuthConnectionGet.
+type ManagedAuthConnectionGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionUpdateParams defines parameters for ManagedAuthConnectionUpdate.
+type ManagedAuthConnectionUpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionCheckParams defines parameters for ManagedAuthConnectionCheck.
+type ManagedAuthConnectionCheckParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionDiagnosticsGetParams defines parameters for ManagedAuthConnectionDiagnosticsGet.
+type ManagedAuthConnectionDiagnosticsGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionFunctionGetParams defines parameters for ManagedAuthConnectionFunctionGet.
+type ManagedAuthConnectionFunctionGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionFunctionGetParamsRole defines parameters for ManagedAuthConnectionFunctionGet.
+type ManagedAuthConnectionFunctionGetParamsRole string
+
+// ManagedAuthConnectionFunctionUpdateParams defines parameters for ManagedAuthConnectionFunctionUpdate.
+type ManagedAuthConnectionFunctionUpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionFunctionUpdateParamsRole defines parameters for ManagedAuthConnectionFunctionUpdate.
+type ManagedAuthConnectionFunctionUpdateParamsRole string
+
+// ManagedAuthConnectionPromoteParams defines parameters for ManagedAuthConnectionPromote.
+type ManagedAuthConnectionPromoteParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionReauthenticateParams defines parameters for ManagedAuthConnectionReauthenticate.
+type ManagedAuthConnectionReauthenticateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthConnectionProfileResetParams defines parameters for ManagedAuthConnectionProfileReset.
+type ManagedAuthConnectionProfileResetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthFunctionTemplatesGetParams defines parameters for ManagedAuthFunctionTemplatesGet.
+type ManagedAuthFunctionTemplatesGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplatesListParams defines parameters for ManagedAuthTemplatesList.
+type ManagedAuthTemplatesListParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplateCreateParams defines parameters for ManagedAuthTemplateCreate.
+type ManagedAuthTemplateCreateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthAdminTemplatesListParams defines parameters for ManagedAuthAdminTemplatesList.
+type ManagedAuthAdminTemplatesListParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplateImportParams defines parameters for ManagedAuthTemplateImport.
+type ManagedAuthTemplateImportParams struct {
+	DryRun                    *bool   `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+	ExpectedTargetStateSha256 *string `form:"expected_target_state_sha256,omitempty" json:"expected_target_state_sha256,omitempty"`
+	XNotteRequestOrigin       *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion          *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplateExportParams defines parameters for ManagedAuthTemplateExport.
+type ManagedAuthTemplateExportParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplateUpdateParams defines parameters for ManagedAuthTemplateUpdate.
+type ManagedAuthTemplateUpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplateFunctionsUnlinkParams defines parameters for ManagedAuthTemplateFunctionsUnlink.
+type ManagedAuthTemplateFunctionsUnlinkParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ManagedAuthTemplatePublishParams defines parameters for ManagedAuthTemplatePublish.
+type ManagedAuthTemplatePublishParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ListPersonasParams defines parameters for ListPersonas.
 type ListPersonasParams struct {
 	// Page Page number
@@ -2805,7 +3297,10 @@ type ListPersonasParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -2956,7 +3451,10 @@ type ListSessionsParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3073,6 +3571,12 @@ type FileListUploadsParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// FileDownloadUploadedFileParams defines parameters for FileDownloadUploadedFile.
+type FileDownloadUploadedFileParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // FileUploadParams defines parameters for FileUpload.
 type FileUploadParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -3120,7 +3624,10 @@ type GetUsageLogsParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3137,7 +3644,10 @@ type ListVaultsParams struct {
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
 	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
-	OnlyCurrentToken    *bool   `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
+
+	// IncludeSystem Whether to include internal system sessions
+	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3208,6 +3718,30 @@ type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
 
 // FunctionScheduleSetJSONRequestBody defines body for FunctionScheduleSet for application/json ContentType.
 type FunctionScheduleSetJSONRequestBody = FunctionScheduleCreateRequest
+
+// ManagedAuthConnectionCreateJSONRequestBody defines body for ManagedAuthConnectionCreate for application/json ContentType.
+type ManagedAuthConnectionCreateJSONRequestBody = ManagedAuthConnectionCreateRequest
+
+// ManagedAuthConnectionUpdateJSONRequestBody defines body for ManagedAuthConnectionUpdate for application/json ContentType.
+type ManagedAuthConnectionUpdateJSONRequestBody = ManagedAuthConnectionUpdateRequest
+
+// ManagedAuthConnectionFunctionUpdateJSONRequestBody defines body for ManagedAuthConnectionFunctionUpdate for application/json ContentType.
+type ManagedAuthConnectionFunctionUpdateJSONRequestBody = ManagedAuthFunctionCodeUpdateRequest
+
+// ManagedAuthConnectionPromoteJSONRequestBody defines body for ManagedAuthConnectionPromote for application/json ContentType.
+type ManagedAuthConnectionPromoteJSONRequestBody = ManagedAuthTemplatePromoteRequest
+
+// ManagedAuthTemplateCreateJSONRequestBody defines body for ManagedAuthTemplateCreate for application/json ContentType.
+type ManagedAuthTemplateCreateJSONRequestBody = ManagedAuthTemplateCreateRequest
+
+// ManagedAuthTemplateImportJSONRequestBody defines body for ManagedAuthTemplateImport for application/json ContentType.
+type ManagedAuthTemplateImportJSONRequestBody = ManagedAuthTemplateBundle
+
+// ManagedAuthTemplateUpdateJSONRequestBody defines body for ManagedAuthTemplateUpdate for application/json ContentType.
+type ManagedAuthTemplateUpdateJSONRequestBody = ManagedAuthTemplateUpdateRequest
+
+// ManagedAuthTemplatePublishJSONRequestBody defines body for ManagedAuthTemplatePublish for application/json ContentType.
+type ManagedAuthTemplatePublishJSONRequestBody = ManagedAuthTemplatePublishRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -8376,6 +8910,85 @@ type ClientInterface interface {
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ManagedAuthConnectionsList request
+	ManagedAuthConnectionsList(ctx context.Context, params *ManagedAuthConnectionsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionCreateWithBody request with any body
+	ManagedAuthConnectionCreateWithBody(ctx context.Context, params *ManagedAuthConnectionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthConnectionCreate(ctx context.Context, params *ManagedAuthConnectionCreateParams, body ManagedAuthConnectionCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionDisconnect request
+	ManagedAuthConnectionDisconnect(ctx context.Context, connectionId string, params *ManagedAuthConnectionDisconnectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionGet request
+	ManagedAuthConnectionGet(ctx context.Context, connectionId string, params *ManagedAuthConnectionGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionUpdateWithBody request with any body
+	ManagedAuthConnectionUpdateWithBody(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthConnectionUpdate(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, body ManagedAuthConnectionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionCheck request
+	ManagedAuthConnectionCheck(ctx context.Context, connectionId string, params *ManagedAuthConnectionCheckParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionDiagnosticsGet request
+	ManagedAuthConnectionDiagnosticsGet(ctx context.Context, connectionId string, params *ManagedAuthConnectionDiagnosticsGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionFunctionGet request
+	ManagedAuthConnectionFunctionGet(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionGetParamsRole, params *ManagedAuthConnectionFunctionGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionFunctionUpdateWithBody request with any body
+	ManagedAuthConnectionFunctionUpdateWithBody(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthConnectionFunctionUpdate(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, body ManagedAuthConnectionFunctionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionPromoteWithBody request with any body
+	ManagedAuthConnectionPromoteWithBody(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthConnectionPromote(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, body ManagedAuthConnectionPromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionReauthenticate request
+	ManagedAuthConnectionReauthenticate(ctx context.Context, connectionId string, params *ManagedAuthConnectionReauthenticateParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthConnectionProfileReset request
+	ManagedAuthConnectionProfileReset(ctx context.Context, connectionId string, params *ManagedAuthConnectionProfileResetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthFunctionTemplatesGet request
+	ManagedAuthFunctionTemplatesGet(ctx context.Context, params *ManagedAuthFunctionTemplatesGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplatesList request
+	ManagedAuthTemplatesList(ctx context.Context, params *ManagedAuthTemplatesListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplateCreateWithBody request with any body
+	ManagedAuthTemplateCreateWithBody(ctx context.Context, params *ManagedAuthTemplateCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthTemplateCreate(ctx context.Context, params *ManagedAuthTemplateCreateParams, body ManagedAuthTemplateCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthAdminTemplatesList request
+	ManagedAuthAdminTemplatesList(ctx context.Context, params *ManagedAuthAdminTemplatesListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplateImportWithBody request with any body
+	ManagedAuthTemplateImportWithBody(ctx context.Context, params *ManagedAuthTemplateImportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthTemplateImport(ctx context.Context, params *ManagedAuthTemplateImportParams, body ManagedAuthTemplateImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplateExport request
+	ManagedAuthTemplateExport(ctx context.Context, slug string, params *ManagedAuthTemplateExportParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplateUpdateWithBody request with any body
+	ManagedAuthTemplateUpdateWithBody(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthTemplateUpdate(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, body ManagedAuthTemplateUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplateFunctionsUnlink request
+	ManagedAuthTemplateFunctionsUnlink(ctx context.Context, templateId string, params *ManagedAuthTemplateFunctionsUnlinkParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ManagedAuthTemplatePublishWithBody request with any body
+	ManagedAuthTemplatePublishWithBody(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthTemplatePublish(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, body ManagedAuthTemplatePublishJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPersonas request
 	ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8502,6 +9115,9 @@ type ClientInterface interface {
 
 	// FileListUploads request
 	FileListUploads(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FileDownloadUploadedFile request
+	FileDownloadUploadedFile(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FileUploadWithBody request with any body
 	FileUploadWithBody(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8842,6 +9458,354 @@ func (c *Client) FunctionScheduleSet(ctx context.Context, functionId string, par
 
 func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewHealthCheckRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionsList(ctx context.Context, params *ManagedAuthConnectionsListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionsListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionCreateWithBody(ctx context.Context, params *ManagedAuthConnectionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionCreateRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionCreate(ctx context.Context, params *ManagedAuthConnectionCreateParams, body ManagedAuthConnectionCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionCreateRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionDisconnect(ctx context.Context, connectionId string, params *ManagedAuthConnectionDisconnectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionDisconnectRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionGet(ctx context.Context, connectionId string, params *ManagedAuthConnectionGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionGetRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionUpdateWithBody(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionUpdateRequestWithBody(c.Server, connectionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionUpdate(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, body ManagedAuthConnectionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionUpdateRequest(c.Server, connectionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionCheck(ctx context.Context, connectionId string, params *ManagedAuthConnectionCheckParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionCheckRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionDiagnosticsGet(ctx context.Context, connectionId string, params *ManagedAuthConnectionDiagnosticsGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionDiagnosticsGetRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionFunctionGet(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionGetParamsRole, params *ManagedAuthConnectionFunctionGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionFunctionGetRequest(c.Server, connectionId, role, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionFunctionUpdateWithBody(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionFunctionUpdateRequestWithBody(c.Server, connectionId, role, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionFunctionUpdate(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, body ManagedAuthConnectionFunctionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionFunctionUpdateRequest(c.Server, connectionId, role, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionPromoteWithBody(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionPromoteRequestWithBody(c.Server, connectionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionPromote(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, body ManagedAuthConnectionPromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionPromoteRequest(c.Server, connectionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionReauthenticate(ctx context.Context, connectionId string, params *ManagedAuthConnectionReauthenticateParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionReauthenticateRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectionProfileReset(ctx context.Context, connectionId string, params *ManagedAuthConnectionProfileResetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectionProfileResetRequest(c.Server, connectionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthFunctionTemplatesGet(ctx context.Context, params *ManagedAuthFunctionTemplatesGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthFunctionTemplatesGetRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplatesList(ctx context.Context, params *ManagedAuthTemplatesListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplatesListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateCreateWithBody(ctx context.Context, params *ManagedAuthTemplateCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateCreateRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateCreate(ctx context.Context, params *ManagedAuthTemplateCreateParams, body ManagedAuthTemplateCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateCreateRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthAdminTemplatesList(ctx context.Context, params *ManagedAuthAdminTemplatesListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthAdminTemplatesListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateImportWithBody(ctx context.Context, params *ManagedAuthTemplateImportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateImportRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateImport(ctx context.Context, params *ManagedAuthTemplateImportParams, body ManagedAuthTemplateImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateImportRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateExport(ctx context.Context, slug string, params *ManagedAuthTemplateExportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateExportRequest(c.Server, slug, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateUpdateWithBody(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateUpdateRequestWithBody(c.Server, templateId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateUpdate(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, body ManagedAuthTemplateUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateUpdateRequest(c.Server, templateId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplateFunctionsUnlink(ctx context.Context, templateId string, params *ManagedAuthTemplateFunctionsUnlinkParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplateFunctionsUnlinkRequest(c.Server, templateId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplatePublishWithBody(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplatePublishRequestWithBody(c.Server, templateId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthTemplatePublish(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, body ManagedAuthTemplatePublishJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthTemplatePublishRequest(c.Server, templateId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -9394,6 +10358,18 @@ func (c *Client) GetSessionScript(ctx context.Context, sessionId string, params 
 
 func (c *Client) FileListUploads(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFileListUploadsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FileDownloadUploadedFile(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFileDownloadUploadedFileRequest(c.Server, filename, params)
 	if err != nil {
 		return nil, err
 	}
@@ -10197,6 +11173,22 @@ func NewListFunctionsRequest(server string, params *ListFunctionsParams) (*http.
 
 		}
 
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -10722,6 +11714,22 @@ func NewListFunctionRunsByFunctionIdRequest(server string, functionId string, pa
 
 		}
 
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11215,6 +12223,1373 @@ func NewHealthCheckRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewManagedAuthConnectionsListRequest generates requests for ManagedAuthConnectionsList
+func NewManagedAuthConnectionsListRequest(server string, params *ManagedAuthConnectionsListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionCreateRequest calls the generic ManagedAuthConnectionCreate builder with application/json body
+func NewManagedAuthConnectionCreateRequest(server string, params *ManagedAuthConnectionCreateParams, body ManagedAuthConnectionCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthConnectionCreateRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthConnectionCreateRequestWithBody generates requests for ManagedAuthConnectionCreate with any type of body
+func NewManagedAuthConnectionCreateRequestWithBody(server string, params *ManagedAuthConnectionCreateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionDisconnectRequest generates requests for ManagedAuthConnectionDisconnect
+func NewManagedAuthConnectionDisconnectRequest(server string, connectionId string, params *ManagedAuthConnectionDisconnectParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionGetRequest generates requests for ManagedAuthConnectionGet
+func NewManagedAuthConnectionGetRequest(server string, connectionId string, params *ManagedAuthConnectionGetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionUpdateRequest calls the generic ManagedAuthConnectionUpdate builder with application/json body
+func NewManagedAuthConnectionUpdateRequest(server string, connectionId string, params *ManagedAuthConnectionUpdateParams, body ManagedAuthConnectionUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthConnectionUpdateRequestWithBody(server, connectionId, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthConnectionUpdateRequestWithBody generates requests for ManagedAuthConnectionUpdate with any type of body
+func NewManagedAuthConnectionUpdateRequestWithBody(server string, connectionId string, params *ManagedAuthConnectionUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionCheckRequest generates requests for ManagedAuthConnectionCheck
+func NewManagedAuthConnectionCheckRequest(server string, connectionId string, params *ManagedAuthConnectionCheckParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/check", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionDiagnosticsGetRequest generates requests for ManagedAuthConnectionDiagnosticsGet
+func NewManagedAuthConnectionDiagnosticsGetRequest(server string, connectionId string, params *ManagedAuthConnectionDiagnosticsGetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/diagnostics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionFunctionGetRequest generates requests for ManagedAuthConnectionFunctionGet
+func NewManagedAuthConnectionFunctionGetRequest(server string, connectionId string, role ManagedAuthConnectionFunctionGetParamsRole, params *ManagedAuthConnectionFunctionGetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "role", runtime.ParamLocationPath, role)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/functions/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionFunctionUpdateRequest calls the generic ManagedAuthConnectionFunctionUpdate builder with application/json body
+func NewManagedAuthConnectionFunctionUpdateRequest(server string, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, body ManagedAuthConnectionFunctionUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthConnectionFunctionUpdateRequestWithBody(server, connectionId, role, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthConnectionFunctionUpdateRequestWithBody generates requests for ManagedAuthConnectionFunctionUpdate with any type of body
+func NewManagedAuthConnectionFunctionUpdateRequestWithBody(server string, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "role", runtime.ParamLocationPath, role)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/functions/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionPromoteRequest calls the generic ManagedAuthConnectionPromote builder with application/json body
+func NewManagedAuthConnectionPromoteRequest(server string, connectionId string, params *ManagedAuthConnectionPromoteParams, body ManagedAuthConnectionPromoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthConnectionPromoteRequestWithBody(server, connectionId, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthConnectionPromoteRequestWithBody generates requests for ManagedAuthConnectionPromote with any type of body
+func NewManagedAuthConnectionPromoteRequestWithBody(server string, connectionId string, params *ManagedAuthConnectionPromoteParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/promote", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionReauthenticateRequest generates requests for ManagedAuthConnectionReauthenticate
+func NewManagedAuthConnectionReauthenticateRequest(server string, connectionId string, params *ManagedAuthConnectionReauthenticateParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/reauthenticate", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectionProfileResetRequest generates requests for ManagedAuthConnectionProfileReset
+func NewManagedAuthConnectionProfileResetRequest(server string, connectionId string, params *ManagedAuthConnectionProfileResetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "connection_id", runtime.ParamLocationPath, connectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connections/%s/reset-profile", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthFunctionTemplatesGetRequest generates requests for ManagedAuthFunctionTemplatesGet
+func NewManagedAuthFunctionTemplatesGetRequest(server string, params *ManagedAuthFunctionTemplatesGetParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/function-templates")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplatesListRequest generates requests for ManagedAuthTemplatesList
+func NewManagedAuthTemplatesListRequest(server string, params *ManagedAuthTemplatesListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplateCreateRequest calls the generic ManagedAuthTemplateCreate builder with application/json body
+func NewManagedAuthTemplateCreateRequest(server string, params *ManagedAuthTemplateCreateParams, body ManagedAuthTemplateCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthTemplateCreateRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthTemplateCreateRequestWithBody generates requests for ManagedAuthTemplateCreate with any type of body
+func NewManagedAuthTemplateCreateRequestWithBody(server string, params *ManagedAuthTemplateCreateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthAdminTemplatesListRequest generates requests for ManagedAuthAdminTemplatesList
+func NewManagedAuthAdminTemplatesListRequest(server string, params *ManagedAuthAdminTemplatesListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/admin")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplateImportRequest calls the generic ManagedAuthTemplateImport builder with application/json body
+func NewManagedAuthTemplateImportRequest(server string, params *ManagedAuthTemplateImportParams, body ManagedAuthTemplateImportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthTemplateImportRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthTemplateImportRequestWithBody generates requests for ManagedAuthTemplateImport with any type of body
+func NewManagedAuthTemplateImportRequestWithBody(server string, params *ManagedAuthTemplateImportParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/import")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ExpectedTargetStateSha256 != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "expected_target_state_sha256", runtime.ParamLocationQuery, *params.ExpectedTargetStateSha256); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplateExportRequest generates requests for ManagedAuthTemplateExport
+func NewManagedAuthTemplateExportRequest(server string, slug string, params *ManagedAuthTemplateExportParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "slug", runtime.ParamLocationPath, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/%s/export", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplateUpdateRequest calls the generic ManagedAuthTemplateUpdate builder with application/json body
+func NewManagedAuthTemplateUpdateRequest(server string, templateId string, params *ManagedAuthTemplateUpdateParams, body ManagedAuthTemplateUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthTemplateUpdateRequestWithBody(server, templateId, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthTemplateUpdateRequestWithBody generates requests for ManagedAuthTemplateUpdate with any type of body
+func NewManagedAuthTemplateUpdateRequestWithBody(server string, templateId string, params *ManagedAuthTemplateUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "template_id", runtime.ParamLocationPath, templateId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplateFunctionsUnlinkRequest generates requests for ManagedAuthTemplateFunctionsUnlink
+func NewManagedAuthTemplateFunctionsUnlinkRequest(server string, templateId string, params *ManagedAuthTemplateFunctionsUnlinkParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "template_id", runtime.ParamLocationPath, templateId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/%s/publish", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthTemplatePublishRequest calls the generic ManagedAuthTemplatePublish builder with application/json body
+func NewManagedAuthTemplatePublishRequest(server string, templateId string, params *ManagedAuthTemplatePublishParams, body ManagedAuthTemplatePublishJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthTemplatePublishRequestWithBody(server, templateId, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthTemplatePublishRequestWithBody generates requests for ManagedAuthTemplatePublish with any type of body
+func NewManagedAuthTemplatePublishRequestWithBody(server string, templateId string, params *ManagedAuthTemplatePublishParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "template_id", runtime.ParamLocationPath, templateId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/templates/%s/publish", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewListPersonasRequest generates requests for ListPersonas
 func NewListPersonasRequest(server string, params *ListPersonasParams) (*http.Request, error) {
 	var err error
@@ -11288,6 +13663,22 @@ func NewListPersonasRequest(server string, params *ListPersonasParams) (*http.Re
 		if params.OnlyCurrentToken != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "only_current_token", runtime.ParamLocationQuery, *params.OnlyCurrentToken); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12741,6 +15132,22 @@ func NewListSessionsRequest(server string, params *ListSessionsParams) (*http.Re
 
 		}
 
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -13955,6 +16362,66 @@ func NewFileListUploadsRequest(server string, params *FileListUploadsParams) (*h
 	return req, nil
 }
 
+// NewFileDownloadUploadedFileRequest generates requests for FileDownloadUploadedFile
+func NewFileDownloadUploadedFileRequest(server string, filename string, params *FileDownloadUploadedFileParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "filename", runtime.ParamLocationPath, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/storage/uploads/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewFileUploadRequestWithBody generates requests for FileUpload with any type of body
 func NewFileUploadRequestWithBody(server string, filename string, params *FileUploadParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
@@ -14390,6 +16857,22 @@ func NewGetUsageLogsRequest(server string, params *GetUsageLogsParams) (*http.Re
 
 		}
 
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -14500,6 +16983,22 @@ func NewListVaultsRequest(server string, params *ListVaultsParams) (*http.Reques
 		if params.OnlyCurrentToken != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "only_current_token", runtime.ParamLocationQuery, *params.OnlyCurrentToken); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeSystem != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15151,6 +17650,85 @@ type ClientWithResponsesInterface interface {
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResult, error)
 
+	// ManagedAuthConnectionsListWithResponse request
+	ManagedAuthConnectionsListWithResponse(ctx context.Context, params *ManagedAuthConnectionsListParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionsListResult, error)
+
+	// ManagedAuthConnectionCreateWithBodyWithResponse request with any body
+	ManagedAuthConnectionCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthConnectionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCreateResult, error)
+
+	ManagedAuthConnectionCreateWithResponse(ctx context.Context, params *ManagedAuthConnectionCreateParams, body ManagedAuthConnectionCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCreateResult, error)
+
+	// ManagedAuthConnectionDisconnectWithResponse request
+	ManagedAuthConnectionDisconnectWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionDisconnectParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionDisconnectResult, error)
+
+	// ManagedAuthConnectionGetWithResponse request
+	ManagedAuthConnectionGetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionGetResult, error)
+
+	// ManagedAuthConnectionUpdateWithBodyWithResponse request with any body
+	ManagedAuthConnectionUpdateWithBodyWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionUpdateResult, error)
+
+	ManagedAuthConnectionUpdateWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, body ManagedAuthConnectionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionUpdateResult, error)
+
+	// ManagedAuthConnectionCheckWithResponse request
+	ManagedAuthConnectionCheckWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionCheckParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCheckResult, error)
+
+	// ManagedAuthConnectionDiagnosticsGetWithResponse request
+	ManagedAuthConnectionDiagnosticsGetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionDiagnosticsGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionDiagnosticsGetResult, error)
+
+	// ManagedAuthConnectionFunctionGetWithResponse request
+	ManagedAuthConnectionFunctionGetWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionGetParamsRole, params *ManagedAuthConnectionFunctionGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionGetResult, error)
+
+	// ManagedAuthConnectionFunctionUpdateWithBodyWithResponse request with any body
+	ManagedAuthConnectionFunctionUpdateWithBodyWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionUpdateResult, error)
+
+	ManagedAuthConnectionFunctionUpdateWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, body ManagedAuthConnectionFunctionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionUpdateResult, error)
+
+	// ManagedAuthConnectionPromoteWithBodyWithResponse request with any body
+	ManagedAuthConnectionPromoteWithBodyWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionPromoteResult, error)
+
+	ManagedAuthConnectionPromoteWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, body ManagedAuthConnectionPromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionPromoteResult, error)
+
+	// ManagedAuthConnectionReauthenticateWithResponse request
+	ManagedAuthConnectionReauthenticateWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionReauthenticateParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionReauthenticateResult, error)
+
+	// ManagedAuthConnectionProfileResetWithResponse request
+	ManagedAuthConnectionProfileResetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionProfileResetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionProfileResetResult, error)
+
+	// ManagedAuthFunctionTemplatesGetWithResponse request
+	ManagedAuthFunctionTemplatesGetWithResponse(ctx context.Context, params *ManagedAuthFunctionTemplatesGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthFunctionTemplatesGetResult, error)
+
+	// ManagedAuthTemplatesListWithResponse request
+	ManagedAuthTemplatesListWithResponse(ctx context.Context, params *ManagedAuthTemplatesListParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatesListResult, error)
+
+	// ManagedAuthTemplateCreateWithBodyWithResponse request with any body
+	ManagedAuthTemplateCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthTemplateCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateCreateResult, error)
+
+	ManagedAuthTemplateCreateWithResponse(ctx context.Context, params *ManagedAuthTemplateCreateParams, body ManagedAuthTemplateCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateCreateResult, error)
+
+	// ManagedAuthAdminTemplatesListWithResponse request
+	ManagedAuthAdminTemplatesListWithResponse(ctx context.Context, params *ManagedAuthAdminTemplatesListParams, reqEditors ...RequestEditorFn) (*ManagedAuthAdminTemplatesListResult, error)
+
+	// ManagedAuthTemplateImportWithBodyWithResponse request with any body
+	ManagedAuthTemplateImportWithBodyWithResponse(ctx context.Context, params *ManagedAuthTemplateImportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateImportResult, error)
+
+	ManagedAuthTemplateImportWithResponse(ctx context.Context, params *ManagedAuthTemplateImportParams, body ManagedAuthTemplateImportJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateImportResult, error)
+
+	// ManagedAuthTemplateExportWithResponse request
+	ManagedAuthTemplateExportWithResponse(ctx context.Context, slug string, params *ManagedAuthTemplateExportParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateExportResult, error)
+
+	// ManagedAuthTemplateUpdateWithBodyWithResponse request with any body
+	ManagedAuthTemplateUpdateWithBodyWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateUpdateResult, error)
+
+	ManagedAuthTemplateUpdateWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, body ManagedAuthTemplateUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateUpdateResult, error)
+
+	// ManagedAuthTemplateFunctionsUnlinkWithResponse request
+	ManagedAuthTemplateFunctionsUnlinkWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateFunctionsUnlinkParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateFunctionsUnlinkResult, error)
+
+	// ManagedAuthTemplatePublishWithBodyWithResponse request with any body
+	ManagedAuthTemplatePublishWithBodyWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatePublishResult, error)
+
+	ManagedAuthTemplatePublishWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, body ManagedAuthTemplatePublishJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatePublishResult, error)
+
 	// ListPersonasWithResponse request
 	ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error)
 
@@ -15277,6 +17855,9 @@ type ClientWithResponsesInterface interface {
 
 	// FileListUploadsWithResponse request
 	FileListUploadsWithResponse(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*FileListUploadsResult, error)
+
+	// FileDownloadUploadedFileWithResponse request
+	FileDownloadUploadedFileWithResponse(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*FileDownloadUploadedFileResult, error)
 
 	// FileUploadWithBodyWithResponse request with any body
 	FileUploadWithBodyWithResponse(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FileUploadResult, error)
@@ -15780,6 +18361,489 @@ func (r HealthCheckResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r HealthCheckResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionsListResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionsListResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionsListResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionCreateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionCreateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionCreateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionDisconnectResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionDisconnectResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionDisconnectResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionUpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionCheckResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthRunResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionCheckResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionCheckResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionDiagnosticsGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthDiagnostics
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionDiagnosticsGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionDiagnosticsGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionFunctionGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthFunctionCode
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionFunctionGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionFunctionGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionFunctionUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthFunctionCode
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionFunctionUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionFunctionUpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionPromoteResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthAdminTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionPromoteResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionPromoteResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionReauthenticateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthRunResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionReauthenticateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionReauthenticateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectionProfileResetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectionProfileResetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectionProfileResetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthFunctionTemplatesGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthFunctionTemplates
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthFunctionTemplatesGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthFunctionTemplatesGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplatesListResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ManagedAuthTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplatesListResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplatesListResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplateCreateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ManagedAuthTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplateCreateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplateCreateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthAdminTemplatesListResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ManagedAuthAdminTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthAdminTemplatesListResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthAdminTemplatesListResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplateImportResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthTemplateImportResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplateImportResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplateImportResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplateExportResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthTemplateBundle
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplateExportResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplateExportResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplateUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthAdminTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplateUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplateUpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplateFunctionsUnlinkResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthAdminTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplateFunctionsUnlinkResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplateFunctionsUnlinkResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthTemplatePublishResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthAdminTemplate
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthTemplatePublishResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthTemplatePublishResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -16589,6 +19653,29 @@ func (r FileListUploadsResult) StatusCode() int {
 	return 0
 }
 
+type FileDownloadUploadedFileResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FileLinkResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FileDownloadUploadedFileResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FileDownloadUploadedFileResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type FileUploadResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -17133,6 +20220,259 @@ func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEd
 	return ParseHealthCheckResult(rsp)
 }
 
+// ManagedAuthConnectionsListWithResponse request returning *ManagedAuthConnectionsListResult
+func (c *ClientWithResponses) ManagedAuthConnectionsListWithResponse(ctx context.Context, params *ManagedAuthConnectionsListParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionsListResult, error) {
+	rsp, err := c.ManagedAuthConnectionsList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionsListResult(rsp)
+}
+
+// ManagedAuthConnectionCreateWithBodyWithResponse request with arbitrary body returning *ManagedAuthConnectionCreateResult
+func (c *ClientWithResponses) ManagedAuthConnectionCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthConnectionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCreateResult, error) {
+	rsp, err := c.ManagedAuthConnectionCreateWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionCreateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthConnectionCreateWithResponse(ctx context.Context, params *ManagedAuthConnectionCreateParams, body ManagedAuthConnectionCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCreateResult, error) {
+	rsp, err := c.ManagedAuthConnectionCreate(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionCreateResult(rsp)
+}
+
+// ManagedAuthConnectionDisconnectWithResponse request returning *ManagedAuthConnectionDisconnectResult
+func (c *ClientWithResponses) ManagedAuthConnectionDisconnectWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionDisconnectParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionDisconnectResult, error) {
+	rsp, err := c.ManagedAuthConnectionDisconnect(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionDisconnectResult(rsp)
+}
+
+// ManagedAuthConnectionGetWithResponse request returning *ManagedAuthConnectionGetResult
+func (c *ClientWithResponses) ManagedAuthConnectionGetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionGetResult, error) {
+	rsp, err := c.ManagedAuthConnectionGet(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionGetResult(rsp)
+}
+
+// ManagedAuthConnectionUpdateWithBodyWithResponse request with arbitrary body returning *ManagedAuthConnectionUpdateResult
+func (c *ClientWithResponses) ManagedAuthConnectionUpdateWithBodyWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionUpdateResult, error) {
+	rsp, err := c.ManagedAuthConnectionUpdateWithBody(ctx, connectionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthConnectionUpdateWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionUpdateParams, body ManagedAuthConnectionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionUpdateResult, error) {
+	rsp, err := c.ManagedAuthConnectionUpdate(ctx, connectionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionUpdateResult(rsp)
+}
+
+// ManagedAuthConnectionCheckWithResponse request returning *ManagedAuthConnectionCheckResult
+func (c *ClientWithResponses) ManagedAuthConnectionCheckWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionCheckParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionCheckResult, error) {
+	rsp, err := c.ManagedAuthConnectionCheck(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionCheckResult(rsp)
+}
+
+// ManagedAuthConnectionDiagnosticsGetWithResponse request returning *ManagedAuthConnectionDiagnosticsGetResult
+func (c *ClientWithResponses) ManagedAuthConnectionDiagnosticsGetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionDiagnosticsGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionDiagnosticsGetResult, error) {
+	rsp, err := c.ManagedAuthConnectionDiagnosticsGet(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionDiagnosticsGetResult(rsp)
+}
+
+// ManagedAuthConnectionFunctionGetWithResponse request returning *ManagedAuthConnectionFunctionGetResult
+func (c *ClientWithResponses) ManagedAuthConnectionFunctionGetWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionGetParamsRole, params *ManagedAuthConnectionFunctionGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionGetResult, error) {
+	rsp, err := c.ManagedAuthConnectionFunctionGet(ctx, connectionId, role, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionFunctionGetResult(rsp)
+}
+
+// ManagedAuthConnectionFunctionUpdateWithBodyWithResponse request with arbitrary body returning *ManagedAuthConnectionFunctionUpdateResult
+func (c *ClientWithResponses) ManagedAuthConnectionFunctionUpdateWithBodyWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionUpdateResult, error) {
+	rsp, err := c.ManagedAuthConnectionFunctionUpdateWithBody(ctx, connectionId, role, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionFunctionUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthConnectionFunctionUpdateWithResponse(ctx context.Context, connectionId string, role ManagedAuthConnectionFunctionUpdateParamsRole, params *ManagedAuthConnectionFunctionUpdateParams, body ManagedAuthConnectionFunctionUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionFunctionUpdateResult, error) {
+	rsp, err := c.ManagedAuthConnectionFunctionUpdate(ctx, connectionId, role, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionFunctionUpdateResult(rsp)
+}
+
+// ManagedAuthConnectionPromoteWithBodyWithResponse request with arbitrary body returning *ManagedAuthConnectionPromoteResult
+func (c *ClientWithResponses) ManagedAuthConnectionPromoteWithBodyWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionPromoteResult, error) {
+	rsp, err := c.ManagedAuthConnectionPromoteWithBody(ctx, connectionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionPromoteResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthConnectionPromoteWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionPromoteParams, body ManagedAuthConnectionPromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionPromoteResult, error) {
+	rsp, err := c.ManagedAuthConnectionPromote(ctx, connectionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionPromoteResult(rsp)
+}
+
+// ManagedAuthConnectionReauthenticateWithResponse request returning *ManagedAuthConnectionReauthenticateResult
+func (c *ClientWithResponses) ManagedAuthConnectionReauthenticateWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionReauthenticateParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionReauthenticateResult, error) {
+	rsp, err := c.ManagedAuthConnectionReauthenticate(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionReauthenticateResult(rsp)
+}
+
+// ManagedAuthConnectionProfileResetWithResponse request returning *ManagedAuthConnectionProfileResetResult
+func (c *ClientWithResponses) ManagedAuthConnectionProfileResetWithResponse(ctx context.Context, connectionId string, params *ManagedAuthConnectionProfileResetParams, reqEditors ...RequestEditorFn) (*ManagedAuthConnectionProfileResetResult, error) {
+	rsp, err := c.ManagedAuthConnectionProfileReset(ctx, connectionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectionProfileResetResult(rsp)
+}
+
+// ManagedAuthFunctionTemplatesGetWithResponse request returning *ManagedAuthFunctionTemplatesGetResult
+func (c *ClientWithResponses) ManagedAuthFunctionTemplatesGetWithResponse(ctx context.Context, params *ManagedAuthFunctionTemplatesGetParams, reqEditors ...RequestEditorFn) (*ManagedAuthFunctionTemplatesGetResult, error) {
+	rsp, err := c.ManagedAuthFunctionTemplatesGet(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthFunctionTemplatesGetResult(rsp)
+}
+
+// ManagedAuthTemplatesListWithResponse request returning *ManagedAuthTemplatesListResult
+func (c *ClientWithResponses) ManagedAuthTemplatesListWithResponse(ctx context.Context, params *ManagedAuthTemplatesListParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatesListResult, error) {
+	rsp, err := c.ManagedAuthTemplatesList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplatesListResult(rsp)
+}
+
+// ManagedAuthTemplateCreateWithBodyWithResponse request with arbitrary body returning *ManagedAuthTemplateCreateResult
+func (c *ClientWithResponses) ManagedAuthTemplateCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthTemplateCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateCreateResult, error) {
+	rsp, err := c.ManagedAuthTemplateCreateWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateCreateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthTemplateCreateWithResponse(ctx context.Context, params *ManagedAuthTemplateCreateParams, body ManagedAuthTemplateCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateCreateResult, error) {
+	rsp, err := c.ManagedAuthTemplateCreate(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateCreateResult(rsp)
+}
+
+// ManagedAuthAdminTemplatesListWithResponse request returning *ManagedAuthAdminTemplatesListResult
+func (c *ClientWithResponses) ManagedAuthAdminTemplatesListWithResponse(ctx context.Context, params *ManagedAuthAdminTemplatesListParams, reqEditors ...RequestEditorFn) (*ManagedAuthAdminTemplatesListResult, error) {
+	rsp, err := c.ManagedAuthAdminTemplatesList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthAdminTemplatesListResult(rsp)
+}
+
+// ManagedAuthTemplateImportWithBodyWithResponse request with arbitrary body returning *ManagedAuthTemplateImportResult
+func (c *ClientWithResponses) ManagedAuthTemplateImportWithBodyWithResponse(ctx context.Context, params *ManagedAuthTemplateImportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateImportResult, error) {
+	rsp, err := c.ManagedAuthTemplateImportWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateImportResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthTemplateImportWithResponse(ctx context.Context, params *ManagedAuthTemplateImportParams, body ManagedAuthTemplateImportJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateImportResult, error) {
+	rsp, err := c.ManagedAuthTemplateImport(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateImportResult(rsp)
+}
+
+// ManagedAuthTemplateExportWithResponse request returning *ManagedAuthTemplateExportResult
+func (c *ClientWithResponses) ManagedAuthTemplateExportWithResponse(ctx context.Context, slug string, params *ManagedAuthTemplateExportParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateExportResult, error) {
+	rsp, err := c.ManagedAuthTemplateExport(ctx, slug, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateExportResult(rsp)
+}
+
+// ManagedAuthTemplateUpdateWithBodyWithResponse request with arbitrary body returning *ManagedAuthTemplateUpdateResult
+func (c *ClientWithResponses) ManagedAuthTemplateUpdateWithBodyWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateUpdateResult, error) {
+	rsp, err := c.ManagedAuthTemplateUpdateWithBody(ctx, templateId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthTemplateUpdateWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateUpdateParams, body ManagedAuthTemplateUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateUpdateResult, error) {
+	rsp, err := c.ManagedAuthTemplateUpdate(ctx, templateId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateUpdateResult(rsp)
+}
+
+// ManagedAuthTemplateFunctionsUnlinkWithResponse request returning *ManagedAuthTemplateFunctionsUnlinkResult
+func (c *ClientWithResponses) ManagedAuthTemplateFunctionsUnlinkWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplateFunctionsUnlinkParams, reqEditors ...RequestEditorFn) (*ManagedAuthTemplateFunctionsUnlinkResult, error) {
+	rsp, err := c.ManagedAuthTemplateFunctionsUnlink(ctx, templateId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplateFunctionsUnlinkResult(rsp)
+}
+
+// ManagedAuthTemplatePublishWithBodyWithResponse request with arbitrary body returning *ManagedAuthTemplatePublishResult
+func (c *ClientWithResponses) ManagedAuthTemplatePublishWithBodyWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatePublishResult, error) {
+	rsp, err := c.ManagedAuthTemplatePublishWithBody(ctx, templateId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplatePublishResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthTemplatePublishWithResponse(ctx context.Context, templateId string, params *ManagedAuthTemplatePublishParams, body ManagedAuthTemplatePublishJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthTemplatePublishResult, error) {
+	rsp, err := c.ManagedAuthTemplatePublish(ctx, templateId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthTemplatePublishResult(rsp)
+}
+
 // ListPersonasWithResponse request returning *ListPersonasResult
 func (c *ClientWithResponses) ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error) {
 	rsp, err := c.ListPersonas(ctx, params, reqEditors...)
@@ -17534,6 +20874,15 @@ func (c *ClientWithResponses) FileListUploadsWithResponse(ctx context.Context, p
 		return nil, err
 	}
 	return ParseFileListUploadsResult(rsp)
+}
+
+// FileDownloadUploadedFileWithResponse request returning *FileDownloadUploadedFileResult
+func (c *ClientWithResponses) FileDownloadUploadedFileWithResponse(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*FileDownloadUploadedFileResult, error) {
+	rsp, err := c.FileDownloadUploadedFile(ctx, filename, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFileDownloadUploadedFileResult(rsp)
 }
 
 // FileUploadWithBodyWithResponse request with arbitrary body returning *FileUploadResult
@@ -18333,6 +21682,699 @@ func ParseHealthCheckResult(rsp *http.Response) (*HealthCheckResult, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionsListResult parses an HTTP response from a ManagedAuthConnectionsListWithResponse call
+func ParseManagedAuthConnectionsListResult(rsp *http.Response) (*ManagedAuthConnectionsListResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionsListResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionCreateResult parses an HTTP response from a ManagedAuthConnectionCreateWithResponse call
+func ParseManagedAuthConnectionCreateResult(rsp *http.Response) (*ManagedAuthConnectionCreateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionCreateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionDisconnectResult parses an HTTP response from a ManagedAuthConnectionDisconnectWithResponse call
+func ParseManagedAuthConnectionDisconnectResult(rsp *http.Response) (*ManagedAuthConnectionDisconnectResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionDisconnectResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionGetResult parses an HTTP response from a ManagedAuthConnectionGetWithResponse call
+func ParseManagedAuthConnectionGetResult(rsp *http.Response) (*ManagedAuthConnectionGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionUpdateResult parses an HTTP response from a ManagedAuthConnectionUpdateWithResponse call
+func ParseManagedAuthConnectionUpdateResult(rsp *http.Response) (*ManagedAuthConnectionUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionCheckResult parses an HTTP response from a ManagedAuthConnectionCheckWithResponse call
+func ParseManagedAuthConnectionCheckResult(rsp *http.Response) (*ManagedAuthConnectionCheckResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionCheckResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthRunResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionDiagnosticsGetResult parses an HTTP response from a ManagedAuthConnectionDiagnosticsGetWithResponse call
+func ParseManagedAuthConnectionDiagnosticsGetResult(rsp *http.Response) (*ManagedAuthConnectionDiagnosticsGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionDiagnosticsGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthDiagnostics
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionFunctionGetResult parses an HTTP response from a ManagedAuthConnectionFunctionGetWithResponse call
+func ParseManagedAuthConnectionFunctionGetResult(rsp *http.Response) (*ManagedAuthConnectionFunctionGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionFunctionGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthFunctionCode
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionFunctionUpdateResult parses an HTTP response from a ManagedAuthConnectionFunctionUpdateWithResponse call
+func ParseManagedAuthConnectionFunctionUpdateResult(rsp *http.Response) (*ManagedAuthConnectionFunctionUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionFunctionUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthFunctionCode
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionPromoteResult parses an HTTP response from a ManagedAuthConnectionPromoteWithResponse call
+func ParseManagedAuthConnectionPromoteResult(rsp *http.Response) (*ManagedAuthConnectionPromoteResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionPromoteResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthAdminTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionReauthenticateResult parses an HTTP response from a ManagedAuthConnectionReauthenticateWithResponse call
+func ParseManagedAuthConnectionReauthenticateResult(rsp *http.Response) (*ManagedAuthConnectionReauthenticateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionReauthenticateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthRunResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectionProfileResetResult parses an HTTP response from a ManagedAuthConnectionProfileResetWithResponse call
+func ParseManagedAuthConnectionProfileResetResult(rsp *http.Response) (*ManagedAuthConnectionProfileResetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectionProfileResetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthFunctionTemplatesGetResult parses an HTTP response from a ManagedAuthFunctionTemplatesGetWithResponse call
+func ParseManagedAuthFunctionTemplatesGetResult(rsp *http.Response) (*ManagedAuthFunctionTemplatesGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthFunctionTemplatesGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthFunctionTemplates
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplatesListResult parses an HTTP response from a ManagedAuthTemplatesListWithResponse call
+func ParseManagedAuthTemplatesListResult(rsp *http.Response) (*ManagedAuthTemplatesListResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplatesListResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ManagedAuthTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplateCreateResult parses an HTTP response from a ManagedAuthTemplateCreateWithResponse call
+func ParseManagedAuthTemplateCreateResult(rsp *http.Response) (*ManagedAuthTemplateCreateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplateCreateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ManagedAuthTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthAdminTemplatesListResult parses an HTTP response from a ManagedAuthAdminTemplatesListWithResponse call
+func ParseManagedAuthAdminTemplatesListResult(rsp *http.Response) (*ManagedAuthAdminTemplatesListResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthAdminTemplatesListResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ManagedAuthAdminTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplateImportResult parses an HTTP response from a ManagedAuthTemplateImportWithResponse call
+func ParseManagedAuthTemplateImportResult(rsp *http.Response) (*ManagedAuthTemplateImportResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplateImportResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthTemplateImportResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplateExportResult parses an HTTP response from a ManagedAuthTemplateExportWithResponse call
+func ParseManagedAuthTemplateExportResult(rsp *http.Response) (*ManagedAuthTemplateExportResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplateExportResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthTemplateBundle
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplateUpdateResult parses an HTTP response from a ManagedAuthTemplateUpdateWithResponse call
+func ParseManagedAuthTemplateUpdateResult(rsp *http.Response) (*ManagedAuthTemplateUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplateUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthAdminTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplateFunctionsUnlinkResult parses an HTTP response from a ManagedAuthTemplateFunctionsUnlinkWithResponse call
+func ParseManagedAuthTemplateFunctionsUnlinkResult(rsp *http.Response) (*ManagedAuthTemplateFunctionsUnlinkResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplateFunctionsUnlinkResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthAdminTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthTemplatePublishResult parses an HTTP response from a ManagedAuthTemplatePublishWithResponse call
+func ParseManagedAuthTemplatePublishResult(rsp *http.Response) (*ManagedAuthTemplatePublishResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthTemplatePublishResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthAdminTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	}
 
@@ -19463,6 +23505,39 @@ func ParseFileListUploadsResult(rsp *http.Response) (*FileListUploadsResult, err
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ListFilesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFileDownloadUploadedFileResult parses an HTTP response from a FileDownloadUploadedFileWithResponse call
+func ParseFileDownloadUploadedFileResult(rsp *http.Response) (*FileDownloadUploadedFileResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FileDownloadUploadedFileResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FileLinkResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

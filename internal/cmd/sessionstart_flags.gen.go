@@ -14,6 +14,9 @@ var (
 	// Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	SessionStartAspectRatio string
 
+	// Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Authentication finishes before the session is returned unless wait_for_authentication is false.
+	SessionStartAuthIds []string
+
 	// The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	SessionStartBrowserType string
 
@@ -57,6 +60,9 @@ var (
 	// The width of the viewport
 	SessionStartViewportWidth int
 
+	// Whether to wait for Managed Auth profile restoration and authentication before returning the session. When false, authentication continues in the background after the browser is ready.
+	SessionStartWaitForAuthentication bool
+
 	// Whether to use web bot authentication.
 	SessionStartWebBotAuth bool
 )
@@ -64,6 +70,7 @@ var (
 // RegisterSessionStartFlags registers all flags for SessionStart command
 func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartAspectRatio, "aspect-ratio", "", "Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.")
+	cmd.Flags().StringSliceVar(&SessionStartAuthIds, "auth-ids", []string{}, "Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Authentication finishes before the session is returned unless wait_for_authentication is false. (repeatable)")
 	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome. (chromium, chrome, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
@@ -80,6 +87,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
 	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
+	cmd.Flags().BoolVar(&SessionStartWaitForAuthentication, "wait-for-authentication", false, "Whether to wait for Managed Auth profile restoration and authentication before returning the session. When false, authentication continues in the background after the browser is ready.")
 	cmd.Flags().BoolVar(&SessionStartWebBotAuth, "web-bot-auth", false, "Whether to use web bot authentication.")
 }
 
@@ -89,6 +97,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartAspectRatio != "" {
 		body.AspectRatio = &SessionStartAspectRatio
+	}
+
+	if len(SessionStartAuthIds) > 0 {
+		body.AuthIds = &SessionStartAuthIds
 	}
 
 	if SessionStartBrowserType != "" {
@@ -159,6 +171,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartViewportWidth > 0 {
 		body.ViewportWidth = &SessionStartViewportWidth
+	}
+
+	if cmd.Flags().Changed("wait-for-authentication") {
+		body.WaitForAuthentication = &SessionStartWaitForAuthentication
 	}
 
 	if cmd.Flags().Changed("web-bot-auth") {
