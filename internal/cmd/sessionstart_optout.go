@@ -73,8 +73,11 @@ func registerSessionStartOptOutFlags(cmd *cobra.Command) {
 		"Run with a visible browser window instead of headless")
 	cmd.Flags().BoolVar(&sessionsStartNoSolveCaptchas, "no-solve-captchas", false,
 		"Do not attempt to solve captchas automatically")
+	// No backticks in usage strings: cobra's UnquoteUsage treats the first
+	// backquoted span as the flag's value placeholder, so this rendered as
+	// "--no-file-storage notte page download" in --help.
 	cmd.Flags().BoolVar(&sessionsStartNoFileStorage, "no-file-storage", false,
-		"Do not attach FileStorage. Disables `notte page download` and `notte files --from session`")
+		"Do not attach FileStorage. Disables 'notte page download' and 'notte files --from session'")
 }
 
 // validateSessionStartOptOuts rejects a pair whose two spellings were both
