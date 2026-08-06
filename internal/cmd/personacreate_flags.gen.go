@@ -18,8 +18,8 @@ var (
 
 // RegisterPersonaCreateFlags registers all flags for PersonaCreate command
 func RegisterPersonaCreateFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona")
-	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona")
+	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona (API default: false)")
+	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona (API default: false)")
 }
 
 // BuildPersonaCreateRequest builds the API request from CLI flags

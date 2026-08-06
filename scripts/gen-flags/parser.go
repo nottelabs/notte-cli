@@ -47,6 +47,7 @@ type SchemaRef struct {
 	Nullable    bool                 `json:"nullable,omitempty"`
 	AnyOf       []SchemaRef          `json:"anyOf,omitempty"`
 	Description string               `json:"description,omitempty"`
+	Default     interface{}          `json:"default,omitempty"`
 }
 
 type Components struct {
@@ -245,6 +246,7 @@ func convertSchemaRefToField(name string, schemaRef SchemaRef, allSchemas map[st
 		Type:        schemaRef.Type,
 		Nullable:    schemaRef.Nullable,
 		Description: schemaRef.Description,
+		Default:     schemaRef.Default,
 		Properties:  make(map[string]*Field),
 	}
 
