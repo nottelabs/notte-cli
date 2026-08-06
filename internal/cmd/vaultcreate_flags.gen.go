@@ -15,7 +15,7 @@ var (
 
 // RegisterVaultCreateFlags registers all flags for VaultCreate command
 func RegisterVaultCreateFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&VaultCreateName, "name", "", "Name of the vault")
+	cmd.Flags().StringVar(&VaultCreateName, "name", "", "Name of the vault (API default: default)")
 }
 
 // BuildVaultCreateRequest builds the API request from CLI flags

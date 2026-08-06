@@ -65,7 +65,7 @@ var (
 
 // RegisterAgentStartFlags registers all flags for AgentStart command
 func RegisterAgentStartFlags(cmd *cobra.Command) {
-	cmd.Flags().IntVar(&AgentStartMaxSteps, "max-steps", 0, "The maximum number of steps the agent should take")
+	cmd.Flags().IntVar(&AgentStartMaxSteps, "max-steps", 0, "The maximum number of steps the agent should take (API default: 20)")
 	cmd.Flags().StringVar(&AgentStartPersonaId, "persona-id", "", "The persona to use for the agent")
 	cmd.Flags().StringVar(&AgentStartReasoningModel, "reasoning-model", "", "The reasoning model to use (openai/gpt-4o, gemini/gemini-2.5-flash, vertex_ai/gemini-2.5-flash, openrouter/google/gemma-3-27b-it, cerebras/gpt-oss-120b, groq/gpt-oss-120b, perplexity/sonar-pro, deepseek/deepseek-r1, together_ai/meta-llama/llama-3.3-70b-instruct, anthropic/claude-sonnet-4-5-20250929, moonshot/kimi-k2.5, xai/grok-4-1-fast-non-reasoning, minimax/minimax-m2.5)")
 	cmd.Flags().StringVar(&AgentStartResponseFormat, "response-format-json", "", "response-format configuration (JSON file path, e.g., @config.json)")
@@ -73,7 +73,7 @@ func RegisterAgentStartFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVar(&AgentStartSessionOffset, "session-offset", 0, "[Experimental] The step from which the agent should gather information from in the session. If none, fresh memory")
 	cmd.Flags().StringVar(&AgentStartTask, "task", "", "The task that the agent should perform")
 	cmd.Flags().StringVar(&AgentStartUrl, "url", "", "The URL that the agent should start on (optional)")
-	cmd.Flags().BoolVar(&AgentStartUseVision, "use-vision", false, "Whether to use vision for the agent. Not all reasoning models support vision.")
+	cmd.Flags().BoolVar(&AgentStartUseVision, "use-vision", false, "Whether to use vision for the agent. Not all reasoning models support vision. (API default: true)")
 	cmd.Flags().StringVar(&AgentStartVaultId, "vault-id", "", "The vault to use for the agent")
 }
 

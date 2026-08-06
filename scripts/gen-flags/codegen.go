@@ -164,12 +164,31 @@ func generateRegisterFunction(buf *bytes.Buffer, config *CommandConfig) error {
 	return nil
 }
 
+// appendAPIDefault notes the server-side default in a flag's help text.
+// Booleans benefit most: cobra shows nothing for a false default, so a flag
+// whose API default is true reads as "off unless you pass this" when the
+// opposite is true.
+func appendAPIDefault(description string, fc *FieldConfig) string {
+	if fc.Field == nil || fc.Field.Default == nil {
+		return description
+	}
+	return fmt.Sprintf("%s (API default: %v)", strings.TrimRight(description, " "), fc.Field.Default)
+}
+
 func generateFlagRegistration(buf *bytes.Buffer, fc *FieldConfig) {
 	defaultValue := getDefaultValue(fc)
 	description := fc.Field.Description
 	if description == "" {
 		description = fc.FlagName
 	}
+
+	// Surface the API's default in the help text rather than as the registered
+	// flag default. Non-boolean flags are sent on a zero-value check
+	// (`if X != ""`, `if X > 0`), so registering the API default would start
+	// transmitting it on every call and freeze today's server-side value into
+	// the client. Showing it keeps the API authoritative while telling the user
+	// what happens if they omit the flag.
+	description = appendAPIDefault(description, fc)
 
 	// Add enum values to description
 	if fc.Category == CategoryEnumFlag && len(fc.Field.Enum) > 0 {
@@ -195,11 +214,15 @@ func generateFlagRegistration(buf *bytes.Buffer, fc *FieldConfig) {
 	}
 }
 
+// getDefaultValue returns the value a flag is REGISTERED with, which is
+// deliberately the Go zero value rather than the API's default.
+//
+// Request builders send non-boolean fields on a zero-value check
+// (`if X != ""`, `if X > 0`). Registering the API default would make those
+// checks always true, so every call would transmit today's server-side value
+// and the API could never change its own default again. The API default is
+// reported in the help text instead - see appendAPIDefault.
 func getDefaultValue(fc *FieldConfig) string {
-	if fc.Field.Default != nil {
-		return fmt.Sprintf("%v", fc.Field.Default)
-	}
-
 	switch fc.Field.Type {
 	case "string":
 		return ""
