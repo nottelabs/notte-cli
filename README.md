@@ -71,8 +71,11 @@ notte auth status
 ### 2. Start a Browser Session
 
 ```bash
-notte sessions start --headless
+notte sessions start
 ```
+
+Sessions are headless by default. Add `--headed` for a visible browser, and
+watch it through the `ViewerUrl` in the output.
 
 ## Commands
 
@@ -119,16 +122,17 @@ notte sessions code                   # Get Python script for session steps
 ```bash
 notte sessions start \
   --browser-type chromium|chrome  # Browser type (default: chromium)
-  --headless                              # Run in headless mode (default: true)
-  --idle-timeout-minutes <minutes>        # Idle timeout (closes after inactivity)
-  --max-duration-minutes <minutes>        # Maximum session lifetime
+  --headed                                # Show a browser window (headless is the default)
+  --idle-timeout-minutes <minutes>        # Idle timeout (default: 3)
+  --max-duration-minutes <minutes>        # Maximum session lifetime (default: 15)
   --user-agent <string>                   # Custom user agent
   --viewport-width <pixels>               # Viewport width
   --viewport-height <pixels>              # Viewport height
   --proxy                                  # Use default proxy rotation
   --proxy-country <code>                  # Proxy with specific country (e.g. us, gb, fr)
-  --solve-captchas                        # Automatically solve captchas
-  --use-file-storage                      # Enable file storage for downloads
+  --no-solve-captchas                     # Turn OFF captcha solving (on by default)
+  --no-file-storage                       # Detach FileStorage (attached by default).
+                                          # Disables page download and files --from session
   --cdp-url <url>                         # CDP URL of remote session provider
   --profile-id <id>                       # Profile ID to use for session
   --profile-persist                       # Save browser state to profile on close
@@ -154,8 +158,12 @@ notte page press "Enter"              # Press a key
 notte page screenshot                 # Take a screenshot
 notte page select <id> "option"       # Select dropdown option
 notte page check <id>                 # Check/uncheck checkbox
-notte page upload <id> <file>         # Upload a file
-notte page download <id>              # Download file by clicking element
+notte page upload <id> --file <name>  # Fill a file input. <name> is a file in your
+                                      # uploads store, not a local path - send it with
+                                      # `notte files upload` first
+notte page download <id>              # Download by clicking. The file lands in the
+                                      # session store; retrieve it with
+                                      # `notte files download <name> --from session`
 notte page new-tab <url>              # Open URL in new tab
 notte page switch-tab <index>         # Switch to tab by index
 notte page close-tab                  # Close current tab
@@ -287,7 +295,7 @@ Data goes to stdout, errors and progress to stderr for clean piping.
 
 ```bash
 # Start session (automatically becomes the current session)
-notte sessions start --headless
+notte sessions start
 
 # Navigate to page
 notte page goto "https://news.ycombinator.com"
@@ -332,8 +340,7 @@ notte vaults credentials list --vault-id $VAULT_ID
 notte sessions start \
   --browser-type chrome \
   --viewport-width 1920 \
-  --viewport-height 1080 \
-  --solve-captchas
+  --viewport-height 1080
 
 # Navigate and interact
 notte page goto "https://example.com"
@@ -400,7 +407,8 @@ Core workflow:
 
 ### Tips
 
-- **Viewing headless sessions**: When you start a session, the output includes a `ViewerUrl` - open it to watch your headless browser live
+- **Viewing sessions**: When you start a session, the output includes a `ViewerUrl` - open it to watch the browser live, headless or not
+- **Session lifetime**: sessions close after **3 minutes idle** or **15 minutes total** by default. Raise `--idle-timeout-minutes`/`--max-duration-minutes` for anything slow, or the next command fails with `Session closed`
 - **Element selectors**: If element IDs from `observe` (like `@B1`) don't work, use Playwright selectors: `#id`, `.class`, `button:has-text('Submit')`
 - **Multiple matches**: Use `>> nth=0` suffix to select the first match: `button:has-text('OK') >> nth=0`
 - **Closing modals**: `notte page press "Escape"` reliably dismisses most dialogs
