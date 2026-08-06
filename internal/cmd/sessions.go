@@ -192,9 +192,12 @@ var sessionsListCmd = &cobra.Command{
 }
 
 var sessionsStartCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start a new browser session",
-	RunE:  runSessionsStart,
+	Use: "start",
+	// Flag conflicts must be caught before RunE, which stops the current
+	// session before it builds the request.
+	PreRunE: validateSessionStartFlags,
+	Short:   "Start a new browser session",
+	RunE:    runSessionsStart,
 }
 
 var sessionsStatusCmd = &cobra.Command{
@@ -341,6 +344,8 @@ func init() {
 
 	// Start command flags (auto-generated + manual proxy)
 	RegisterSessionStartFlags(sessionsStartCmd)
+	// Positive opt-outs for options that default to true server-side
+	registerSessionStartOptOutFlags(sessionsStartCmd)
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
@@ -501,16 +506,16 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := applySessionStartOptOuts(cmd, body); err != nil {
+		return err
+	}
+
 	// Handle proxies manually (union type: bool | array of proxy objects).
 	// At most one proxy kind may be selected per call.
-	var setProxyFlags []string
-	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id"} {
-		if cmd.Flags().Changed(name) {
-			setProxyFlags = append(setProxyFlags, "--"+name)
-		}
-	}
-	if len(setProxyFlags) > 1 {
-		return fmt.Errorf("proxy flags are mutually exclusive, got: %s", strings.Join(setProxyFlags, ", "))
+	// Already checked in PreRunE; repeated so the invariant does not depend on
+	// the command wiring.
+	if err := validateSessionStartProxyFlags(cmd); err != nil {
+		return err
 	}
 
 	var proxyItems api.ApiSessionStartRequestProxies0
