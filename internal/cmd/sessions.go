@@ -341,6 +341,8 @@ func init() {
 
 	// Start command flags (auto-generated + manual proxy)
 	RegisterSessionStartFlags(sessionsStartCmd)
+	// Positive opt-outs for options that default to true server-side
+	registerSessionStartOptOutFlags(sessionsStartCmd)
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
@@ -498,6 +500,10 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	// Build request body from generated flags
 	body, err := BuildSessionStartRequest(cmd)
 	if err != nil {
+		return err
+	}
+
+	if err := applySessionStartOptOuts(cmd, body); err != nil {
 		return err
 	}
 
