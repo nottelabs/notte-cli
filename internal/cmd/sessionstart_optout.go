@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -76,15 +77,30 @@ func registerSessionStartOptOutFlags(cmd *cobra.Command) {
 		"Do not attach FileStorage. Disables `notte page download` and `notte files --from session`")
 }
 
-// applySessionStartOptOuts folds the negative flags into an already-built
-// request body. Each one inverts its counterpart, so --headed sends
-// headless=false and --headed=false sends headless=true.
-func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartRequest) error {
+// validateSessionStartOptOuts rejects a pair whose two spellings were both
+// supplied. It is deliberately separate from applying the values: `sessions
+// start` stops and clears any current session before it builds the request, so
+// validation that runs at build time would take the old session away and then
+// refuse to start a new one. This runs from PreRunE, ahead of any side effect.
+func validateSessionStartOptOuts(cmd *cobra.Command) error {
 	for _, o := range sessionStartOptOuts() {
 		if cmd.Flags().Changed(o.negative) && cmd.Flags().Changed(o.original) {
 			return fmt.Errorf(
 				"--%s and --%s set the same option; pass only one", o.negative, o.original)
 		}
+	}
+	return nil
+}
+
+// applySessionStartOptOuts folds the negative flags into an already-built
+// request body. Each one inverts its counterpart, so --headed sends
+// headless=false and --headed=false sends headless=true.
+//
+// Revalidates so the invariant holds even if a caller reaches this without
+// going through PreRunE.
+func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartRequest) error {
+	if err := validateSessionStartOptOuts(cmd); err != nil {
+		return err
 	}
 
 	for _, o := range sessionStartOptOuts() {
@@ -93,4 +109,29 @@ func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartReque
 		}
 	}
 	return nil
+}
+
+// validateSessionStartProxyFlags reports more than one proxy kind being
+// selected. Same reasoning as above: this used to run after the current session
+// had already been stopped.
+func validateSessionStartProxyFlags(cmd *cobra.Command) error {
+	var set []string
+	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id"} {
+		if cmd.Flags().Changed(name) {
+			set = append(set, "--"+name)
+		}
+	}
+	if len(set) > 1 {
+		return fmt.Errorf("proxy flags are mutually exclusive, got: %s", strings.Join(set, ", "))
+	}
+	return nil
+}
+
+// validateSessionStartFlags runs every flag-consistency check that must happen
+// before `sessions start` touches anything.
+func validateSessionStartFlags(cmd *cobra.Command, _ []string) error {
+	if err := validateSessionStartOptOuts(cmd); err != nil {
+		return err
+	}
+	return validateSessionStartProxyFlags(cmd)
 }

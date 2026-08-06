@@ -56,19 +56,40 @@ func TestOptOutsLeaveBodyUntouchedWhenAbsent(t *testing.T) {
 
 func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
-		want func(*api.ApiSessionStartRequest) (string, *bool)
-		val  bool
+		name  string
+		args  []string
+		field string
+		get   func(*api.ApiSessionStartRequest) *bool
+		want  bool
 	}{
-		{"--headed sends headless=false", []string{"--headed"},
-			func(b *api.ApiSessionStartRequest) (string, *bool) { return "Headless", b.Headless }, false},
-		{"--headed=false sends headless=true", []string{"--headed=false"},
-			func(b *api.ApiSessionStartRequest) (string, *bool) { return "Headless", b.Headless }, true},
-		{"--no-solve-captchas sends solve_captchas=false", []string{"--no-solve-captchas"},
-			func(b *api.ApiSessionStartRequest) (string, *bool) { return "SolveCaptchas", b.SolveCaptchas }, false},
-		{"--no-file-storage sends use_file_storage=false", []string{"--no-file-storage"},
-			func(b *api.ApiSessionStartRequest) (string, *bool) { return "UseFileStorage", b.UseFileStorage }, false},
+		{
+			name:  "--headed sends headless=false",
+			args:  []string{"--headed"},
+			field: "Headless",
+			get:   func(b *api.ApiSessionStartRequest) *bool { return b.Headless },
+			want:  false,
+		},
+		{
+			name:  "--headed=false sends headless=true",
+			args:  []string{"--headed=false"},
+			field: "Headless",
+			get:   func(b *api.ApiSessionStartRequest) *bool { return b.Headless },
+			want:  true,
+		},
+		{
+			name:  "--no-solve-captchas sends solve_captchas=false",
+			args:  []string{"--no-solve-captchas"},
+			field: "SolveCaptchas",
+			get:   func(b *api.ApiSessionStartRequest) *bool { return b.SolveCaptchas },
+			want:  false,
+		},
+		{
+			name:  "--no-file-storage sends use_file_storage=false",
+			args:  []string{"--no-file-storage"},
+			field: "UseFileStorage",
+			get:   func(b *api.ApiSessionStartRequest) *bool { return b.UseFileStorage },
+			want:  false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -77,12 +98,12 @@ func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 			if err != nil {
 				t.Fatalf("applySessionStartOptOuts() error = %v", err)
 			}
-			field, got := tc.want(body)
+			got := tc.get(body)
 			if got == nil {
-				t.Fatalf("%s is nil, want %v", field, tc.val)
+				t.Fatalf("%s is nil, want %v", tc.field, tc.want)
 			}
-			if *got != tc.val {
-				t.Errorf("%s = %v, want %v", field, *got, tc.val)
+			if *got != tc.want {
+				t.Errorf("%s = %v, want %v", tc.field, *got, tc.want)
 			}
 		})
 	}
@@ -121,6 +142,46 @@ func TestOriginalFlagsStillWorkAlone(t *testing.T) {
 		}
 		if f.Hidden {
 			t.Errorf("--%s should stay visible in help", name)
+		}
+	}
+}
+
+// TestConflictsRejectedBeforeSideEffects pins the ordering, not just the error.
+// runSessionsStart stops and clears the current session before it builds the
+// request, so a conflict detected at build time would cost the user their
+// existing session and give them nothing back. Validation therefore has to hang
+// off PreRunE, which cobra runs before RunE.
+func TestConflictsRejectedBeforeSideEffects(t *testing.T) {
+	if sessionsStartCmd.PreRunE == nil {
+		t.Fatal("sessions start must validate flags in PreRunE; validating inside RunE " +
+			"runs after the current session has already been stopped")
+	}
+
+	ranRunE := false
+	cmd := &cobra.Command{
+		Use:     "start",
+		PreRunE: validateSessionStartFlags,
+		RunE: func(*cobra.Command, []string) error {
+			ranRunE = true
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "headless")
+	cmd.Flags().Bool("proxy", false, "proxy")
+	cmd.Flags().String("proxy-country", "", "proxy country")
+	registerSessionStartOptOutFlags(cmd)
+
+	for _, args := range [][]string{
+		{"--headed", "--headless"},
+		{"--proxy", "--proxy-country=us"},
+	} {
+		ranRunE = false
+		cmd.SetArgs(args)
+		if err := cmd.Execute(); err == nil {
+			t.Errorf("%v: expected PreRunE to reject the combination", args)
+		}
+		if ranRunE {
+			t.Errorf("%v: RunE ran despite invalid flags - the session would already be gone", args)
 		}
 	}
 }
