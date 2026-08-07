@@ -2,9 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/nottelabs/notte-cli/internal/config"
 )
+
+// legacyCurrentAgentFile is retained only so `notte clear` can clean up state
+// written by CLI versions that supported agents.
+const legacyCurrentAgentFile = "current_agent"
 
 var clearCmd = &cobra.Command{
 	Use:   "clear",
@@ -24,6 +32,9 @@ func runClear(cmd *cobra.Command, args []string) error {
 	if err := clearCurrentViewerURL(); err != nil {
 		return fmt.Errorf("failed to clear current viewer URL: %w", err)
 	}
+	if err := clearLegacyCurrentAgent(); err != nil {
+		return fmt.Errorf("failed to clear legacy current agent: %w", err)
+	}
 	if err := clearCurrentFunction(); err != nil {
 		return fmt.Errorf("failed to clear current function: %w", err)
 	}
@@ -35,4 +46,16 @@ func runClear(cmd *cobra.Command, args []string) error {
 		"cleared": []string{"session", "viewer_url", "function", "session_expiry"},
 		"success": true,
 	})
+}
+
+func clearLegacyCurrentAgent() error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(configDir, legacyCurrentAgentFile)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }

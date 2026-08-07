@@ -7,6 +7,25 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// TestAgentCommandRemoved guards the intended public command boundary: agents
+// are no longer exposed, while the retained session and function workflows stay
+// registered.
+func TestAgentCommandRemoved(t *testing.T) {
+	registered := make(map[string]bool)
+	for _, cmd := range rootCmd.Commands() {
+		registered[cmd.Name()] = true
+	}
+
+	if registered["agents"] {
+		t.Error("notte agents should not be registered")
+	}
+	for _, name := range []string{"sessions", "functions"} {
+		if !registered[name] {
+			t.Errorf("notte %s should remain registered", name)
+		}
+	}
+}
+
 // TestNoGenericIDFlags ensures no command uses a generic "--id" flag.
 // All ID flags should be resource-specific (e.g., --session-id, --function-id).
 func TestNoGenericIDFlags(t *testing.T) {

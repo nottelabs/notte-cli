@@ -85,8 +85,8 @@ func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 		"/vaults/{vault_id}/credit-card":                  "VaultCreditCardSet",
 		"/functions/schedule":                             "FunctionScheduleSet",
 		"/functions/{function_id}/runs/{run_id}/metadata": "FunctionRunUpdateMetadata",
-		"/scrape":                                         "ScrapeWebpage",
-		"/scrape-html":                                    "ScrapeFromHtml",
+		"/scrape":      "ScrapeWebpage",
+		"/scrape-html": "ScrapeFromHtml",
 	}
 
 	for path, pathItem := range spec.Paths {

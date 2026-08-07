@@ -161,7 +161,7 @@ func TestOnlyActiveIsHiddenButUsable(t *testing.T) {
 // TestAlwaysSendReturnsValue covers a boolean list filter that must be
 // sent explicitly even when false.
 func TestAlwaysSendReturnsValue(t *testing.T) {
-	cmd := &cobra.Command{Use: "list", RunE: func(*cobra.Command, args []string) error { return nil }}
+	cmd := &cobra.Command{Use: "list", RunE: func(*cobra.Command, []string) error { return nil }}
 	cmd.Flags().Bool("include-deleted", false, "Include deleted records")
 	execute(t, cmd)
 

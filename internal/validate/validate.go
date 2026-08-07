@@ -113,7 +113,6 @@ func NonEmpty(s, name string) error {
 
 var (
 	sessionIDPattern  = regexp.MustCompile(`^sess_[a-zA-Z0-9]{1,64}$`)
-	agentIDPattern    = regexp.MustCompile(`^agent_[a-zA-Z0-9]{1,64}$`)
 	workflowIDPattern = regexp.MustCompile(`^wf_[a-zA-Z0-9]{1,64}$`)
 	vaultIDPattern    = regexp.MustCompile(`^vault_[a-zA-Z0-9]{1,64}$`)
 	personaIDPattern  = regexp.MustCompile(`^persona_[a-zA-Z0-9]{1,64}$`)
