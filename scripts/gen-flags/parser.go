@@ -77,7 +77,6 @@ func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 	// Map of endpoints to command names
 	endpointMap := map[string]string{
 		"/sessions/start":                                 "SessionStart",
-		"/agents/start":                                   "AgentStart",
 		"/personas/create":                                "PersonaCreate",
 		"/profiles/create":                                "ProfileCreate",
 		"/vaults/create":                                  "VaultCreate",
@@ -86,8 +85,8 @@ func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 		"/vaults/{vault_id}/credit-card":                  "VaultCreditCardSet",
 		"/functions/schedule":                             "FunctionScheduleSet",
 		"/functions/{function_id}/runs/{run_id}/metadata": "FunctionRunUpdateMetadata",
-		"/scrape":                                         "ScrapeWebpage",
-		"/scrape-html":                                    "ScrapeFromHtml",
+		"/scrape":      "ScrapeWebpage",
+		"/scrape-html": "ScrapeFromHtml",
 	}
 
 	for path, pathItem := range spec.Paths {

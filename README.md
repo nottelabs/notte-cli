@@ -2,7 +2,7 @@
 
 <div align="center">
   <p>
-    Control browser sessions, AI agents, and web scraping through intuitive <strong>resource-based commands</strong> <br/>
+    Control browser sessions and web scraping through intuitive <strong>resource-based commands</strong> <br/>
     → Read more at: <a href="https://notte.cc?ref=github" target="_blank" rel="noopener noreferrer">Landing</a> • <a href="https://console.notte.cc/?ref=github" target="_blank" rel="noopener noreferrer">Console</a> • <a href="https://docs.notte.cc?ref=github" target="_blank" rel="noopener noreferrer">Docs</a> • <a href="https://x.com/nottecore?ref=github" target="_blank" rel="noopener noreferrer">X</a> • <a href="https://www.linkedin.com/company/nottelabsinc/?ref=github" target="_blank" rel="noopener noreferrer">LinkedIn</a>
   </p>
 </div>
@@ -16,11 +16,10 @@
 
 # What is Notte CLI?
 
-The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) to your terminal — letting you drive browser sessions, AI agents, and web scraping pipelines from the command line. Pair it with shell scripts, CI/CD pipelines, or AI coding assistants for repeatable, scriptable web automation.
+The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) to your terminal — letting you drive browser sessions and web scraping pipelines from the command line. Pair it with shell scripts, CI/CD pipelines, or AI coding assistants for repeatable, scriptable web automation.
 
 ## Features
 
-- **AI agents** - run and monitor AI-powered browser functions
 - **Browser sessions** - headless or headed Chromium/Chrome with full control
 - **Files** - upload and download files to notte.cc
 - **Output formats** - human-readable text or JSON for scripting
@@ -171,19 +170,6 @@ notte page reload                     # Reload page
 notte page wait <seconds>             # Wait for duration
 notte page captcha-solve              # Solve captcha
 ```
-
-### AI Agents
-
-```bash
-notte agents list [--page N] [--page-size N] [-a|--all] [--only-saved]  # List running agents (-a includes finished)
-notte agents start --task "..."       # Start a new AI agent (auto-uses current session)
-notte agents status                   # Get agent status (uses current agent)
-notte agents stop                     # Stop an agent (uses current agent)
-notte agents workflow-code            # Get agent's workflow code
-notte agents replay                   # Get agent execution replay
-```
-
-**Note:** When you start an agent, it automatically becomes the "current" agent. All subsequent commands use this agent by default. Use `--agent-id <agent-id>` only when you need to manage multiple agents. If a session is active, `agents start` will automatically use that session unless `--session-id` is specified.
 
 ### Functions
 

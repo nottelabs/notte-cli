@@ -121,19 +121,6 @@ func cleanupSession(t *testing.T, sessionID string) {
 	}
 }
 
-// cleanupAgent stops an agent, ignoring errors (for deferred cleanup)
-func cleanupAgent(t *testing.T, agentID string) {
-	t.Helper()
-	if agentID == "" {
-		return
-	}
-	result := runCLI(t, "agents", "stop", "--agent-id", agentID)
-	if result.ExitCode != 0 {
-		t.Logf("Warning: failed to cleanup agent %s: %s", agentID, result.Stderr)
-	}
-}
-
-// cleanupVault deletes a vault, ignoring errors (for deferred cleanup)
 func cleanupVault(t *testing.T, vaultID string) {
 	t.Helper()
 	if vaultID == "" {

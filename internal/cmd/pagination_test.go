@@ -56,7 +56,7 @@ func TestResolveOnlyActiveArtifacts(t *testing.T) {
 	}
 }
 
-// TestResolveOnlyActiveInstances covers sessions/agents, where only_active
+// TestResolveOnlyActiveInstances covers sessions, where only_active
 // means "still running". The default stays running-only, matching `docker ps`.
 func TestResolveOnlyActiveInstances(t *testing.T) {
 	tests := []struct {
@@ -158,16 +158,16 @@ func TestOnlyActiveIsHiddenButUsable(t *testing.T) {
 	}
 }
 
-// TestAlwaysSendReturnsValue covers --only-saved, which needs no rename but is
-// sent explicitly for the same reason.
+// TestAlwaysSendReturnsValue covers a boolean list filter that must be
+// sent explicitly even when false.
 func TestAlwaysSendReturnsValue(t *testing.T) {
 	cmd := &cobra.Command{Use: "list", RunE: func(*cobra.Command, []string) error { return nil }}
-	cmd.Flags().Bool("only-saved", false, "Only return saved agents")
+	cmd.Flags().Bool("include-deleted", false, "Include deleted records")
 	execute(t, cmd)
 
-	got := alwaysSend(cmd, "only-saved")
+	got := alwaysSend(cmd, "include-deleted")
 	if got == nil || *got != false {
-		t.Errorf("alwaysSend(only-saved) = %v, want non-nil false", got)
+		t.Errorf("alwaysSend(include-deleted) = %v, want non-nil false", got)
 	}
 }
 
