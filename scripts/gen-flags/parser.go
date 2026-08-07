@@ -77,7 +77,6 @@ func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 	// Map of endpoints to command names
 	endpointMap := map[string]string{
 		"/sessions/start":                                 "SessionStart",
-		"/agents/start":                                   "AgentStart",
 		"/personas/create":                                "PersonaCreate",
 		"/profiles/create":                                "ProfileCreate",
 		"/vaults/create":                                  "VaultCreate",

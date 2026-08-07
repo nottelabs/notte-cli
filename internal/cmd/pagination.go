@@ -37,7 +37,7 @@ func getPageSizeFlag(cmd *cobra.Command) (*int, error) {
 // thing for each resource:
 //
 //   - stored artifacts (functions, vaults, personas): active == not deleted
-//   - live instances (sessions, agents):               active == still running
+//   - live instances:               active == still running
 //   - function runs:                                   active == still executing
 //
 // One flag named --only-active for all three is unlearnable: whatever a user

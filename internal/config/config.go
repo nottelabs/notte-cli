@@ -15,7 +15,6 @@ const (
 	CurrentSessionFile       = "current_session"
 	CurrentFunctionFile      = "current_function"
 	CurrentViewerURLFile     = "current_viewer_url"
-	CurrentAgentFile         = "current_agent"
 	CurrentSessionExpiryFile = "current_session_expiry"
 	DefaultRequestOrigin     = "cli"
 	EnvConfigDir             = "NOTTE_CONFIG_DIR"
@@ -24,7 +23,6 @@ const (
 	EnvRequestOrigin         = "NOTTE_REQUEST_ORIGIN"
 	EnvSessionID             = "NOTTE_SESSION_ID"
 	EnvFunctionID            = "NOTTE_FUNCTION_ID"
-	EnvAgentID               = "NOTTE_AGENT_ID"
 	EnvNoUpdateCheck         = "NOTTE_NO_UPDATE_CHECK"
 )
 

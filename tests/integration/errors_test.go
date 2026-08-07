@@ -88,21 +88,6 @@ func TestErrorParsing_NonexistentProfile(t *testing.T) {
 	t.Logf("Got expected error message: %s", result.Stderr)
 }
 
-// TestErrorParsing_NonexistentAgent tests that agent not found errors show proper messages
-func TestErrorParsing_NonexistentAgent(t *testing.T) {
-	// Try to get status of a non-existent agent
-	result := runCLI(t, "agents", "status", "--agent-id", "nonexistent-agent-id-jkl012")
-	requireFailure(t, result)
-
-	// Verify we get a proper error (not "failed to read response body")
-	if containsString(result.Stderr, "failed to read response body") {
-		t.Error("Error message should not contain 'failed to read response body'")
-	}
-
-	t.Logf("Got expected error message: %s", result.Stderr)
-}
-
-// TestErrorParsing_InvalidSessionExecuteAction tests that invalid action JSON shows proper error
 func TestErrorParsing_InvalidSessionExecuteAction(t *testing.T) {
 	// Start a session first
 	result := runCLI(t, "sessions", "start", "--headless")

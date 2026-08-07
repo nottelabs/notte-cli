@@ -40,7 +40,6 @@ func TestJSONOutputValidity(t *testing.T) {
 	}{
 		// List commands (no setup required)
 		{"sessions list", []string{"sessions", "list"}, ""},
-		{"agents list", []string{"agents", "list"}, ""},
 		{"personas list", []string{"personas", "list"}, ""},
 		{"profiles list", []string{"profiles", "list"}, ""},
 		{"vaults list", []string{"vaults", "list"}, ""},

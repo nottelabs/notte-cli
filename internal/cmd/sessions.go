@@ -462,7 +462,6 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			// Session has expired — silently clear stale state
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
-			_ = clearCurrentAgent()
 			_ = clearCurrentSessionExpiry()
 			existingSessionID = "" // skip the confirmation prompt
 		}
@@ -487,7 +486,6 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			}
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
-			_ = clearCurrentAgent()
 			_ = clearCurrentSessionExpiry()
 		}
 	}
@@ -677,7 +675,6 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		if strings.TrimSpace(string(data)) == sessionID {
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
-			_ = clearCurrentAgent()
 			_ = clearCurrentSessionExpiry()
 		}
 	}

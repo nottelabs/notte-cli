@@ -30,9 +30,9 @@ var (
 // rootCmd is the base command
 var rootCmd = &cobra.Command{
 	Use:   "notte",
-	Short: "CLI for notte.cc browser agent platform",
+	Short: "CLI for notte.cc browser automation platform",
 	Long: `notte-cli provides command-line access to the notte.cc platform
-for browser automation, AI agents, and web scraping.
+for browser automation and web scraping.
 
 Get started:
   notte auth login        # Authenticate with your API key

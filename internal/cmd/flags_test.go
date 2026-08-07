@@ -81,15 +81,6 @@ func TestNoGenericIDFlags(t *testing.T) {
 		checkCommand(cmdPath, sub.PersistentFlags(), "persistent")
 	}
 
-	// Check agentsCmd and subcommands
-	checkCommand("notte agents", agentsCmd.PersistentFlags(), "persistent")
-	checkCommand("notte agents", agentsCmd.Flags(), "local")
-	for _, sub := range agentsCmd.Commands() {
-		cmdPath := "notte agents " + sub.Name()
-		checkCommand(cmdPath, sub.Flags(), "local")
-		checkCommand(cmdPath, sub.PersistentFlags(), "persistent")
-	}
-
 	// Check sessionsCmd and subcommands
 	checkCommand("notte sessions", sessionsCmd.PersistentFlags(), "persistent")
 	checkCommand("notte sessions", sessionsCmd.Flags(), "local")
@@ -117,7 +108,6 @@ func TestPaginatedListCommandsHaveFlags(t *testing.T) {
 		requiredFlags []string
 	}{
 		{sessionsListCmd, "sessions list", []string{"page", "page-size", "only-active"}},
-		{agentsListCmd, "agents list", []string{"page", "page-size", "only-active", "only-saved"}},
 		{functionsListCmd, "functions list", []string{"page", "page-size", "only-active"}},
 		{functionsRunsCmd, "functions runs", []string{"page", "page-size", "only-active"}},
 		{personasListCmd, "personas list", []string{"page", "page-size", "only-active"}},

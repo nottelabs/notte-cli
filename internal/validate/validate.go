@@ -130,17 +130,6 @@ func SessionID(s string) error {
 	return nil
 }
 
-// AgentID validates that a string is a valid Notte agent ID
-func AgentID(s string) error {
-	if s == "" {
-		return fmt.Errorf("agent ID cannot be empty")
-	}
-	if !agentIDPattern.MatchString(s) {
-		return fmt.Errorf("invalid agent ID: expected agent_<alphanumeric 1-64 chars>, got %q", s)
-	}
-	return nil
-}
-
 // WorkflowID validates that a string is a valid Notte workflow ID
 func WorkflowID(s string) error {
 	if s == "" {

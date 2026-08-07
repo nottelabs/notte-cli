@@ -166,26 +166,6 @@ func TestSessionID(t *testing.T) {
 	}
 }
 
-func TestAgentID(t *testing.T) {
-	tests := []struct {
-		input   string
-		wantErr bool
-	}{
-		{"agent_abc123def456", false},
-		{"", true},
-		{"abc123", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			err := AgentID(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AgentID(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestWorkflowID(t *testing.T) {
 	tests := []struct {
 		input   string
