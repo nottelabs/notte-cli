@@ -11,14 +11,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
-	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 // Manual flags for proxies and extra headers (union types not auto-generated)
@@ -44,137 +42,10 @@ var (
 	sessionReplayOutput       string
 )
 
-// GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
-func GetCurrentSessionID() string {
-	// 1. Check --session-id flag (already in sessionID variable if set)
-	if sessionID != "" {
-		return sessionID
-	}
-
-	// 2. Check NOTTE_SESSION_ID env var
-	if envID := os.Getenv(config.EnvSessionID); envID != "" {
-		return envID
-	}
-
-	// 3. Check current_session file
-	configDir, err := config.Dir()
-	if err != nil {
-		return ""
-	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
-}
-
-// setCurrentSession saves the session ID to the current_session file
-func setCurrentSession(id string) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	// Ensure directory exists
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionFile), []byte(id), 0o600)
-}
-
-// clearCurrentSession removes the current_session file
-func clearCurrentSession() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentSessionFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-// setCurrentViewerURL saves the viewer URL to the current_viewer_url file
-func setCurrentViewerURL(url string) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentViewerURLFile), []byte(url), 0o600)
-}
-
-// getCurrentViewerURL reads the viewer URL from the current_viewer_url file
-func getCurrentViewerURL() string {
-	configDir, err := config.Dir()
-	if err != nil {
-		return ""
-	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentViewerURLFile))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
-}
-
-// clearCurrentViewerURL removes the current_viewer_url file
-func clearCurrentViewerURL() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentViewerURLFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-// setCurrentSessionExpiry saves the session expiry timestamp to the current_session_expiry file
-func setCurrentSessionExpiry(t time.Time) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(configDir, config.CurrentSessionExpiryFile), []byte(t.Format(time.RFC3339)), 0o600)
-}
-
-// getCurrentSessionExpiry reads the session expiry timestamp from the current_session_expiry file
-func getCurrentSessionExpiry() (time.Time, error) {
-	configDir, err := config.Dir()
-	if err != nil {
-		return time.Time{}, err
-	}
-	data, err := os.ReadFile(filepath.Join(configDir, config.CurrentSessionExpiryFile))
-	if err != nil {
-		return time.Time{}, err
-	}
-	return time.Parse(time.RFC3339, strings.TrimSpace(string(data)))
-}
-
-// clearCurrentSessionExpiry removes the current_session_expiry file
-func clearCurrentSessionExpiry() error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(configDir, config.CurrentSessionExpiryFile)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-// RequireSessionID ensures a session ID is available from flag, env, or file
+// RequireSessionID ensures a session ID was supplied explicitly.
 func RequireSessionID() error {
-	sessionID = GetCurrentSessionID()
 	if sessionID == "" {
-		return errors.New("session ID required: use --session-id flag, set NOTTE_SESSION_ID env var, or start a session first")
+		return errors.New("session ID required: use --session-id")
 	}
 	return nil
 }
@@ -193,8 +64,7 @@ var sessionsListCmd = &cobra.Command{
 
 var sessionsStartCmd = &cobra.Command{
 	Use: "start",
-	// Flag conflicts must be caught before RunE, which stops the current
-	// session before it builds the request.
+	// Flag conflicts must be caught before RunE builds or sends the request.
 	PreRunE: validateSessionStartFlags,
 	Short:   "Start a new browser session",
 	RunE:    runSessionsStart,
@@ -286,8 +156,8 @@ var sessionsReplayCmd = &cobra.Command{
 	Long: `Download the replay video (MP4) for a session.
 
 Examples:
-  notte sessions replay                       # saves to temp directory
-  notte sessions replay --path replay.mp4    # saves to specified path`,
+  notte sessions replay --session-id <session-id>                    # saves to temp directory
+  notte sessions replay --session-id <session-id> --path replay.mp4  # saves to specified path`,
 	Args: cobra.NoArgs,
 	RunE: runSessionReplay,
 }
@@ -358,53 +228,67 @@ func init() {
 	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
 
 	// Status command flags
-	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsStatusCmd.MarkFlagRequired("session-id")
 
 	// Stop command flags
-	sessionsStopCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsStopCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsStopCmd.MarkFlagRequired("session-id")
 
 	// Observe command flags
-	sessionsObserveCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsObserveCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsObserveCmd.MarkFlagRequired("session-id")
 	// Execute command flags
-	sessionsExecuteCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsExecuteCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsExecuteCmd.MarkFlagRequired("session-id")
 	sessionsExecuteCmd.Flags().StringVar(&sessionExecuteAction, "action", "", "Action JSON, @file, or '-' for stdin")
 
 	// Scrape command flags
-	sessionsScrapeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsScrapeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsScrapeCmd.MarkFlagRequired("session-id")
 	sessionsScrapeCmd.Flags().StringVar(&sessionScrapeInstructions, "instructions", "", "Extraction instructions")
 	sessionsScrapeCmd.Flags().BoolVar(&sessionScrapeOnlyMain, "only-main-content", false, "Only scrape main content")
 
 	// Cookies command flags
-	sessionsCookiesCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsCookiesCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsCookiesCmd.MarkFlagRequired("session-id")
 
 	// Cookies-set command flags
-	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsCookiesSetCmd.MarkFlagRequired("session-id")
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", "JSON file containing cookies array (required)")
 	_ = sessionsCookiesSetCmd.MarkFlagRequired("file")
 
 	// Debug command flags
-	sessionsDebugCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsDebugCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsDebugCmd.MarkFlagRequired("session-id")
 
 	// Network command flags
-	sessionsNetworkCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsNetworkCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsNetworkCmd.MarkFlagRequired("session-id")
 	sessionsNetworkCmd.Flags().BoolVar(&sessionNetworkURLsOnly, "urls-only", false, "Only show download URLs without downloading")
 	sessionsNetworkCmd.Flags().StringVar(&sessionNetworkPath, "path", "", "Output directory for downloaded files (defaults to temp directory)")
 
 	// Replay command flags
-	sessionsReplayCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsReplayCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsReplayCmd.MarkFlagRequired("session-id")
 	sessionsReplayCmd.Flags().StringVar(&sessionReplayOutput, "path", "", "Output path for the replay video (defaults to temp directory)")
 
 	// Offset command flags
-	sessionsOffsetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsOffsetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsOffsetCmd.MarkFlagRequired("session-id")
 
 	// Workflow-code command flags
-	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsWorkflowCodeCmd.MarkFlagRequired("session-id")
 
 	// Code command flags
-	sessionsCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsCodeCmd.MarkFlagRequired("session-id")
 
 	// Viewer command flags
-	sessionsViewerCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsViewerCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = sessionsViewerCmd.MarkFlagRequired("session-id")
 }
 
 func runSessionsList(cmd *cobra.Command, args []string) error {
@@ -454,42 +338,6 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionsStart(cmd *cobra.Command, args []string) error {
-	// Check if there's already a current session
-	existingSessionID := GetCurrentSessionID()
-	if existingSessionID != "" {
-		// Check if the session has expired based on stored max expiry
-		if expiry, err := getCurrentSessionExpiry(); err == nil && !expiry.IsZero() && time.Now().UTC().After(expiry) {
-			// Session has expired — silently clear stale state
-			_ = clearCurrentSession()
-			_ = clearCurrentViewerURL()
-			_ = clearCurrentSessionExpiry()
-			existingSessionID = "" // skip the confirmation prompt
-		}
-	}
-	if existingSessionID != "" {
-		confirmed, err := confirmReplaceSession(existingSessionID)
-		if err != nil {
-			return err
-		}
-		if confirmed {
-			// Stop the existing session
-			stopClient, err := GetClient()
-			if err != nil {
-				return err
-			}
-			ctx, cancel := GetContextWithTimeout(cmd.Context())
-			params := &api.SessionStopParams{}
-			_, stopErr := stopClient.Client().SessionStopWithResponse(ctx, existingSessionID, params)
-			cancel()
-			if stopErr != nil {
-				PrintInfo(fmt.Sprintf("Warning: could not stop session %s: %v", existingSessionID, stopErr))
-			}
-			_ = clearCurrentSession()
-			_ = clearCurrentViewerURL()
-			_ = clearCurrentSessionExpiry()
-		}
-	}
-
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -588,26 +436,6 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Save session ID as current session
-	if resp.JSON200 != nil {
-		if err := setCurrentSession(resp.JSON200.SessionId); err != nil {
-			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
-		}
-		// Store session expiry if max duration is set
-		if resp.JSON200.MaxDurationMinutes != nil && !resp.JSON200.CreatedAt.IsZero() {
-			expiry := resp.JSON200.CreatedAt.Add(time.Duration(*resp.JSON200.MaxDurationMinutes) * time.Minute)
-			if err := setCurrentSessionExpiry(expiry); err != nil {
-				PrintInfo(fmt.Sprintf("Warning: could not save session expiry: %v", err))
-			}
-		}
-		// Store viewer URL if available
-		if resp.JSON200.ViewerUrl != nil && *resp.JSON200.ViewerUrl != "" {
-			if err := setCurrentViewerURL(*resp.JSON200.ViewerUrl); err != nil {
-				PrintInfo(fmt.Sprintf("Warning: could not save viewer URL: %v", err))
-			}
-		}
-	}
-
 	formatter := GetFormatter()
 	return formatter.Print(resp.JSON200)
 }
@@ -666,17 +494,6 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
-	}
-
-	// Clear current session only if it matches the stopped session
-	configDir, _ := config.Dir()
-	if configDir != "" {
-		data, _ := os.ReadFile(filepath.Join(configDir, config.CurrentSessionFile))
-		if strings.TrimSpace(string(data)) == sessionID {
-			_ = clearCurrentSession()
-			_ = clearCurrentViewerURL()
-			_ = clearCurrentSessionExpiry()
-		}
 	}
 
 	return PrintResult(fmt.Sprintf("Session %s stopped.", sessionID), map[string]any{
@@ -1275,31 +1092,27 @@ func runSessionViewer(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	viewerURL := getCurrentViewerURL()
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
 
-	// Fallback: fetch viewer URL from session status if not stored locally
-	if viewerURL == "" {
-		client, err := GetClient()
-		if err != nil {
-			return err
-		}
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
 
-		ctx, cancel := GetContextWithTimeout(cmd.Context())
-		defer cancel()
+	params := &api.SessionStatusParams{}
+	resp, err := client.Client().SessionStatusWithResponse(ctx, sessionID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
 
-		params := &api.SessionStatusParams{}
-		resp, err := client.Client().SessionStatusWithResponse(ctx, sessionID, params)
-		if err != nil {
-			return fmt.Errorf("API request failed: %w", err)
-		}
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
 
-		if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-			return err
-		}
-
-		if resp.JSON200 != nil && resp.JSON200.ViewerUrl != nil {
-			viewerURL = *resp.JSON200.ViewerUrl
-		}
+	viewerURL := ""
+	if resp.JSON200 != nil && resp.JSON200.ViewerUrl != nil {
+		viewerURL = *resp.JSON200.ViewerUrl
 	}
 
 	if viewerURL == "" {

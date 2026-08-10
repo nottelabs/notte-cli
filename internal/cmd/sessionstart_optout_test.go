@@ -147,14 +147,11 @@ func TestOriginalFlagsStillWorkAlone(t *testing.T) {
 }
 
 // TestConflictsRejectedBeforeSideEffects pins the ordering, not just the error.
-// runSessionsStart stops and clears the current session before it builds the
-// request, so a conflict detected at build time would cost the user their
-// existing session and give them nothing back. Validation therefore has to hang
-// off PreRunE, which cobra runs before RunE.
+// Validation has to hang off PreRunE, which Cobra runs before RunE and before
+// any API request can be sent.
 func TestConflictsRejectedBeforeSideEffects(t *testing.T) {
 	if sessionsStartCmd.PreRunE == nil {
-		t.Fatal("sessions start must validate flags in PreRunE; validating inside RunE " +
-			"runs after the current session has already been stopped")
+		t.Fatal("sessions start must validate flags in PreRunE before RunE sends an API request")
 	}
 
 	ranRunE := false

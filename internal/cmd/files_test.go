@@ -12,7 +12,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nottelabs/notte-cli/internal/config"
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
@@ -253,15 +252,6 @@ func TestRunFilesListDownloads(t *testing.T) {
 }
 
 func TestRunFilesListDownloadsMissingSession(t *testing.T) {
-	env := testutil.SetupTestEnv(t)
-	env.SetEnv("NOTTE_API_KEY", "test-key") // Need API key for GetClient()
-	env.SetEnv("NOTTE_SESSION_ID", "")      // Clear session env var
-
-	// Set up empty config dir (no session file)
-	tmpDir := t.TempDir()
-	config.SetTestConfigDir(tmpDir)
-	t.Cleanup(func() { config.SetTestConfigDir("") })
-
 	origDownloadsFlag := filesListDownloadsFlag
 	origFrom := filesListFrom
 	origSession := sessionID
@@ -404,7 +394,6 @@ func TestRunFilesDownload(t *testing.T) {
 func TestRunFilesDownloadFromUploads(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
-	env.SetEnv("NOTTE_SESSION_ID", "")
 
 	fileServer := testutil.NewMockServer()
 	defer fileServer.Close()
@@ -446,14 +435,6 @@ func TestRunFilesDownloadFromUploads(t *testing.T) {
 }
 
 func TestRunFilesDownloadMissingSession(t *testing.T) {
-	env := testutil.SetupTestEnv(t)
-	env.SetEnv("NOTTE_SESSION_ID", "") // Clear session env var
-
-	// Set up empty config dir (no session file)
-	tmpDir := t.TempDir()
-	config.SetTestConfigDir(tmpDir)
-	t.Cleanup(func() { config.SetTestConfigDir("") })
-
 	origSession := sessionID
 	origFrom := filesDownloadFrom
 	t.Cleanup(func() { sessionID = origSession })

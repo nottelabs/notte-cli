@@ -70,12 +70,12 @@ func init() {
 	filesListCmd.Flags().BoolVar(&filesListUploadsFlag, "uploads", false, "List uploaded files")
 	filesListCmd.Flags().BoolVar(&filesListDownloadsFlag, "downloads", false, "List downloaded files from a session")
 	filesListCmd.Flags().StringVar(&filesListFrom, "from", "", "File source: uploads or session (default session)")
-	filesListCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	filesListCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required with --from session)")
 	_ = filesListCmd.Flags().MarkDeprecated("uploads", "use --from uploads instead")
 	_ = filesListCmd.Flags().MarkDeprecated("downloads", "use --from session instead")
 
 	// Download command flags
-	filesDownloadCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	filesDownloadCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (required with --from session)")
 	filesDownloadCmd.Flags().StringVar(&filesDownloadFrom, "from", "", "File source: uploads or session (default session)")
 	filesDownloadCmd.Flags().StringVar(&filesDownloadOutput, "path", "", "Output file path (defaults to current directory)")
 }
@@ -203,6 +203,11 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if source == filesSourceSession {
+		if err := RequireSessionID(); err != nil {
+			return err
+		}
+	}
 
 	client, err := GetClient()
 	if err != nil {
@@ -243,11 +248,6 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 		return formatter.Print(fileNames)
 	}
 
-	// Default: list downloads for a session
-	if err := RequireSessionID(); err != nil {
-		return err
-	}
-
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
@@ -275,7 +275,7 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 
 	if !IsJSONOutput() {
 		fmt.Printf("Downloaded files in session %s:\n", sessionID)
-		fmt.Println("Fetch locally with: notte files download <filename>")
+		fmt.Printf("Fetch locally with: notte files download <filename> --from session --session-id %s\n", sessionID)
 		fmt.Println()
 	}
 	return formatter.Print(fileNames)

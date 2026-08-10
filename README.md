@@ -70,11 +70,12 @@ notte auth status
 ### 2. Start a Browser Session
 
 ```bash
-notte sessions start
+SESSION_ID=$(notte sessions start -o json | jq -r '.session_id')
 ```
 
 Sessions are headless by default. Add `--headed` for a visible browser, and
-watch it through the `ViewerUrl` in the output.
+watch it through the `ViewerUrl` in the output. Save the returned `session_id`
+and pass it explicitly to every command that targets the session.
 
 ## Commands
 
@@ -103,18 +104,18 @@ response for scripting.
 ```bash
 notte sessions list [--page N] [--page-size N] [-a|--all]  # List running sessions (-a includes stopped)
 notte sessions start [flags]          # Start a new session
-notte sessions status                 # Get current session status
-notte sessions stop                   # Stop current session
-notte sessions cookies                # Get all cookies from current session
-notte sessions cookies-set --file cookies.json  # Set cookies in current session
-notte sessions network                # View network activity logs
-notte sessions replay                 # Get session replay data
-notte sessions workflow-code          # Export session steps as Python code
-notte sessions viewer                 # Open session viewer in browser
-notte sessions code                   # Get Python script for session steps
+notte sessions status --session-id <id>                 # Get session status
+notte sessions stop --session-id <id>                   # Stop session
+notte sessions cookies --session-id <id>                # Get all cookies
+notte sessions cookies-set --session-id <id> --file cookies.json
+notte sessions network --session-id <id>                # View network activity logs
+notte sessions replay --session-id <id>                 # Get session replay data
+notte sessions workflow-code --session-id <id>          # Export steps as Python workflow code
+notte sessions viewer --session-id <id>                 # Open session viewer in browser
+notte sessions code --session-id <id>                   # Get Python script for session steps
 ```
 
-**Note:** When you start a session, it automatically becomes the "current" session. All subsequent commands use this session by default. Use `--session-id <session-id>` only when you need to manage multiple sessions simultaneously or reference a specific session.
+Every command that targets a session requires `--session-id <session-id>`.
 
 #### Session Start Options
 
@@ -141,34 +142,35 @@ notte sessions start \
 
 ### Page Actions
 
-Interact with pages using simplified commands (requires an active session):
+Interact with pages using simplified commands. Every page command requires
+`--session-id <id>`:
 
 ```bash
-notte page observe                    # Get page state and available actions
-notte page scrape --instructions "..." # Scrape content from the page 
-notte page click "@B3"            # Click an element by ID
-notte page fill "@I1" "text"    # Fill an input field
-notte page goto "https://example.com" # Navigate to a URL
-notte page back                       # Go back in history
-notte page forward                    # Go forward in history
-notte page scroll-down [amount]       # Scroll down the page
-notte page scroll-up [amount]         # Scroll up
-notte page press "Enter"              # Press a key
-notte page screenshot                 # Take a screenshot
-notte page select <id> "option"       # Select dropdown option
-notte page check <id>                 # Check/uncheck checkbox
-notte page upload <id> --file <name>  # Fill a file input. <name> is a file in your
+notte page observe --session-id <id>                    # Get page state and available actions
+notte page scrape --session-id <id> --instructions "..." # Scrape content from the page
+notte page click --session-id <id> "@B3"                # Click an element by ID
+notte page fill --session-id <id> "@I1" "text"          # Fill an input field
+notte page goto --session-id <id> "https://example.com" # Navigate to a URL
+notte page back --session-id <id>                       # Go back in history
+notte page forward --session-id <id>                    # Go forward in history
+notte page scroll-down --session-id <id> [amount]       # Scroll down the page
+notte page scroll-up --session-id <id> [amount]         # Scroll up
+notte page press --session-id <id> "Enter"              # Press a key
+notte page screenshot --session-id <id>                 # Take a screenshot
+notte page select --session-id <id> <element> "option"  # Select dropdown option
+notte page check --session-id <id> <element>            # Check/uncheck checkbox
+notte page upload --session-id <id> <element> --file <name>  # Fill a file input. <name> is a file in your
                                       # uploads store, not a local path - send it with
                                       # `notte files upload` first
-notte page download <id>              # Download by clicking. The file lands in the
+notte page download --session-id <id> <element>         # Download by clicking. The file lands in the
                                       # session store; retrieve it with
-                                      # `notte files download <name> --from session`
-notte page new-tab <url>              # Open URL in new tab
-notte page switch-tab <index>         # Switch to tab by index
-notte page close-tab                  # Close current tab
-notte page reload                     # Reload page
-notte page wait <seconds>             # Wait for duration
-notte page captcha-solve              # Solve captcha
+                                      # `notte files download <name> --from session --session-id <id>`
+notte page new-tab --session-id <id> <url>              # Open URL in new tab
+notte page switch-tab --session-id <id> <index>         # Switch to tab by index
+notte page close-tab --session-id <id>                  # Close current tab
+notte page reload --session-id <id>                     # Reload page
+notte page wait --session-id <id> <seconds>             # Wait for duration
+notte page captcha-solve --session-id <id> <type>       # Solve captcha
 ```
 
 ### Functions
@@ -176,20 +178,19 @@ notte page captcha-solve              # Solve captcha
 ```bash
 notte functions list [--page N] [--page-size N] [--include-deleted]  # List functions
 notte functions create --file workflow.py  # Create a new function
-notte functions show                  # View current function details
-notte functions show --function-id <id>  # View specific function details (different from current function)
-notte functions update --file workflow.py  # Update current function code
-notte functions delete                # Delete current function
-notte functions fork                  # Fork current function to new version
-notte functions run                   # Execute current function
-notte functions runs [--page N] [--page-size N] [--running]  # List runs for current function (--running = in-flight only)
-notte functions run-stop --run-id <id>  # Stop a running function execution
-notte functions run-metadata --run-id <id>  # Get run logs and results
-notte functions schedule --cron "0 9 * * *"  # Schedule current function
-notte functions unschedule            # Remove schedule from current function
+notte functions show --function-id <id>                    # View function details
+notte functions update --function-id <id> --file workflow.py
+notte functions delete --function-id <id>                  # Delete function
+notte functions fork --function-id <id>                    # Fork function to new version
+notte functions run --function-id <id>                     # Execute function
+notte functions runs --function-id <id> [--page N] [--page-size N] [--running]
+notte functions run-stop --function-id <id> --run-id <run-id>
+notte functions run-metadata --function-id <id> --run-id <run-id>
+notte functions schedule --function-id <id> --cron "0 9 * * *"
+notte functions unschedule --function-id <id>
 ```
 
-**Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
+Every command that targets a function requires `--function-id <function-id>`.
 
 ### Vaults
 
@@ -230,8 +231,8 @@ notte profiles delete --profile-id <id>  # Delete a profile
 notte files upload <path>                                      # Upload a persistent input file
 notte files list --from uploads                                # List persistent input files
 notte files download <filename> --from uploads                 # Download a persistent input file
-notte files list --from session [--session-id <id>]            # List files produced by a session
-notte files download <filename> [--session-id <id>]            # Download a file produced by a session
+notte files list --from session --session-id <id>              # List files produced by a session
+notte files download <filename> --from session --session-id <id> # Download a session file
 ```
 
 ### Utilities
@@ -280,17 +281,17 @@ Data goes to stdout, errors and progress to stderr for clean piping.
 ### Automated Web Scraping Pipeline
 
 ```bash
-# Start session (automatically becomes the current session)
-notte sessions start
+# Start a session and capture its ID
+SESSION_ID=$(notte sessions start -o json | jq -r '.session_id')
 
 # Navigate to page
-notte page goto "https://news.ycombinator.com"
+notte page goto --session-id "$SESSION_ID" "https://news.ycombinator.com"
 
 # Extract structured data
-notte page scrape --instructions "Extract top 10 stories with title and URL"
+notte page scrape --session-id "$SESSION_ID" --instructions "Extract top 10 stories with title and URL"
 
 # Cleanup
-notte sessions stop
+notte sessions stop --session-id "$SESSION_ID"
 ```
 
 ### Running a Workflow
@@ -322,22 +323,22 @@ notte vaults credentials list --vault-id $VAULT_ID
 ### Multi-Step Browser Automation
 
 ```bash
-# Start browser with specific configuration
-notte sessions start \
+# Start browser with specific configuration and capture its ID
+SESSION_ID=$(notte sessions start -o json \
   --browser-type chrome \
   --viewport-width 1920 \
-  --viewport-height 1080
+  --viewport-height 1080 | jq -r '.session_id')
 
 # Navigate and interact
-notte page goto "https://example.com"
-notte page click "#login-button"
-notte page fill "#username" "user@example.com"
+notte page goto --session-id "$SESSION_ID" "https://example.com"
+notte page click --session-id "$SESSION_ID" "#login-button"
+notte page fill --session-id "$SESSION_ID" "#username" "user@example.com"
 
-# Get current page state with available actions
-notte page observe
+# Get page state with available actions
+notte page observe --session-id "$SESSION_ID"
 
 # Stop when done
-notte sessions stop
+notte sessions stop --session-id "$SESSION_ID"
 ```
 
 ### JQ Filtering
@@ -383,12 +384,12 @@ For more consistent results, add to your project or global instructions file:
 Use `notte` for web automation. Run `notte --help` for all commands.
 
 Core workflow:
-1. `notte sessions start` - Start a browser session
-2. `notte page goto <url>` - Navigate to a URL
-3. `notte page observe` - Get interactive elements with IDs (@B1, @B2)
-4. `notte page click "@B1"` / `notte page fill "@I1" "text"` - Interact using element IDs
-5. `notte page scrape --instructions "..."` - Extract structured data
-6. `notte sessions stop` - Clean up when done
+1. `SESSION_ID=$(notte sessions start -o json | jq -r '.session_id')` - Start a browser session and capture its ID
+2. `notte page goto --session-id "$SESSION_ID" <url>` - Navigate to a URL
+3. `notte page observe --session-id "$SESSION_ID"` - Get interactive elements with IDs (@B1, @B2)
+4. `notte page click --session-id "$SESSION_ID" "@B1"` / `notte page fill --session-id "$SESSION_ID" "@I1" "text"` - Interact using element IDs
+5. `notte page scrape --session-id "$SESSION_ID" --instructions "..."` - Extract structured data
+6. `notte sessions stop --session-id "$SESSION_ID"` - Clean up when done
 ```
 
 ### Tips
@@ -397,7 +398,7 @@ Core workflow:
 - **Session lifetime**: sessions close after **3 minutes idle** or **15 minutes total** by default. Raise `--idle-timeout-minutes`/`--max-duration-minutes` for anything slow, or the next command fails with `Session closed`
 - **Element selectors**: If element IDs from `observe` (like `@B1`) don't work, use Playwright selectors: `#id`, `.class`, `button:has-text('Submit')`
 - **Multiple matches**: Use `>> nth=0` suffix to select the first match: `button:has-text('OK') >> nth=0`
-- **Closing modals**: `notte page press "Escape"` reliably dismisses most dialogs
+- **Closing modals**: `notte page press --session-id <id> "Escape"` reliably dismisses most dialogs
 
 ### Skills Documentation
 

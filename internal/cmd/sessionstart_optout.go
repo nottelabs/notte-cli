@@ -81,10 +81,8 @@ func registerSessionStartOptOutFlags(cmd *cobra.Command) {
 }
 
 // validateSessionStartOptOuts rejects a pair whose two spellings were both
-// supplied. It is deliberately separate from applying the values: `sessions
-// start` stops and clears any current session before it builds the request, so
-// validation that runs at build time would take the old session away and then
-// refuse to start a new one. This runs from PreRunE, ahead of any side effect.
+// supplied. It is deliberately separate from applying the values so Cobra can
+// reject conflicts in PreRunE, before the request is built or sent.
 func validateSessionStartOptOuts(cmd *cobra.Command) error {
 	for _, o := range sessionStartOptOuts() {
 		if cmd.Flags().Changed(o.negative) && cmd.Flags().Changed(o.original) {
@@ -115,8 +113,7 @@ func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartReque
 }
 
 // validateSessionStartProxyFlags reports more than one proxy kind being
-// selected. Same reasoning as above: this used to run after the current session
-// had already been stopped.
+// selected. It runs before the request is built or sent.
 func validateSessionStartProxyFlags(cmd *cobra.Command) error {
 	var set []string
 	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id"} {

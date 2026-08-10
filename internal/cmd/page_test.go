@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nottelabs/notte-cli/internal/config"
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
@@ -738,15 +737,10 @@ func TestRunPageFormFill_InvalidJSON(t *testing.T) {
 func TestPageCommand_NoSessionID(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
-	env.SetEnv("NOTTE_SESSION_ID", "")
 
 	server := testutil.NewMockServer()
 	t.Cleanup(func() { server.Close() })
 	env.SetEnv("NOTTE_API_URL", server.URL())
-
-	// Use isolated config directory so no current_session file is found
-	config.SetTestConfigDir(env.TempDir)
-	t.Cleanup(func() { config.SetTestConfigDir("") })
 
 	// Clear sessionID
 	origID := sessionID

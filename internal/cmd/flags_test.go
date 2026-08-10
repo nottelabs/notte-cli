@@ -118,6 +118,65 @@ func TestNoGenericIDFlags(t *testing.T) {
 	}
 }
 
+func TestResourceTargetCommandsRequireExplicitIDFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  *cobra.Command
+		flag string
+	}{
+		{"page", pageCmd, "session-id"},
+		{"sessions status", sessionsStatusCmd, "session-id"},
+		{"sessions stop", sessionsStopCmd, "session-id"},
+		{"sessions observe", sessionsObserveCmd, "session-id"},
+		{"sessions execute", sessionsExecuteCmd, "session-id"},
+		{"sessions scrape", sessionsScrapeCmd, "session-id"},
+		{"sessions cookies", sessionsCookiesCmd, "session-id"},
+		{"sessions cookies-set", sessionsCookiesSetCmd, "session-id"},
+		{"sessions debug", sessionsDebugCmd, "session-id"},
+		{"sessions network", sessionsNetworkCmd, "session-id"},
+		{"sessions replay", sessionsReplayCmd, "session-id"},
+		{"sessions offset", sessionsOffsetCmd, "session-id"},
+		{"sessions workflow-code", sessionsWorkflowCodeCmd, "session-id"},
+		{"sessions code", sessionsCodeCmd, "session-id"},
+		{"sessions viewer", sessionsViewerCmd, "session-id"},
+		{"functions show", functionsShowCmd, "function-id"},
+		{"functions update", functionsUpdateCmd, "function-id"},
+		{"functions delete", functionsDeleteCmd, "function-id"},
+		{"functions run", functionsRunCmd, "function-id"},
+		{"functions runs", functionsRunsCmd, "function-id"},
+		{"functions fork", functionsForkCmd, "function-id"},
+		{"functions run-stop", functionsRunStopCmd, "function-id"},
+		{"functions run-metadata", functionsRunMetadataCmd, "function-id"},
+		{"functions run-metadata-update", functionsRunMetadataUpdateCmd, "function-id"},
+		{"functions schedule", functionsScheduleCmd, "function-id"},
+		{"functions unschedule", functionsUnscheduleCmd, "function-id"},
+		{"vaults update", vaultsUpdateCmd, "vault-id"},
+		{"vaults delete", vaultsDeleteCmd, "vault-id"},
+		{"vault credentials", vaultsCredentialsCmd, "vault-id"},
+		{"personas show", personasShowCmd, "persona-id"},
+		{"personas delete", personasDeleteCmd, "persona-id"},
+		{"personas emails", personasEmailsCmd, "persona-id"},
+		{"personas sms", personasSmsCmd, "persona-id"},
+		{"profiles show", profilesShowCmd, "profile-id"},
+		{"profiles delete", profilesDeleteCmd, "profile-id"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag := tt.cmd.Flags().Lookup(tt.flag)
+			if flag == nil {
+				flag = tt.cmd.PersistentFlags().Lookup(tt.flag)
+			}
+			if flag == nil {
+				t.Fatalf("missing --%s", tt.flag)
+			}
+			if _, required := flag.Annotations[cobra.BashCompOneRequiredFlag]; !required {
+				t.Fatalf("--%s is not marked required", tt.flag)
+			}
+		})
+	}
+}
+
 // TestPaginatedListCommandsHaveFlags ensures all paginated list commands
 // expose --page, --page-size, and their resource-specific filter flags.
 func TestPaginatedListCommandsHaveFlags(t *testing.T) {

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -217,140 +216,6 @@ func TestFunctionsLifecycle(t *testing.T) {
 	t.Log("Function lifecycle test completed successfully")
 }
 
-func TestFunctionIDResolution(t *testing.T) {
-	// This test verifies the function ID resolution feature:
-	// 1. Create a function and verify current_function file is created
-	// 2. Run subsequent commands without --function-id and verify they use the saved function
-	// 3. Delete the function and verify current_function file is cleared
-
-	tmpFile := createTempFunctionFile(t)
-
-	// Step 1: Create a new function
-	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "id-resolution-test")
-	requireSuccess(t, result)
-
-	var createResp struct {
-		FunctionID string `json:"function_id"`
-	}
-	if err := json.Unmarshal([]byte(result.Stdout), &createResp); err != nil {
-		t.Fatalf("Failed to parse function create response: %v", err)
-	}
-	functionID := createResp.FunctionID
-	if functionID == "" {
-		t.Fatal("No function ID returned from create command")
-	}
-	t.Logf("Created function: %s", functionID)
-
-	// Track whether the function was already deleted (by the test logic)
-	deleted := false
-	defer func() {
-		if !deleted {
-			cleanupFunction(t, functionID)
-		}
-	}()
-
-	// Step 2: Verify current_function file was created
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatalf("Failed to get home dir: %v", err)
-	}
-	currentFunctionFile := filepath.Join(homeDir, ".notte", "cli", "current_function")
-	data, err := os.ReadFile(currentFunctionFile)
-	if err != nil {
-		t.Fatalf("Failed to read current_function file: %v", err)
-	}
-	if string(data) != functionID {
-		t.Errorf("current_function file contains %q, expected %q", string(data), functionID)
-	}
-	t.Log("Verified current_function file was created with correct function ID")
-
-	// Step 3: Test show command without --function-id should use the saved function
-	result = runCLI(t, "functions", "show")
-	requireSuccess(t, result)
-	if !containsString(result.Stdout, functionID) {
-		t.Error("Function show without --function-id did not return the current function")
-	}
-	t.Log("Successfully used current function for 'show' command")
-
-	// Step 4: Test runs command without --function-id should use the saved function
-	result = runCLI(t, "functions", "runs")
-	requireSuccess(t, result)
-	t.Log("Successfully used current function for 'runs' command")
-
-	// Step 4a: Test run command without --function-id should use the saved function
-	result = runCLI(t, "functions", "run")
-	requireSuccess(t, result)
-	if !containsString(result.Stdout, functionID) {
-		t.Error("Function run without --function-id did not use the current function")
-	}
-	t.Log("Successfully used current function for 'run' command")
-
-	// Step 5: Test delete command without --function-id should use the saved function and clear it
-	result = runCLI(t, "functions", "delete")
-	requireSuccess(t, result)
-	deleted = true // Mark as deleted so deferred cleanup is skipped
-	t.Log("Successfully deleted current function")
-
-	// Step 6: Verify current_function file was cleared
-	if _, err := os.Stat(currentFunctionFile); !os.IsNotExist(err) {
-		data, readErr := os.ReadFile(currentFunctionFile)
-		if readErr == nil && string(data) == functionID {
-			t.Error("current_function file should have been cleared after delete")
-		}
-	}
-	t.Log("Verified current_function file was cleared after delete")
-}
-
-func TestFunctionIDResolutionPriority(t *testing.T) {
-	// Test priority: --function-id flag > NOTTE_FUNCTION_ID env var > current_function file
-	tmpFile := createTempFunctionFile(t)
-
-	// Create first function (this sets current_function)
-	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "priority-test-function1")
-	requireSuccess(t, result)
-
-	var createResp1 struct {
-		FunctionID string `json:"function_id"`
-	}
-	if err := json.Unmarshal([]byte(result.Stdout), &createResp1); err != nil {
-		t.Fatalf("Failed to parse function create response: %v", err)
-	}
-	functionID1 := createResp1.FunctionID
-	defer cleanupFunction(t, functionID1)
-	t.Logf("Created first function: %s", functionID1)
-
-	// Create second function (this overwrites current_function)
-	result = runCLI(t, "functions", "create", "--file", tmpFile, "--name", "priority-test-function2")
-	requireSuccess(t, result)
-
-	var createResp2 struct {
-		FunctionID string `json:"function_id"`
-	}
-	if err := json.Unmarshal([]byte(result.Stdout), &createResp2); err != nil {
-		t.Fatalf("Failed to parse function create response: %v", err)
-	}
-	functionID2 := createResp2.FunctionID
-	defer cleanupFunction(t, functionID2)
-	t.Logf("Created second function: %s", functionID2)
-
-	// Test 1: env var should take priority over file
-	// Current function file has functionID2, env var has functionID1
-	result = runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": functionID1}, "functions", "show")
-	requireSuccess(t, result)
-	if !containsString(result.Stdout, functionID1) {
-		t.Errorf("Expected function1 (%s) when using env var, but got different function", functionID1)
-	}
-	t.Log("Verified env var takes priority over current_function file")
-
-	// Test 2: --function-id flag should take priority over env var
-	result = runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": functionID1}, "functions", "show", "--function-id", functionID2)
-	requireSuccess(t, result)
-	if !containsString(result.Stdout, functionID2) {
-		t.Errorf("Expected function2 (%s) when using --function-id flag, but got different function", functionID2)
-	}
-	t.Log("Verified --function-id flag takes priority over env var")
-}
-
 func TestFunctionsUpdate(t *testing.T) {
 	tmpFile := createTempFunctionFile(t)
 
@@ -518,22 +383,15 @@ func TestFunctionsScheduleAndUnschedule(t *testing.T) {
 }
 
 func TestFunctionsNoIDProvided(t *testing.T) {
-	// Clear any existing current_function file
-	homeDir, err := os.UserHomeDir()
-	if err == nil {
-		currentFunctionFile := filepath.Join(homeDir, ".notte", "cli", "current_function")
-		os.Remove(currentFunctionFile)
-	}
-
-	// Clear NOTTE_FUNCTION_ID env var and try to show without --function-id
-	result := runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": ""}, "functions", "show")
+	// An environment variable must not substitute for the required flag.
+	result := runCLIWithEnv(t, map[string]string{"NOTTE_FUNCTION_ID": "fn_ignored"}, "functions", "show")
 	requireFailure(t, result)
 
 	// Should contain helpful error message
-	if !containsString(result.Stderr, "function ID required") && !containsString(result.Stdout, "function ID required") {
-		t.Log("Expected error message about function ID being required")
+	if !containsString(result.Stderr, "function-id") && !containsString(result.Stdout, "function-id") {
+		t.Fatalf("expected missing --function-id error, stdout=%q stderr=%q", result.Stdout, result.Stderr)
 	}
-	t.Log("Correctly failed when no function ID is available")
+	t.Log("Correctly rejected an implicit function ID")
 }
 
 func TestFunctionRun(t *testing.T) {

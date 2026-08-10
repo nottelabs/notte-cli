@@ -146,11 +146,11 @@ var pageCmd = &cobra.Command{
 	Long: `Execute page actions with a simplified command interface.
 
 Use:
-  notte page click "#btn"
-  notte page click B3         # element ID (auto-detected)
-  notte page click @B3        # @-prefix also works (legacy)
-  notte page fill I1 "hello"
-  notte page goto "https://example.com"`,
+  notte page click --session-id <session-id> "#btn"
+  notte page click --session-id <session-id> B3         # element ID (auto-detected)
+  notte page click --session-id <session-id> @B3        # @-prefix also works (legacy)
+  notte page fill --session-id <session-id> I1 "hello"
+  notte page goto --session-id <session-id> "https://example.com"`,
 }
 
 // Element Actions (selector-based)
@@ -595,9 +595,9 @@ var pageScreenshotCmd = &cobra.Command{
 By default, saves to a temporary directory. Optionally provide a path to save to a specific location.
 
 Examples:
-  notte page screenshot                    # saves to tmp directory
-  notte page screenshot screenshot.jpg     # saves to specified path
-  notte page screenshot --output out.jpg   # saves to specified path (alt syntax)`,
+  notte page screenshot --session-id <session-id>                    # saves to tmp directory
+  notte page screenshot --session-id <session-id> screenshot.jpg     # saves to specified path
+  notte page screenshot --session-id <session-id> --output out.jpg   # saves to specified path (alt syntax)`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runPageScreenshot,
 }
@@ -690,9 +690,9 @@ var pageEvalJsCmd = &cobra.Command{
 The JavaScript code is executed in the context of the page's main frame.
 
 Examples:
-  notte page eval-js "document.title"
-  notte page eval-js "window.location.href"
-  notte page eval-js "document.querySelectorAll('a').length"`,
+  notte page eval-js --session-id <session-id> "document.title"
+  notte page eval-js --session-id <session-id> "window.location.href"
+  notte page eval-js --session-id <session-id> "document.querySelectorAll('a').length"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runPageEvalJs,
 }
@@ -785,7 +785,8 @@ func init() {
 	pageCmd.AddCommand(pageEvalJsCmd)
 
 	// Add --session-id flag to parent command (inherited by all subcommands)
-	pageCmd.PersistentFlags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	pageCmd.PersistentFlags().StringVar(&sessionID, "session-id", "", "Session ID (required)")
+	_ = pageCmd.MarkPersistentFlagRequired("session-id")
 
 	// click flags
 	pageClickCmd.Flags().IntVar(&pageClickTimeout, "timeout", 0, "Timeout in milliseconds")

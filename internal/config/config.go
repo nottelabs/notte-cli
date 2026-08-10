@@ -12,17 +12,11 @@ const (
 	DefaultConsoleURL        = "https://console.notte.cc"
 	ConfigDirName            = ".notte/cli"
 	ConfigFileName           = "config.json"
-	CurrentSessionFile       = "current_session"
-	CurrentFunctionFile      = "current_function"
-	CurrentViewerURLFile     = "current_viewer_url"
-	CurrentSessionExpiryFile = "current_session_expiry"
 	DefaultRequestOrigin     = "cli"
 	EnvConfigDir             = "NOTTE_CONFIG_DIR"
 	EnvAPIURL                = "NOTTE_API_URL"
 	EnvConsoleURL            = "NOTTE_CONSOLE_URL"
 	EnvRequestOrigin         = "NOTTE_REQUEST_ORIGIN"
-	EnvSessionID             = "NOTTE_SESSION_ID"
-	EnvFunctionID            = "NOTTE_FUNCTION_ID"
 	EnvNoUpdateCheck         = "NOTTE_NO_UPDATE_CHECK"
 )
 

@@ -315,28 +315,13 @@ func TestPageFormFill(t *testing.T) {
 	t.Log("Successfully executed page form-fill")
 }
 
-// TestPageUsesCurrentSession tests that page commands use the current session when --session-id is not specified
-func TestPageUsesCurrentSession(t *testing.T) {
-	// Start a session (this sets the current session)
-	result := runCLI(t, "sessions", "start", "--headless")
-	requireSuccess(t, result)
-
-	var startResp struct {
-		SessionID string `json:"session_id"`
+// TestPageRequiresSessionID verifies that page commands reject implicit IDs.
+func TestPageRequiresSessionID(t *testing.T) {
+	result := runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com")
+	requireFailure(t, result)
+	if !containsString(result.Stderr, "session-id") && !containsString(result.Stdout, "session-id") {
+		t.Fatalf("expected missing --session-id error, stdout=%q stderr=%q", result.Stdout, result.Stderr)
 	}
-	if err := json.Unmarshal([]byte(result.Stdout), &startResp); err != nil {
-		t.Fatalf("Failed to parse session start response: %v", err)
-	}
-	sessionID := startResp.SessionID
-	defer cleanupSession(t, sessionID)
-
-	// Wait for session to be ready
-	time.Sleep(2 * time.Second)
-
-	// Run page command WITHOUT --session-id flag (should use current session)
-	result = runCLIWithTimeout(t, 120*time.Second, "page", "goto", "https://example.com")
-	requireSuccess(t, result)
-	t.Log("Successfully used current session without --session-id flag")
 }
 
 // TestPageCommandErrors tests error handling for page commands
