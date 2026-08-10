@@ -83,11 +83,13 @@ func TestConfirmReplaceSessionWithIO_YesNo(t *testing.T) {
 		{"y\n", true},
 		{"yes\n", true},
 		{"Y\n", true},
-		{"\n", true}, // default is yes
+		{"\n", false}, // default is no
+		{"", false},   // non-interactive EOF is also no
 		{"n\n", false},
 		{"no\n", false},
 		{"N\n", false},
 		{"NO\n", false},
+		{"maybe\n", false},
 	}
 
 	for _, tt := range tests {
@@ -107,8 +109,8 @@ func TestConfirmReplaceSessionWithIO_YesNo(t *testing.T) {
 	if !strings.Contains(out.String(), "sess_abc") {
 		t.Errorf("expected prompt to contain session ID, got %q", out.String())
 	}
-	if !strings.Contains(out.String(), "[Y/n]") {
-		t.Errorf("expected prompt to contain [Y/n], got %q", out.String())
+	if !strings.Contains(out.String(), "[y/N]") {
+		t.Errorf("expected prompt to contain [y/N], got %q", out.String())
 	}
 }
 

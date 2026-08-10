@@ -38,7 +38,7 @@ func ConfirmActionWithIO(in io.Reader, out io.Writer, resource, id string) (bool
 }
 
 // confirmReplaceSession prompts the user to confirm stopping an existing session before starting a new one.
-// Defaults to "yes" if user just presses Enter.
+// Defaults to "no" if user just presses Enter or stdin reaches EOF.
 func confirmReplaceSession(id string) (bool, error) {
 	if skipConfirmation {
 		return true, nil
@@ -48,7 +48,7 @@ func confirmReplaceSession(id string) (bool, error) {
 
 // confirmReplaceSessionWithIO is the testable version of confirmReplaceSession.
 func confirmReplaceSessionWithIO(in io.Reader, out io.Writer, id string) (bool, error) {
-	if _, err := fmt.Fprintf(out, "Session %s is currently active. A new session will be created either way.\nStop the existing session before starting the new one? [Y/n]: ", id); err != nil {
+	if _, err := fmt.Fprintf(out, "Session %s is currently active. A new session will be created either way.\nStop the existing session before starting the new one? [y/N]: ", id); err != nil {
 		return false, fmt.Errorf("failed to write prompt: %w", err)
 	}
 
@@ -59,7 +59,7 @@ func confirmReplaceSessionWithIO(in io.Reader, out io.Writer, id string) (bool, 
 	}
 
 	response = strings.TrimSpace(strings.ToLower(response))
-	return response != "n" && response != "no", nil
+	return response == "y" || response == "yes", nil
 }
 
 // SetSkipConfirmation sets whether to skip confirmation prompts (for --yes flag).
