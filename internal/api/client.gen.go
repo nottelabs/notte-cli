@@ -129,6 +129,18 @@ const (
 	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
+// Defines values for MailboxConnectRequestProvider.
+const (
+	MailboxConnectRequestProviderGmail            MailboxConnectRequestProvider = "gmail"
+	MailboxConnectRequestProviderMicrosoftOutlook MailboxConnectRequestProvider = "microsoft_outlook"
+)
+
+// Defines values for MailboxConnectionProvider.
+const (
+	MailboxConnectionProviderGmail            MailboxConnectionProvider = "gmail"
+	MailboxConnectionProviderMicrosoftOutlook MailboxConnectionProvider = "microsoft_outlook"
+)
+
 // Defines values for ProfileCookiesImportRequestMode.
 const (
 	ProfileCookiesImportRequestModeAppend  ProfileCookiesImportRequestMode = "append"
@@ -1061,6 +1073,22 @@ type EmailResponse struct {
 	TextContent *string `json:"text_content,omitempty"`
 }
 
+// EmailVerificationReadAction defines model for EmailVerificationReadAction.
+type EmailVerificationReadAction struct {
+	Category    *string `json:"category,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// MailboxId Workspace mailbox connection to read the verification email from
+	MailboxId string `json:"mailbox_id"`
+
+	// MaxAgeSeconds Maximum age of the verification email in seconds
+	MaxAgeSeconds *int `json:"max_age_seconds,omitempty"`
+
+	// SenderDomain Sender domain to search, such as example.com
+	SenderDomain string  `json:"sender_domain"`
+	Type         *string `json:"type,omitempty"`
+}
+
 // EvaluateJsAction defines model for EvaluateJsAction.
 type EvaluateJsAction struct {
 	Category *string `json:"category,omitempty"`
@@ -1668,6 +1696,57 @@ type ListFilesResponse struct {
 // LlmModel defines model for LlmModel.
 type LlmModel string
 
+// MailboxConnectRequest defines model for MailboxConnectRequest.
+type MailboxConnectRequest struct {
+	AllowedOrigin      string                         `json:"allowed_origin"`
+	ErrorRedirectUri   string                         `json:"error_redirect_uri"`
+	Provider           *MailboxConnectRequestProvider `json:"provider,omitempty"`
+	SuccessRedirectUri string                         `json:"success_redirect_uri"`
+}
+
+// MailboxConnectRequestProvider defines model for MailboxConnectRequest.Provider.
+type MailboxConnectRequestProvider string
+
+// MailboxConnectResponse defines model for MailboxConnectResponse.
+type MailboxConnectResponse struct {
+	ConnectLinkUrl string  `json:"connect_link_url"`
+	ExpiresAt      *string `json:"expires_at,omitempty"`
+	MailboxId      string  `json:"mailbox_id"`
+}
+
+// MailboxConnection defines model for MailboxConnection.
+type MailboxConnection struct {
+	AllowAllSenders      *bool                      `json:"allow_all_senders,omitempty"`
+	AllowedSenderDomains *[]string                  `json:"allowed_sender_domains,omitempty"`
+	AuthorizedScopes     *[]string                  `json:"authorized_scopes,omitempty"`
+	CreatedAt            *string                    `json:"created_at,omitempty"`
+	EmailAddress         string                     `json:"email_address"`
+	Healthy              *bool                      `json:"healthy,omitempty"`
+	Id                   string                     `json:"id"`
+	Provider             *MailboxConnectionProvider `json:"provider,omitempty"`
+	UpdatedAt            *string                    `json:"updated_at,omitempty"`
+}
+
+// MailboxConnectionProvider defines model for MailboxConnection.Provider.
+type MailboxConnectionProvider string
+
+// MailboxListResponse defines model for MailboxListResponse.
+type MailboxListResponse struct {
+	Items []MailboxConnection `json:"items"`
+}
+
+// MailboxSyncRequest defines model for MailboxSyncRequest.
+type MailboxSyncRequest struct {
+	MailboxId *string `json:"mailbox_id,omitempty"`
+	Provider  *string `json:"provider,omitempty"`
+}
+
+// MailboxUpdateRequest defines model for MailboxUpdateRequest.
+type MailboxUpdateRequest struct {
+	AllowAllSenders      bool      `json:"allow_all_senders"`
+	AllowedSenderDomains *[]string `json:"allowed_sender_domains,omitempty"`
+}
+
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
 	Category        *string                              `json:"category,omitempty"`
@@ -1895,7 +1974,8 @@ type PersonaCreateRequest struct {
 	CreatePhoneNumber *bool `json:"create_phone_number,omitempty"`
 
 	// CreateVault Whether to create a vault for the persona
-	CreateVault *bool `json:"create_vault,omitempty"`
+	CreateVault *bool   `json:"create_vault,omitempty"`
+	Name        *string `json:"name,omitempty"`
 }
 
 // PersonaResponse defines model for PersonaResponse.
@@ -1907,7 +1987,8 @@ type PersonaResponse struct {
 	FirstName string `json:"first_name"`
 
 	// LastName Last name of the persona
-	LastName string `json:"last_name"`
+	LastName string  `json:"last_name"`
+	Name     *string `json:"name,omitempty"`
 
 	// PersonaId ID of the created persona
 	PersonaId string `json:"persona_id"`
@@ -1920,6 +2001,11 @@ type PersonaResponse struct {
 
 	// VaultId ID of the vault
 	VaultId *string `json:"vault_id,omitempty"`
+}
+
+// PersonaUpdateRequest defines model for PersonaUpdateRequest.
+type PersonaUpdateRequest struct {
+	Name string `json:"name"`
 }
 
 // PressKeyAction defines model for PressKeyAction.
@@ -2816,6 +2902,42 @@ type FunctionScheduleSetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// MailboxListParams defines parameters for MailboxList.
+type MailboxListParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MailboxConnectTokenParams defines parameters for MailboxConnectToken.
+type MailboxConnectTokenParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MailboxSyncParams defines parameters for MailboxSync.
+type MailboxSyncParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MailboxDeleteParams defines parameters for MailboxDelete.
+type MailboxDeleteParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MailboxGetParams defines parameters for MailboxGet.
+type MailboxGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MailboxUpdateParams defines parameters for MailboxUpdate.
+type MailboxUpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ListPersonasParams defines parameters for ListPersonas.
 type ListPersonasParams struct {
 	// Page Page number
@@ -2850,6 +2972,12 @@ type PersonaDeleteParams struct {
 
 // PersonaGetParams defines parameters for PersonaGet.
 type PersonaGetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PersonaUpdateParams defines parameters for PersonaUpdate.
+type PersonaUpdateParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3250,8 +3378,20 @@ type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
 // FunctionScheduleSetJSONRequestBody defines body for FunctionScheduleSet for application/json ContentType.
 type FunctionScheduleSetJSONRequestBody = FunctionScheduleCreateRequest
 
+// MailboxConnectTokenJSONRequestBody defines body for MailboxConnectToken for application/json ContentType.
+type MailboxConnectTokenJSONRequestBody = MailboxConnectRequest
+
+// MailboxSyncJSONRequestBody defines body for MailboxSync for application/json ContentType.
+type MailboxSyncJSONRequestBody = MailboxSyncRequest
+
+// MailboxUpdateJSONRequestBody defines body for MailboxUpdate for application/json ContentType.
+type MailboxUpdateJSONRequestBody = MailboxUpdateRequest
+
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
+
+// PersonaUpdateJSONRequestBody defines body for PersonaUpdate for application/json ContentType.
+type PersonaUpdateJSONRequestBody = PersonaUpdateRequest
 
 // ProfileCreateJSONRequestBody defines body for ProfileCreate for application/json ContentType.
 type ProfileCreateJSONRequestBody = ProfileCreateRequest
@@ -3904,6 +4044,36 @@ func (t *ActionSpace_Actions_Item) MergeEmailReadAction(v EmailReadAction) error
 	return err
 }
 
+// AsEmailVerificationReadAction returns the union data inside the ActionSpace_Actions_Item as a EmailVerificationReadAction
+func (t ActionSpace_Actions_Item) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the ActionSpace_Actions_Item as the provided EmailVerificationReadAction
+func (t *ActionSpace_Actions_Item) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the ActionSpace_Actions_Item, using the provided EmailVerificationReadAction
+func (t *ActionSpace_Actions_Item) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsSmsReadAction returns the union data inside the ActionSpace_Actions_Item as a SmsReadAction
 func (t ActionSpace_Actions_Item) AsSmsReadAction() (SmsReadAction, error) {
 	var body SmsReadAction
@@ -4232,6 +4402,8 @@ func (t ActionSpace_Actions_Item) ValueByDiscriminator() (interface{}, error) {
 		return t.AsDownloadFileActionOutput()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
 	case "evaluate_js":
 		return t.AsEvaluateJsAction()
 	case "fallback_fill":
@@ -4797,6 +4969,36 @@ func (t *ActionSpace_BrowserActions_Item) MergeEmailReadAction(v EmailReadAction
 	return err
 }
 
+// AsEmailVerificationReadAction returns the union data inside the ActionSpace_BrowserActions_Item as a EmailVerificationReadAction
+func (t ActionSpace_BrowserActions_Item) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the ActionSpace_BrowserActions_Item as the provided EmailVerificationReadAction
+func (t *ActionSpace_BrowserActions_Item) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the ActionSpace_BrowserActions_Item, using the provided EmailVerificationReadAction
+func (t *ActionSpace_BrowserActions_Item) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsSmsReadAction returns the union data inside the ActionSpace_BrowserActions_Item as a SmsReadAction
 func (t ActionSpace_BrowserActions_Item) AsSmsReadAction() (SmsReadAction, error) {
 	var body SmsReadAction
@@ -4879,6 +5081,8 @@ func (t ActionSpace_BrowserActions_Item) ValueByDiscriminator() (interface{}, er
 		return t.AsCompletionAction()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
 	case "evaluate_js":
 		return t.AsEvaluateJsAction()
 	case "form_fill":
@@ -5781,6 +5985,36 @@ func (t *ApiExecutionResponse_Action) MergeEmailReadAction(v EmailReadAction) er
 	return err
 }
 
+// AsEmailVerificationReadAction returns the union data inside the ApiExecutionResponse_Action as a EmailVerificationReadAction
+func (t ApiExecutionResponse_Action) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the ApiExecutionResponse_Action as the provided EmailVerificationReadAction
+func (t *ApiExecutionResponse_Action) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the ApiExecutionResponse_Action, using the provided EmailVerificationReadAction
+func (t *ApiExecutionResponse_Action) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsSmsReadAction returns the union data inside the ApiExecutionResponse_Action as a SmsReadAction
 func (t ApiExecutionResponse_Action) AsSmsReadAction() (SmsReadAction, error) {
 	var body SmsReadAction
@@ -6109,6 +6343,8 @@ func (t ApiExecutionResponse_Action) ValueByDiscriminator() (interface{}, error)
 		return t.AsDownloadFileActionOutput()
 	case "email_read":
 		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
 	case "evaluate_js":
 		return t.AsEvaluateJsAction()
 	case "fallback_fill":
@@ -8417,6 +8653,30 @@ type ClientInterface interface {
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MailboxList request
+	MailboxList(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MailboxConnectTokenWithBody request with any body
+	MailboxConnectTokenWithBody(ctx context.Context, params *MailboxConnectTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MailboxConnectToken(ctx context.Context, params *MailboxConnectTokenParams, body MailboxConnectTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MailboxSyncWithBody request with any body
+	MailboxSyncWithBody(ctx context.Context, params *MailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MailboxSync(ctx context.Context, params *MailboxSyncParams, body MailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MailboxDelete request
+	MailboxDelete(ctx context.Context, mailboxId string, params *MailboxDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MailboxGet request
+	MailboxGet(ctx context.Context, mailboxId string, params *MailboxGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MailboxUpdateWithBody request with any body
+	MailboxUpdateWithBody(ctx context.Context, mailboxId string, params *MailboxUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MailboxUpdate(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPersonas request
 	ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8430,6 +8690,11 @@ type ClientInterface interface {
 
 	// PersonaGet request
 	PersonaGet(ctx context.Context, personaId string, params *PersonaGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PersonaUpdateWithBody request with any body
+	PersonaUpdateWithBody(ctx context.Context, personaId string, params *PersonaUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PersonaUpdate(ctx context.Context, personaId string, params *PersonaUpdateParams, body PersonaUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PersonaEmailsList request
 	PersonaEmailsList(ctx context.Context, personaId string, params *PersonaEmailsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8896,6 +9161,114 @@ func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
+func (c *Client) MailboxList(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxConnectTokenWithBody(ctx context.Context, params *MailboxConnectTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxConnectTokenRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxConnectToken(ctx context.Context, params *MailboxConnectTokenParams, body MailboxConnectTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxConnectTokenRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxSyncWithBody(ctx context.Context, params *MailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxSyncRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxSync(ctx context.Context, params *MailboxSyncParams, body MailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxSyncRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxDelete(ctx context.Context, mailboxId string, params *MailboxDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxDeleteRequest(c.Server, mailboxId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxGet(ctx context.Context, mailboxId string, params *MailboxGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxGetRequest(c.Server, mailboxId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxUpdateWithBody(ctx context.Context, mailboxId string, params *MailboxUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxUpdateRequestWithBody(c.Server, mailboxId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MailboxUpdate(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMailboxUpdateRequest(c.Server, mailboxId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPersonasRequest(c.Server, params)
 	if err != nil {
@@ -8946,6 +9319,30 @@ func (c *Client) PersonaDelete(ctx context.Context, personaId string, params *Pe
 
 func (c *Client) PersonaGet(ctx context.Context, personaId string, params *PersonaGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPersonaGetRequest(c.Server, personaId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PersonaUpdateWithBody(ctx context.Context, personaId string, params *PersonaUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPersonaUpdateRequestWithBody(c.Server, personaId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PersonaUpdate(ctx context.Context, personaId string, params *PersonaUpdateParams, body PersonaUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPersonaUpdateRequest(c.Server, personaId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11303,6 +11700,384 @@ func NewHealthCheckRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewMailboxListRequest generates requests for MailboxList
+func NewMailboxListRequest(server string, params *MailboxListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMailboxConnectTokenRequest calls the generic MailboxConnectToken builder with application/json body
+func NewMailboxConnectTokenRequest(server string, params *MailboxConnectTokenParams, body MailboxConnectTokenJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMailboxConnectTokenRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewMailboxConnectTokenRequestWithBody generates requests for MailboxConnectToken with any type of body
+func NewMailboxConnectTokenRequestWithBody(server string, params *MailboxConnectTokenParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes/connect-token")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMailboxSyncRequest calls the generic MailboxSync builder with application/json body
+func NewMailboxSyncRequest(server string, params *MailboxSyncParams, body MailboxSyncJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMailboxSyncRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewMailboxSyncRequestWithBody generates requests for MailboxSync with any type of body
+func NewMailboxSyncRequestWithBody(server string, params *MailboxSyncParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes/sync")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMailboxDeleteRequest generates requests for MailboxDelete
+func NewMailboxDeleteRequest(server string, mailboxId string, params *MailboxDeleteParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "mailbox_id", runtime.ParamLocationPath, mailboxId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMailboxGetRequest generates requests for MailboxGet
+func NewMailboxGetRequest(server string, mailboxId string, params *MailboxGetParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "mailbox_id", runtime.ParamLocationPath, mailboxId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMailboxUpdateRequest calls the generic MailboxUpdate builder with application/json body
+func NewMailboxUpdateRequest(server string, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMailboxUpdateRequestWithBody(server, mailboxId, params, "application/json", bodyReader)
+}
+
+// NewMailboxUpdateRequestWithBody generates requests for MailboxUpdate with any type of body
+func NewMailboxUpdateRequestWithBody(server string, mailboxId string, params *MailboxUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "mailbox_id", runtime.ParamLocationPath, mailboxId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/mailboxes/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewListPersonasRequest generates requests for ListPersonas
 func NewListPersonasRequest(server string, params *ListPersonasParams) (*http.Request, error) {
 	var err error
@@ -11598,6 +12373,79 @@ func NewPersonaGetRequest(server string, personaId string, params *PersonaGetPar
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPersonaUpdateRequest calls the generic PersonaUpdate builder with application/json body
+func NewPersonaUpdateRequest(server string, personaId string, params *PersonaUpdateParams, body PersonaUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPersonaUpdateRequestWithBody(server, personaId, params, "application/json", bodyReader)
+}
+
+// NewPersonaUpdateRequestWithBody generates requests for PersonaUpdate with any type of body
+func NewPersonaUpdateRequestWithBody(server string, personaId string, params *PersonaUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "persona_id", runtime.ParamLocationPath, personaId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/personas/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -15363,6 +16211,30 @@ type ClientWithResponsesInterface interface {
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResult, error)
 
+	// MailboxListWithResponse request
+	MailboxListWithResponse(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*MailboxListResult, error)
+
+	// MailboxConnectTokenWithBodyWithResponse request with any body
+	MailboxConnectTokenWithBodyWithResponse(ctx context.Context, params *MailboxConnectTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxConnectTokenResult, error)
+
+	MailboxConnectTokenWithResponse(ctx context.Context, params *MailboxConnectTokenParams, body MailboxConnectTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxConnectTokenResult, error)
+
+	// MailboxSyncWithBodyWithResponse request with any body
+	MailboxSyncWithBodyWithResponse(ctx context.Context, params *MailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxSyncResult, error)
+
+	MailboxSyncWithResponse(ctx context.Context, params *MailboxSyncParams, body MailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxSyncResult, error)
+
+	// MailboxDeleteWithResponse request
+	MailboxDeleteWithResponse(ctx context.Context, mailboxId string, params *MailboxDeleteParams, reqEditors ...RequestEditorFn) (*MailboxDeleteResult, error)
+
+	// MailboxGetWithResponse request
+	MailboxGetWithResponse(ctx context.Context, mailboxId string, params *MailboxGetParams, reqEditors ...RequestEditorFn) (*MailboxGetResult, error)
+
+	// MailboxUpdateWithBodyWithResponse request with any body
+	MailboxUpdateWithBodyWithResponse(ctx context.Context, mailboxId string, params *MailboxUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxUpdateResult, error)
+
+	MailboxUpdateWithResponse(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxUpdateResult, error)
+
 	// ListPersonasWithResponse request
 	ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error)
 
@@ -15376,6 +16248,11 @@ type ClientWithResponsesInterface interface {
 
 	// PersonaGetWithResponse request
 	PersonaGetWithResponse(ctx context.Context, personaId string, params *PersonaGetParams, reqEditors ...RequestEditorFn) (*PersonaGetResult, error)
+
+	// PersonaUpdateWithBodyWithResponse request with any body
+	PersonaUpdateWithBodyWithResponse(ctx context.Context, personaId string, params *PersonaUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PersonaUpdateResult, error)
+
+	PersonaUpdateWithResponse(ctx context.Context, personaId string, params *PersonaUpdateParams, body PersonaUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*PersonaUpdateResult, error)
 
 	// PersonaEmailsListWithResponse request
 	PersonaEmailsListWithResponse(ctx context.Context, personaId string, params *PersonaEmailsListParams, reqEditors ...RequestEditorFn) (*PersonaEmailsListResult, error)
@@ -16001,6 +16878,143 @@ func (r HealthCheckResult) StatusCode() int {
 	return 0
 }
 
+type MailboxListResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MailboxListResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxListResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxListResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MailboxConnectTokenResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MailboxConnectResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxConnectTokenResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxConnectTokenResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MailboxSyncResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MailboxListResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxSyncResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxSyncResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MailboxDeleteResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxDeleteResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxDeleteResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MailboxGetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MailboxConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxGetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MailboxUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MailboxConnection
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MailboxUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MailboxUpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListPersonasResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -16087,6 +17101,29 @@ func (r PersonaGetResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PersonaGetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PersonaUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PersonaResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PersonaUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PersonaUpdateResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -17371,6 +18408,84 @@ func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEd
 	return ParseHealthCheckResult(rsp)
 }
 
+// MailboxListWithResponse request returning *MailboxListResult
+func (c *ClientWithResponses) MailboxListWithResponse(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*MailboxListResult, error) {
+	rsp, err := c.MailboxList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxListResult(rsp)
+}
+
+// MailboxConnectTokenWithBodyWithResponse request with arbitrary body returning *MailboxConnectTokenResult
+func (c *ClientWithResponses) MailboxConnectTokenWithBodyWithResponse(ctx context.Context, params *MailboxConnectTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxConnectTokenResult, error) {
+	rsp, err := c.MailboxConnectTokenWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxConnectTokenResult(rsp)
+}
+
+func (c *ClientWithResponses) MailboxConnectTokenWithResponse(ctx context.Context, params *MailboxConnectTokenParams, body MailboxConnectTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxConnectTokenResult, error) {
+	rsp, err := c.MailboxConnectToken(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxConnectTokenResult(rsp)
+}
+
+// MailboxSyncWithBodyWithResponse request with arbitrary body returning *MailboxSyncResult
+func (c *ClientWithResponses) MailboxSyncWithBodyWithResponse(ctx context.Context, params *MailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxSyncResult, error) {
+	rsp, err := c.MailboxSyncWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxSyncResult(rsp)
+}
+
+func (c *ClientWithResponses) MailboxSyncWithResponse(ctx context.Context, params *MailboxSyncParams, body MailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxSyncResult, error) {
+	rsp, err := c.MailboxSync(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxSyncResult(rsp)
+}
+
+// MailboxDeleteWithResponse request returning *MailboxDeleteResult
+func (c *ClientWithResponses) MailboxDeleteWithResponse(ctx context.Context, mailboxId string, params *MailboxDeleteParams, reqEditors ...RequestEditorFn) (*MailboxDeleteResult, error) {
+	rsp, err := c.MailboxDelete(ctx, mailboxId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxDeleteResult(rsp)
+}
+
+// MailboxGetWithResponse request returning *MailboxGetResult
+func (c *ClientWithResponses) MailboxGetWithResponse(ctx context.Context, mailboxId string, params *MailboxGetParams, reqEditors ...RequestEditorFn) (*MailboxGetResult, error) {
+	rsp, err := c.MailboxGet(ctx, mailboxId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxGetResult(rsp)
+}
+
+// MailboxUpdateWithBodyWithResponse request with arbitrary body returning *MailboxUpdateResult
+func (c *ClientWithResponses) MailboxUpdateWithBodyWithResponse(ctx context.Context, mailboxId string, params *MailboxUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MailboxUpdateResult, error) {
+	rsp, err := c.MailboxUpdateWithBody(ctx, mailboxId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) MailboxUpdateWithResponse(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxUpdateResult, error) {
+	rsp, err := c.MailboxUpdate(ctx, mailboxId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMailboxUpdateResult(rsp)
+}
+
 // ListPersonasWithResponse request returning *ListPersonasResult
 func (c *ClientWithResponses) ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error) {
 	rsp, err := c.ListPersonas(ctx, params, reqEditors...)
@@ -17413,6 +18528,23 @@ func (c *ClientWithResponses) PersonaGetWithResponse(ctx context.Context, person
 		return nil, err
 	}
 	return ParsePersonaGetResult(rsp)
+}
+
+// PersonaUpdateWithBodyWithResponse request with arbitrary body returning *PersonaUpdateResult
+func (c *ClientWithResponses) PersonaUpdateWithBodyWithResponse(ctx context.Context, personaId string, params *PersonaUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PersonaUpdateResult, error) {
+	rsp, err := c.PersonaUpdateWithBody(ctx, personaId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePersonaUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) PersonaUpdateWithResponse(ctx context.Context, personaId string, params *PersonaUpdateParams, body PersonaUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*PersonaUpdateResult, error) {
+	rsp, err := c.PersonaUpdate(ctx, personaId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePersonaUpdateResult(rsp)
 }
 
 // PersonaEmailsListWithResponse request returning *PersonaEmailsListResult
@@ -18586,6 +19718,197 @@ func ParseHealthCheckResult(rsp *http.Response) (*HealthCheckResult, error) {
 	return response, nil
 }
 
+// ParseMailboxListResult parses an HTTP response from a MailboxListWithResponse call
+func ParseMailboxListResult(rsp *http.Response) (*MailboxListResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxListResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MailboxListResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMailboxConnectTokenResult parses an HTTP response from a MailboxConnectTokenWithResponse call
+func ParseMailboxConnectTokenResult(rsp *http.Response) (*MailboxConnectTokenResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxConnectTokenResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MailboxConnectResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMailboxSyncResult parses an HTTP response from a MailboxSyncWithResponse call
+func ParseMailboxSyncResult(rsp *http.Response) (*MailboxSyncResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxSyncResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MailboxListResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMailboxDeleteResult parses an HTTP response from a MailboxDeleteWithResponse call
+func ParseMailboxDeleteResult(rsp *http.Response) (*MailboxDeleteResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxDeleteResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMailboxGetResult parses an HTTP response from a MailboxGetWithResponse call
+func ParseMailboxGetResult(rsp *http.Response) (*MailboxGetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MailboxConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMailboxUpdateResult parses an HTTP response from a MailboxUpdateWithResponse call
+func ParseMailboxUpdateResult(rsp *http.Response) (*MailboxUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MailboxUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MailboxConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListPersonasResult parses an HTTP response from a ListPersonasWithResponse call
 func ParseListPersonasResult(rsp *http.Response) (*ListPersonasResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -18694,6 +20017,39 @@ func ParsePersonaGetResult(rsp *http.Response) (*PersonaGetResult, error) {
 	}
 
 	response := &PersonaGetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PersonaResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePersonaUpdateResult parses an HTTP response from a PersonaUpdateWithResponse call
+func ParsePersonaUpdateResult(rsp *http.Response) (*PersonaUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PersonaUpdateResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
