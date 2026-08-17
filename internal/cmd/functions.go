@@ -678,7 +678,7 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var items []api.GetFunctionRunResponse
+	var items []api.FunctionRunListItemResponse
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
