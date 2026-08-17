@@ -389,10 +389,10 @@ const (
 
 // Defines values for SessionResponseStatus.
 const (
-	SessionResponseStatusActive   SessionResponseStatus = "active"
-	SessionResponseStatusClosed   SessionResponseStatus = "closed"
-	SessionResponseStatusError    SessionResponseStatus = "error"
-	SessionResponseStatusTimedOut SessionResponseStatus = "timed_out"
+	Active   SessionResponseStatus = "active"
+	Closed   SessionResponseStatus = "closed"
+	Error    SessionResponseStatus = "error"
+	TimedOut SessionResponseStatus = "timed_out"
 )
 
 // Defines values for SpaceCategory.
@@ -1365,7 +1365,7 @@ type FunctionRunListItemResponse struct {
 	Local         *bool                             `json:"local,omitempty"`
 	SessionId     *string                           `json:"session_id,omitempty"`
 	Status        FunctionRunListItemResponseStatus `json:"status"`
-	UpdatedAt     FlexibleTime                      `json:"updated_at"`
+	UpdatedAt     time.Time                         `json:"updated_at"`
 	WorkflowId    *string                           `json:"workflow_id,omitempty"`
 	WorkflowRunId *string                           `json:"workflow_run_id,omitempty"`
 }
