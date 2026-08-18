@@ -459,7 +459,7 @@ func TestRunFunctionRun(t *testing.T) {
 
 func TestRunFunctionRuns(t *testing.T) {
 	server := setupFunctionTest(t)
-	server.AddResponse("/functions/"+functionIDTest+"/runs", 200, `{"items":[`+functionRunJSON()+`]}`)
+	server.AddResponse("/functions/"+functionIDTest+"/runs", 200, `{"items":[`+functionRunJSON()+`],"page":1,"page_size":10,"has_next":false}`)
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -475,8 +475,20 @@ func TestRunFunctionRuns(t *testing.T) {
 		}
 	})
 
-	if stdout == "" {
-		t.Error("expected output, got empty string")
+	var runs []map[string]any
+	if err := json.Unmarshal([]byte(stdout), &runs); err != nil {
+		t.Fatalf("expected JSON run list, got %q: %v", stdout, err)
+	}
+	if len(runs) != 1 {
+		t.Fatalf("expected one run, got %d", len(runs))
+	}
+	if runs[0]["function_run_id"] != functionRunIDTest {
+		t.Errorf("expected lightweight run ID %q, got %#v", functionRunIDTest, runs[0]["function_run_id"])
+	}
+	for _, detailField := range []string{"logs", "variables", "result"} {
+		if _, exists := runs[0][detailField]; exists {
+			t.Errorf("lightweight run unexpectedly contains %q", detailField)
+		}
 	}
 }
 

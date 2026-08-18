@@ -73,6 +73,13 @@ const (
 	Success DeleteVaultResponseStatus = "success"
 )
 
+// Defines values for FunctionRunListItemResponseStatus.
+const (
+	FunctionRunListItemResponseStatusActive FunctionRunListItemResponseStatus = "active"
+	FunctionRunListItemResponseStatusClosed FunctionRunListItemResponseStatus = "closed"
+	FunctionRunListItemResponseStatusFailed FunctionRunListItemResponseStatus = "failed"
+)
+
 // Defines values for FunctionRunUpdateRequestStatus.
 const (
 	FunctionRunUpdateRequestStatusActive FunctionRunUpdateRequestStatus = "active"
@@ -382,10 +389,10 @@ const (
 
 // Defines values for SessionResponseStatus.
 const (
-	SessionResponseStatusActive   SessionResponseStatus = "active"
-	SessionResponseStatusClosed   SessionResponseStatus = "closed"
-	SessionResponseStatusError    SessionResponseStatus = "error"
-	SessionResponseStatusTimedOut SessionResponseStatus = "timed_out"
+	Active   SessionResponseStatus = "active"
+	Closed   SessionResponseStatus = "closed"
+	Error    SessionResponseStatus = "error"
+	TimedOut SessionResponseStatus = "timed_out"
 )
 
 // Defines values for SpaceCategory.
@@ -1346,6 +1353,26 @@ type FunctionResponse struct {
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
+// FunctionRunListItemResponse defines model for FunctionRunListItemResponse.
+type FunctionRunListItemResponse struct {
+	CreatedAt FlexibleTime `json:"created_at"`
+
+	// FunctionId The ID of the function
+	FunctionId string `json:"function_id"`
+
+	// FunctionRunId The ID of the function run
+	FunctionRunId string                            `json:"function_run_id"`
+	Local         *bool                             `json:"local,omitempty"`
+	SessionId     *string                           `json:"session_id,omitempty"`
+	Status        FunctionRunListItemResponseStatus `json:"status"`
+	UpdatedAt     time.Time                         `json:"updated_at"`
+	WorkflowId    *string                           `json:"workflow_id,omitempty"`
+	WorkflowRunId *string                           `json:"workflow_run_id,omitempty"`
+}
+
+// FunctionRunListItemResponseStatus defines model for FunctionRunListItemResponse.Status.
+type FunctionRunListItemResponseStatus string
+
 // FunctionRunUpdateRequest defines model for FunctionRunUpdateRequest.
 type FunctionRunUpdateRequest struct {
 	// Logs The logs of the workflow run
@@ -1907,13 +1934,13 @@ type PaginatedResponseFunctionResponse struct {
 	PageSize    int                `json:"page_size"`
 }
 
-// PaginatedResponseGetFunctionRunResponse defines model for PaginatedResponse_GetFunctionRunResponse_.
-type PaginatedResponseGetFunctionRunResponse struct {
-	HasNext     bool                     `json:"has_next"`
-	HasPrevious *bool                    `json:"has_previous,omitempty"`
-	Items       []GetFunctionRunResponse `json:"items"`
-	Page        int                      `json:"page"`
-	PageSize    int                      `json:"page_size"`
+// PaginatedResponseFunctionRunListItemResponse defines model for PaginatedResponse_FunctionRunListItemResponse_.
+type PaginatedResponseFunctionRunListItemResponse struct {
+	HasNext     bool                          `json:"has_next"`
+	HasPrevious *bool                         `json:"has_previous,omitempty"`
+	Items       []FunctionRunListItemResponse `json:"items"`
+	Page        int                           `json:"page"`
+	PageSize    int                           `json:"page_size"`
 }
 
 // PaginatedResponsePersonaResponse defines model for PaginatedResponse_PersonaResponse_.
@@ -16698,7 +16725,7 @@ func (r FunctionForkResult) StatusCode() int {
 type ListFunctionRunsByFunctionIdResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PaginatedResponseGetFunctionRunResponse
+	JSON200      *PaginatedResponseFunctionRunListItemResponse
 	JSON422      *HTTPValidationError
 }
 
@@ -19476,7 +19503,7 @@ func ParseListFunctionRunsByFunctionIdResult(rsp *http.Response) (*ListFunctionR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PaginatedResponseGetFunctionRunResponse
+		var dest PaginatedResponseFunctionRunListItemResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
