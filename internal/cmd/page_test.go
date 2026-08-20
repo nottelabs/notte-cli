@@ -205,6 +205,67 @@ func TestRunPageFill(t *testing.T) {
 	}
 }
 
+func TestRunPageFill_WithVaultField(t *testing.T) {
+	server := setupPageTest(t)
+	path := "/sessions/" + pageSessionIDTest + "/page/execute"
+	server.AddResponse(path, 200, pageExecResponse())
+
+	origVaultField := pageFillVaultField
+	pageFillVaultField = "email"
+	t.Cleanup(func() { pageFillVaultField = origVaultField })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	if err := runPageFill(cmd, []string{"#email"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	requests := server.Requests(path)
+	if len(requests) != 1 {
+		t.Fatalf("got %d requests, want 1", len(requests))
+	}
+	if !strings.Contains(requests[0].Body, `"value":"user@example.org"`) {
+		t.Errorf("request body does not contain the email sentinel: %s", requests[0].Body)
+	}
+}
+
+func TestRunPageFill_RejectsValueAndVaultField(t *testing.T) {
+	origVaultField := pageFillVaultField
+	pageFillVaultField = "password"
+	t.Cleanup(func() { pageFillVaultField = origVaultField })
+
+	cmd := &cobra.Command{}
+	err := runPageFill(cmd, []string{"#password", "literal"})
+	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("got error %v, want mutually exclusive error", err)
+	}
+}
+
+func TestRunPageFill_RequiresValueOrVaultField(t *testing.T) {
+	origVaultField := pageFillVaultField
+	pageFillVaultField = ""
+	t.Cleanup(func() { pageFillVaultField = origVaultField })
+
+	cmd := &cobra.Command{}
+	err := runPageFill(cmd, []string{"#email"})
+	if err == nil || !strings.Contains(err.Error(), "requires a value or --vault-field") {
+		t.Fatalf("got error %v, want missing value error", err)
+	}
+}
+
+func TestRunPageFill_RejectsUnknownVaultField(t *testing.T) {
+	origVaultField := pageFillVaultField
+	pageFillVaultField = "token"
+	t.Cleanup(func() { pageFillVaultField = origVaultField })
+
+	cmd := &cobra.Command{}
+	err := runPageFill(cmd, []string{"#token"})
+	if err == nil || !strings.Contains(err.Error(), "unsupported vault field") {
+		t.Fatalf("got error %v, want unsupported vault field error", err)
+	}
+}
+
 func TestRunPageFill_WithFlags(t *testing.T) {
 	server := setupPageTest(t)
 	server.AddResponse("/sessions/"+pageSessionIDTest+"/page/execute", 200, pageExecResponse())
