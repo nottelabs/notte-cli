@@ -135,19 +135,23 @@ notte sessions start \
   --cdp-url <url>                         # CDP URL of remote session provider
   --profile-id <id>                       # Profile ID to use for session
   --profile-persist                       # Save browser state to profile on close
+  --vault-id <id>                         # Vault used to resolve credential fields
   --screenshot-type <type>                # Screenshot type (raw, full, last_action)
   --chrome-args <args>                    # Chrome instance arguments (repeatable)
 ```
 
 ### Page Actions
 
-Interact with pages using simplified commands (requires an active session):
+Interact with pages using simplified commands (requires an active session). Start
+the session with `--vault-id <id>` before using `page fill --vault-field`:
 
 ```bash
 notte page observe                    # Get page state and available actions
 notte page scrape --instructions "..." # Scrape content from the page 
 notte page click "@B3"            # Click an element by ID
 notte page fill "@I1" "text"    # Fill an input field
+notte page fill "#email" --vault-field email       # Fill from the session vault
+notte page fill "#password" --vault-field password # Supports email, username, password, and mfa
 notte page goto "https://example.com" # Navigate to a URL
 notte page back                       # Go back in history
 notte page forward                    # Go forward in history

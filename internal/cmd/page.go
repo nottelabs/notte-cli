@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/credentials"
 )
 
 // Page command flags
@@ -24,8 +25,9 @@ var (
 	pageClickEnter   bool
 
 	// fill flags
-	pageFillClear bool
-	pageFillEnter bool
+	pageFillClear      bool
+	pageFillEnter      bool
+	pageFillVaultField string
 
 	// check flags
 	pageCheckValue bool
@@ -186,13 +188,36 @@ func runPageClick(cmd *cobra.Command, args []string) error {
 }
 
 var pageFillCmd = &cobra.Command{
-	Use:   "fill <id|selector> <value>",
+	Use:   "fill <id|selector> [value]",
 	Short: "Fill an input field with a value",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runPageFill,
+	Long: `Fill an input field with a literal value or a credential from the vault
+attached to the current session.
+
+Use --vault-field instead of a value to keep credentials out of the command:
+  notte page fill "input[name=email]" --vault-field email
+  notte page fill "input[name=password]" --vault-field password`,
+	Args: cobra.RangeArgs(1, 2),
+	RunE: runPageFill,
+}
+
+func resolvePageFillValue(args []string) (string, error) {
+	if len(args) == 2 && pageFillVaultField != "" {
+		return "", fmt.Errorf("value and --vault-field are mutually exclusive")
+	}
+	if len(args) == 2 {
+		return args[1], nil
+	}
+	if pageFillVaultField == "" {
+		return "", fmt.Errorf("requires a value or --vault-field")
+	}
+	return credentials.Sentinel(pageFillVaultField)
 }
 
 func runPageFill(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 || len(args) > 2 {
+		return fmt.Errorf("accepts 1 or 2 arg(s), received %d", len(args))
+	}
+
 	action := map[string]any{"type": "fill"}
 
 	id, selector, err := parseSelector(args[0])
@@ -205,7 +230,11 @@ func runPageFill(cmd *cobra.Command, args []string) error {
 		action["selector"] = selector
 	}
 
-	action["value"] = args[1]
+	value, err := resolvePageFillValue(args)
+	if err != nil {
+		return err
+	}
+	action["value"] = value
 
 	if pageFillClear {
 		action["clear"] = true
@@ -794,6 +823,10 @@ func init() {
 	// fill flags
 	pageFillCmd.Flags().BoolVar(&pageFillClear, "clear", false, "Clear the field before filling")
 	pageFillCmd.Flags().BoolVar(&pageFillEnter, "enter", false, "Press Enter after filling")
+	pageFillCmd.Flags().StringVar(&pageFillVaultField, "vault-field", "", "Fill from the session vault (email, username, password, mfa)")
+	_ = pageFillCmd.RegisterFlagCompletionFunc("vault-field", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return credentials.Fields(), cobra.ShellCompDirectiveNoFileComp
+	})
 
 	// check flags
 	pageCheckCmd.Flags().BoolVar(&pageCheckValue, "value", true, "Check (true) or uncheck (false)")
