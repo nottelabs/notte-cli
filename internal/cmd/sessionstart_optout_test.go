@@ -13,7 +13,6 @@ import (
 func newOptOutCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "start", RunE: func(*cobra.Command, []string) error { return nil }}
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "solve captchas")
-	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "file storage")
 	registerSessionStartOptOutFlags(cmd)
 	return cmd
 }
@@ -22,7 +21,6 @@ func runOptOut(t *testing.T, args ...string) (*api.ApiSessionStartRequest, error
 	t.Helper()
 	// Package-level flag vars are shared; reset before each case.
 	sessionsStartNoSolveCaptchas = false
-	sessionsStartNoFileStorage = false
 
 	cmd := newOptOutCmd()
 	cmd.SetArgs(args)
@@ -44,9 +42,6 @@ func TestOptOutsLeaveBodyUntouchedWhenAbsent(t *testing.T) {
 	if body.SolveCaptchas != nil {
 		t.Errorf("SolveCaptchas = %v, want nil when --no-solve-captchas is omitted", *body.SolveCaptchas)
 	}
-	if body.UseFileStorage != nil {
-		t.Errorf("UseFileStorage = %v, want nil when --no-file-storage is omitted", *body.UseFileStorage)
-	}
 }
 
 func TestOptOutsInvertTheirCounterpart(t *testing.T) {
@@ -62,13 +57,6 @@ func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 			args:  []string{"--no-solve-captchas"},
 			field: "SolveCaptchas",
 			get:   func(b *api.ApiSessionStartRequest) *bool { return b.SolveCaptchas },
-			want:  false,
-		},
-		{
-			name:  "--no-file-storage sends use_file_storage=false",
-			args:  []string{"--no-file-storage"},
-			field: "UseFileStorage",
-			get:   func(b *api.ApiSessionStartRequest) *bool { return b.UseFileStorage },
 			want:  false,
 		},
 	}
@@ -96,7 +84,6 @@ func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 func TestConflictingPairIsRejected(t *testing.T) {
 	for _, args := range [][]string{
 		{"--no-solve-captchas", "--solve-captchas"},
-		{"--no-file-storage", "--use-file-storage"},
 	} {
 		_, err := runOptOut(t, args...)
 		if err == nil {
@@ -110,7 +97,7 @@ func TestConflictingPairIsRejected(t *testing.T) {
 // when they cannot rely on the server default.
 func TestOriginalFlagsStillWorkAlone(t *testing.T) {
 	cmd := newOptOutCmd()
-	for _, name := range []string{"solve-captchas", "use-file-storage"} {
+	for _, name := range []string{"solve-captchas"} {
 		f := cmd.Flags().Lookup(name)
 		if f == nil {
 			t.Errorf("--%s should still be registered", name)

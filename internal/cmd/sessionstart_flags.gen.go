@@ -48,9 +48,6 @@ var (
 	// Whether to try to automatically solve captchas
 	SessionStartSolveCaptchas bool
 
-	// Whether FileStorage should be attached to the session.
-	SessionStartUseFileStorage bool
-
 	// The user agent to use for the session
 	SessionStartUserAgent string
 
@@ -86,7 +83,6 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close (API default: false)")
 	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (API default: last_action) (raw, full, last_action)")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas (API default: true)")
-	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "Whether FileStorage should be attached to the session. (API default: true)")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
 	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
@@ -159,10 +155,6 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if cmd.Flags().Changed("solve-captchas") {
 		body.SolveCaptchas = &SessionStartSolveCaptchas
-	}
-
-	if cmd.Flags().Changed("use-file-storage") {
-		body.UseFileStorage = &SessionStartUseFileStorage
 	}
 
 	if SessionStartUserAgent != "" {
