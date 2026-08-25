@@ -26,6 +26,9 @@ var (
 	// Overwrite the chrome instance arguments
 	SessionStartChromeArgs []string
 
+	// Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
+	SessionStartDemonstrate bool
+
 	// Whether to run the session in headless mode.
 	SessionStartHeadless bool
 
@@ -74,6 +77,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome. (API default: chromium) (chromium, chrome, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
+	cmd.Flags().BoolVar(&SessionStartDemonstrate, "demonstrate", false, "Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false. (API default: false)")
 	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation). (API default: 3)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
@@ -114,6 +118,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if len(SessionStartChromeArgs) > 0 {
 		body.ChromeArgs = &SessionStartChromeArgs
+	}
+
+	if cmd.Flags().Changed("demonstrate") {
+		body.Demonstrate = &SessionStartDemonstrate
 	}
 
 	if cmd.Flags().Changed("headless") {

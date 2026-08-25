@@ -389,10 +389,10 @@ const (
 
 // Defines values for SessionResponseStatus.
 const (
-	Active   SessionResponseStatus = "active"
-	Closed   SessionResponseStatus = "closed"
-	Error    SessionResponseStatus = "error"
-	TimedOut SessionResponseStatus = "timed_out"
+	SessionResponseStatusActive   SessionResponseStatus = "active"
+	SessionResponseStatusClosed   SessionResponseStatus = "closed"
+	SessionResponseStatusError    SessionResponseStatus = "error"
+	SessionResponseStatusTimedOut SessionResponseStatus = "timed_out"
 )
 
 // Defines values for SpaceCategory.
@@ -426,6 +426,12 @@ const (
 const (
 	Stopped UpdateFunctionRunResponseStatus = "stopped"
 	Updated UpdateFunctionRunResponseStatus = "updated"
+)
+
+// Defines values for SessionStopParamsCloseReason.
+const (
+	SessionStopParamsCloseReasonError  SessionStopParamsCloseReason = "error"
+	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
 )
 
 // ActionParameter defines model for ActionParameter.
@@ -604,13 +610,14 @@ type ApiAgentStartRequest_ReasoningModel struct {
 
 // ApiExecutionResponse defines model for ApiExecutionResponse.
 type ApiExecutionResponse struct {
-	Action    ApiExecutionResponse_Action `json:"action"`
-	Data      *DataSpace                  `json:"data,omitempty"`
-	EndedAt   time.Time                   `json:"ended_at"`
-	Exception *string                     `json:"exception,omitempty"`
-	Message   string                      `json:"message"`
-	StartedAt FlexibleTime                `json:"started_at"`
-	Success   bool                        `json:"success"`
+	Action          ApiExecutionResponse_Action `json:"action"`
+	Data            *DataSpace                  `json:"data,omitempty"`
+	EndedAt         time.Time                   `json:"ended_at"`
+	Exception       *string                     `json:"exception,omitempty"`
+	ExceptionDetail *SerializedError            `json:"exception_detail,omitempty"`
+	Message         string                      `json:"message"`
+	StartedAt       time.Time                   `json:"started_at"`
+	Success         bool                        `json:"success"`
 }
 
 // ApiExecutionResponse_Action defines model for ApiExecutionResponse.Action.
@@ -634,6 +641,9 @@ type ApiSessionStartRequest struct {
 
 	// ChromeArgs Overwrite the chrome instance arguments
 	ChromeArgs *[]string `json:"chrome_args,omitempty"`
+
+	// Demonstrate Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
+	Demonstrate *bool `json:"demonstrate,omitempty"`
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
@@ -2402,6 +2412,16 @@ type SelectDropdownOptionActionOutput_Value struct {
 	union json.RawMessage
 }
 
+// SerializedError defines model for SerializedError.
+type SerializedError struct {
+	AgentMessage     string `json:"agent_message"`
+	DevMessage       string `json:"dev_message"`
+	ErrorType        string `json:"error_type"`
+	ShouldNotifyTeam *bool  `json:"should_notify_team,omitempty"`
+	ShouldRetryLater *bool  `json:"should_retry_later,omitempty"`
+	UserMessage      string `json:"user_message"`
+}
+
 // SessionDebugResponse defines model for SessionDebugResponse.
 type SessionDebugResponse struct {
 	DebugUrl string                    `json:"debug_url"`
@@ -2432,6 +2452,9 @@ type SessionResponse struct {
 
 	// CdpUrl The URL to connect to the CDP server.
 	CdpUrl *string `json:"cdp_url,omitempty"`
+
+	// CloseReason Reason the session closed, if it is no longer active
+	CloseReason *string `json:"close_reason,omitempty"`
 
 	// ClosedAt Session closing time
 	ClosedAt *string `json:"closed_at,omitempty"`
@@ -3236,9 +3259,13 @@ type SessionReplayParams struct {
 
 // SessionStopParams defines parameters for SessionStop.
 type SessionStopParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	CloseReason         *SessionStopParamsCloseReason `form:"close_reason,omitempty" json:"close_reason,omitempty"`
+	XNotteRequestOrigin *string                       `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string                       `json:"x-notte-sdk-version,omitempty"`
 }
+
+// SessionStopParamsCloseReason defines parameters for SessionStop.
+type SessionStopParamsCloseReason string
 
 // GetSessionScriptParams defines parameters for GetSessionScript.
 type GetSessionScriptParams struct {
@@ -14767,6 +14794,28 @@ func NewSessionStopRequest(server string, sessionId string, params *SessionStopP
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.CloseReason != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "close_reason", runtime.ParamLocationQuery, *params.CloseReason); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
