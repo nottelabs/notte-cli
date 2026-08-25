@@ -227,3 +227,41 @@ func printSessionStatus(resp *api.SessionResponse) error {
 
 	return nil
 }
+
+// executionFailureError builds the error for a failed page action.
+//
+// The API serializes failures twice: `exception` is a bare string rendered in
+// whatever ErrorConfig mode the server ran in (often the generic user-facing
+// sentence), while `exception_detail` carries the concrete error type, the
+// per-audience messages and the retry/notify flags. Prefer the structured
+// field so the CLI reports what actually went wrong, and fall back to the
+// legacy string for API builds that predate it.
+func executionFailureError(detail *api.SerializedError, exception *string, message string) error {
+	if detail != nil {
+		reason := detail.DevMessage
+		if reason == "" {
+			reason = detail.UserMessage
+		}
+		if reason == "" {
+			reason = message
+		}
+		if reason == "" {
+			return fmt.Errorf("%s", detail.ErrorType)
+		}
+		if detail.ErrorType != "" {
+			return fmt.Errorf("%s: %s", detail.ErrorType, reason)
+		}
+		return fmt.Errorf("%s", reason)
+	}
+
+	if exception != nil && *exception != "" {
+		if message != "" && *exception != message {
+			return fmt.Errorf("%s: %s", *exception, message)
+		}
+		return fmt.Errorf("%s", *exception)
+	}
+	if message != "" {
+		return fmt.Errorf("action failed: %s", message)
+	}
+	return fmt.Errorf("action failed")
+}

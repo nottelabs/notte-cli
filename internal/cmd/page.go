@@ -55,19 +55,7 @@ func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 	}
 
 	if !resp.Success {
-		// Build error message with available context
-		if resp.Exception != nil {
-			// Include exception and message if both present and different
-			if resp.Message != "" && *resp.Exception != resp.Message {
-				return fmt.Errorf("%s: %s", *resp.Exception, resp.Message)
-			}
-			return fmt.Errorf("%s", *resp.Exception)
-		}
-		// No exception - use message or generic fallback
-		if resp.Message != "" {
-			return fmt.Errorf("action failed: %s", resp.Message)
-		}
-		return fmt.Errorf("action failed")
+		return executionFailureError(resp.ExceptionDetail, resp.Exception, resp.Message)
 	}
 
 	// Print message
@@ -718,10 +706,15 @@ var pageEvalJsCmd = &cobra.Command{
 
 The JavaScript code is executed in the context of the page's main frame.
 
+The evaluated value is printed alone on stdout (objects and arrays as JSON, a JS
+null as "null"), so it pipes straight into jq or a shell variable; the status
+line goes to stderr. Use -o json for the full execution result.
+
 Examples:
   notte page eval-js "document.title"
   notte page eval-js "window.location.href"
-  notte page eval-js "document.querySelectorAll('a').length"`,
+  notte page eval-js "document.querySelectorAll('a').length"
+  notte page eval-js "JSON.stringify([...document.links].map(a => a.href))" | jq length`,
 	Args: cobra.ExactArgs(1),
 	RunE: runPageEvalJs,
 }
@@ -765,21 +758,16 @@ func runPageEvalJs(cmd *cobra.Command, args []string) error {
 	}
 
 	if !result.Success {
-		if result.Exception != nil {
-			if result.Message != "" && *result.Exception != result.Message {
-				return fmt.Errorf("%s: %s", *result.Exception, result.Message)
-			}
-			return fmt.Errorf("%s", *result.Exception)
-		}
-		if result.Message != "" {
-			return fmt.Errorf("eval-js failed: %s", result.Message)
-		}
-		return fmt.Errorf("eval-js failed")
+		return executionFailureError(result.ExceptionDetail, result.Exception, result.Message)
 	}
 
-	fmt.Println(result.Message)
-	if result.Data != nil && result.Data.Markdown != "" {
-		fmt.Printf("Result:  %s\n", result.Data.Markdown)
+	// The evaluated value is the point of the command, so print it bare: it pipes
+	// into jq or a shell variable without post-processing, and a JS value that is
+	// legitimately empty still prints an (empty) line instead of vanishing behind
+	// a success banner. The status line goes to stderr so stdout stays the value.
+	_, _ = fmt.Fprintln(os.Stderr, result.Message)
+	if result.Data != nil {
+		fmt.Println(result.Data.Markdown)
 	}
 	return nil
 }
