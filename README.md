@@ -173,7 +173,25 @@ notte page close-tab                  # Close current tab
 notte page reload                     # Reload page
 notte page wait <seconds>             # Wait for duration
 notte page captcha-solve              # Solve captcha
+notte page eval-js "document.title"   # Evaluate JavaScript in the page
 ```
+
+#### Evaluating JavaScript
+
+`page eval-js` prints the evaluated value **alone on stdout** — objects and
+arrays as JSON, a JS `null` as `null` — with the status line on stderr, so it
+captures and pipes without post-processing:
+
+```bash
+title=$(notte page eval-js "document.title")
+
+notte page eval-js "JSON.stringify([...document.querySelectorAll('a')].map(a => a.href))" | jq length
+```
+
+Return `JSON.stringify(...)` when the answer is structured. `console.log` output
+is discarded — only the returned value comes back. A failing script exits
+non-zero and reports the actual JavaScript error; use `-o json` to get the full
+execution result instead of the bare value.
 
 ### Functions
 
