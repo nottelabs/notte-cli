@@ -12,7 +12,7 @@ import (
 
 func TestSessionsLifecycle(t *testing.T) {
 	// Start a new session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	// Parse the response to get session ID
@@ -50,7 +50,6 @@ func TestSessionsLifecycle(t *testing.T) {
 func TestSessionsStartWithOptions(t *testing.T) {
 	// Start session with custom options
 	result := runCLI(t, "sessions", "start",
-		"--headless",
 		"--browser-type", "chromium",
 		"--idle-timeout-minutes", "5",
 		"--max-duration-minutes", "10",
@@ -79,7 +78,7 @@ func TestSessionsStartWithOptions(t *testing.T) {
 
 func TestSessionsCookies(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -99,7 +98,7 @@ func TestSessionsCookies(t *testing.T) {
 
 func TestSessionsObserve(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -126,7 +125,7 @@ func TestSessionsObserve(t *testing.T) {
 
 func TestSessionsScrape(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -156,7 +155,7 @@ func TestSessionsScrape(t *testing.T) {
 
 func TestSessionsNetwork(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -192,8 +191,8 @@ func TestSessionsList(t *testing.T) {
 }
 
 func TestSessionsReplay(t *testing.T) {
-	// Start a headless session
-	result := runCLI(t, "sessions", "start", "--headless")
+	// Start a session
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {

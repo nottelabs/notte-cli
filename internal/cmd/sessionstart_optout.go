@@ -30,9 +30,9 @@ var (
 
 // sessionStartOptOut pairs a new negative flag with the generated flag it
 // supersedes. The original stays registered and undeprecated: pinning a value
-// explicitly is legitimate defensive scripting, since a caller who needs a
-// headless session should not have to trust that the server default stays
-// true. Only passing both at once is an error.
+// explicitly is legitimate defensive scripting, since a caller should not
+// have to trust that the server default stays true. Only passing both at once
+// is an error.
 type sessionStartOptOut struct {
 	negative string
 	original string

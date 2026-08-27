@@ -13,7 +13,7 @@ import (
 // Commands that produce invalid JSON will be logged and the test will fail.
 func TestJSONOutputValidity(t *testing.T) {
 	// Start a session for commands that need one
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -146,4 +146,3 @@ func TestJSONOutputValidity(t *testing.T) {
 		t.Logf("\nCommands with broken JSON output: %v", brokenCommands)
 	}
 }
-

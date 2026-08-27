@@ -90,7 +90,7 @@ func TestErrorParsing_NonexistentProfile(t *testing.T) {
 
 func TestErrorParsing_InvalidSessionExecuteAction(t *testing.T) {
 	// Start a session first
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	if result.ExitCode != 0 {
 		t.Skipf("Could not start session for test: %s", result.Stderr)
 	}

@@ -56,7 +56,7 @@ func TestStorageUploadListAndDownload(t *testing.T) {
 
 func TestStorageDownloadFromSession(t *testing.T) {
 	// Start a session with file storage enabled
-	result := runCLI(t, "sessions", "start", "--headless", "--use-file-storage")
+	result := runCLI(t, "sessions", "start", "--use-file-storage")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -86,7 +86,7 @@ func TestStorageListDownloadsRequiresSession(t *testing.T) {
 
 func TestStorageDownloadNonexistent(t *testing.T) {
 	// Start a session with file storage enabled
-	result := runCLI(t, "sessions", "start", "--headless", "--use-file-storage")
+	result := runCLI(t, "sessions", "start", "--use-file-storage")
 	requireSuccess(t, result)
 
 	var startResp struct {

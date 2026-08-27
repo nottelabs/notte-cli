@@ -10,7 +10,7 @@ import (
 
 func TestPageObserve(t *testing.T) {
 	// Start a session first
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -42,7 +42,7 @@ func TestPageObserve(t *testing.T) {
 
 func TestPageExecuteAction(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -73,7 +73,7 @@ func TestPageExecuteAction(t *testing.T) {
 
 func TestPageScrapeBasic(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -108,7 +108,7 @@ func TestPageScrapeBasic(t *testing.T) {
 
 func TestPageScrapeWithInstructions(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -138,7 +138,7 @@ func TestPageScrapeWithInstructions(t *testing.T) {
 
 func TestPageScrapeOnlyMainContent(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -168,7 +168,7 @@ func TestPageScrapeOnlyMainContent(t *testing.T) {
 
 func TestPageObserveExecuteScrapeFlow(t *testing.T) {
 	// Start a session
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
