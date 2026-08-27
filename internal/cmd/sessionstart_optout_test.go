@@ -12,7 +12,6 @@ import (
 // opt-outs invert and the opt-outs themselves.
 func newOptOutCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "start", RunE: func(*cobra.Command, []string) error { return nil }}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "headless")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "solve captchas")
 	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "use-file-storage", false, "file storage")
 	registerSessionStartOptOutFlags(cmd)
@@ -22,7 +21,6 @@ func newOptOutCmd() *cobra.Command {
 func runOptOut(t *testing.T, args ...string) (*api.ApiSessionStartRequest, error) {
 	t.Helper()
 	// Package-level flag vars are shared; reset before each case.
-	sessionsStartHeaded = false
 	sessionsStartNoSolveCaptchas = false
 	sessionsStartNoFileStorage = false
 
@@ -43,9 +41,6 @@ func TestOptOutsLeaveBodyUntouchedWhenAbsent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applySessionStartOptOuts() error = %v", err)
 	}
-	if body.Headless != nil {
-		t.Errorf("Headless = %v, want nil (unset) when --headed is omitted", *body.Headless)
-	}
 	if body.SolveCaptchas != nil {
 		t.Errorf("SolveCaptchas = %v, want nil when --no-solve-captchas is omitted", *body.SolveCaptchas)
 	}
@@ -62,20 +57,6 @@ func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 		get   func(*api.ApiSessionStartRequest) *bool
 		want  bool
 	}{
-		{
-			name:  "--headed sends headless=false",
-			args:  []string{"--headed"},
-			field: "Headless",
-			get:   func(b *api.ApiSessionStartRequest) *bool { return b.Headless },
-			want:  false,
-		},
-		{
-			name:  "--headed=false sends headless=true",
-			args:  []string{"--headed=false"},
-			field: "Headless",
-			get:   func(b *api.ApiSessionStartRequest) *bool { return b.Headless },
-			want:  true,
-		},
 		{
 			name:  "--no-solve-captchas sends solve_captchas=false",
 			args:  []string{"--no-solve-captchas"},
@@ -114,8 +95,6 @@ func TestOptOutsInvertTheirCounterpart(t *testing.T) {
 // invisible.
 func TestConflictingPairIsRejected(t *testing.T) {
 	for _, args := range [][]string{
-		{"--headed", "--headless"},
-		{"--headed", "--headless=false"},
 		{"--no-solve-captchas", "--solve-captchas"},
 		{"--no-file-storage", "--use-file-storage"},
 	} {
@@ -131,7 +110,7 @@ func TestConflictingPairIsRejected(t *testing.T) {
 // when they cannot rely on the server default.
 func TestOriginalFlagsStillWorkAlone(t *testing.T) {
 	cmd := newOptOutCmd()
-	for _, name := range []string{"headless", "solve-captchas", "use-file-storage"} {
+	for _, name := range []string{"solve-captchas", "use-file-storage"} {
 		f := cmd.Flags().Lookup(name)
 		if f == nil {
 			t.Errorf("--%s should still be registered", name)
@@ -166,13 +145,12 @@ func TestConflictsRejectedBeforeSideEffects(t *testing.T) {
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "headless")
 	cmd.Flags().Bool("proxy", false, "proxy")
 	cmd.Flags().String("proxy-country", "", "proxy country")
 	registerSessionStartOptOutFlags(cmd)
 
 	for _, args := range [][]string{
-		{"--headed", "--headless"},
+		{"--no-solve-captchas", "--solve-captchas"},
 		{"--proxy", "--proxy-country=us"},
 	} {
 		ranRunE = false
