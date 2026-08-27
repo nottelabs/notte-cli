@@ -265,7 +265,8 @@ notte logs <name> [--follow]           # tail runs, tracebacks mapped back to so
 notte secrets diff|push|set|list [--env E]
 notte promote <name> --from staging --to prod    # move the artifact, not the source
 notte rollback <name> --to v20260821_162138
-notte whoami                           # blocked on a backend endpoint — see asks
+notte auth login --env <name>          # store this env's key under its own keyring label
+notte whoami [--env E]                 # blocked on a backend endpoint — see asks
 ```
 
 `<target>` is a name, a glob, `all`, or a path — so `notte deploy functions/amazon_search` tab-completes.
@@ -303,7 +304,20 @@ cron        = "cron(0 9 * * ? *)"
 secrets     = ["AMAZON_PARTNER_TAG"]             # in addition to what the AST scan finds
 ```
 
-API keys are **not** literals in `notte.toml`. They resolve per env through the existing chain, extended one step: `--api-key` → the `${env:…}` reference → `NOTTE_API_KEY` → keyring under the `KeyringKeyForEnv` label that `internal/auth/env.go` already computes → `~/.notte/cli/config.json`. That is what "both key + base URL per env" needs, and half of it already exists.
+### Credentials resolve *from* the environment, never beside it
+
+API keys are **not** literals in `notte.toml`. More importantly, **the key and the URL must be resolved as one unit.** Selecting an env fixes `api_url`, and every candidate key is then derived from that same `api_url` — there is no step in the chain that can hand back a credential belonging to a different endpoint:
+
+1. `--api-key` (explicit, and the operator owns the consequences)
+2. the `api_key = "${env:…}"` reference declared **inside that env's own block**
+3. the keyring entry under `KeyringKeyForEnv(hostToEnvLabel(api_url))` — the label computed from the resolved URL, not from ambient state
+4. **stop.** Fail with `no credential for env 'staging' (https://us-staging.notte.cc) — set NOTTE_API_KEY_STAGING or run 'notte auth login --env staging'`.
+
+The two fallbacks the global CLI uses today — a bare `NOTTE_API_KEY` and `~/.notte/cli/config.json` — are **deliberately not in this chain**, because neither is tied to an endpoint. A developer with `NOTTE_API_KEY` exported for prod running `notte deploy --env staging` would otherwise authenticate to staging with a prod key: it fails closed if the orgs differ, but it succeeds and writes to the *wrong org* whenever they don't. `notte deploy` is the command where that matters most.
+
+This is the same bug `marketplace-catalog.ts` already documents having hit from the other direction — its `NOTTE_API_URLS` table exists precisely because reusing a helper that read ambient `NOTTE_API_URL` made `pull prod` silently read dev. Its `createNotteRunner` then passes `NOTTE_API_KEY` and `NOTTE_API_URL` to the subprocess explicitly, together, never ambient. Same rule, enforced one level up.
+
+`notte auth login --env <name>` and `notte whoami --env <name>` are the paired ergonomics that make failing closed tolerable, and `notte status` should print the resolved org for each configured env so a misconfiguration is visible before a deploy rather than after.
 
 ---
 
@@ -314,10 +328,21 @@ API keys are **not** literals in `notte.toml`. They resolve per env through the 
 1. Parse `main.py`; collect relative imports (`from .x import a`, `from ..y.z import b`).
 2. Resolve to files inside `functions_dir`; recurse. Anything outside the package, or non-relative, is left alone and checked against the allowlist.
 3. Topologically sort. Cycle → error naming the cycle.
-4. Emit: header, then `from __future__ import annotations` if any module had it (exactly one, first statement), then hoisted+deduped third-party imports, then each dependency's body in topological order with its relative-import lines deleted, then `main.py`'s body last.
+4. Emit: header, then `from __future__ import annotations` if any module had it (exactly one, first statement), then hoisted+deduped third-party imports, then each dependency's body in topological order with its relative-import lines **replaced** (see aliases below), then `main.py`'s body last.
 5. Hash the artifact. Write `.notte/build/<env>/<name>.py` + a source map.
 
+**Aliased relative imports keep their binding.** A relative import line is not simply deleted — it is replaced in place by an assignment per aliased name:
+
+```python
+from .parse import parse_rows as pr, clean          # source
+pr = parse_rows                                     # artifact (clean needs nothing)
+```
+
+Deleting the line outright would drop `pr` and the artifact would die with `NameError` at run time, which is the worst possible failure mode: it passes the bundler, passes upload validation, and fails in production. Unaliased names need no assignment because the flattened definition already carries that name, and dependency bodies are emitted before the body that imports them, so the right-hand side is always bound by the time the assignment runs.
+
 **Collisions are an error, not a rename.** If `_shared/http.py` and `parse.py` both define `clean`, fail with `_shared/http.py:12 and parse.py:8 both define 'clean' — rename one`. This is the pivotal simplification: **no reference rewriting is ever needed**, so no full-fidelity Python parser is needed, and the artifact stays byte-readable — which matters because that artifact is what the console shows and what tracebacks point at.
+
+The collision set is every top-level binding **plus every alias introduced above** — `from .parse import clean as fetch` collides with a `fetch` defined in `_shared/http.py` exactly as a second `def fetch` would, and must be reported the same way.
 
 Rejected in v1, each with a fix-it message:
 - `from . import mod` then `mod.f()` → *"use `from .mod import f`"*. Neither existing codebase does this.
@@ -459,7 +484,28 @@ Auto-derived. `check_revision_bumps.py` and the manual `revision` field both dis
 
 **`notte init --from-session <ses_id>`.** `sessions workflow-code` already emits a deployable `run()`. Record a workflow in a browser → scaffold a project around it. An onboarding path nothing else in the prior-art table can offer.
 
-**Testing.** `test_*.py` colocated in the function dir, never bundled, run with pytest; `notte check --test` runs them. managed-auth's `ShippedConnectorsTest` — asserting properties of the real checked-in catalog, e.g. *"every connector still parses once inlined"* — generalizes into `notte check` itself and stops being something each repo hand-writes.
+**Testing.** Two layers.
+
+*For user projects:* `test_*.py` colocated in the function dir, never bundled, run with pytest; `notte check --test` runs them. managed-auth's `ShippedConnectorsTest` — asserting properties of the real checked-in catalog, e.g. *"every connector still parses once inlined"* — generalizes into `notte check` itself and stops being something each repo hand-writes.
+
+*For the CLI itself:* the bundler is the part where a wrong answer is silent, so it ships with a golden-file suite before it ships at all — `internal/bundle/testdata/<case>/{in/,want.py}`, one directory per case, following `marketplace-catalog.ts`'s convention of naming each test after the invariant it protects. The cases that must exist on day one:
+
+| Case | Asserts |
+|---|---|
+| `alias-preserved` | `from .parse import f as g` emits `g = f`; the artifact defines `g` |
+| `alias-collides` | an alias colliding with another module's top-level name is reported, not silently shadowed |
+| `collision-reported` | two modules defining `clean` fail with both file:line locations |
+| `topo-order` | a dependency's body precedes every body that imports it |
+| `diamond` | a module reached by two paths is emitted exactly once |
+| `cycle-rejected` | the error names the cycle |
+| `future-annotations` | emitted once, first statement, even when three modules declare it |
+| `import-hoist-dedup` | `import requests` in four modules yields one line |
+| `star-import`, `from-dot-import`, `import-in-function` | each rejected with its fix-it message |
+| `disallowed-import` | `import os` fails locally with the `notte_sdk.types` hint, before any upload |
+| `deterministic` | bundling twice byte-identical — `artifact_sha256` is load-bearing for the whole diff model |
+| `source-map` | every artifact line maps to a real `source:line` |
+
+`alias-preserved` and `alias-collides` exist because that gap was found in review of this document rather than in a test — which is the argument for the table.
 
 ---
 
