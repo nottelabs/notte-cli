@@ -47,7 +47,16 @@ Managed-auth **templates** are already declarative and could join later (see bel
 
 ## The hard constraint nobody can design around
 
-`POST /functions` runs `ScriptValidator.parse_script(source, restricted=True)` — `restricted` **defaults to `True`** (`notte-api/src/notte_api/functions/endpoints.py:353,411`). That validator is RestrictedPython, and it determines the entire design:
+There are **two** gates, with different scopes, and conflating them is easy — an earlier draft of this document did exactly that. Getting the distinction right matters, because it changes which arguments are load-bearing:
+
+| | Upload | Runtime |
+|---|---|---|
+| Where | `POST /functions`, `?restricted=` **defaults to `True`** (`notte_api/functions/endpoints.py:353,411`) | `workflows-lambda/worker.py:891` calls `run_script(..., restricted=False)` |
+| RestrictedPython AST policy | **enforced** — `FORBIDDEN_NODES`, `FORBIDDEN_CALLS`, the lot | **not applied at all** — `worker.py:608` takes the `restricted=False` branch and uses plain `compile()` |
+| Import allowlist | enforced statically over the source | **still enforced**, dynamically: `__import__` is `runner.safe_import`, which calls `check_valid_import(name)` on every import (`worker.py:572-578`) |
+| Which list | `notte_api.ast.ALLOWED_IMPORTS` | `_LAMBDA_ALLOWED_IMPORTS` + `{httpx, httpcloak}`, minus `tempfile` (`worker.py:520`) |
+
+So the AST policy is an upload-time quality gate, while **the import allowlist is a genuine runtime guard** — enforced by name, on every import, by the last guard standing once `restricted=False`.
 
 **1. Local imports are structurally impossible server-side.**
 `notte-api/src/notte_api/ast.py`, `visit_ImportFrom`:
@@ -57,14 +66,23 @@ if node.module is None:
 ```
 `from . import util` dies there. `from .util import x` survives that check (module is `"util"`) but then hits `check_valid_import("util")` → not in `ALLOWED_IMPORTS` → rejected. Plain `import util` likewise. **There is no server-side path to multi-file. Bundling must be client-side.**
 
-**2. The stickytape / pinliner approach is dead.**
-Every Python single-file bundler emits a prelude that writes module sources to a temp dir or registers them in `sys.modules`, using `sys`, `exec`/`compile`, `__import__`, `os`/`pathlib`. All six are forbidden:
-```python
-DISALLOWED_STDLIB_IMPORTS = {..., "os", "sys", "importlib", "pathlib", "tempfile", "zipimport", ...}
-FORBIDDEN_CALLS  = {"exec", "eval", "compile", "__import__", "globals", "locals", "vars", "dir", ...}
-FORBIDDEN_NODES  = {ast.Global, ast.Nonlocal, ast.TryStar, ast.Lambda, ast.Delete}
-```
-The bundler must be a **static flattener** emitting plain, ordinary Python — one module namespace, no runtime machinery. That's a *good* constraint: the artifact stays readable in the console.
+**2. Off-the-shelf bundlers don't help — and `os`/`sys` isn't the reason.**
+
+An earlier draft said stickytape and pinliner were impossible because RestrictedPython forbids `sys`, `exec`, `compile`, `__import__` and `os`. **That was the wrong mechanism** — the AST policy isn't applied at execution time, so pointing at `FORBIDDEN_CALLS` proves nothing about what a deployed function can do. The real blockers are further down, and they bite in this order:
+
+1. **`import tempfile` fails first.** `worker.py:520` does `ALLOWED_IMPORTS.discard("tempfile")`, so stickytape's `mkdtemp()` dies before a single module is written.
+2. **`import util` — the entire point — is rejected by name at run time.** stickytape exists to make a written-to-disk module importable; that import goes through `safe_import("util")` → `check_valid_import("util")` → not in the allowlist. The one thing it does is the one thing that's gated.
+3. `os`, `sys` and `shutil` are on the **runtime** denylist too (`_LAMBDA_DISALLOWED_STDLIB_IMPORTS`), so none of this is an upload-time gate a query parameter can switch off.
+
+**On the obvious counter-proposal — "just allow `os` and `sys`":** it is neither necessary nor sufficient. It doesn't touch (1) or (2). Making stickytape work means disabling `safe_import`, i.e. permitting arbitrary imports by name at run time. That is a materially bigger decision than allowing two modules, and unlike the original framing it carries a real security dimension, because `safe_import` is the only import guard left once `restricted=False`. It deserves to be decided on its own merits, not adopted as a side effect of a bundling convenience.
+
+**Three reasons to flatten that don't depend on any allowlist.** These are the actual argument, and the earlier draft buried them beneath a claim that turned out to be wrong:
+
+- **The artifact stops being readable.** stickytape emits a prelude plus every module as an escaped bytes literal passed to `__stickytape_write_module`. The deployed file is what the console renders, what `functions show` downloads, and what marketplace's `push`/`check` diff against. A blob kills the diff model, and makes tracebacks worse rather than better.
+- **stickytape disclaims itself.** Its README: *"bodged together… for a specific use case"*, no `from __future__` imports, `__file__` unreliable, dynamic imports need manual flags. That is an unmaintained third-party dependency sitting in the deploy path.
+- **It's Python.** Adopting it reintroduces the "`notte deploy` fails on a machine where `notte` works" problem that is the entire reason for the Go-native recommendation below.
+
+So: the bundler must be a **static flattener** emitting plain, ordinary Python — one module namespace, no runtime machinery. **That recommendation stands even in a fully permissive runtime**, which is how it should have been argued in the first place.
 
 **3. Dependencies are a fixed allowlist, so there is no dependency resolution to build.**
 `ALLOWED_IMPORTS = set(sys.stdlib_module_names) - DISALLOWED_STDLIB_IMPORTS | {notte, notte_sdk, notte_core, notte_browser, notte_agent, notte_llm, pydantic, loguru, requests, httpx, httpcloak, playwright, gspread, google, litellm, bs4, pipedream, tqdm, typing_extensions}`.
@@ -252,24 +270,27 @@ notte init [dir]                       # scaffold notte.toml, functions/, pyrigh
 notte init --from-session <ses_id>     # bootstrap from `sessions workflow-code` — record, then scaffold
 notte new <name>                       # one function directory from a template
 
-notte build  [<target>] [--env E]      # bundle → .notte/build/<env>/. no network.
 notte check  [<target>] [--env E]      # build + validate + diff vs remote. writes NOTHING. the CI gate.
 notte deploy [<target>] [--env E]      # build → diff → confirm → create/update → schedule → write lock
 notte status [--env E]                 # what's drifted, and what a `_shared` edit would touch
-notte pull   [--env E]                 # adopt existing remote functions into the tree
-
-notte dev <name> [--var k=v]           # run the entrypoint locally against real cloud sessions
-notte run <name> [--var k=v]           # invoke the deployed function
-notte logs <name> [--follow]           # tail runs, tracebacks mapped back to source
-
-notte secrets diff|push|set|list [--env E]
-notte promote <name> --from staging --to prod    # move the artifact, not the source
-notte rollback <name> --to v20260821_162138
-notte auth login --env <name>          # store this env's key under its own keyring label
-notte whoami [--env E]                 # blocked on a backend endpoint — see asks
 ```
 
-`<target>` is a name, a glob, `all`, or a path — so `notte deploy functions/amazon_search` tab-completes.
+Five commands, not eighteen. `<target>` is a name, a glob, `all`, or a path — so `notte deploy functions/amazon_search` tab-completes.
+
+### Deferred, and why
+
+An earlier draft proposed eighteen commands. Roughly half were aspirational or gated on backend work that doesn't exist yet, and a large surface is its own cost — it has to be documented, tab-completed, kept coherent, and lived with. Everything below is deliberately *not* in v1:
+
+| Command | Why deferred |
+|---|---|
+| `run`, `logs`, `secrets`, `schedule` | already exist under `notte functions`; project-aware twins aren't needed on day one |
+| `build` | folded into `deploy` and `check`. Expose separately only once someone actually wants the artifact without the diff |
+| `promote`, `rollback` | need `--version` and `versions[]` exposed on the CLI first |
+| `pull` | only matters for adopting an existing tree. Real for marketplace's 2,049 files, irrelevant to a new project |
+| `dev` | genuinely valuable, but it's a second execution model and deserves its own design rather than a line in this table |
+| `whoami`, `auth login --env` | blocked on `GET /me` (backend ask #3). These ship *with* that endpoint — `auth login --env` is a prerequisite for the fail-closed credential rule below, not an optional extra |
+
+The credential resolution rules in the next section apply to all five v1 commands regardless; `--env` is not deferred.
 
 `notte.toml`:
 ```toml
@@ -356,7 +377,7 @@ Rejected in v1, each with a fix-it message:
 |---|---|---|---|
 | Parse fidelity | Purpose-built tokenizer. Sufficient **because collisions error out**. `go-python/gpython` is a Python 3.4 grammar — no f-strings, no walrus, no `match` — so it isn't an option. | Perfect: Python's own `ast`. | Perfect. |
 | Runtime deps | None. Brew binary works in CI, in a bare container, everywhere. | Needs `python3`/`uv` present. | None. |
-| `notte build` offline | Yes | Yes | **No** — you lose local preview and the CI gate |
+| local build offline | Yes | Yes | **No** — you lose local preview and the CI gate |
 | Agreement with `ScriptValidator` | Must mirror the allowlist as data (drifts) | Same problem — the validator lives in `notte-api`, not in a pip package | Authoritative by construction |
 | Cost | ~600 lines Go + tests | ~200 lines Python, `//go:embed`-ed, run via `uv run --script` | Backend work: accept a tar, bundle, validate |
 | Failure mode | A weird import form is rejected with a clear message | "python3: not found" on a machine where the CLI otherwise works | Slow loop; can't check in a PR without credentials |
@@ -364,7 +385,7 @@ Rejected in v1, each with a fix-it message:
 **Recommendation: Go-native.** A brew-installed Go binary that silently requires Python is the worse DX, and the collisions-error-out design shrinks the problem to import discovery + topological sort + top-level binding extraction — all line-oriented at indent level 0. The parse-fidelity gap only bites on constructs we reject anyway.
 
 Two things make this safe rather than optimistic:
-- **Ship the allowlist as data, refreshed from the API** (see backend asks). Then `notte build` fails with `functions/x/main.py:3: import os is not allowed — use 'from notte_sdk.types import os'` instead of after a multipart upload. Copy managed-auth's `--allow-api-behind` + exit-code-2 handling for when the CLI is newer than the API.
+- **Ship the allowlist as data, refreshed from the API** (see backend asks). Then `notte check` fails with `functions/x/main.py:3: import os is not allowed — use 'from notte_sdk.types import os'` instead of after a multipart upload. Copy managed-auth's `--allow-api-behind` + exit-code-2 handling for when the CLI is newer than the API.
 - **Ask for `POST /functions?dry_run=true`.** managed-auth's preview→guard→apply depends on the server saying what *it* thinks before you write. Functions has no equivalent, so `notte check` can only be locally authoritative.
 
 ### Two hashes, because bundling breaks the round trip
@@ -523,14 +544,14 @@ Auto-derived. `check_revision_bumps.py` and the manual `revision` field both dis
 2. **Make secrets updatable by name**: `PUT /secrets/{namespace}/{name}` as an upsert, and `DELETE` by `(namespace, name)`. Today a secret rotation is LIST → DELETE-by-uuid → POST, which is three calls and a window where the secret doesn't exist.
 3. **`GET /me`** → `{user_id, org_id, org_name, org_role, plan_type}`. A `notte.toml` committed to git gets applied by different keys; without this, "am I about to deploy to the right org?" is unanswerable. It also deletes marketplace's hack of reading the org id out of the first path segment of a signed download URL.
 4. **`POST /functions?dry_run=true`** returning a managed-auth-style diff (`action`, `previous_version`, `changed`, `target_state_sha256`). Enables preview→guard→apply for functions and makes `notte check` server-authoritative.
-5. **`GET /functions/capabilities`** exporting `ALLOWED_IMPORTS`, `FORBIDDEN_CALLS`, and the forbidden-node list, so `notte build` fails locally with the same rules the server enforces instead of vendoring a copy that drifts.
+5. **`GET /functions/capabilities`** exporting **both** import allowlists — the upload one (`notte_api.ast.ALLOWED_IMPORTS`) and the runtime one (`_LAMBDA_ALLOWED_IMPORTS` + third-party, minus `tempfile`) — plus `FORBIDDEN_CALLS` and the forbidden-node list, so `notte check` fails locally with the same rules the server enforces instead of vendoring a copy that drifts. The two lists differing is precisely why this should be served rather than copied: `worker.py`'s own comment notes that a name on only one of them *"either rejects code that would have run or accepts code that then fails inside the sandbox."*
 6. *(later, for managed auth)* Flip `include_in_schema` on the managed-auth router so the Go client can be generated, and decide whether template import stays gated to the connectors org.
 
 ---
 
 ## Open questions
 
-1. **Does `restricted=false` have a legitimate use?** If deployers can opt out, the allowlist check becomes advisory and the bundler could in principle emit a `sys.modules` prelude — but the whole security model changes. Assumption throughout: `restricted=true` always.
+1. **Should `safe_import` remain the runtime import guard?** Execution already runs with `restricted=False`, so the RestrictedPython AST policy is off and `safe_import` is the only thing standing between a deployed function and arbitrary imports. It is also, incidentally, what makes off-the-shelf bundlers unusable. Relaxing it would make them work — but that trade should be evaluated on its own merits, not taken as a side effect of a bundling convenience, and this RFC does not need it either way.
 2. **`notte functions` vs the project commands.** The current commands are function-id-centric with global `~/.notte/cli/current_function` state; the new ones are project-centric. Proposal: `GetCurrentFunctionID()` gains a fourth source — the project lock, resolved from cwd — ahead of the global state file, so both surfaces stay coherent.
 3. **Is `preview` (dev + `x-db-preview: <branch>`) Notte-wide or managed-auth-specific?** Modeled above as generic `[env.*] headers`, which may be over-general.
 4. **Function grouping.** managed-auth needs "these two deploy together, transactionally." Does a `[bundle]` concept belong in the model now, or is it deferred with managed auth?
