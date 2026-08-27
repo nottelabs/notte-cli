@@ -301,11 +301,19 @@ Which implies a companion rule: **`deploy` must refuse to create a function whos
 - The URL is a Fernet token for Notte-managed functions, decrypted with a key derived client-side: `sha256(f"api_key:{key}:workflow_id:{id}:dumb")[:64]`, passed as `?decryption_key=`.
 - **`notte functions download` does not exist.** `functions show` already calls `FunctionDownloadUrl`, prints the metadata, and throws the URL away. So today this is entirely hand-rolled — marketplace reimplements the key derivation and the fetch, which is how one secret-derivation rule ended up living in two repos.
 
-Two things follow. First, `notte functions download --function-id <id>` should exist as a primitive in its own right; `pull` is then a loop over it, and marketplace's hand-rolled copy is deleted. The CLI should derive the decryption key itself rather than exposing a flag users have to understand.
+**This needs no backend change — parallelise it.** An earlier draft asked for `url` on the list endpoint to halve the request count. That ask is unnecessary, and marketplace is the evidence: it runs the full walk at `concurrency: 48` (`marketplace-catalog.ts:2103`, overridable with `--concurrency`) over the largest corpus that exists, and the comment on its retry classifier records the measurement:
 
-Second, a backend ask worth its own line (see below): **add `url` to the objects the list endpoint returns**, which collapses `1 + 2N` to `1 + N` and is the same additive change that put `published` and `required_secrets` on `FunctionResponse`. A page-level bulk export returning code inline would be better still, but the cheap version removes half the requests.
+> *"Nothing hit a 429 while this was being measured, but a full pull is several times larger than any sample taken, and a retry is much cheaper than a half-written tree."*
 
-Until then, `pull` needs the things any N+1 walk needs and marketplace already learned: bounded concurrency, retry with backoff on 429/502/529 honouring `Retry-After`, and a **complete** page walk before reporting anything as a remote extra — a listing that stops early looks identical to one where functions were deleted.
+4,120 requests, no rate limiting. The retry logic is defensive rather than a response to observed throttling. For a realistic project — tens of functions, not thousands — `1 + 2N` at concurrency 48 is a second or two. Adding a backend dependency to optimise that would be trading real coordination cost for an imperceptible win.
+
+So what's actually needed is client-side, and all of it is CLI work:
+
+- **`notte functions download --function-id <id>`** as a primitive in its own right, deriving the decryption key internally rather than exposing a flag users must understand. `pull` becomes a bounded-concurrency loop over it, and marketplace's hand-rolled fetch and duplicated key derivation both get deleted.
+- Retry with backoff on 429/5xx honouring `Retry-After` — cheap, and the failure it prevents is a half-written tree.
+- A **complete** page walk before anything is reported as a remote extra. A listing that stops early is indistinguishable from one where functions were deleted.
+
+**And `check` shouldn't pay this cost at all in the common case.** The lock already stores `artifact_sha256` per env, so the default gate — *"you changed sources and didn't deploy"* — is a local build plus a hash comparison, with no downloads and no page walk. `--verify-remote` does the full download walk to catch out-of-band edits made in the console. marketplace always downloads in `check` because it is a mirror with no separate source hash to trust; we have one, so we can be cheap by default and thorough on request. That also matches its own observation that a scheduled `check` against prod is a staleness alarm rather than a build gate.
 
 ### Deferred, and why
 
@@ -317,7 +325,7 @@ An earlier draft proposed eighteen commands. Roughly half were aspirational or g
 | `build` | folded into `deploy` and `check`. Expose separately only once someone actually wants the artifact without the diff |
 | `promote`, `rollback` | need `--version` and `versions[]` exposed on the CLI first |
 | `dev` | genuinely valuable, but it's a second execution model and deserves its own design rather than a line in this table |
-| `whoami`, `auth login --env` | blocked on `GET /me` (backend ask #4). These ship *with* that endpoint — `auth login --env` is a prerequisite for the fail-closed credential rule below, not an optional extra |
+| `whoami`, `auth login --env` | blocked on `GET /me` (backend ask #3). These ship *with* that endpoint — `auth login --env` is a prerequisite for the fail-closed credential rule below, not an optional extra |
 
 The credential resolution rules in the next section apply to all six v1 commands regardless; `--env` is not deferred.
 
@@ -571,11 +579,10 @@ Auto-derived. `check_revision_bumps.py` and the manual `revision` field both dis
 
 1. **Add `schedule_cron` / `schedule_variables` / `schedule_state` to `FunctionResponse`** (`functions/endpoints.py:50-63`). ~2 lines, additive, exactly how `published` and `required_secrets` were added. Without it, cron cannot be reconciled — only blindly re-applied.
 2. **Make secrets updatable by name**: `PUT /secrets/{namespace}/{name}` as an upsert, and `DELETE` by `(namespace, name)`. Today a secret rotation is LIST → DELETE-by-uuid → POST, which is three calls and a window where the secret doesn't exist.
-3. **Return the download `url` from the list endpoint**, i.e. make `GET /functions` items carry what `FunctionWithLinkResponse` already carries. Today `pull` costs `⌈N/100⌉ + 2N` requests because the list gives ids and the URL needs a second call per function — about 4,120 requests for marketplace's 2,049. This halves it, and it's the same additive change that added `published` and `required_secrets`. A page-level bulk export returning code inline would be better again, if it's cheap.
-4. **`GET /me`** → `{user_id, org_id, org_name, org_role, plan_type}`. A `notte.toml` committed to git gets applied by different keys; without this, "am I about to deploy to the right org?" is unanswerable. It also deletes marketplace's hack of reading the org id out of the first path segment of a signed download URL.
-5. **`POST /functions?dry_run=true`** returning a managed-auth-style diff (`action`, `previous_version`, `changed`, `target_state_sha256`). Enables preview→guard→apply for functions and makes `notte check` server-authoritative.
-6. **`GET /functions/capabilities`** exporting **both** import allowlists — the upload one (`notte_api.ast.ALLOWED_IMPORTS`) and the runtime one (`_LAMBDA_ALLOWED_IMPORTS` + third-party, minus `tempfile`) — plus `FORBIDDEN_CALLS` and the forbidden-node list, so `notte check` fails locally with the same rules the server enforces instead of vendoring a copy that drifts. The two lists differing is precisely why this should be served rather than copied: `worker.py`'s own comment notes that a name on only one of them *"either rejects code that would have run or accepts code that then fails inside the sandbox."*
-7. *(later, for managed auth)* Flip `include_in_schema` on the managed-auth router so the Go client can be generated, and decide whether template import stays gated to the connectors org.
+3. **`GET /me`** → `{user_id, org_id, org_name, org_role, plan_type}`. A `notte.toml` committed to git gets applied by different keys; without this, "am I about to deploy to the right org?" is unanswerable. It also deletes marketplace's hack of reading the org id out of the first path segment of a signed download URL.
+4. **`POST /functions?dry_run=true`** returning a managed-auth-style diff (`action`, `previous_version`, `changed`, `target_state_sha256`). Enables preview→guard→apply for functions and makes `notte check` server-authoritative.
+5. **`GET /functions/capabilities`** exporting **both** import allowlists — the upload one (`notte_api.ast.ALLOWED_IMPORTS`) and the runtime one (`_LAMBDA_ALLOWED_IMPORTS` + third-party, minus `tempfile`) — plus `FORBIDDEN_CALLS` and the forbidden-node list, so `notte check` fails locally with the same rules the server enforces instead of vendoring a copy that drifts. The two lists differing is precisely why this should be served rather than copied: `worker.py`'s own comment notes that a name on only one of them *"either rejects code that would have run or accepts code that then fails inside the sandbox."*
+6. *(later, for managed auth)* Flip `include_in_schema` on the managed-auth router so the Go client can be generated, and decide whether template import stays gated to the connectors org.
 
 ---
 
