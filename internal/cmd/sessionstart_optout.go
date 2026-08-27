@@ -10,15 +10,13 @@ import (
 )
 
 // Several session-start options default to true server-side, which left their
-// flags shaped as opt-ins for something already on. Passing --headless or
-// --solve-captchas changed nothing, and turning either off required the double
-// negative `--headless=false`. Each now has a positive way to opt out.
+// flags shaped as opt-ins for something already on. Passing --solve-captchas
+// changed nothing, and turning it off required the double negative
+// `--solve-captchas=false`. Each now has a positive way to opt out.
 //
 // Naming follows one rule: use the term the ecosystem already has, otherwise
-// prefix with --no-. Playwright exposes a visible browser as --headed, and
-// users arrive from Playwright and Puppeteer, so that is the word they will
-// guess. There is no comparable word for the other two, so they take the --no-
-// prefix used by git, docker, npm and curl.
+// prefix with --no-. The prefix follows the convention used by git, docker,
+// npm and curl.
 //
 // --no- rather than --disable- specifically because Chromium's own flags are
 // --disable-* (--disable-gpu, --disable-extensions) and this command forwards
@@ -26,16 +24,15 @@ import (
 // `--no-file-storage --chrome-args="--disable-gpu"` reads unambiguously as one
 // Notte flag and one browser flag.
 var (
-	sessionsStartHeaded          bool
 	sessionsStartNoSolveCaptchas bool
 	sessionsStartNoFileStorage   bool
 )
 
 // sessionStartOptOut pairs a new negative flag with the generated flag it
 // supersedes. The original stays registered and undeprecated: pinning a value
-// explicitly is legitimate defensive scripting, since a caller who needs a
-// headless session should not have to trust that the server default stays
-// true. Only passing both at once is an error.
+// explicitly is legitimate defensive scripting, since a caller should not
+// have to trust that the server default stays true. Only passing both at once
+// is an error.
 type sessionStartOptOut struct {
 	negative string
 	original string
@@ -45,12 +42,6 @@ type sessionStartOptOut struct {
 
 func sessionStartOptOuts() []sessionStartOptOut {
 	return []sessionStartOptOut{
-		{
-			negative: "headed",
-			original: "headless",
-			set:      &sessionsStartHeaded,
-			apply:    func(b *api.ApiSessionStartRequest, enabled bool) { b.Headless = &enabled },
-		},
 		{
 			negative: "no-solve-captchas",
 			original: "solve-captchas",
@@ -69,8 +60,6 @@ func sessionStartOptOuts() []sessionStartOptOut {
 // registerSessionStartOptOutFlags adds the negative flags alongside the
 // generated ones.
 func registerSessionStartOptOutFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&sessionsStartHeaded, "headed", false,
-		"Run with a visible browser window instead of headless")
 	cmd.Flags().BoolVar(&sessionsStartNoSolveCaptchas, "no-solve-captchas", false,
 		"Do not attempt to solve captchas automatically")
 	// No backticks in usage strings: cobra's UnquoteUsage treats the first
@@ -96,9 +85,7 @@ func validateSessionStartOptOuts(cmd *cobra.Command) error {
 }
 
 // applySessionStartOptOuts folds the negative flags into an already-built
-// request body. Each one inverts its counterpart, so --headed sends
-// headless=false and --headed=false sends headless=true.
-//
+// request body. Each one inverts its counterpart.
 // Revalidates so the invariant holds even if a caller reaches this without
 // going through PreRunE.
 func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartRequest) error {

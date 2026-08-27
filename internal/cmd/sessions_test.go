@@ -106,7 +106,6 @@ func TestRunSessionsStart(t *testing.T) {
 
 	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_123","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
 
-	origHeadless := SessionStartHeadless
 	origBrowser := SessionStartBrowserType
 	origTimeout := SessionStartIdleTimeoutMinutes
 	origProxies := sessionsStartProxy
@@ -117,7 +116,6 @@ func TestRunSessionsStart(t *testing.T) {
 	origCDP := SessionStartCdpUrl
 	origFileStorage := SessionStartUseFileStorage
 	t.Cleanup(func() {
-		SessionStartHeadless = origHeadless
 		SessionStartBrowserType = origBrowser
 		SessionStartIdleTimeoutMinutes = origTimeout
 		sessionsStartProxy = origProxies
@@ -129,7 +127,6 @@ func TestRunSessionsStart(t *testing.T) {
 		SessionStartUseFileStorage = origFileStorage
 	})
 
-	SessionStartHeadless = false
 	SessionStartBrowserType = "chrome"
 	SessionStartIdleTimeoutMinutes = 5
 	sessionsStartProxy = true
@@ -145,11 +142,9 @@ func TestRunSessionsStart(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "file-storage", false, "")
-	_ = cmd.Flags().Set("headless", "false")
 	_ = cmd.Flags().Set("proxy", "true")
 	_ = cmd.Flags().Set("solve-captchas", "true")
 	_ = cmd.Flags().Set("file-storage", "true")
@@ -177,7 +172,6 @@ func TestRunSessionsStart_Minimal(t *testing.T) {
 
 	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_456","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":3}`)
 
-	origHeadless := SessionStartHeadless
 	origBrowser := SessionStartBrowserType
 	origTimeout := SessionStartIdleTimeoutMinutes
 	origProxies := sessionsStartProxy
@@ -187,7 +181,6 @@ func TestRunSessionsStart_Minimal(t *testing.T) {
 	origUA := SessionStartUserAgent
 	origCDP := SessionStartCdpUrl
 	t.Cleanup(func() {
-		SessionStartHeadless = origHeadless
 		SessionStartBrowserType = origBrowser
 		SessionStartIdleTimeoutMinutes = origTimeout
 		sessionsStartProxy = origProxies
@@ -198,7 +191,6 @@ func TestRunSessionsStart_Minimal(t *testing.T) {
 		SessionStartCdpUrl = origCDP
 	})
 
-	SessionStartHeadless = true
 	SessionStartBrowserType = ""
 	SessionStartIdleTimeoutMinutes = 0
 	sessionsStartProxy = false
@@ -213,7 +205,6 @@ func TestRunSessionsStart_Minimal(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
@@ -1071,7 +1062,6 @@ func TestSessionsStart_SetsCurrentSession(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
@@ -1278,7 +1268,6 @@ func TestSessionsStart_SavesExpiry(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
@@ -1349,7 +1338,6 @@ func TestSessionsStart_AutoClearsExpiredSession(t *testing.T) {
 	env.SetEnv("NOTTE_SESSION_ID", "")
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())
@@ -1418,7 +1406,6 @@ func TestSessionsStart_DoesNotAutoClearNonExpiredSession(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", true, "")
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
 	cmd.SetContext(context.Background())

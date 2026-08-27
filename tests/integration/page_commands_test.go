@@ -11,7 +11,7 @@ import (
 // startTestSession is a helper that starts a session and returns its ID
 func startTestSession(t *testing.T) string {
 	t.Helper()
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {
@@ -318,7 +318,7 @@ func TestPageFormFill(t *testing.T) {
 // TestPageUsesCurrentSession tests that page commands use the current session when --session-id is not specified
 func TestPageUsesCurrentSession(t *testing.T) {
 	// Start a session (this sets the current session)
-	result := runCLI(t, "sessions", "start", "--headless")
+	result := runCLI(t, "sessions", "start")
 	requireSuccess(t, result)
 
 	var startResp struct {

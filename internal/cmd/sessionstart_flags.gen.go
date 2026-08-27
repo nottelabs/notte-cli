@@ -11,6 +11,9 @@ import (
 
 // SessionStart command flags
 var (
+	// Enable Notte's highest-fidelity browser environment for sites with sophisticated bot detection. Available to approved workspaces.
+	SessionStartAdvancedStealth bool
+
 	// Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	SessionStartAspectRatio string
 
@@ -28,9 +31,6 @@ var (
 
 	// Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
 	SessionStartDemonstrate bool
-
-	// Whether to run the session in headless mode.
-	SessionStartHeadless bool
 
 	// Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	SessionStartIdleTimeoutMinutes int
@@ -72,13 +72,13 @@ var (
 
 // RegisterSessionStartFlags registers all flags for SessionStart command
 func RegisterSessionStartFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&SessionStartAdvancedStealth, "advanced-stealth", false, "Enable Notte's highest-fidelity browser environment for sites with sophisticated bot detection. Available to approved workspaces. (API default: false)")
 	cmd.Flags().StringVar(&SessionStartAspectRatio, "aspect-ratio", "", "Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.")
 	cmd.Flags().StringSliceVar(&SessionStartAuthIds, "auth-ids", []string{}, "Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Authentication finishes before the session is returned unless wait_for_authentication is false. (repeatable)")
 	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome. (API default: chromium) (chromium, chrome, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().BoolVar(&SessionStartDemonstrate, "demonstrate", false, "Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false. (API default: false)")
-	cmd.Flags().BoolVar(&SessionStartHeadless, "headless", false, "Whether to run the session in headless mode. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation). (API default: 3)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
 	// profile (flattened object)
@@ -98,6 +98,10 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 // BuildSessionStartRequest builds the API request from CLI flags
 func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, error) {
 	body := &api.ApiSessionStartRequest{}
+
+	if cmd.Flags().Changed("advanced-stealth") {
+		body.AdvancedStealth = &SessionStartAdvancedStealth
+	}
 
 	if SessionStartAspectRatio != "" {
 		body.AspectRatio = &SessionStartAspectRatio
@@ -122,10 +126,6 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if cmd.Flags().Changed("demonstrate") {
 		body.Demonstrate = &SessionStartDemonstrate
-	}
-
-	if cmd.Flags().Changed("headless") {
-		body.Headless = &SessionStartHeadless
 	}
 
 	if SessionStartIdleTimeoutMinutes > 0 {

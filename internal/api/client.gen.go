@@ -627,6 +627,9 @@ type ApiExecutionResponse_Action struct {
 
 // ApiSessionStartRequest defines model for ApiSessionStartRequest.
 type ApiSessionStartRequest struct {
+	// AdvancedStealth Enable Notte's highest-fidelity browser environment for sites with sophisticated bot detection. Available to approved workspaces.
+	AdvancedStealth *bool `json:"advanced_stealth,omitempty"`
+
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
@@ -647,9 +650,6 @@ type ApiSessionStartRequest struct {
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
-
-	// Headless Whether to run the session in headless mode.
-	Headless *bool `json:"headless,omitempty"`
 
 	// IdleTimeoutMinutes Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
@@ -1324,8 +1324,8 @@ type FrameData struct {
 	FrameUrl string `json:"frameUrl"`
 }
 
-// FunctionResponse defines model for FunctionResponse.
-type FunctionResponse struct {
+// FunctionListItemResponse defines model for FunctionListItemResponse.
+type FunctionListItemResponse struct {
 	// CreatedAt The creation time of the workflow
 	CreatedAt FlexibleTime `json:"created_at"`
 
@@ -1346,8 +1346,77 @@ type FunctionResponse struct {
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
+	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
+	SelfHealing *bool `json:"self_healing,omitempty"`
+
 	// Shared Whether the workflow is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
+
+	// Source Where the function was created from, stamped at creation. Read-only.
+	Source *string `json:"source,omitempty"`
+
+	// Status The status of the workflow
+	Status string `json:"status"`
+
+	// UpdatedAt The last update time of the workflow
+	UpdatedAt FlexibleTime `json:"updated_at"`
+
+	// Variables The variables to run the workflow with
+	Variables *[]ParameterInfo `json:"variables,omitempty"`
+
+	// Versions The versions of the workflow
+	Versions   []string `json:"versions"`
+	WorkflowId *string  `json:"workflow_id,omitempty"`
+}
+
+// FunctionMetadataUpdateRequest defines model for FunctionMetadataUpdateRequest.
+type FunctionMetadataUpdateRequest struct {
+	Instructions *string `json:"instructions,omitempty"`
+	SelfHealing  *bool   `json:"self_healing,omitempty"`
+}
+
+// FunctionResponse defines model for FunctionResponse.
+type FunctionResponse struct {
+	// CreatedAt The creation time of the workflow
+	CreatedAt FlexibleTime `json:"created_at"`
+
+	// Description The description of the workflow
+	Description *string `json:"description,omitempty"`
+
+	// FunctionId The ID of the function
+	FunctionId string `json:"function_id"`
+
+	// Instructions Builder's operating notes: typical run duration, known failure modes, which parameters matter.
+	Instructions *string `json:"instructions,omitempty"`
+
+	// LatestVersion The version of the workflow
+	LatestVersion string `json:"latest_version"`
+
+	// Name The name of the workflow
+	Name      *string `json:"name,omitempty"`
+	Published *bool   `json:"published,omitempty"`
+
+	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
+	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
+	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
+
+	// ScheduleCron Cron expression the function runs on, or null if it is not scheduled.
+	ScheduleCron *string `json:"schedule_cron,omitempty"`
+
+	// ScheduleState 'enabled' while the schedule fires, 'paused' once the backend disabled it after a deterministic failure (exhausted credit, or an inactive function), null when there is no schedule.
+	ScheduleState *string `json:"schedule_state,omitempty"`
+
+	// ScheduleVariables Variables passed to each scheduled run, or null if it is not scheduled.
+	ScheduleVariables *map[string]interface{} `json:"schedule_variables,omitempty"`
+
+	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
+	SelfHealing *bool `json:"self_healing,omitempty"`
+
+	// Shared Whether the workflow is public and can beshared with other users
+	Shared *bool `json:"shared,omitempty"`
+
+	// Source Where the function was created from, stamped at creation. Read-only.
+	Source *string `json:"source,omitempty"`
 
 	// Status The status of the workflow
 	Status string `json:"status"`
@@ -1421,6 +1490,9 @@ type FunctionWithLinkResponse struct {
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
+	// Instructions Builder's operating notes: typical run duration, known failure modes, which parameters matter.
+	Instructions *string `json:"instructions,omitempty"`
+
 	// LatestVersion The version of the workflow
 	LatestVersion string `json:"latest_version"`
 
@@ -1432,8 +1504,23 @@ type FunctionWithLinkResponse struct {
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
+	// ScheduleCron Cron expression the function runs on, or null if it is not scheduled.
+	ScheduleCron *string `json:"schedule_cron,omitempty"`
+
+	// ScheduleState 'enabled' while the schedule fires, 'paused' once the backend disabled it after a deterministic failure (exhausted credit, or an inactive function), null when there is no schedule.
+	ScheduleState *string `json:"schedule_state,omitempty"`
+
+	// ScheduleVariables Variables passed to each scheduled run, or null if it is not scheduled.
+	ScheduleVariables *map[string]interface{} `json:"schedule_variables,omitempty"`
+
+	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
+	SelfHealing *bool `json:"self_healing,omitempty"`
+
 	// Shared Whether the workflow is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
+
+	// Source Where the function was created from, stamped at creation. Read-only.
+	Source *string `json:"source,omitempty"`
 
 	// Status The status of the workflow
 	Status string `json:"status"`
@@ -1502,6 +1589,9 @@ type GetFunctionRunResponseStatus string
 
 // GlobalScrapeRequest defines model for GlobalScrapeRequest.
 type GlobalScrapeRequest struct {
+	// AdvancedStealth Enable Notte's highest-fidelity browser environment for sites with sophisticated bot detection. Available to approved workspaces.
+	AdvancedStealth *bool `json:"advanced_stealth,omitempty"`
+
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
@@ -1519,9 +1609,6 @@ type GlobalScrapeRequest struct {
 
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
-
-	// Headless Whether to run the session in headless mode.
-	Headless *bool `json:"headless,omitempty"`
 
 	// IdleTimeoutMinutes Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
@@ -1935,13 +2022,13 @@ type PaginatedResponseAgentResponse struct {
 	PageSize    int             `json:"page_size"`
 }
 
-// PaginatedResponseFunctionResponse defines model for PaginatedResponse_FunctionResponse_.
-type PaginatedResponseFunctionResponse struct {
-	HasNext     bool               `json:"has_next"`
-	HasPrevious *bool              `json:"has_previous,omitempty"`
-	Items       []FunctionResponse `json:"items"`
-	Page        int                `json:"page"`
-	PageSize    int                `json:"page_size"`
+// PaginatedResponseFunctionListItemResponse defines model for PaginatedResponse_FunctionListItemResponse_.
+type PaginatedResponseFunctionListItemResponse struct {
+	HasNext     bool                       `json:"has_next"`
+	HasPrevious *bool                      `json:"has_previous,omitempty"`
+	Items       []FunctionListItemResponse `json:"items"`
+	Page        int                        `json:"page"`
+	PageSize    int                        `json:"page_size"`
 }
 
 // PaginatedResponseFunctionRunListItemResponse defines model for PaginatedResponse_FunctionRunListItemResponse_.
@@ -2468,9 +2555,6 @@ type SessionResponse struct {
 	// Error Error message if the operation failed to complete
 	Error *string `json:"error,omitempty"`
 
-	// Headless Whether to run the session in headless mode.
-	Headless *bool `json:"headless,omitempty"`
-
 	// IdleTimeoutMinutes Session idle timeout in minutes. Will timeout if now() > last access time + idle_timeout_minutes
 	IdleTimeoutMinutes int `json:"idle_timeout_minutes"`
 
@@ -2874,6 +2958,12 @@ type FunctionDownloadUrlParams struct {
 
 	// DecryptionKey The decryption key for the function
 	DecryptionKey       *string `form:"decryption_key,omitempty" json:"decryption_key,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionMetadataUpdateParams defines parameters for FunctionMetadataUpdate.
+type FunctionMetadataUpdateParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3419,6 +3509,9 @@ type AnythingStartJSONRequestBody = AnythingStartRequest
 
 // FunctionCreateMultipartRequestBody defines body for FunctionCreate for multipart/form-data ContentType.
 type FunctionCreateMultipartRequestBody = BodyFunctionCreateFunctionsPost
+
+// FunctionMetadataUpdateJSONRequestBody defines body for FunctionMetadataUpdate for application/json ContentType.
+type FunctionMetadataUpdateJSONRequestBody = FunctionMetadataUpdateRequest
 
 // FunctionUpdateMultipartRequestBody defines body for FunctionUpdate for multipart/form-data ContentType.
 type FunctionUpdateMultipartRequestBody = BodyFunctionUpdateFunctionsFunctionIdPost
@@ -8671,6 +8764,11 @@ type ClientInterface interface {
 	// FunctionDownloadUrl request
 	FunctionDownloadUrl(ctx context.Context, functionId string, params *FunctionDownloadUrlParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FunctionMetadataUpdateWithBody request with any body
+	FunctionMetadataUpdateWithBody(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionMetadataUpdate(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, body FunctionMetadataUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FunctionUpdateWithBody request with any body
 	FunctionUpdateWithBody(ctx context.Context, functionId string, params *FunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9049,6 +9147,30 @@ func (c *Client) FunctionDelete(ctx context.Context, functionId string, params *
 
 func (c *Client) FunctionDownloadUrl(ctx context.Context, functionId string, params *FunctionDownloadUrlParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFunctionDownloadUrlRequest(c.Server, functionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionMetadataUpdateWithBody(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionMetadataUpdateRequestWithBody(c.Server, functionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionMetadataUpdate(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, body FunctionMetadataUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionMetadataUpdateRequest(c.Server, functionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -10962,6 +11084,79 @@ func NewFunctionDownloadUrlRequest(server string, functionId string, params *Fun
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionMetadataUpdateRequest calls the generic FunctionMetadataUpdate builder with application/json body
+func NewFunctionMetadataUpdateRequest(server string, functionId string, params *FunctionMetadataUpdateParams, body FunctionMetadataUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionMetadataUpdateRequestWithBody(server, functionId, params, "application/json", bodyReader)
+}
+
+// NewFunctionMetadataUpdateRequestWithBody generates requests for FunctionMetadataUpdate with any type of body
+func NewFunctionMetadataUpdateRequestWithBody(server string, functionId string, params *FunctionMetadataUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -16251,6 +16446,11 @@ type ClientWithResponsesInterface interface {
 	// FunctionDownloadUrlWithResponse request
 	FunctionDownloadUrlWithResponse(ctx context.Context, functionId string, params *FunctionDownloadUrlParams, reqEditors ...RequestEditorFn) (*FunctionDownloadUrlResult, error)
 
+	// FunctionMetadataUpdateWithBodyWithResponse request with any body
+	FunctionMetadataUpdateWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionMetadataUpdateResult, error)
+
+	FunctionMetadataUpdateWithResponse(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, body FunctionMetadataUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionMetadataUpdateResult, error)
+
 	// FunctionUpdateWithBodyWithResponse request with any body
 	FunctionUpdateWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionUpdateResult, error)
 
@@ -16636,7 +16836,7 @@ func (r AnythingStartResult) StatusCode() int {
 type ListFunctionsResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PaginatedResponseFunctionResponse
+	JSON200      *PaginatedResponseFunctionListItemResponse
 	JSON422      *HTTPValidationError
 }
 
@@ -16719,6 +16919,29 @@ func (r FunctionDownloadUrlResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FunctionDownloadUrlResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionMetadataUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionMetadataUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionMetadataUpdateResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -18370,6 +18593,23 @@ func (c *ClientWithResponses) FunctionDownloadUrlWithResponse(ctx context.Contex
 	return ParseFunctionDownloadUrlResult(rsp)
 }
 
+// FunctionMetadataUpdateWithBodyWithResponse request with arbitrary body returning *FunctionMetadataUpdateResult
+func (c *ClientWithResponses) FunctionMetadataUpdateWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionMetadataUpdateResult, error) {
+	rsp, err := c.FunctionMetadataUpdateWithBody(ctx, functionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionMetadataUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionMetadataUpdateWithResponse(ctx context.Context, functionId string, params *FunctionMetadataUpdateParams, body FunctionMetadataUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionMetadataUpdateResult, error) {
+	rsp, err := c.FunctionMetadataUpdate(ctx, functionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionMetadataUpdateResult(rsp)
+}
+
 // FunctionUpdateWithBodyWithResponse request with arbitrary body returning *FunctionUpdateResult
 func (c *ClientWithResponses) FunctionUpdateWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionUpdateResult, error) {
 	rsp, err := c.FunctionUpdateWithBody(ctx, functionId, params, contentType, body, reqEditors...)
@@ -19354,7 +19594,7 @@ func ParseListFunctionsResult(rsp *http.Response) (*ListFunctionsResult, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PaginatedResponseFunctionResponse
+		var dest PaginatedResponseFunctionListItemResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -19454,6 +19694,39 @@ func ParseFunctionDownloadUrlResult(rsp *http.Response) (*FunctionDownloadUrlRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest FunctionWithLinkResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionMetadataUpdateResult parses an HTTP response from a FunctionMetadataUpdateWithResponse call
+func ParseFunctionMetadataUpdateResult(rsp *http.Response) (*FunctionMetadataUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionMetadataUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
