@@ -270,12 +270,29 @@ notte init [dir]                       # scaffold notte.toml, functions/, pyrigh
 notte init --from-session <ses_id>     # bootstrap from `sessions workflow-code` — record, then scaffold
 notte new <name>                       # one function directory from a template
 
+notte pull   [--env E]                 # adopt existing remote functions into the tree + lock
 notte check  [<target>] [--env E]      # build + validate + diff vs remote. writes NOTHING. the CI gate.
 notte deploy [<target>] [--env E]      # build → diff → confirm → create/update → schedule → write lock
 notte status [--env E]                 # what's drifted, and what a `_shared` edit would touch
 ```
 
-Five commands, not eighteen. `<target>` is a name, a glob, `all`, or a path — so `notte deploy functions/amazon_search` tab-completes.
+Six commands, not eighteen. `<target>` is a name, a glob, `all`, or a path — so `notte deploy functions/amazon_search` tab-completes.
+
+### Why `pull` is v1 and not a migration nicety
+
+It is tempting to file `pull` under "only needed to adopt an existing tree." That is wrong twice over.
+
+**An org with existing functions is the normal case, not the migration case.** Functions already arrive from `sessions workflow-code`, from the Anything API build agent, and from the console. The expected Notte flow is *author in the browser, then decide you want it in git* — which is `pull`, and which is also why `notte init --from-session` is really just a single-function `pull` wearing a different name. The machinery is required either way.
+
+**Without it, `deploy` is unsafe in a non-empty org.** Create-vs-update is decided from the lock: no `function_id` for this env → create. A fresh `notte init` against an org that already has `amazon_search` produces a lock that believes nothing exists, so the first `deploy` **creates a second `amazon_search`** rather than updating the first. `functions.name` has no unique constraint (`text NOT NULL DEFAULT 'default'`), so the API accepts it silently, and now two functions share a name while callers hold the id of the one that stopped being updated. That is the worst failure mode in this document, and `pull` is what prevents it.
+
+Which implies a companion rule: **`deploy` must refuse to create a function whose name already exists remotely but is absent from the lock**, and say `run 'notte pull --env prod' first`. Fail closed, same as the credential rule below. `--force-create` exists for the genuine case where you do want a second one.
+
+**`pull` is not the inverse of `deploy`, and must not pretend to be.** What comes back over the wire is the *artifact*, and a bundled artifact cannot be un-flattened into the package that produced it. So:
+
+- A function with no entry in the lock is written as a **single-file function** — `functions/<name>.py` — because that is genuinely what it is. It can be promoted to a directory with helpers later, by hand, at which point it starts bundling.
+- A function already in the lock and already deployed *from this tree* is **left alone**. Overwriting `functions/amazon_search/{main,parse}.py` with one flattened file would destroy the sources to "sync" them, which is the opposite of the intent. If its `artifact_sha256` doesn't match what's deployed, that's drift — report it, and let `status`/`deploy` handle it.
+- Following marketplace: a run is authoritative only for what it inspected, so `--limit` or a failed download never prunes; and remote functions absent from the tree are **reported, never deleted**.
 
 ### Deferred, and why
 
@@ -286,11 +303,10 @@ An earlier draft proposed eighteen commands. Roughly half were aspirational or g
 | `run`, `logs`, `secrets`, `schedule` | already exist under `notte functions`; project-aware twins aren't needed on day one |
 | `build` | folded into `deploy` and `check`. Expose separately only once someone actually wants the artifact without the diff |
 | `promote`, `rollback` | need `--version` and `versions[]` exposed on the CLI first |
-| `pull` | only matters for adopting an existing tree. Real for marketplace's 2,049 files, irrelevant to a new project |
 | `dev` | genuinely valuable, but it's a second execution model and deserves its own design rather than a line in this table |
 | `whoami`, `auth login --env` | blocked on `GET /me` (backend ask #3). These ship *with* that endpoint — `auth login --env` is a prerequisite for the fail-closed credential rule below, not an optional extra |
 
-The credential resolution rules in the next section apply to all five v1 commands regardless; `--env` is not deferred.
+The credential resolution rules in the next section apply to all six v1 commands regardless; `--env` is not deferred.
 
 `notte.toml`:
 ```toml
