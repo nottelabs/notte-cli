@@ -20,7 +20,7 @@ The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) t
 
 ## Features
 
-- **Browser sessions** - headless or headed Chromium/Chrome with full control
+- **Browser sessions** - remote Chromium/Chrome with full control
 - **Files** - upload and download files to notte.cc
 - **Output formats** - human-readable text or JSON for scripting
 - **Personas** - create and manage digital identities with email, phone, and SMS
@@ -73,8 +73,7 @@ notte auth status
 notte sessions start
 ```
 
-Sessions are headless by default. Add `--headed` for a visible browser, and
-watch it through the `ViewerUrl` in the output.
+Watch the session live through the `ViewerUrl` in the output.
 
 ## Commands
 
@@ -121,7 +120,6 @@ notte sessions code                   # Get Python script for session steps
 ```bash
 notte sessions start \
   --browser-type chromium|chrome  # Browser type (default: chromium)
-  --headed                                # Show a browser window (headless is the default)
   --idle-timeout-minutes <minutes>        # Idle timeout (default: 3)
   --max-duration-minutes <minutes>        # Maximum session lifetime (default: 15)
   --user-agent <string>                   # Custom user agent
@@ -132,6 +130,8 @@ notte sessions start \
   --no-solve-captchas                     # Turn OFF captcha solving (on by default)
   --no-file-storage                       # Detach FileStorage (attached by default).
                                           # Disables page download and files --from session
+  --advanced-stealth                      # Highest-fidelity browser for sites with
+                                          # sophisticated bot detection (approved workspaces)
   --cdp-url <url>                         # CDP URL of remote session provider
   --profile-id <id>                       # Profile ID to use for session
   --profile-persist                       # Save browser state to profile on close
@@ -415,7 +415,7 @@ Core workflow:
 
 ### Tips
 
-- **Viewing sessions**: When you start a session, the output includes a `ViewerUrl` - open it to watch the browser live, headless or not
+- **Viewing sessions**: When you start a session, the output includes a `ViewerUrl` - open it to watch the browser live
 - **Session lifetime**: sessions close after **3 minutes idle** or **15 minutes total** by default. Raise `--idle-timeout-minutes`/`--max-duration-minutes` for anything slow, or the next command fails with `Session closed`
 - **Element selectors**: If element IDs from `observe` (like `@B1`) don't work, use Playwright selectors: `#id`, `.class`, `button:has-text('Submit')`
 - **Multiple matches**: Use `>> nth=0` suffix to select the first match: `button:has-text('OK') >> nth=0`
