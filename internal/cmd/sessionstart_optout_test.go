@@ -145,6 +145,10 @@ func TestConflictsRejectedBeforeSideEffects(t *testing.T) {
 			return nil
 		},
 	}
+	// --solve-captchas has to be registered here too: without it the pair below
+	// fails on cobra's "unknown flag" before PreRunE ever runs, so the case would
+	// pass without exercising validateSessionStartOptOuts at all.
+	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "solve captchas")
 	cmd.Flags().Bool("proxy", false, "proxy")
 	cmd.Flags().String("proxy-country", "", "proxy country")
 	registerSessionStartOptOutFlags(cmd)
