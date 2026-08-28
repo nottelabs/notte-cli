@@ -121,8 +121,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if broken := srcRes.Misconfigured(health); len(broken) > 0 {
-		return fmt.Errorf("the environment in %s cannot resolve %s, which the runtime reports as installed — "+
-			"delete it and re-run to rebuild", venv, strings.Join(broken, ", "))
+		return environmentBrokenError(venv, broken)
 	}
 	sourceProblems := map[string][]string{}
 	for _, d := range srcRes.Diagnostics {
@@ -168,8 +167,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		// is wrong, not the code. Blaming the file would send someone to fix
 		// something that is fine.
 		if broken := tyRes.Misconfigured(health); len(broken) > 0 {
-			return fmt.Errorf("the environment in %s cannot resolve %s, which the runtime reports as installed — "+
-				"delete it and re-run to rebuild", venv, strings.Join(broken, ", "))
+			return environmentBrokenError(venv, broken)
 		}
 		for _, d := range tyRes.Diagnostics {
 			results[i].Problems = append(results[i].Problems, mapDiagnostic(res, d))
@@ -219,6 +217,21 @@ func functionOwning(path string, functions []project.Function, functionsDir stri
 		}
 	}
 	return ""
+}
+
+// environmentBrokenError covers the one check failure that is about the
+// environment rather than the code: ty could not resolve a package the runtime
+// reports as installed, so the venv is wrong, not the function.
+//
+// It names --force specifically. A plain sync would reuse the environment,
+// because the stamp records what it was built from and still matches — so the
+// obvious advice is the advice that does nothing.
+func environmentBrokenError(venv string, broken []string) error {
+	return fmt.Errorf(
+		"the environment in %s cannot resolve %s, which the runtime reports as installed.\n"+
+			"  the environment is wrong, not your code — rebuild it with:\n"+
+			"      notte stack sync --force",
+		venv, strings.Join(broken, ", "))
 }
 
 func bundleHeader(name string) string {

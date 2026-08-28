@@ -143,3 +143,42 @@ func TestSyncBuildsAndReusesARealEnvironment(t *testing.T) {
 		t.Fatal("a changed runtime digest must rebuild")
 	}
 }
+
+// A matching stamp says the environment was built from the same inputs, not
+// that it is still intact. Without --force a corrupted venv is unrecoverable
+// except by deleting the directory by hand.
+func TestSyncForceRebuildsAMatchingEnvironment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("network")
+	}
+	tc := toolchain(t)
+	h := loadFixture(t, "health_ok.json")
+	venv := filepath.Join(t.TempDir(), "venv")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	req := SyncRequest{VenvDir: venv, Health: h, Imports: []string{"requests"}}
+
+	if _, err := Sync(ctx, tc, req); err != nil {
+		t.Fatal(err)
+	}
+	reused, err := Sync(ctx, tc, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reused.Reused {
+		t.Fatal("an unchanged runtime should reuse")
+	}
+
+	req.Force = true
+	forced, err := Sync(ctx, tc, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if forced.Reused {
+		t.Fatal("--force must rebuild even when the stamp matches")
+	}
+	if _, err := os.Stat(PythonPath(venv)); err != nil {
+		t.Fatalf("forced rebuild left no interpreter: %v", err)
+	}
+}

@@ -66,6 +66,13 @@ type SyncRequest struct {
 	// intersection with what the runtime ships is installed: the allowlist is
 	// closed, so this is a set intersection rather than dependency resolution.
 	Imports []string
+	// Force rebuilds even when the stamp matches.
+	//
+	// The stamp records what an environment was built *from*, which is not the
+	// same as it still being intact — a half-finished install or a deleted
+	// site-packages leaves a venv that reuse happily accepts. Without this
+	// there is no way to recover except deleting the directory by hand.
+	Force bool
 }
 
 // SyncResult describes what was built.
@@ -124,7 +131,7 @@ func Sync(ctx context.Context, tc *Toolchain, req SyncRequest) (*SyncResult, err
 	// The digest covers the contract fields only, so it moves if and only if an
 	// environment built against the previous answer would now be wrong. A
 	// rebuild that changes nothing observable does not invalidate this venv.
-	if have, err := readStamp(req.VenvDir); err == nil && have.matches(want) {
+	if have, err := readStamp(req.VenvDir); !req.Force && err == nil && have.matches(want) {
 		res.Reused = true
 		return res, nil
 	}
