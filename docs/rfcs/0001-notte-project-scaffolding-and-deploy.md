@@ -80,7 +80,7 @@ An earlier draft said stickytape and pinliner were impossible because Restricted
 
 - **The artifact stops being readable.** stickytape emits a prelude plus every module as an escaped bytes literal passed to `__stickytape_write_module`. The deployed file is what the console renders, what `functions show` downloads, and what marketplace's `push`/`check` diff against. A blob kills the diff model, and makes tracebacks worse rather than better.
 - **stickytape disclaims itself.** Its README: *"bodged together… for a specific use case"*, no `from __future__` imports, `__file__` unreliable, dynamic imports need manual flags. That is an unmaintained third-party dependency sitting in the deploy path.
-- **It's Python.** Adopting it reintroduces the "`notte deploy` fails on a machine where `notte` works" problem that is the entire reason for the Go-native recommendation below.
+- **It's Python.** Adopting it as *the* bundler would put an interpreter on the critical path of flattening itself. Python still has a role — see the validation gate below — but as an optional check that degrades, not as the thing without which nothing builds.
 
 So: the bundler must be a **static flattener** emitting plain, ordinary Python — one module namespace, no runtime machinery. **That recommendation stands even in a fully permissive runtime**, which is how it should have been argued in the first place.
 
@@ -419,11 +419,51 @@ Rejected in v1, each with a fix-it message:
 | Cost | ~600 lines Go + tests | ~200 lines Python, `//go:embed`-ed, run via `uv run --script` | Backend work: accept a tar, bundle, validate |
 | Failure mode | A weird import form is rejected with a clear message | "python3: not found" on a machine where the CLI otherwise works | Slow loop; can't check in a PR without credentials |
 
-**Recommendation: Go-native.** A brew-installed Go binary that silently requires Python is the worse DX, and the collisions-error-out design shrinks the problem to import discovery + topological sort + top-level binding extraction — all line-oriented at indent level 0. The parse-fidelity gap only bites on constructs we reject anyway.
+**Recommendation: Go flattens, Python validates.** Not either column alone — each does the half it is actually good at, and neither reimplements the other.
 
-Two things make this safe rather than optimistic:
-- **Ship the allowlist as data, refreshed from the API** (see backend asks). Then `notte check` fails with `functions/x/main.py:3: import os is not allowed — use 'from notte_sdk.types import os'` instead of after a multipart upload. Copy managed-auth's `--allow-api-behind` + exit-code-2 handling for when the CLI is newer than the API.
-- **Ask for `POST /functions?dry_run=true`.** managed-auth's preview→guard→apply depends on the server saying what *it* thinks before you write. Functions has no equivalent, so `notte check` can only be locally authoritative.
+**Go does the flattening**, with no toolchain requirement. Resolution, topological sort, concatenation, import hoisting and alias preservation are a text transformation, and the collisions-error-out rule shrinks the parsing problem to import discovery plus top-level binding extraction, all line-oriented at indent zero. Validated against `anything-api/marketplace`: 2,524 production files, zero bundle errors, zero artifacts failing `py_compile`, zero lost definitions.
+
+**Python validates**, when it is available — and this is where the real leverage is. Mirroring the server's rules in Go means maintaining a copy of `ALLOWED_IMPORTS`, a denylist, and a stdlib set generated from a pinned CPython. Every one of those drifts. With an interpreter present you stop mirroring and run the real thing:
+
+| Problem | Cost of mirroring in Go | With Python present |
+|---|---|---|
+| Tokenizer edge cases | a hand-written scanner | `ast`, the parser the server uses |
+| Import allowlist drift | vendored copy of two lists | import the real `ScriptValidator` |
+| stdlib version mismatch | pinned generator, version-guarded | the runtime's own interpreter |
+| Semantic errors | not detectable at all | `ty check` |
+
+That last row is the one the flattener cannot cover by itself. A *missed* collision produces valid Python with the wrong meaning, so `py_compile` passes — but a type checker reports it as a redefinition. The gate closes exactly the hole the bundler can leave open.
+
+### Project commands may require Python; the rest of the CLI must not
+
+`notte sessions`, `notte page` and friends stay pure Go with no toolchain. Only the project commands may ask for an interpreter, and the ask is small: `uv run --python 3.12` **downloads the interpreter itself**, so the requirement is "have uv", one binary. `managed-auth` already works this way.
+
+Degradation is not optional. Without uv, `notte check` still flattens and still runs the local import check, and says plainly `skipped validator + typecheck (uv not found)`. Silently reporting a narrower check as a pass is the failure this whole section exists to avoid.
+
+### `ty`, and the way it fails open
+
+Use `ty`, not basedpyright. `anything-api` already gates its build agent on `ty check client.py` before every create or update, so there is in-house precedent and a working configuration; and ty's 10–100x advantage on *cold* checks is precisely the case a CLI hits on every invocation. It is on `0.0.x` with no stable API, which argues for pinning the version, not for avoiding it.
+
+The trap is documented in `anything-api`'s `ty-config.ts`, and it is worth quoting because the CLI would walk straight into it:
+
+> ty does NOT resolve imports against the environment it was pip-installed into. With no `VIRTUAL_ENV`, no `.venv` and no `--python`, it falls back to the first `python` on PATH — the system 3.9 in the sandbox, not the 3.11 the snapshot installed notte-sdk into. So every generated client.py reported `unresolved-import` for `requests`, `pydantic` AND `notte_sdk`, and **the agent deployed straight through the mandatory type check.**
+
+A type checker that cannot resolve imports does not fail. It emits `unresolved-import` and everything downstream reads green — the worst shape a gate can have, since it looks like coverage and provides none. So:
+
+- **Write a `ty.toml` naming the interpreter explicitly.** Never rely on ambient `python`. Under `uv` the CLI owns the venv, so this is a known path rather than a probe — but the config must still be written.
+- **`unresolved-import` for an allowlisted package is a hard error**, never an environment artefact to wave through. That is already the rule in the build agent's prompt.
+- ty treats a wrong `environment.python` as fatal for the whole run, and rejects an `extra-paths` entry that is not a directory. Both are worse than the bug being fixed, so both are checked before the file is written.
+
+### Which `notte-sdk` to check against
+
+Latest. The runner image pins `notte-sdk` to a commit extracted from `notte-api/uv.lock` at build time (`build-docker.sh:54`), which sounds like it could lag PyPI — but the monorepo has a hard check that the latest SDK is installed before every release, so the lock is bumped and the image rebuilt on every SDK release. Latest tracks the runtime.
+
+So the CLI pins nothing and resolves fresh, and **`deploy` fails on SDK skew**, because a green check against an SDK the runtime does not run is exactly the drift this section removes. Two guards keep that from being outage-shaped:
+
+- **Never fail on unreachable PyPI.** Fall back to the uv cache and say so. An offline runner or a registry blip must not block a hotfix.
+- **`--allow-sdk-skew`**, with the message naming installed versus latest. A door exists, or people route around the tool entirely.
+
+One consequence worth stating plainly: because the runtime moves, **a deployed function can break without anyone touching it.** A scheduled `notte check --verify-remote` is the only thing that would notice, which makes it more than the staleness alarm it is described as above.
 
 ### Two hashes, because bundling breaks the round trip
 
@@ -581,8 +621,7 @@ Auto-derived. `check_revision_bumps.py` and the manual `revision` field both dis
 2. **Make secrets updatable by name**: `PUT /secrets/{namespace}/{name}` as an upsert, and `DELETE` by `(namespace, name)`. Today a secret rotation is LIST → DELETE-by-uuid → POST, which is three calls and a window where the secret doesn't exist.
 3. **`GET /me`** → `{user_id, org_id, org_name, org_role, plan_type}`. A `notte.toml` committed to git gets applied by different keys; without this, "am I about to deploy to the right org?" is unanswerable. It also deletes marketplace's hack of reading the org id out of the first path segment of a signed download URL.
 4. **`POST /functions?dry_run=true`** returning a managed-auth-style diff (`action`, `previous_version`, `changed`, `target_state_sha256`). Enables preview→guard→apply for functions and makes `notte check` server-authoritative.
-5. **`GET /functions/capabilities`** exporting **both** import allowlists — the upload one (`notte_api.ast.ALLOWED_IMPORTS`) and the runtime one (`_LAMBDA_ALLOWED_IMPORTS` + third-party, minus `tempfile`) — plus `FORBIDDEN_CALLS` and the forbidden-node list, so `notte check` fails locally with the same rules the server enforces instead of vendoring a copy that drifts. The two lists differing is precisely why this should be served rather than copied: `worker.py`'s own comment notes that a name on only one of them *"either rejects code that would have run or accepts code that then fails inside the sandbox."*
-6. *(later, for managed auth)* Flip `include_in_schema` on the managed-auth router so the Go client can be generated, and decide whether template import stays gated to the connectors org.
+5. *(later, for managed auth)* Flip `include_in_schema` on the managed-auth router so the Go client can be generated, and decide whether template import stays gated to the connectors org.
 
 ---
 
