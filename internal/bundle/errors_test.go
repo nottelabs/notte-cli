@@ -173,3 +173,51 @@ func TestErrorCarriesPathAndLine(t *testing.T) {
 		t.Fatalf("location = %s:%d, want fn/main.py:3", be.Path, be.Line)
 	}
 }
+
+// `import json; import re` used to parse as a single import of a module named
+// "json;", drop the whole line, and never hoist re — a NameError from an
+// artifact that compiled and passed upload validation.
+func TestSemicolonSeparatedImportsAreRejected(t *testing.T) {
+	msg := wantErr(t, map[string]string{
+		"fn/main.py": "import json; import re\n\n\ndef run():\n    return json, re\n",
+	})
+	mustContain(t, msg, "own line")
+}
+
+func TestImportSharingALineWithCodeIsRejected(t *testing.T) {
+	msg := wantErr(t, map[string]string{
+		"fn/main.py": "import json; x = 1\n\n\ndef run():\n    return x\n",
+	})
+	mustContain(t, msg, "own line")
+}
+
+// Semicolons elsewhere are fine; only imports constrain the rewriter.
+func TestSemicolonInOrdinaryCodeIsAllowed(t *testing.T) {
+	res, err := Bundle(mapFS(map[string]string{
+		"fn/main.py": "A = 1; B = 2\n\n\ndef run():\n    return A + B\n",
+	}), "fn/main.py", Options{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(res.Code, "A = 1; B = 2") {
+		t.Fatalf("line altered:\n%s", res.Code)
+	}
+}
+
+// Collisions must be caught for names bound without an '=' too.
+func TestClauseBoundNamesCollide(t *testing.T) {
+	for _, b := range []struct{ name, src string }{
+		{"for", "for item in [1]:\n    pass\n"},
+		{"with", "with open(\"f\") as item:\n    pass\n"},
+		{"walrus", "if (item := 1):\n    pass\n"},
+	} {
+		t.Run(b.name, func(t *testing.T) {
+			msg := wantErr(t, map[string]string{
+				"fn/main.py": "from .a import a\nfrom .b import b\n\n\ndef run():\n    return a() + b()\n",
+				"fn/a.py":    b.src + "\n\ndef a():\n    return 1\n",
+				"fn/b.py":    "item = 2\n\n\ndef b():\n    return item\n",
+			})
+			mustContain(t, msg, "item")
+		})
+	}
+}
