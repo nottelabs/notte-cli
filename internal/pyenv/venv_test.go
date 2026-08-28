@@ -182,3 +182,25 @@ func TestSyncForceRebuildsAMatchingEnvironment(t *testing.T) {
 		t.Fatalf("forced rebuild left no interpreter: %v", err)
 	}
 }
+
+// The environment must carry notte_core and notte_sdk whether or not the
+// functions import them: the first is what Validate runs, and the second is
+// what people write against, so an editor should resolve it before a function
+// has been saved and re-synced.
+func TestSyncAlwaysIncludesTheNotteBasePackages(t *testing.T) {
+	h := loadFixture(t, "health_ok.json")
+	install, _ := h.Installable(append(append([]string{}, AlwaysInstall...), "requests"))
+
+	got := map[string]bool{}
+	for _, p := range install {
+		got[p.ImportName] = true
+	}
+	for _, want := range AlwaysInstall {
+		if !got[want] {
+			t.Errorf("%q must be installed regardless of imports; got %v", want, got)
+		}
+	}
+	if !got["requests"] {
+		t.Errorf("the function's own imports must still be installed; got %v", got)
+	}
+}
