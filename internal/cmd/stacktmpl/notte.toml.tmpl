@@ -10,10 +10,12 @@ name = "{{.Name}}"
 # Per-function settings are optional. Uncomment to use them:
 #
 # [functions.{{.Example}}]
-# name        = "A human-readable name"
-# description = "What it does"
-# cron        = "cron(0 9 * * ? *)"    # six-field AWS EventBridge form
-# secrets     = ["MY_TOKEN"]           # beyond what the AST scan already finds
+# name           = "A human-readable name"
+# description    = "What it does"
+# cron           = "cron(0 9 * * ? *)"   # six-field AWS EventBridge form
+# cron_variables = { name = "scheduled" } # arguments the scheduled run uses;
+#                                         # without these it runs on run()'s defaults
+# secrets        = ["MY_TOKEN"]           # beyond what the AST scan already finds
 
 # Environments are opt-in. Most projects deploy to prod and never add these.
 #

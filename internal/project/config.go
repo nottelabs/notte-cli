@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -67,6 +68,73 @@ type FunctionConfig struct {
 	Shared      bool     `toml:"shared"`
 	Cron        string   `toml:"cron"`
 	Secrets     []string `toml:"secrets"`
+
+	// CronVariables are the arguments a scheduled run is invoked with.
+	//
+	// A schedule carries its own variables — POST /functions/{id}/schedule
+	// takes {cron, variables} — and the server validates the keys against
+	// run()'s parameters. Without them a scheduled function runs on its
+	// defaults, which is rarely what a 9am job is for, and a function with a
+	// parameter that has no default cannot be scheduled at all.
+	CronVariables map[string]any `toml:"cron_variables"`
+}
+
+// Param is one of run()'s parameters, as reported by the validator.
+type Param struct {
+	Name       string
+	HasDefault bool
+}
+
+// ScheduleProblems reports configuration that would fail at schedule time.
+//
+// The server rejects an unexpected key and a missing required one, but only
+// when the schedule is set — and a cron that fails at 09:00 on a Sunday is a
+// bad way to learn about a typo. run()'s parameters are already known from
+// validation, so the same check runs locally.
+func (f FunctionConfig) ScheduleProblems(name string, params []Param) []string {
+	if len(f.CronVariables) == 0 && f.Cron == "" {
+		return nil
+	}
+	if f.Cron == "" {
+		return []string{fmt.Sprintf("[functions.%s] sets cron_variables but no cron, so they are never used", name)}
+	}
+
+	known := make(map[string]bool, len(params))
+	for _, p := range params {
+		known[p.Name] = true
+	}
+
+	var problems []string
+	var unexpected []string
+	for key := range f.CronVariables {
+		if !known[key] {
+			unexpected = append(unexpected, key)
+		}
+	}
+	sort.Strings(unexpected)
+	for _, key := range unexpected {
+		problems = append(problems, fmt.Sprintf("[functions.%s] cron_variables has %q, which is not a parameter of run(%s)",
+			name, key, paramList(params)))
+	}
+
+	for _, p := range params {
+		if p.HasDefault {
+			continue
+		}
+		if _, ok := f.CronVariables[p.Name]; !ok {
+			problems = append(problems, fmt.Sprintf("[functions.%s] run() requires %q and it has no default, so cron_variables must supply it",
+				name, p.Name))
+		}
+	}
+	return problems
+}
+
+func paramList(params []Param) string {
+	names := make([]string, 0, len(params))
+	for _, p := range params {
+		names = append(names, p.Name)
+	}
+	return strings.Join(names, ", ")
 }
 
 // Load reads notte.toml from dir.

@@ -110,6 +110,25 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// The sources are checked as well as the artifacts, and not only for
+	// tidiness: a module under _shared/ that no function imports appears in no
+	// artifact, so checking artifacts alone would never look at it. Source
+	// diagnostics also land on the real file directly, with no map in between.
+	srcRes, err := pyenv.TypeCheck(cmd.Context(), tc, cfg.Root, venv, []string{cfg.Project.FunctionsDir})
+	if err != nil {
+		return err
+	}
+	if broken := srcRes.Misconfigured(health); len(broken) > 0 {
+		return fmt.Errorf("the environment in %s cannot resolve %s, which the runtime reports as installed — "+
+			"delete it and re-run to rebuild", venv, strings.Join(broken, ", "))
+	}
+	sourceProblems := map[string][]string{}
+	for _, d := range srcRes.Diagnostics {
+		owner := functionOwning(d.Path, selected, cfg.Project.FunctionsDir)
+		sourceProblems[owner] = append(sourceProblems[owner],
+			fmt.Sprintf("%s:%d: %s [%s]", d.Path, d.Line, d.Message, d.Rule))
+	}
+
 	for i := range results {
 		res, ok := artifacts[results[i].Name]
 		if !ok {
@@ -125,6 +144,15 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		results[i].Problems = append(results[i].Problems, verdict.Errors...)
+
+		// run()'s parameters are known now, so a cron_variables typo is caught
+		// here rather than at 09:00 on a Sunday when the schedule fires.
+		params := make([]project.Param, 0, len(verdict.Variables))
+		for _, v := range verdict.Variables {
+			params = append(params, project.Param{Name: v.Name, HasDefault: v.Default != nil})
+		}
+		results[i].Problems = append(results[i].Problems,
+			cfg.Functions[results[i].Name].ScheduleProblems(results[i].Name, params)...)
 
 		rel, err := filepath.Rel(cfg.Root, artifactPath)
 		if err != nil {
@@ -144,9 +172,18 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		for _, d := range tyRes.Diagnostics {
 			results[i].Problems = append(results[i].Problems, mapDiagnostic(res, d))
 		}
+		results[i].Problems = append(results[i].Problems, sourceProblems[results[i].Name]...)
 		if len(results[i].Problems) > 0 {
 			failed++
 		}
+	}
+
+	// Diagnostics in shared code belong to no single function. Reporting them
+	// under whichever function happened to import it would be arbitrary, and
+	// dropping them would hide the case this whole pass exists for.
+	if shared := sourceProblems[""]; len(shared) > 0 {
+		failed++
+		results = append(results, checked{Name: "(shared)", Problems: shared})
 	}
 
 	reportChecked(results, failed)
@@ -165,6 +202,21 @@ func mapDiagnostic(res *bundle.Result, d pyenv.Diagnostic) string {
 		return fmt.Sprintf("%s:%d: %s [%s]", path, line, d.Message, d.Rule)
 	}
 	return fmt.Sprintf("(generated):%d: %s [%s]", d.Line, d.Message, d.Rule)
+}
+
+// functionOwning maps a source path to the function whose directory contains
+// it, or "" for shared code that belongs to none.
+func functionOwning(path string, functions []project.Function, functionsDir string) string {
+	rel := strings.TrimPrefix(filepath.ToSlash(path), functionsDir+"/")
+	for _, f := range functions {
+		if f.Dir && strings.HasPrefix(rel, f.Name+"/") {
+			return f.Name
+		}
+		if !f.Dir && rel == f.Entrypoint {
+			return f.Name
+		}
+	}
+	return ""
 }
 
 func bundleHeader(name string) string {
