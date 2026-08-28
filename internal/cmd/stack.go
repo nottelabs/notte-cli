@@ -136,8 +136,17 @@ func runStackInit(cmd *cobra.Command, args []string) error {
 		PrintInfo("  exists   " + p + " (use --force to overwrite)")
 	}
 
+	// The editor will report unresolved imports until .notte/venv exists, and
+	// init deliberately does not build it: scaffolding should work offline and
+	// without credentials. Saying so here costs a line and saves someone
+	// debugging a project that is not actually broken.
 	return PrintResult(
-		fmt.Sprintf("\nStack ready in %s.\n  next: notte stack check", abs),
+		fmt.Sprintf("\nStack ready in %s.\n\n"+
+			"  next: notte stack check\n"+
+			"        builds .notte/venv from the runtime, then validates every function.\n"+
+			"        Until it runs, your editor will report pydantic and notte_sdk as\n"+
+			"        unresolved — there is no environment for it to resolve against yet.",
+			abs),
 		map[string]any{"root": abs, "created": written, "skipped": skipped},
 	)
 }
