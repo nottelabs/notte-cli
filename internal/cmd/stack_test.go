@@ -171,15 +171,26 @@ func TestNewRefusesToOverwrite(t *testing.T) {
 	}
 }
 
-func TestEnvNameDefaultsToProd(t *testing.T) {
-	stackEnv = ""
-	if got := envName(); got != project.DefaultEnv {
-		t.Fatalf("envName() = %q, want %q", got, project.DefaultEnv)
-	}
-	stackEnv = "staging"
+// The lock key must describe the endpoint being written to. Recording a
+// staging deploy under "prod" would make the next real prod deploy update
+// whatever id happened to be filed there.
+func TestEnvNameFollowsTheEndpoint(t *testing.T) {
 	defer func() { stackEnv = "" }()
+
+	stackEnv = "staging"
 	if got := envName(); got != "staging" {
-		t.Fatalf("envName() = %q", got)
+		t.Fatalf("an explicit --env must win: %q", got)
+	}
+
+	stackEnv = ""
+	t.Setenv("NOTTE_API_URL", "https://us-staging.notte.cc")
+	if got := envName(); got != "staging" {
+		t.Fatalf("with NOTTE_API_URL on staging the lock key must be staging, got %q", got)
+	}
+
+	t.Setenv("NOTTE_API_URL", "https://api.notte.cc")
+	if got := envName(); got != project.DefaultEnv {
+		t.Fatalf("prod endpoint should map to %q, got %q", project.DefaultEnv, got)
 	}
 }
 
