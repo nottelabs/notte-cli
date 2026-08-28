@@ -81,9 +81,6 @@ check-skills: ## Fail if a command is undocumented in the notte-skills repositor
 
 check-coverage: check-endpoints check-skills ## Run both coverage guards
 
-generate-stdlib: ## Regenerate the Python stdlib module list used by the bundler
-	./scripts/gen-stdlib.sh
-
 check: ## Verify generated code is up to date (fails if `make generate` would produce a diff)
 	@echo "Checking for local changes in generated files..."
 	@[ -z "$$(git status --porcelain -- internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go')" ] || \
