@@ -1,0 +1,224 @@
+package project
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// write builds a project directory from a path->content map.
+func write(t *testing.T, files map[string]string) string {
+	t.Helper()
+	dir := t.TempDir()
+	for rel, body := range files {
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+// The common case: no environments, no credentials, prod implied. If this ever
+// needs more than [project] to work, the "environments are opt-in" promise has
+// been broken.
+func TestMinimalConfigNeedsNoEnvironments(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname = \"demo\"\n",
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Project.FunctionsDir != DefaultFunctionsDir {
+		t.Fatalf("functions_dir = %q, want %q", cfg.Project.FunctionsDir, DefaultFunctionsDir)
+	}
+	env, err := cfg.ResolveEnv("")
+	if err != nil {
+		t.Fatalf("default env must resolve without an [env.*] block: %v", err)
+	}
+	if env.APIURL != "" {
+		t.Fatalf("expected an empty api_url to fall through to CLI defaults, got %q", env.APIURL)
+	}
+}
+
+// TOML silently ignores keys it cannot place, so a typo would otherwise be a
+// setting that never applies.
+func TestUnknownKeyIsRejected(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname = \"demo\"\nfunctions_dirr = \"fns\"\n",
+	})
+	_, err := Load(dir)
+	if err == nil {
+		t.Fatal("expected an error for a misspelled key")
+	}
+	if !strings.Contains(err.Error(), "functions_dirr") {
+		t.Fatalf("error should name the key, got %v", err)
+	}
+}
+
+func TestUndeclaredEnvIsRejectedButDefaultIsNot(t *testing.T) {
+	dir := write(t, map[string]string{"notte.toml": "[project]\nname = \"demo\"\n"})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cfg.ResolveEnv("staging"); err == nil {
+		t.Fatal("naming an undefined env should fail")
+	}
+	if _, err := cfg.ResolveEnv(DefaultEnv); err != nil {
+		t.Fatalf("the default env must resolve even when undeclared: %v", err)
+	}
+}
+
+func TestEnvExtendsInherits(t *testing.T) {
+	t.Setenv("TEST_KEY", "sk-test")
+	dir := write(t, map[string]string{
+		"notte.toml": `[project]
+name = "demo"
+
+[env.dev]
+api_url = "https://us-dev.notte.cc"
+api_key = "${env:TEST_KEY}"
+headers = { "x-a" = "1" }
+
+[env.preview]
+extends = "dev"
+headers = { "x-b" = "2" }
+`,
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env, err := cfg.ResolveEnv("preview")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if env.APIURL != "https://us-dev.notte.cc" {
+		t.Fatalf("api_url not inherited: %q", env.APIURL)
+	}
+	if env.APIKey != "sk-test" {
+		t.Fatalf("api_key not inherited/expanded: %q", env.APIKey)
+	}
+	if env.Headers["x-a"] != "1" || env.Headers["x-b"] != "2" {
+		t.Fatalf("headers not merged: %v", env.Headers)
+	}
+}
+
+func TestEnvExtendsUnknownIsRejected(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[env.preview]\nextends = \"nope\"\n",
+	})
+	if _, err := Load(dir); err == nil {
+		t.Fatal("extends of an undefined env should fail")
+	}
+}
+
+func TestEnvExtendsCycleIsRejected(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[env.a]\nextends=\"b\"\n\n[env.b]\nextends=\"a\"\n",
+	})
+	err := Load2(t, dir)
+	if err == nil || !strings.Contains(err.Error(), "circular") {
+		t.Fatalf("expected a circular-extends error, got %v", err)
+	}
+}
+
+// Load2 is Load, returning only the error, for terser assertions.
+func Load2(t *testing.T, dir string) error {
+	t.Helper()
+	_, err := Load(dir)
+	return err
+}
+
+// An unresolved reference must fail loudly. Expanding to "" produces an
+// api_url of "" or a credential of "", which fails far from the cause.
+func TestUnsetInterpolationIsAnError(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[env.dev]\napi_key = \"${env:DEFINITELY_NOT_SET_XYZ}\"\n",
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = cfg.ResolveEnv("dev")
+	if err == nil {
+		t.Fatal("an unset ${env:...} must be an error, never an empty string")
+	}
+	if !strings.Contains(err.Error(), "DEFINITELY_NOT_SET_XYZ") {
+		t.Fatalf("error should name the variable, got %v", err)
+	}
+}
+
+func TestUnknownInterpolationNamespaceIsAnError(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[env.dev]\napi_key = \"${vault:thing}\"\n",
+	})
+	cfg, _ := Load(dir)
+	if _, err := cfg.ResolveEnv("dev"); err == nil {
+		t.Fatal("unknown namespace should be an error")
+	}
+}
+
+func TestGitInterpolation(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[env.preview]\nheaders = { \"x-db-preview\" = \"${git:branch}\" }\n",
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env, err := cfg.ResolveEnv("preview")
+	if err != nil {
+		t.Skipf("not in a git worktree: %v", err)
+	}
+	if env.Headers["x-db-preview"] == "" {
+		t.Fatal("git branch did not expand")
+	}
+}
+
+func TestFunctionsDirMustStayInsideTheProject(t *testing.T) {
+	for _, bad := range []string{"/etc", "../outside"} {
+		dir := write(t, map[string]string{
+			"notte.toml": "[project]\nname=\"d\"\nfunctions_dir = \"" + bad + "\"\n",
+		})
+		if _, err := Load(dir); err == nil {
+			t.Fatalf("functions_dir %q should be rejected", bad)
+		}
+	}
+}
+
+// Commands must work from a subdirectory, the way git does.
+func TestFindWalksUp(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml":           "[project]\nname=\"d\"\n",
+		"functions/fn/main.py": "def run():\n    return 1\n",
+	})
+	found, err := Find(filepath.Join(dir, "functions", "fn"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved, _ := filepath.EvalSymlinks(found); resolved != mustEval(t, dir) {
+		t.Fatalf("found %q, want %q", found, dir)
+	}
+}
+
+func mustEval(t *testing.T, p string) string {
+	t.Helper()
+	r, err := filepath.EvalSymlinks(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+
+func TestFindReportsWhenThereIsNoProject(t *testing.T) {
+	if _, err := Find(t.TempDir()); err == nil {
+		t.Fatal("expected an error outside a project")
+	}
+}
