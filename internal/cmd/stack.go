@@ -142,10 +142,10 @@ func runStackInit(cmd *cobra.Command, args []string) error {
 	// debugging a project that is not actually broken.
 	return PrintResult(
 		fmt.Sprintf("\nStack ready in %s.\n\n"+
-			"  next: notte stack check\n"+
-			"        builds .notte/venv from the runtime, then validates every function.\n"+
-			"        Until it runs, your editor will report pydantic and notte_sdk as\n"+
-			"        unresolved — there is no environment for it to resolve against yet.",
+			"  next: notte stack sync    builds .notte/venv so your editor resolves imports\n"+
+			"        notte stack check   bundles and validates every function\n\n"+
+			"  Until sync runs, an editor will report pydantic and notte_sdk as unresolved:\n"+
+			"  there is no environment for it to resolve against yet.",
 			abs),
 		map[string]any{"root": abs, "created": written, "skipped": skipped},
 	)
