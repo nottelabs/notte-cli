@@ -80,14 +80,14 @@ An earlier draft said stickytape and pinliner were impossible because Restricted
 
 - **The artifact stops being readable.** stickytape emits a prelude plus every module as an escaped bytes literal passed to `__stickytape_write_module`. The deployed file is what the console renders, what `functions show` downloads, and what marketplace's `push`/`check` diff against. A blob kills the diff model, and makes tracebacks worse rather than better.
 - **stickytape disclaims itself.** Its README: *"bodged together… for a specific use case"*, no `from __future__` imports, `__file__` unreliable, dynamic imports need manual flags. That is an unmaintained third-party dependency sitting in the deploy path.
-- **It's Python.** Adopting it as *the* bundler would put an interpreter on the critical path of flattening itself. Python still has a role — see the validation gate below — but as an optional check that degrades, not as the thing without which nothing builds.
+- **It's Python.** `notte stack` requires an interpreter anyway, so this is no longer a dependency argument — it is a separation one. Flattening stays a pure text transformation with no interpreter in it, which is what lets it be tested offline against thousands of files and reasoned about without a runtime. Python does the part that genuinely needs Python: validating the result.
 
 So: the bundler must be a **static flattener** emitting plain, ordinary Python — one module namespace, no runtime machinery. **That recommendation stands even in a fully permissive runtime**, which is how it should have been argued in the first place.
 
 **3. Dependencies are a fixed allowlist, so there is no dependency resolution to build.**
 `ALLOWED_IMPORTS = set(sys.stdlib_module_names) - DISALLOWED_STDLIB_IMPORTS | {notte, notte_sdk, notte_core, notte_browser, notte_agent, notte_llm, pydantic, loguru, requests, httpx, httpcloak, playwright, gspread, google, litellm, bs4, pipedream, tqdm, typing_extensions}`.
 
-No `pip install`, no `requirements.txt`, no PEP-723 block. The CLI's only job is to **check imports against the allowlist at build time** so you get the error in 20 ms locally instead of after a multipart upload.
+No `pip install`, no `requirements.txt`, no PEP-723 block, and no dependency resolver to write. The set is closed, so `notte stack sync` installs the intersection of that list with what your functions import — which makes the venv itself the check, since anything outside it fails to resolve.
 
 Two more upload-time contracts:
 - `extract_env_requirements(source)` (`notte_api/functions/requirements.py`) AST-scans for literal `os.environ[...]`/`os.getenv(...)`/`.get`/`.setdefault`/`.pop` plus aliases, unions with an optional module-level `NOTTE_REQUIRED_SECRETS = [...]` list, subtracts reserved names, and persists to `functions.required_secrets`. Env vars are read via `from notte_sdk.types import os` (bare `import os` is blocked). **This is a ready-made input for the secrets planner.**
@@ -274,9 +274,13 @@ notte stack deploy [<target>]          # build → diff → confirm → create/u
 notte stack check  [<target>]          # build + validate + diff vs remote. writes NOTHING. the CI gate.
 notte stack status                     # what's drifted, and what a `_shared` edit would touch
 notte stack pull                       # adopt existing remote functions into the tree + lock
+
+notte stack sync                       # create/refresh .notte/venv: Python 3.12, latest notte-sdk,
+                                       #   plus the allowlisted packages your functions import
+notte stack doctor                     # what is installed, resolved SDK vs latest, ty version, org
 ```
 
-Six commands. `<target>` is a name, a glob, `all`, or a path — so `notte stack deploy functions/amazon_search` tab-completes.
+Eight commands. `<target>` is a name, a glob, `all`, or a path — so `notte stack deploy functions/amazon_search` tab-completes.
 
 ### Why `stack`, and the two rules that keep it honest
 
@@ -456,11 +460,39 @@ Rejected in v1, each with a fix-it message:
 
 That last row is the one the flattener cannot cover by itself. A *missed* collision produces valid Python with the wrong meaning, so `py_compile` passes — but a type checker reports it as a redefinition. The gate closes exactly the hole the bundler can leave open.
 
-### Project commands may require Python; the rest of the CLI must not
+### `notte stack` requires Python; the rest of the CLI does not
 
-`notte sessions`, `notte page` and friends stay pure Go with no toolchain. Only the project commands may ask for an interpreter, and the ask is small: `uv run --python 3.12` **downloads the interpreter itself**, so the requirement is "have uv", one binary. `managed-auth` already works this way.
+`notte sessions`, `notte page` and friends stay pure Go with no toolchain. `notte stack` requires an interpreter, and requires rather than prefers it.
 
-Degradation is not optional. Without uv, `notte stack check` still flattens and still runs the local import check, and says plainly `skipped validator + typecheck (uv not found)`. Silently reporting a narrower check as a pass is the failure this whole section exists to avoid.
+An earlier draft made it optional, degrading to a vendored copy of the server's rules when uv was absent. That copy was the problem. Mirroring `ALLOWED_IMPORTS`, a denylist, and a stdlib set generated from a pinned CPython means maintaining three things that drift from a backend this repo does not control — and two of them drifted within a week of being written, one of them shipping a list from CPython 3.14 that would have rejected `telnetlib`, `cgi` and 17 other modules the 3.12 runner actually has.
+
+Requiring Python deletes the mirror rather than maintaining it:
+
+| Deleted | Replaced by |
+|---|---|
+| a vendored `ALLOWED_IMPORTS` + denylist | the real `ScriptValidator.parse_script(source, restricted=True)` |
+| a stdlib set generated from a pinned CPython | the interpreter's own `sys.stdlib_module_names` |
+| `make generate-stdlib` and its script | nothing |
+| "is this check current?" | not a question that can be asked |
+
+The ask is small because **uv downloads the interpreter itself**, so the requirement is "have uv" — one binary. `managed-auth` already works this way. It needs one line in `--help` and a good error, not a redesign.
+
+### The venv is the enforcement
+
+`notte stack sync` builds `.notte/venv` with Python 3.12, the latest `notte-sdk`, and **the allowlisted packages your functions actually import** — not all of them, and nothing else.
+
+That last constraint does more work than it looks. The runtime allowlist is *closed*: `requests`, `httpx`, `httpcloak`, `pydantic`, `loguru`, `playwright`, `bs4`, `litellm`, `gspread`, `google`, `tqdm`, `typing_extensions`, `notte_*`. So detection is not open-ended dependency resolution, it is intersecting your imports with a known set. And once the venv mirrors the runtime image, **`ty`'s `unresolved-import` *is* the allowlist violation** — no separate third-party check has to exist, because the environment enforces it.
+
+Standard-library denials (`os`, `sys`, `subprocess`) still resolve fine in a venv, so those remain `ScriptValidator`'s job. Between the two, every rule the runtime applies is checked by the thing that applies it.
+
+An import of something not on the allowlist is an error at sync time, naming the file and line. Never a silent install.
+
+Two consequences for the rest of the design:
+
+- **`sync` is implicit.** `deploy` and `check` build the venv if it is missing rather than erroring, the way `uv run` does. `sync` is the explicit refresh.
+- **`notte stack init` writes `ty.toml` and `pyrightconfig.json` pointing at that venv**, which is where the day-to-day win lands: clone a functions repo, run one command, and the editor resolves `notte_sdk`, `pydantic` and `session.page`. `managed-auth` currently reconstructs this by hand in a Makefile target that scrapes an SDK commit out of another project's lockfile.
+
+**`sync` does not generate a `pyproject.toml`.** It is tempting — the project would become a normal Python project and `pytest` would work unconfigured — but a generated `pyproject.toml` is clobbered the moment someone adds `pytest` or `ruff` to it. That is exactly the mistake `marketplace/manifest.json` made by mixing generated state with hand-owned content. `pyproject.toml` stays entirely the user's; the CLI owns `.notte/` and nothing else in the repo root.
 
 ### `ty`, and the way it fails open
 

@@ -16,6 +16,13 @@
 // is ever rewritten, so nothing has to be understood well enough to rewrite.
 // It also keeps the artifact readable, which matters because the artifact is
 // what the console shows and what tracebacks point at.
+//
+// This package deliberately does not check imports against the runtime
+// allowlist. It used to, by vendoring a copy of the server's lists and a stdlib
+// set generated from a pinned CPython — and both drifted within a week of being
+// written. `notte stack` requires Python, so the real ScriptValidator runs
+// against the artifact instead, and a copy that can disagree with it is worse
+// than no copy at all.
 package bundle
 
 import (
