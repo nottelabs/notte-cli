@@ -4,6 +4,7 @@ go 1.25.5
 
 require (
 	github.com/99designs/keyring v1.2.2
+	github.com/BurntSushi/toml v1.6.0
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
