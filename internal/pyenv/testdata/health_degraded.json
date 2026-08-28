@@ -1,0 +1,18 @@
+{
+    "status": "degraded",
+    "reachable": true,
+    "latency_ms": 318.2,
+    "python_version": null,
+    "packages": [],
+    "stdlib_modules": [],
+    "reserved_env_names": [
+        "ENVIRONMENT",
+        "NOTTE_API_KEY",
+        "NOTTE_API_URL",
+        "NOTTE_BASE_URL",
+        "NOTTE_DB_PREVIEW_BRANCH",
+        "NOTTE_ENV"
+    ],
+    "runtime_digest": null,
+    "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://<runner>.lambda-url.<region>.on.aws/runtime'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+}
