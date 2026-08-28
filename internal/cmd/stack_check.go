@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/bundle"
 	"github.com/nottelabs/notte-cli/internal/project"
 	"github.com/nottelabs/notte-cli/internal/pyenv"
@@ -38,25 +39,45 @@ type checked struct {
 }
 
 func runStackCheck(cmd *cobra.Command, args []string) error {
-	cfg, err := loadStack()
-	if err != nil {
-		return err
-	}
 	target := ""
 	if len(args) == 1 {
 		target = args[0]
 	}
+	prep, err := prepareStack(cmd, target)
+	if err != nil {
+		return err
+	}
+	reportChecked(prep.results, prep.failed)
+	if prep.failed > 0 {
+		return fmt.Errorf("%d of %d function(s) failed", prep.failed, len(prep.results))
+	}
+	return nil
+}
+
+// prepared is the outcome of bundling and validating a stack. deploy runs the
+// same pipeline before it uploads anything, so the two can never disagree
+// about whether a function is deployable.
+type prepared struct {
+	cfg       *project.Config
+	selected  []project.Function
+	artifacts map[string]*bundle.Result
+	results   []checked
+	failed    int
+}
+
+func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
+	cfg, err := loadStack()
+	if err != nil {
+		return nil, err
+	}
 
 	functions, err := project.Discover(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	selected, err := project.Select(functions, target)
 	if err != nil {
-		return err
-	}
-	if len(selected) == 0 {
-		return PrintResult("no functions found", map[string]any{"functions": []any{}})
+		return nil, err
 	}
 
 	// Bundling comes first because it needs nothing external. A syntax or
@@ -86,8 +107,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 	// no local copy of it to fall back on — that is the point.
 	health, tc, err := stackRuntime(cmd)
 	if err != nil {
-		reportChecked(results, failed)
-		return err
+		return nil, err
 	}
 
 	// Imports come from the sources rather than the artifacts: a function that
@@ -95,21 +115,20 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 	// later diagnostic is a spurious unresolved-import.
 	imports, err := sourceImports(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	venv := cfg.StatePath("venv")
 	sync, err := pyenv.Sync(cmd.Context(), tc, pyenv.SyncRequest{
 		VenvDir: venv, Health: health, Imports: imports,
 	})
 	if err != nil {
-		reportChecked(results, failed)
-		return err
+		return nil, err
 	}
 	reportEnvironment(sync)
 
 	buildDir := cfg.StatePath("build", envName())
 	if err := os.MkdirAll(buildDir, 0o755); err != nil {
-		return err
+		return nil, err
 	}
 
 	// The sources are checked as well as the artifacts, and not only for
@@ -118,10 +137,10 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 	// diagnostics also land on the real file directly, with no map in between.
 	srcRes, err := pyenv.TypeCheck(cmd.Context(), tc, cfg.Root, venv, []string{cfg.Project.FunctionsDir})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if broken := srcRes.Misconfigured(health); len(broken) > 0 {
-		return environmentBrokenError(venv, broken)
+		return nil, environmentBrokenError(venv, broken)
 	}
 	sourceProblems := map[string][]string{}
 	for _, d := range srcRes.Diagnostics {
@@ -137,12 +156,12 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		}
 		artifactPath := filepath.Join(buildDir, results[i].Name+".py")
 		if err := os.WriteFile(artifactPath, []byte(res.Code), 0o644); err != nil {
-			return err
+			return nil, err
 		}
 
 		verdict, err := pyenv.Validate(cmd.Context(), venv, health, res.Code)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		results[i].Problems = append(results[i].Problems, verdict.Errors...)
 
@@ -161,13 +180,13 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		}
 		tyRes, err := pyenv.TypeCheck(cmd.Context(), tc, cfg.Root, venv, []string{rel})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		// An unresolved import of something the runtime ships means the venv
 		// is wrong, not the code. Blaming the file would send someone to fix
 		// something that is fine.
 		if broken := tyRes.Misconfigured(health); len(broken) > 0 {
-			return environmentBrokenError(venv, broken)
+			return nil, environmentBrokenError(venv, broken)
 		}
 		for _, d := range tyRes.Diagnostics {
 			results[i].Problems = append(results[i].Problems, mapDiagnostic(res, d))
@@ -186,11 +205,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		results = append(results, checked{Name: "(shared)", Problems: shared})
 	}
 
-	reportChecked(results, failed)
-	if failed > 0 {
-		return fmt.Errorf("%d of %d function(s) failed", failed, len(results))
-	}
-	return nil
+	return &prepared{cfg: cfg, selected: selected, artifacts: artifacts, results: results, failed: failed}, nil
 }
 
 // mapDiagnostic rewrites an artifact location back to the source it came from.
@@ -280,11 +295,22 @@ func short(sha string) string {
 	return sha
 }
 
+// envName is the key this deploy is recorded under in the lock.
+//
+// It must describe the endpoint actually being written to. Defaulting to
+// "prod" while NOTTE_API_URL points at staging would file staging function ids
+// under the prod key, and the next real prod deploy would then update whatever
+// id happened to be there — the exact confusion the per-environment lock
+// exists to prevent.
+//
+// An explicit --env wins, since a project that declares environments has said
+// what it means by them. Otherwise the label is derived from the resolved API
+// URL using the same mapping the keyring already uses, so the two agree.
 func envName() string {
-	if stackEnv == "" {
-		return project.DefaultEnv
+	if stackEnv != "" {
+		return stackEnv
 	}
-	return stackEnv
+	return auth.ResolveEnvLabel(auth.GetCurrentAPIURL())
 }
 
 // stackRuntime resolves credentials and fetches the runtime's report.
