@@ -2606,7 +2606,8 @@ type SessionResponse struct {
 	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
-	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
+	WebBotAuth           *bool                  `json:"web_bot_auth,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // SessionResponseBrowserType defines model for SessionResponse.BrowserType.
@@ -3670,6 +3671,437 @@ func (a SearchRequest) MarshalJSON() ([]byte, error) {
 	object["q"], err = json.Marshal(a.Q)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'q': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for SessionResponse. Returns the specified
+// element and whether it was found
+func (a SessionResponse) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for SessionResponse
+func (a *SessionResponse) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for SessionResponse to handle AdditionalProperties
+func (a *SessionResponse) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["auth_ids"]; found {
+		err = json.Unmarshal(raw, &a.AuthIds)
+		if err != nil {
+			return fmt.Errorf("error reading 'auth_ids': %w", err)
+		}
+		delete(object, "auth_ids")
+	}
+
+	if raw, found := object["browser_type"]; found {
+		err = json.Unmarshal(raw, &a.BrowserType)
+		if err != nil {
+			return fmt.Errorf("error reading 'browser_type': %w", err)
+		}
+		delete(object, "browser_type")
+	}
+
+	if raw, found := object["cdp_url"]; found {
+		err = json.Unmarshal(raw, &a.CdpUrl)
+		if err != nil {
+			return fmt.Errorf("error reading 'cdp_url': %w", err)
+		}
+		delete(object, "cdp_url")
+	}
+
+	if raw, found := object["close_reason"]; found {
+		err = json.Unmarshal(raw, &a.CloseReason)
+		if err != nil {
+			return fmt.Errorf("error reading 'close_reason': %w", err)
+		}
+		delete(object, "close_reason")
+	}
+
+	if raw, found := object["closed_at"]; found {
+		err = json.Unmarshal(raw, &a.ClosedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'closed_at': %w", err)
+		}
+		delete(object, "closed_at")
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["duration"]; found {
+		err = json.Unmarshal(raw, &a.Duration)
+		if err != nil {
+			return fmt.Errorf("error reading 'duration': %w", err)
+		}
+		delete(object, "duration")
+	}
+
+	if raw, found := object["error"]; found {
+		err = json.Unmarshal(raw, &a.Error)
+		if err != nil {
+			return fmt.Errorf("error reading 'error': %w", err)
+		}
+		delete(object, "error")
+	}
+
+	if raw, found := object["idle_timeout_minutes"]; found {
+		err = json.Unmarshal(raw, &a.IdleTimeoutMinutes)
+		if err != nil {
+			return fmt.Errorf("error reading 'idle_timeout_minutes': %w", err)
+		}
+		delete(object, "idle_timeout_minutes")
+	}
+
+	if raw, found := object["last_accessed_at"]; found {
+		err = json.Unmarshal(raw, &a.LastAccessedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'last_accessed_at': %w", err)
+		}
+		delete(object, "last_accessed_at")
+	}
+
+	if raw, found := object["max_duration_minutes"]; found {
+		err = json.Unmarshal(raw, &a.MaxDurationMinutes)
+		if err != nil {
+			return fmt.Errorf("error reading 'max_duration_minutes': %w", err)
+		}
+		delete(object, "max_duration_minutes")
+	}
+
+	if raw, found := object["network_request_bytes"]; found {
+		err = json.Unmarshal(raw, &a.NetworkRequestBytes)
+		if err != nil {
+			return fmt.Errorf("error reading 'network_request_bytes': %w", err)
+		}
+		delete(object, "network_request_bytes")
+	}
+
+	if raw, found := object["network_response_bytes"]; found {
+		err = json.Unmarshal(raw, &a.NetworkResponseBytes)
+		if err != nil {
+			return fmt.Errorf("error reading 'network_response_bytes': %w", err)
+		}
+		delete(object, "network_response_bytes")
+	}
+
+	if raw, found := object["proxies"]; found {
+		err = json.Unmarshal(raw, &a.Proxies)
+		if err != nil {
+			return fmt.Errorf("error reading 'proxies': %w", err)
+		}
+		delete(object, "proxies")
+	}
+
+	if raw, found := object["session_id"]; found {
+		err = json.Unmarshal(raw, &a.SessionId)
+		if err != nil {
+			return fmt.Errorf("error reading 'session_id': %w", err)
+		}
+		delete(object, "session_id")
+	}
+
+	if raw, found := object["solve_captchas"]; found {
+		err = json.Unmarshal(raw, &a.SolveCaptchas)
+		if err != nil {
+			return fmt.Errorf("error reading 'solve_captchas': %w", err)
+		}
+		delete(object, "solve_captchas")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["steps"]; found {
+		err = json.Unmarshal(raw, &a.Steps)
+		if err != nil {
+			return fmt.Errorf("error reading 'steps': %w", err)
+		}
+		delete(object, "steps")
+	}
+
+	if raw, found := object["system_hidden"]; found {
+		err = json.Unmarshal(raw, &a.SystemHidden)
+		if err != nil {
+			return fmt.Errorf("error reading 'system_hidden': %w", err)
+		}
+		delete(object, "system_hidden")
+	}
+
+	if raw, found := object["timeout_minutes"]; found {
+		err = json.Unmarshal(raw, &a.TimeoutMinutes)
+		if err != nil {
+			return fmt.Errorf("error reading 'timeout_minutes': %w", err)
+		}
+		delete(object, "timeout_minutes")
+	}
+
+	if raw, found := object["use_file_storage"]; found {
+		err = json.Unmarshal(raw, &a.UseFileStorage)
+		if err != nil {
+			return fmt.Errorf("error reading 'use_file_storage': %w", err)
+		}
+		delete(object, "use_file_storage")
+	}
+
+	if raw, found := object["user_agent"]; found {
+		err = json.Unmarshal(raw, &a.UserAgent)
+		if err != nil {
+			return fmt.Errorf("error reading 'user_agent': %w", err)
+		}
+		delete(object, "user_agent")
+	}
+
+	if raw, found := object["viewer_url"]; found {
+		err = json.Unmarshal(raw, &a.ViewerUrl)
+		if err != nil {
+			return fmt.Errorf("error reading 'viewer_url': %w", err)
+		}
+		delete(object, "viewer_url")
+	}
+
+	if raw, found := object["viewport_height"]; found {
+		err = json.Unmarshal(raw, &a.ViewportHeight)
+		if err != nil {
+			return fmt.Errorf("error reading 'viewport_height': %w", err)
+		}
+		delete(object, "viewport_height")
+	}
+
+	if raw, found := object["viewport_width"]; found {
+		err = json.Unmarshal(raw, &a.ViewportWidth)
+		if err != nil {
+			return fmt.Errorf("error reading 'viewport_width': %w", err)
+		}
+		delete(object, "viewport_width")
+	}
+
+	if raw, found := object["web_bot_auth"]; found {
+		err = json.Unmarshal(raw, &a.WebBotAuth)
+		if err != nil {
+			return fmt.Errorf("error reading 'web_bot_auth': %w", err)
+		}
+		delete(object, "web_bot_auth")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for SessionResponse to handle AdditionalProperties
+func (a SessionResponse) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.AuthIds != nil {
+		object["auth_ids"], err = json.Marshal(a.AuthIds)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'auth_ids': %w", err)
+		}
+	}
+
+	if a.BrowserType != nil {
+		object["browser_type"], err = json.Marshal(a.BrowserType)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'browser_type': %w", err)
+		}
+	}
+
+	if a.CdpUrl != nil {
+		object["cdp_url"], err = json.Marshal(a.CdpUrl)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'cdp_url': %w", err)
+		}
+	}
+
+	if a.CloseReason != nil {
+		object["close_reason"], err = json.Marshal(a.CloseReason)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'close_reason': %w", err)
+		}
+	}
+
+	if a.ClosedAt != nil {
+		object["closed_at"], err = json.Marshal(a.ClosedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'closed_at': %w", err)
+		}
+	}
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	if a.Duration != nil {
+		object["duration"], err = json.Marshal(a.Duration)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'duration': %w", err)
+		}
+	}
+
+	if a.Error != nil {
+		object["error"], err = json.Marshal(a.Error)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'error': %w", err)
+		}
+	}
+
+	object["idle_timeout_minutes"], err = json.Marshal(a.IdleTimeoutMinutes)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'idle_timeout_minutes': %w", err)
+	}
+
+	object["last_accessed_at"], err = json.Marshal(a.LastAccessedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'last_accessed_at': %w", err)
+	}
+
+	if a.MaxDurationMinutes != nil {
+		object["max_duration_minutes"], err = json.Marshal(a.MaxDurationMinutes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'max_duration_minutes': %w", err)
+		}
+	}
+
+	if a.NetworkRequestBytes != nil {
+		object["network_request_bytes"], err = json.Marshal(a.NetworkRequestBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'network_request_bytes': %w", err)
+		}
+	}
+
+	if a.NetworkResponseBytes != nil {
+		object["network_response_bytes"], err = json.Marshal(a.NetworkResponseBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'network_response_bytes': %w", err)
+		}
+	}
+
+	if a.Proxies != nil {
+		object["proxies"], err = json.Marshal(a.Proxies)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'proxies': %w", err)
+		}
+	}
+
+	object["session_id"], err = json.Marshal(a.SessionId)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'session_id': %w", err)
+	}
+
+	if a.SolveCaptchas != nil {
+		object["solve_captchas"], err = json.Marshal(a.SolveCaptchas)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'solve_captchas': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	if a.Steps != nil {
+		object["steps"], err = json.Marshal(a.Steps)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'steps': %w", err)
+		}
+	}
+
+	if a.SystemHidden != nil {
+		object["system_hidden"], err = json.Marshal(a.SystemHidden)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'system_hidden': %w", err)
+		}
+	}
+
+	object["timeout_minutes"], err = json.Marshal(a.TimeoutMinutes)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'timeout_minutes': %w", err)
+	}
+
+	if a.UseFileStorage != nil {
+		object["use_file_storage"], err = json.Marshal(a.UseFileStorage)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'use_file_storage': %w", err)
+		}
+	}
+
+	if a.UserAgent != nil {
+		object["user_agent"], err = json.Marshal(a.UserAgent)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'user_agent': %w", err)
+		}
+	}
+
+	if a.ViewerUrl != nil {
+		object["viewer_url"], err = json.Marshal(a.ViewerUrl)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'viewer_url': %w", err)
+		}
+	}
+
+	if a.ViewportHeight != nil {
+		object["viewport_height"], err = json.Marshal(a.ViewportHeight)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'viewport_height': %w", err)
+		}
+	}
+
+	if a.ViewportWidth != nil {
+		object["viewport_width"], err = json.Marshal(a.ViewportWidth)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'viewport_width': %w", err)
+		}
+	}
+
+	if a.WebBotAuth != nil {
+		object["web_bot_auth"], err = json.Marshal(a.WebBotAuth)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'web_bot_auth': %w", err)
+		}
 	}
 
 	for fieldName, field := range a.AdditionalProperties {
