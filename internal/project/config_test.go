@@ -222,3 +222,72 @@ func TestFindReportsWhenThereIsNoProject(t *testing.T) {
 		t.Fatal("expected an error outside a project")
 	}
 }
+
+func TestCronVariablesParse(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": `[project]
+name = "d"
+
+[functions.hello]
+cron = "cron(0 9 * * ? *)"
+cron_variables = { name = "scheduled", limit = 10 }
+`,
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := cfg.Functions["hello"]
+	if fn.CronVariables["name"] != "scheduled" {
+		t.Fatalf("name = %v", fn.CronVariables["name"])
+	}
+	// TOML integers decode as int64; the schedule endpoint takes any JSON value.
+	if got, ok := fn.CronVariables["limit"].(int64); !ok || got != 10 {
+		t.Fatalf("limit = %#v", fn.CronVariables["limit"])
+	}
+}
+
+// A schedule that supplies a key run() does not take is rejected by the server
+// only when the schedule is set, and a cron failing at 09:00 is a bad way to
+// find a typo.
+func TestScheduleProblemsRejectsUnknownVariable(t *testing.T) {
+	fn := FunctionConfig{Cron: "cron(0 9 * * ? *)", CronVariables: map[string]any{"naem": "x"}}
+	problems := fn.ScheduleProblems("hello", []Param{{Name: "name", HasDefault: true}})
+	if len(problems) != 1 {
+		t.Fatalf("got %v", problems)
+	}
+	if !strings.Contains(problems[0], "naem") || !strings.Contains(problems[0], "name") {
+		t.Fatalf("error should name both the typo and the real parameter: %v", problems[0])
+	}
+}
+
+// A parameter without a default cannot be filled in by the runtime, so a
+// schedule that omits it can never succeed.
+func TestScheduleProblemsRequiresParametersWithoutDefaults(t *testing.T) {
+	fn := FunctionConfig{Cron: "cron(0 9 * * ? *)"}
+	problems := fn.ScheduleProblems("hello", []Param{{Name: "url"}})
+	if len(problems) != 1 || !strings.Contains(problems[0], "url") {
+		t.Fatalf("got %v", problems)
+	}
+
+	fn.CronVariables = map[string]any{"url": "https://x.test"}
+	if problems := fn.ScheduleProblems("hello", []Param{{Name: "url"}}); len(problems) != 0 {
+		t.Fatalf("supplying it should satisfy the check: %v", problems)
+	}
+}
+
+func TestScheduleProblemsRejectsVariablesWithoutACron(t *testing.T) {
+	fn := FunctionConfig{CronVariables: map[string]any{"name": "x"}}
+	problems := fn.ScheduleProblems("hello", []Param{{Name: "name", HasDefault: true}})
+	if len(problems) != 1 || !strings.Contains(problems[0], "never used") {
+		t.Fatalf("got %v", problems)
+	}
+}
+
+// An unscheduled function is not required to supply anything.
+func TestScheduleProblemsSilentWithoutASchedule(t *testing.T) {
+	fn := FunctionConfig{}
+	if problems := fn.ScheduleProblems("hello", []Param{{Name: "url"}}); len(problems) != 0 {
+		t.Fatalf("got %v", problems)
+	}
+}
