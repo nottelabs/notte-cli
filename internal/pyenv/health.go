@@ -155,12 +155,15 @@ func (h *Health) Installable(wanted []string) (install []Package, allowedButMiss
 // is different code — a version-only install produces a near-miss environment
 // that reports confident, wrong answers.
 func (p Package) Requirement() string {
-	if p.Source != "" {
-		return strings.TrimPrefix(p.Source, "git+")
-	}
 	name := p.Package
 	if name == "" {
 		name = p.ImportName
+	}
+	if p.Source != "" {
+		// PEP 508 direct reference. The git+ prefix is required — uv rejects a
+		// bare https URL outright — and naming the distribution keeps the
+		// resolver's messages legible.
+		return name + " @ " + p.Source
 	}
 	if p.Version == "" {
 		return name
