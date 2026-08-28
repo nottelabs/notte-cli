@@ -477,20 +477,48 @@ Requiring Python deletes the mirror rather than maintaining it:
 
 The ask is small because **uv downloads the interpreter itself**, so the requirement is "have uv" — one binary. `managed-auth` already works this way. It needs one line in `--help` and a good error, not a redesign.
 
-### The venv is the enforcement
+### The runtime describes itself: `GET /functions/health`
 
-`notte stack sync` builds `.notte/venv` with Python 3.12, the latest `notte-sdk`, and **the allowlisted packages your functions actually import** — not all of them, and nothing else.
+Everything below depends on `nottelabs/monorepo#2394`, which makes the runner report its own contract:
 
-That last constraint does more work than it looks. The runtime allowlist is *closed*: `requests`, `httpx`, `httpcloak`, `pydantic`, `loguru`, `playwright`, `bs4`, `litellm`, `gspread`, `google`, `tqdm`, `typing_extensions`, `notte_*`. So detection is not open-ended dependency resolution, it is intersecting your imports with a known set. And once the venv mirrors the runtime image, **`ty`'s `unresolved-import` *is* the allowlist violation** — no separate third-party check has to exist, because the environment enforces it.
+```json
+{ "status": "ok", "python_version": "3.12.0", "runtime_digest": "sha256:…",
+  "packages": [{"import_name": "notte_sdk", "package": "notte-sdk", "version": "1.4.4",
+                "installed": true,
+                "source": "git+https://github.com/nottelabs/notte@<sha>#subdirectory=packages/notte-sdk"}],
+  "stdlib_modules": ["asyncio", "json", "…"],
+  "reserved_env_names": ["NOTTE_API_KEY", "…"] }
+```
 
-Standard-library denials (`os`, `sys`, `subprocess`) still resolve fine in a venv, so those remain `ScriptValidator`'s job. Between the two, every rule the runtime applies is checked by the thing that applies it.
+This removes the vendored copies entirely rather than reducing them. No allowlist in Go, no generated stdlib list, no hand-pinned CPython version, no scraped SDK commit.
 
-An import of something not on the allowlist is an error at sync time, naming the file and line. Never a silent install.
+Three properties of it that the client has to respect:
 
-Two consequences for the rest of the design:
+- **`source` is read from the install's PEP 610 `direct_url.json`, not from build args.** The runner installs `notte-sdk` and `notte-core` from git SHAs, so a version number is not an identity — and build args record intent while dist-info records what is actually in the image. `sync` installs from `source` when present and from the index when it is `null`.
+- **`runtime_digest` covers the contract fields only** — python version, packages with sources, allowed imports, reserved names — deliberately not status, latency or reachability. So it moves if and only if a venv built against the previous answer would now be wrong. It is also the ETag, but there is no `If-None-Match` handling: compare the value, do not expect a 304.
+- **`status: "degraded"` is a normal state, not an error.** Between an API deploy and the runner image rebuild, `/runtime` 404s on a perfectly healthy runner, so `python_version`, `packages` and `runtime_digest` are absent and the digest is `null`. Rules that follow: never block a deploy on it, never overwrite a good cached report with a partial one, and note that `reserved_env_names` is still populated because it is the API's rule rather than the runner's — so `secrets push` validation keeps working throughout.
 
-- **`sync` is implicit.** `deploy` and `check` build the venv if it is missing rather than erroring, the way `uv run` does. `sync` is the explicit refresh.
-- **`notte stack init` writes `ty.toml` and `pyrightconfig.json` pointing at that venv**, which is where the day-to-day win lands: clone a functions repo, run one command, and the editor resolves `notte_sdk`, `pydantic` and `session.page`. `managed-auth` currently reconstructs this by hand in a Makefile target that scrapes an SDK commit out of another project's lockfile.
+Caching is for container cycling rather than latency: `runtime_info()` is cached per container, so the round trip is ~295 ms cold and ~12 ms warm. Cache the report in `.notte/` keyed by `runtime_digest`; refresh on `sync` and `doctor`.
+
+### The venv is the enforcement, and the validator owns only structure
+
+`notte stack sync` builds `.notte/venv` with the reported `python_version`, and installs the reported packages **at their reported sources** — the intersection with what the functions actually import, not the whole list.
+
+Once the venv mirrors the runner image, **`ty`'s `unresolved-import` *is* the allowlist violation.** No third-party allowlist has to exist client-side, because the environment enforces it. An import of something not reported is an error at sync time naming the file and line, never a silent install.
+
+**The SDK's own validator cannot be trusted for imports, and this is not a hypothetical.** `notte_core.ast.ScriptValidator` in the published `notte-sdk 1.8.31` carries an explicit 41-entry allowlist that omits `httpcloak`, `httpx`, `bs4` and `tqdm`, and *includes* `tempfile`, which the runner discards. Running it against `marketplace/99.co/list_condos_by_letter.py` — deployed and serving traffic — rejects it outright, along with the ~333 other functions that import `httpcloak`. The runner installs `notte_core` from a git SHA rather than from the index, so the published package and the running code are different code under the same version number.
+
+So the split is:
+
+| Owner | Checks |
+|---|---|
+| `GET /functions/health` + the venv | which imports are allowed, at which versions |
+| `notte_core.ast.ScriptValidator` | structure: one top-level `run()`, forbidden nodes, forbidden calls, relative imports, stdlib denials, `variables` extraction |
+| `ty` | semantics, including the redefinitions a flattener could silently introduce |
+
+The validator's structural checks were verified against the published SDK and are correct there. One known gap: it **accepts two top-level `run()` definitions** where the server rejects them, so the CLI checks that itself.
+
+Worth fixing independently of this CLI: anyone calling `parse_script` from the published SDK today gets wrong answers about production functions.
 
 **`sync` does not generate a `pyproject.toml`.** It is tempting — the project would become a normal Python project and `pytest` would work unconfigured — but a generated `pyproject.toml` is clobbered the moment someone adds `pytest` or `ruff` to it. That is exactly the mistake `marketplace/manifest.json` made by mixing generated state with hand-owned content. `pyproject.toml` stays entirely the user's; the CLI owns `.notte/` and nothing else in the repo root.
 
@@ -670,6 +698,8 @@ Auto-derived. `check_revision_bumps.py` and the manual `revision` field both dis
 ---
 
 ## Backend asks (ordered by how much they unblock)
+
+*Landed while this RFC was in review: `GET /functions/health` (`nottelabs/monorepo#2394`) reports the runner's Python version, allowed imports, package versions and install sources, reserved env names, and a content digest. It removes every vendored copy of the runtime's rules — see the validation section above.*
 
 1. **Add `schedule_cron` / `schedule_variables` / `schedule_state` to `FunctionResponse`** (`functions/endpoints.py:50-63`). ~2 lines, additive, exactly how `published` and `required_secrets` were added. Without it, cron cannot be reconciled — only blindly re-applied.
 2. **Make secrets updatable by name**: `PUT /secrets/{namespace}/{name}` as an upsert, and `DELETE` by `(namespace, name)`. Today a secret rotation is LIST → DELETE-by-uuid → POST, which is three calls and a window where the secret doesn't exist.
