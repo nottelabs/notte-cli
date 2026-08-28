@@ -142,5 +142,4 @@ func TestSyncBuildsAndReusesARealEnvironment(t *testing.T) {
 	if third.Reused {
 		t.Fatal("a changed runtime digest must rebuild")
 	}
-
 }
