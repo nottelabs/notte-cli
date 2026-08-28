@@ -1,6 +1,9 @@
 package bundle
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // ImportKind classifies a top-level import statement. The distinction that
 // matters is Relative versus everything else: relative imports are resolved
@@ -314,4 +317,50 @@ func isIdentByte(c byte) bool {
 		(c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
 		(c >= '0' && c <= '9')
+}
+
+// ExternalImports are the non-relative module names a bundled artifact
+// imports, deduplicated and sorted by root.
+//
+// After flattening there are no relative imports left, so everything returned
+// is a real module the runtime will have to resolve. Roots only: `os.path` is
+// reported as `os`, because that is the granularity the allowlist works at.
+func ExternalImports(code string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, stmt := range Scan(code) {
+		if !stmt.TopLevel() {
+			continue
+		}
+		im, ok := ParseImport(stmt)
+		if !ok || (im.Kind != ImportAbsolute && im.Kind != ImportFrom) {
+			continue
+		}
+		for _, module := range importedModules(im) {
+			root := module
+			if i := strings.IndexByte(root, '.'); i >= 0 {
+				root = root[:i]
+			}
+			if root == "" || seen[root] {
+				continue
+			}
+			seen[root] = true
+			out = append(out, root)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// importedModules is the module names a statement loads. `import a.b` loads
+// a.b even though it binds a, and `from a.b import c` loads a.b.
+func importedModules(im Import) []string {
+	if im.Kind == ImportFrom {
+		return []string{im.Module}
+	}
+	out := make([]string, 0, len(im.Names))
+	for _, n := range im.Names {
+		out = append(out, n.Name)
+	}
+	return out
 }
