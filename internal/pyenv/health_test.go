@@ -106,11 +106,16 @@ func TestRequirementPrefersSourceOverVersion(t *testing.T) {
 		t.Skip("this capture has no git source for notte_sdk")
 	}
 	req := sdk.Requirement()
-	if !strings.Contains(req, "github.com/nottelabs/notte") || !strings.Contains(req, "@") {
+	if !strings.Contains(req, "github.com/nottelabs/notte") {
 		t.Fatalf("requirement should install from the git source, got %q", req)
 	}
-	if strings.HasPrefix(req, "git+") {
-		t.Fatalf("uv takes the URL without the git+ prefix, got %q", req)
+	// uv rejects a bare https URL: the git+ prefix is what marks it a VCS
+	// reference. Verified against uv directly.
+	if !strings.Contains(req, "git+https://") {
+		t.Fatalf("the git+ prefix must survive, got %q", req)
+	}
+	if !strings.HasPrefix(req, "notte-sdk @ ") {
+		t.Fatalf("PEP 508 direct reference should name the distribution, got %q", req)
 	}
 }
 
