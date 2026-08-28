@@ -1,0 +1,22 @@
+#:schema https://notte.cc/schema/notte-v1.json
+
+[project]
+name = "{{.Name}}"
+
+# Functions live in ./functions. Anything there whose name does not start with
+# an underscore is deployed — either <name>/main.py or <name>.py. Underscore
+# means shared code: import it with `from .._shared.thing import helper`.
+
+# Per-function settings are optional. Uncomment to use them:
+#
+# [functions.{{.Example}}]
+# name        = "A human-readable name"
+# description = "What it does"
+# cron        = "cron(0 9 * * ? *)"    # six-field AWS EventBridge form
+# secrets     = ["MY_TOKEN"]           # beyond what the AST scan already finds
+
+# Environments are opt-in. Most projects deploy to prod and never add these.
+#
+# [env.staging]
+# api_url = "https://us-staging.notte.cc"
+# api_key = "${env:NOTTE_API_KEY_STAGING}"
