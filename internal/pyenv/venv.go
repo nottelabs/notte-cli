@@ -47,14 +47,22 @@ type Stamp struct {
 	Requirements  []string `json:"requirements"`
 }
 
-// ValidatorPackage is installed into every environment regardless of what the
-// functions import.
+// AlwaysInstall are put into every environment regardless of what the
+// functions currently import.
 //
-// Validate runs the SDK's ScriptValidator, which lives in notte_core, so an
-// environment without it can build a perfectly good artifact and then fail to
-// check it. It is part of the runtime image either way, so installing it
-// unconditionally makes the venv a closer mirror rather than a looser one.
-const ValidatorPackage = "notte_core"
+// notte_core carries ScriptValidator, so an environment without it can build a
+// perfectly good artifact and then fail to check it.
+//
+// notte_sdk is what people actually write against — it is the single most
+// common import in real stacks, and someone typing `from notte_sdk import
+// NotteClient` into a new function wants completion before they have saved and
+// re-synced. Measured at 1 MB on top of notte_core's 46 MB, in a third of a
+// second, with no browser dependencies, so the mirroring argument wins easily.
+//
+// Neither loosens the mirror: both are in the runtime image regardless, so
+// installing them unconditionally makes the venv a closer match, not a looser
+// one.
+var AlwaysInstall = []string{"notte_core", "notte_sdk"}
 
 // SyncRequest describes the environment to build.
 type SyncRequest struct {
@@ -109,7 +117,7 @@ func Sync(ctx context.Context, tc *Toolchain, req SyncRequest) (*SyncResult, err
 		return nil, fmt.Errorf("cannot build an environment from a %s runtime report: it carries no package list", req.Health.Status)
 	}
 
-	install, missing := req.Health.Installable(append([]string{ValidatorPackage}, req.Imports...))
+	install, missing := req.Health.Installable(append(append([]string{}, AlwaysInstall...), req.Imports...))
 	res := &SyncResult{
 		VenvDir:           req.VenvDir,
 		Python:            req.Health.PythonVersion,
