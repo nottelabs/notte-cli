@@ -136,6 +136,19 @@ func Scan(src string) []Stmt {
 		}
 
 		switch c {
+		case ';':
+			// A semicolon separates statements on one physical line. Without
+			// this the parser reads `import json; import re` as a single import
+			// of a module literally named "json;", drops the line as an import,
+			// and never hoists re — a NameError from an artifact that compiled.
+			if depth == 0 {
+				end := line
+				flush(end)
+				inStmt = true
+				stmtStart = end
+				stmtIndent = indent
+				continue
+			}
 		case '(', '[', '{':
 			depth++
 		case ')', ']', '}':

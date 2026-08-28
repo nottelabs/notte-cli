@@ -138,7 +138,79 @@ func TopLevelBindings(s Stmt) []string {
 		}
 		return im.Bindings()
 	}
+	if names := clauseTargets(text); len(names) > 0 {
+		return names
+	}
+	if names := walrusTargets(text); len(names) > 0 {
+		return names
+	}
 	return assignTargets(text)
+}
+
+// clauseTargets covers the top-level statements that bind a name without an
+// '=': a for loop's variable, a with block's alias, and an except clause's
+// exception. They are rare at module level but bind exactly as a def does, so
+// omitting them means a real collision goes unreported.
+func clauseTargets(text string) []string {
+	switch {
+	case strings.HasPrefix(text, "for "):
+		rest := text[len("for "):]
+		idx := strings.Index(rest, " in ")
+		if idx < 0 {
+			return nil
+		}
+		return splitTargets(rest[:idx])
+	case strings.HasPrefix(text, "with "), strings.HasPrefix(text, "async with "),
+		strings.HasPrefix(text, "except "), strings.HasPrefix(text, "except* "):
+		// Every `as NAME` in the clause; `with` may carry several.
+		var out []string
+		for _, part := range strings.Split(text, " as ")[1:] {
+			name := strings.TrimSpace(part)
+			end := 0
+			for end < len(name) && isIdentByte(name[end]) {
+				end++
+			}
+			if n := name[:end]; isIdentifier(n) {
+				out = append(out, n)
+			}
+		}
+		return out
+	}
+	return nil
+}
+
+// walrusTargets covers `if (found := f()):` and friends at module level.
+func walrusTargets(text string) []string {
+	var out []string
+	for i := 0; i+1 < len(text); i++ {
+		if text[i] != ':' || text[i+1] != '=' {
+			continue
+		}
+		end := i
+		for end > 0 && text[end-1] == ' ' {
+			end--
+		}
+		start := end
+		for start > 0 && isIdentByte(text[start-1]) {
+			start--
+		}
+		if n := text[start:end]; isIdentifier(n) {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// splitTargets pulls plain identifiers out of a possibly-tupled target list.
+func splitTargets(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		name := strings.TrimSpace(strings.Trim(strings.TrimSpace(part), "()[]"))
+		if isIdentifier(name) {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // identAfter reads the identifier following a keyword.

@@ -159,6 +159,14 @@ func load(fsys fs.FS, p string) (*module, error) {
 			}
 			continue
 		}
+		// Emission drops or rewrites whole lines, so an import sharing a line
+		// with anything else would take its neighbour with it. Rejecting is
+		// cheap for the author to fix and PEP 8 asks for it anyway; a sub-line
+		// rewriter is a lot of machinery for `import os; x = 1`.
+		if sharesLine(m.stmts, s) {
+			return nil, errAt(p, s.StartLine, "import shares a line with another statement",
+				"put each import on its own line")
+		}
 		m.imports = append(m.imports, im)
 
 		switch im.Kind {
@@ -183,6 +191,19 @@ func load(fsys fs.FS, p string) (*module, error) {
 		}
 	}
 	return m, nil
+}
+
+// sharesLine reports whether any other statement begins inside this one's span.
+func sharesLine(stmts []Stmt, target Stmt) bool {
+	for _, other := range stmts {
+		if other == target {
+			continue
+		}
+		if other.StartLine >= target.StartLine && other.StartLine <= target.EndLine {
+			return true
+		}
+	}
+	return false
 }
 
 func firstName(im Import) string {
