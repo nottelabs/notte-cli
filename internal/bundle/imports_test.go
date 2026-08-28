@@ -186,3 +186,51 @@ func TestTopLevelBindingsFutureImportBindsNothing(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestExternalImportsCollectsRootsOnly(t *testing.T) {
+	code := `import requests
+import os.path
+from pydantic import BaseModel
+from notte_sdk.types import os as notte_os
+import json, re
+
+
+def run():
+    return 1
+`
+	got := ExternalImports(code)
+	want := []string{"json", "notte_sdk", "os", "pydantic", "re", "requests"}
+	if !equal(got, want) {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+}
+
+// After flattening there are no relative imports left, but a stray one must
+// not be reported as a module the runtime has to resolve.
+func TestExternalImportsSkipsRelativeAndIndented(t *testing.T) {
+	code := `from .parse import clean
+import requests
+
+
+def run():
+    import json
+    return clean(requests, json)
+`
+	if got := ExternalImports(code); !equal(got, []string{"requests"}) {
+		t.Fatalf("got %q, want [requests]", got)
+	}
+}
+
+func TestExternalImportsIgnoresDocstrings(t *testing.T) {
+	code := "\"\"\"Doc.\n\nimport ghost\n\"\"\"\nimport requests\n\n\ndef run():\n    return 1\n"
+	if got := ExternalImports(code); !equal(got, []string{"requests"}) {
+		t.Fatalf("got %q, want [requests]", got)
+	}
+}
+
+func TestExternalImportsDeduplicates(t *testing.T) {
+	code := "import requests\nimport requests\nfrom requests import get\n\n\ndef run():\n    return 1\n"
+	if got := ExternalImports(code); !equal(got, []string{"requests"}) {
+		t.Fatalf("got %q", got)
+	}
+}
