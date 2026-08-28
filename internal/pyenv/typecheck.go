@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strings"
@@ -83,21 +84,33 @@ type gitlabDiagnostic struct {
 	} `json:"location"`
 }
 
-// TypeCheck runs ty over targets, relative to dir.
+// TypeCheck runs ty over targets, relative to dir, resolving imports against
+// the environment in venvDir.
 //
 // ty is run through uvx rather than installed into the venv on purpose: the
 // venv mirrors the runtime image, and putting a package in it that the runtime
 // does not have weakens the property that makes the venv the enforcement.
 //
-// dir must contain the ty.toml written by WriteTyConfig — without it ty
-// resolves against whatever python is first on PATH.
-func TypeCheck(ctx context.Context, tc *Toolchain, dir string, targets []string) (*TypeCheckResult, error) {
+// The interpreter is passed explicitly on every invocation. Left to itself ty
+// resolves against the first python on PATH, and anything-api records what that
+// costs: every import came back unresolved and a mandatory type check went
+// green while checking nothing. Passing --python rather than writing a ty.toml
+// keeps it at the call site, where it cannot be omitted by a caller that
+// forgot to generate the file — and leaves no machine-specific absolute path
+// in the user's repository.
+func TypeCheck(ctx context.Context, tc *Toolchain, dir, venvDir string, targets []string) (*TypeCheckResult, error) {
 	if len(targets) == 0 {
 		return &TypeCheckResult{}, nil
+	}
+	// ty treats an unusable --python as fatal for the whole run, which is worse
+	// than the misconfiguration it prevents, so it is checked first.
+	if _, err := os.Stat(PythonPath(venvDir)); err != nil {
+		return nil, fmt.Errorf("no interpreter at %s: %w", PythonPath(venvDir), err)
 	}
 
 	args := append([]string{
 		"ty@" + TyVersion, "check",
+		"--python", venvDir,
 		"--output-format", "gitlab",
 		// Diagnostics are read from stdout, never from the exit code — the
 		// same reason the health endpoint always answers 200.

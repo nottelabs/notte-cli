@@ -39,7 +39,7 @@ func TestMisconfiguredDistinguishesWiringFromUserError(t *testing.T) {
 }
 
 func TestTypeCheckWithNoTargetsIsClean(t *testing.T) {
-	res, err := TypeCheck(context.Background(), &Toolchain{UV: "uv"}, t.TempDir(), nil)
+	res, err := TypeCheck(context.Background(), &Toolchain{UV: "uv"}, t.TempDir(), t.TempDir(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,9 +54,6 @@ func TestTypeCheckAgainstARealEnvironment(t *testing.T) {
 	tc := toolchain(t)
 
 	dir := t.TempDir()
-	if err := WriteTyConfig(dir, venv); err != nil {
-		t.Fatalf("ty config: %v", err)
-	}
 
 	// requests and pydantic are in the venv; nonexistent_pkg is not.
 	src := `import requests
@@ -77,7 +74,7 @@ def run() -> Response:
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	res, err := TypeCheck(ctx, tc, dir, []string{"artifact.py"})
+	res, err := TypeCheck(ctx, tc, dir, venv, []string{"artifact.py"})
 	if err != nil {
 		t.Fatalf("typecheck: %v", err)
 	}
@@ -118,9 +115,6 @@ func TestTypeCheckReportsRealTypeErrors(t *testing.T) {
 	tc := toolchain(t)
 
 	dir := t.TempDir()
-	if err := WriteTyConfig(dir, venv); err != nil {
-		t.Fatal(err)
-	}
 	src := "def run() -> int:\n    return \"not an int\"\n"
 	if err := os.WriteFile(filepath.Join(dir, "artifact.py"), []byte(src), 0o644); err != nil {
 		t.Fatal(err)
@@ -128,7 +122,7 @@ func TestTypeCheckReportsRealTypeErrors(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	res, err := TypeCheck(ctx, tc, dir, []string{"artifact.py"})
+	res, err := TypeCheck(ctx, tc, dir, venv, []string{"artifact.py"})
 	if err != nil {
 		t.Fatal(err)
 	}
