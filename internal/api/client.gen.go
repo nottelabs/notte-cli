@@ -87,6 +87,13 @@ const (
 	FunctionRunUpdateRequestStatusFailed FunctionRunUpdateRequestStatus = "failed"
 )
 
+// Defines values for FunctionRuntimeHealthResponseStatus.
+const (
+	Degraded    FunctionRuntimeHealthResponseStatus = "degraded"
+	Ok          FunctionRuntimeHealthResponseStatus = "ok"
+	Unreachable FunctionRuntimeHealthResponseStatus = "unreachable"
+)
+
 // Defines values for GetFunctionRunResponseStatus.
 const (
 	GetFunctionRunResponseStatusActive GetFunctionRunResponseStatus = "active"
@@ -1473,6 +1480,39 @@ type FunctionRunUpdateRequest struct {
 // FunctionRunUpdateRequestStatus The status of the workflow run
 type FunctionRunUpdateRequestStatus string
 
+// FunctionRuntimeHealthResponse defines model for FunctionRuntimeHealthResponse.
+type FunctionRuntimeHealthResponse struct {
+	// Error Why the probe failed, when it did.
+	Error *string `json:"error,omitempty"`
+
+	// LatencyMs Round trip to the runtime, null when unreachable.
+	LatencyMs *float32 `json:"latency_ms,omitempty"`
+
+	// Packages Non-stdlib imports the sandbox allows, with versions.
+	Packages *[]RuntimePackage `json:"packages,omitempty"`
+
+	// PythonVersion Python the sandbox executes under, e.g. '3.12.0'.
+	PythonVersion *string `json:"python_version,omitempty"`
+
+	// Reachable Whether the runtime answered an HTTP request at all.
+	Reachable bool `json:"reachable"`
+
+	// ReservedEnvNames `function_env` names the platform owns, rejected at write time. Served here so a client validating secret names before pushing them does not have to vendor its own copy and watch it drift.
+	ReservedEnvNames *[]string `json:"reserved_env_names,omitempty"`
+
+	// RuntimeDigest Digest of the reproducible contract - Python version, packages with their sources, allowed imports, reserved names - and nothing volatile, so it changes if and only if an environment built against it would now be wrong. Cache against it to detect a runner rebuild. Null unless `status` is 'ok', since a partial report is not a contract. Also returned as the response ETag.
+	RuntimeDigest *string `json:"runtime_digest,omitempty"`
+
+	// Status 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
+	Status FunctionRuntimeHealthResponseStatus `json:"status"`
+
+	// StdlibModules Standard-library modules the sandbox allows. Versionless: the Python version covers them.
+	StdlibModules *[]string `json:"stdlib_modules,omitempty"`
+}
+
+// FunctionRuntimeHealthResponseStatus 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
+type FunctionRuntimeHealthResponseStatus string
+
 // FunctionScheduleCreateRequest defines model for FunctionScheduleCreateRequest.
 type FunctionScheduleCreateRequest struct {
 	Cron      string                  `json:"cron"`
@@ -2234,6 +2274,24 @@ type RunFunctionRequest struct {
 	WorkflowId string `json:"workflow_id"`
 }
 
+// RuntimePackage defines model for RuntimePackage.
+type RuntimePackage struct {
+	// ImportName The name a function writes in its `import` statement, e.g. `notte_sdk`.
+	ImportName string `json:"import_name"`
+
+	// Installed False for a name the upload validator accepts but the runtime image does not ship: such an import passes validation and then fails mid-run with ModuleNotFoundError.
+	Installed *bool `json:"installed,omitempty"`
+
+	// Package Distribution providing it, e.g. `notte-sdk`. Null when nothing on disk claims the name.
+	Package *string `json:"package,omitempty"`
+
+	// Source Installable reference this came from when it did not come from an index, e.g. `git+https://github.com/nottelabs/notte@<sha>#subdirectory=packages/notte-sdk`. Null for an ordinary index install, where `version` is the whole identity. Read from the install's own PEP 610 record: the runner pins notte-sdk and notte-core to git SHAs, so those share a version number with a PyPI build that behaves differently, and reproducing the sandbox from `version` alone gets you the wrong code.
+	Source *string `json:"source,omitempty"`
+
+	// Version Installed version of `package`, or null if unknown.
+	Version *string `json:"version,omitempty"`
+}
+
 // SMSResponse defines model for SMSResponse.
 type SMSResponse struct {
 	// Body SMS message body
@@ -2943,6 +3001,12 @@ type ListFunctionsParams struct {
 type FunctionCreateParams struct {
 	// Restricted Whether to restrict the function code
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionRuntimeHealthParams defines parameters for FunctionRuntimeHealth.
+type FunctionRuntimeHealthParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -9190,6 +9254,9 @@ type ClientInterface interface {
 	// FunctionCreateWithBody request with any body
 	FunctionCreateWithBody(ctx context.Context, params *FunctionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FunctionRuntimeHealth request
+	FunctionRuntimeHealth(ctx context.Context, params *FunctionRuntimeHealthParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FunctionDelete request
 	FunctionDelete(ctx context.Context, functionId string, params *FunctionDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9555,6 +9622,18 @@ func (c *Client) ListFunctions(ctx context.Context, params *ListFunctionsParams,
 
 func (c *Client) FunctionCreateWithBody(ctx context.Context, params *FunctionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFunctionCreateRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionRuntimeHealth(ctx context.Context, params *FunctionRuntimeHealthParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionRuntimeHealthRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -11358,6 +11437,59 @@ func NewFunctionCreateRequestWithBody(server string, params *FunctionCreateParam
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionRuntimeHealthRequest generates requests for FunctionRuntimeHealth
+func NewFunctionRuntimeHealthRequest(server string, params *FunctionRuntimeHealthParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/health")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	if params != nil {
 
@@ -16872,6 +17004,9 @@ type ClientWithResponsesInterface interface {
 	// FunctionCreateWithBodyWithResponse request with any body
 	FunctionCreateWithBodyWithResponse(ctx context.Context, params *FunctionCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionCreateResult, error)
 
+	// FunctionRuntimeHealthWithResponse request
+	FunctionRuntimeHealthWithResponse(ctx context.Context, params *FunctionRuntimeHealthParams, reqEditors ...RequestEditorFn) (*FunctionRuntimeHealthResult, error)
+
 	// FunctionDeleteWithResponse request
 	FunctionDeleteWithResponse(ctx context.Context, functionId string, params *FunctionDeleteParams, reqEditors ...RequestEditorFn) (*FunctionDeleteResult, error)
 
@@ -17305,6 +17440,29 @@ func (r FunctionCreateResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FunctionCreateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionRuntimeHealthResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionRuntimeHealthResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionRuntimeHealthResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionRuntimeHealthResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -19007,6 +19165,15 @@ func (c *ClientWithResponses) FunctionCreateWithBodyWithResponse(ctx context.Con
 	return ParseFunctionCreateResult(rsp)
 }
 
+// FunctionRuntimeHealthWithResponse request returning *FunctionRuntimeHealthResult
+func (c *ClientWithResponses) FunctionRuntimeHealthWithResponse(ctx context.Context, params *FunctionRuntimeHealthParams, reqEditors ...RequestEditorFn) (*FunctionRuntimeHealthResult, error) {
+	rsp, err := c.FunctionRuntimeHealth(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionRuntimeHealthResult(rsp)
+}
+
 // FunctionDeleteWithResponse request returning *FunctionDeleteResult
 func (c *ClientWithResponses) FunctionDeleteWithResponse(ctx context.Context, functionId string, params *FunctionDeleteParams, reqEditors ...RequestEditorFn) (*FunctionDeleteResult, error) {
 	rsp, err := c.FunctionDelete(ctx, functionId, params, reqEditors...)
@@ -20060,6 +20227,39 @@ func ParseFunctionCreateResult(rsp *http.Response) (*FunctionCreateResult, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest FunctionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionRuntimeHealthResult parses an HTTP response from a FunctionRuntimeHealthWithResponse call
+func ParseFunctionRuntimeHealthResult(rsp *http.Response) (*FunctionRuntimeHealthResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionRuntimeHealthResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionRuntimeHealthResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
