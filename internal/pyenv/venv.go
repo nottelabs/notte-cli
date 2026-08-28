@@ -47,6 +47,15 @@ type Stamp struct {
 	Requirements  []string `json:"requirements"`
 }
 
+// ValidatorPackage is installed into every environment regardless of what the
+// functions import.
+//
+// Validate runs the SDK's ScriptValidator, which lives in notte_core, so an
+// environment without it can build a perfectly good artifact and then fail to
+// check it. It is part of the runtime image either way, so installing it
+// unconditionally makes the venv a closer mirror rather than a looser one.
+const ValidatorPackage = "notte_core"
+
 // SyncRequest describes the environment to build.
 type SyncRequest struct {
 	// VenvDir is where the environment lives, normally .notte/venv.
@@ -93,7 +102,7 @@ func Sync(ctx context.Context, tc *Toolchain, req SyncRequest) (*SyncResult, err
 		return nil, fmt.Errorf("cannot build an environment from a %s runtime report: it carries no package list", req.Health.Status)
 	}
 
-	install, missing := req.Health.Installable(req.Imports)
+	install, missing := req.Health.Installable(append([]string{ValidatorPackage}, req.Imports...))
 	res := &SyncResult{
 		VenvDir:           req.VenvDir,
 		Python:            req.Health.PythonVersion,
