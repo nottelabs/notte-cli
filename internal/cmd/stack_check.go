@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -65,7 +64,6 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 	fsys := os.DirFS(cfg.FunctionsPath())
 	results := make([]checked, 0, len(selected))
 	artifacts := map[string]*bundle.Result{}
-	imports := map[string]bool{}
 	failed := 0
 
 	for _, fn := range selected {
@@ -78,9 +76,6 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		artifacts[fn.Name] = res
-		for _, module := range bundle.ExternalImports(res.Code) {
-			imports[module] = true
-		}
 		results = append(results, checked{
 			Name: fn.Name, Entrypoint: fn.Entrypoint, Sources: res.Sources,
 			SourceSHA256: res.SourceSHA256, ArtifactSHA256: res.ArtifactSHA256,
@@ -95,9 +90,16 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Imports come from the sources rather than the artifacts: a function that
+	// failed to bundle above still needs its dependencies present, or every
+	// later diagnostic is a spurious unresolved-import.
+	imports, err := sourceImports(cfg)
+	if err != nil {
+		return err
+	}
 	venv := cfg.StatePath("venv")
 	sync, err := pyenv.Sync(cmd.Context(), tc, pyenv.SyncRequest{
-		VenvDir: venv, Health: health, Imports: sortedKeys(imports),
+		VenvDir: venv, Health: health, Imports: imports,
 	})
 	if err != nil {
 		reportChecked(results, failed)
@@ -263,15 +265,6 @@ func short(sha string) string {
 		return sha[:12]
 	}
 	return sha
-}
-
-func sortedKeys(m map[string]bool) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }
 
 func envName() string {

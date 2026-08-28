@@ -182,3 +182,74 @@ func TestEnvNameDefaultsToProd(t *testing.T) {
 		t.Fatalf("envName() = %q", got)
 	}
 }
+
+// sourceImports must read the sources, not bundled artifacts. A function that
+// fails to bundle still has imports, and its author still needs an environment
+// in which to fix it — otherwise every later diagnostic is a spurious
+// unresolved-import piled on top of the real error.
+func TestSourceImportsCoversUnbundlableAndUnimportedFiles(t *testing.T) {
+	dir := initInto(t)
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A function that cannot bundle: star import from a relative module.
+	broken := filepath.Join(cfg.FunctionsPath(), "broken")
+	if err := os.MkdirAll(broken, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"__init__.py": "",
+		"main.py":     "import httpx\nfrom .helpers import *\n\n\ndef run():\n    return 1\n",
+		"helpers.py":  "def h():\n    return 1\n",
+	} {
+		if err := os.WriteFile(filepath.Join(broken, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A shared module no function imports.
+	if err := os.WriteFile(filepath.Join(cfg.FunctionsPath(), "_shared", "orphan.py"),
+		[]byte("import requests\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	imports, err := sourceImports(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	has := func(want string) bool {
+		for _, got := range imports {
+			if got == want {
+				return true
+			}
+		}
+		return false
+	}
+	if !has("httpx") {
+		t.Errorf("imports of a function that cannot bundle must still be collected: %v", imports)
+	}
+	if !has("requests") {
+		t.Errorf("imports of an unreferenced shared module must be collected: %v", imports)
+	}
+	if !has("pydantic") {
+		t.Errorf("the scaffolded function's imports are missing: %v", imports)
+	}
+	for _, got := range imports {
+		if strings.HasPrefix(got, ".") {
+			t.Errorf("relative import leaked into the environment list: %q", got)
+		}
+	}
+}
+
+func TestSyncIsAliasedToInstall(t *testing.T) {
+	var found bool
+	for _, alias := range stackSyncCmd.Aliases {
+		if alias == "install" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("sync should answer to install too, got %v", stackSyncCmd.Aliases)
+	}
+}
