@@ -30,7 +30,13 @@ explicit form, and the one to run after cloning a stack.`,
 	RunE: runStackSync,
 }
 
-func init() { stackCmd.AddCommand(stackSyncCmd) }
+var stackSyncForce bool
+
+func init() {
+	stackCmd.AddCommand(stackSyncCmd)
+	stackSyncCmd.Flags().BoolVar(&stackSyncForce, "force", false,
+		"Rebuild even if the environment already matches the runtime")
+}
 
 func runStackSync(cmd *cobra.Command, args []string) error {
 	cfg, err := loadStack()
@@ -48,7 +54,7 @@ func runStackSync(cmd *cobra.Command, args []string) error {
 	}
 
 	sync, err := pyenv.Sync(cmd.Context(), tc, pyenv.SyncRequest{
-		VenvDir: cfg.StatePath("venv"), Health: health, Imports: imports,
+		VenvDir: cfg.StatePath("venv"), Health: health, Imports: imports, Force: stackSyncForce,
 	})
 	if err != nil {
 		return err

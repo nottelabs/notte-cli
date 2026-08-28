@@ -1,6 +1,7 @@
 package pyenv
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,22 @@ const TyVersion = "0.0.75"
 // unresolved, and the build agent deployed straight through a mandatory type
 // check. A checker that cannot resolve imports does not fail — it goes green.
 const UnresolvedImport = "unresolved-import"
+
+// EnvironmentError is a failure of the environment rather than of the code
+// being checked.
+//
+// It carries the rebuild command because the obvious one does not work: a
+// plain sync reuses the environment, since the stamp records what it was built
+// from and that still matches. Only --force gets past the reuse check.
+type EnvironmentError struct {
+	VenvDir string
+	Detail  string
+}
+
+func (e *EnvironmentError) Error() string {
+	return fmt.Sprintf("the environment in %s is unusable, so nothing could be checked:\n  %s\n"+
+		"  rebuild it with:\n      notte stack sync --force", e.VenvDir, e.Detail)
+}
 
 // Diagnostic is one finding.
 type Diagnostic struct {
@@ -119,11 +136,20 @@ func TypeCheck(ctx context.Context, tc *Toolchain, dir, venvDir string, targets 
 
 	cmd := exec.CommandContext(ctx, tc.UV+"x", args...)
 	cmd.Dir = dir
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		// uvx lives beside uv; if it is missing, say so rather than reporting
-		// a type error that never happened.
-		return nil, fmt.Errorf("run ty: %w", err)
+		// --exit-zero means diagnostics never fail the process, so a non-zero
+		// exit is ty itself refusing to run — overwhelmingly a broken
+		// environment rather than anything about the code. Returning a bare
+		// "exit status 2" sends someone hunting through their functions for a
+		// problem that is not there.
+		detail := strings.TrimSpace(stderr.String())
+		if detail == "" {
+			detail = err.Error()
+		}
+		return nil, &EnvironmentError{VenvDir: venvDir, Detail: detail}
 	}
 
 	var raw []gitlabDiagnostic
