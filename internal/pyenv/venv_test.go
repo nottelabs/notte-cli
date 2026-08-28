@@ -85,11 +85,18 @@ func TestStampMatching(t *testing.T) {
 	}
 }
 
-func TestWriteTyConfigRefusesAMissingInterpreter(t *testing.T) {
+// ty treats an unusable --python as fatal for the entire run, so an absent
+// interpreter must be caught before ty is invoked rather than surfacing as a
+// wall of unresolved imports.
+func TestTypeCheckRefusesAMissingInterpreter(t *testing.T) {
 	dir := t.TempDir()
-	err := WriteTyConfig(dir, filepath.Join(dir, "nonexistent-venv"))
+	_, err := TypeCheck(context.Background(), &Toolchain{UV: "uv"}, dir,
+		filepath.Join(dir, "nonexistent-venv"), []string{"x.py"})
 	if err == nil {
-		t.Fatal("naming a missing interpreter is fatal to the whole ty run, so it must be caught here")
+		t.Fatal("a missing interpreter must be reported before ty runs")
+	}
+	if !strings.Contains(err.Error(), "no interpreter at") {
+		t.Fatalf("error should name the path, got %v", err)
 	}
 }
 
@@ -136,7 +143,4 @@ func TestSyncBuildsAndReusesARealEnvironment(t *testing.T) {
 		t.Fatal("a changed runtime digest must rebuild")
 	}
 
-	if err := WriteTyConfig(t.TempDir(), venv); err != nil {
-		t.Fatalf("ty config: %v", err)
-	}
 }

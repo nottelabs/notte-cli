@@ -105,10 +105,6 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 	}
 	reportEnvironment(sync)
 
-	if err := pyenv.WriteTyConfig(cfg.Root, venv); err != nil {
-		return err
-	}
-
 	buildDir := cfg.StatePath("build", envName())
 	if err := os.MkdirAll(buildDir, 0o755); err != nil {
 		return err
@@ -134,7 +130,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			rel = artifactPath
 		}
-		tyRes, err := pyenv.TypeCheck(cmd.Context(), tc, cfg.Root, []string{rel})
+		tyRes, err := pyenv.TypeCheck(cmd.Context(), tc, cfg.Root, venv, []string{rel})
 		if err != nil {
 			return err
 		}
