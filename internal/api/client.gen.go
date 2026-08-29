@@ -43,6 +43,24 @@ const (
 	ApiSessionStartRequestScreenshotTypeRaw        ApiSessionStartRequestScreenshotType = "raw"
 )
 
+// Defines values for ConnectLinkContextStatus.
+const (
+	ConnectLinkContextStatusCompleted ConnectLinkContextStatus = "completed"
+	ConnectLinkContextStatusExpired   ConnectLinkContextStatus = "expired"
+	ConnectLinkContextStatusFailed    ConnectLinkContextStatus = "failed"
+	ConnectLinkContextStatusPending   ConnectLinkContextStatus = "pending"
+	ConnectLinkContextStatusSubmitted ConnectLinkContextStatus = "submitted"
+)
+
+// Defines values for ConnectLinkStatusResponseStatus.
+const (
+	ConnectLinkStatusResponseStatusCompleted ConnectLinkStatusResponseStatus = "completed"
+	ConnectLinkStatusResponseStatusExpired   ConnectLinkStatusResponseStatus = "expired"
+	ConnectLinkStatusResponseStatusFailed    ConnectLinkStatusResponseStatus = "failed"
+	ConnectLinkStatusResponseStatusPending   ConnectLinkStatusResponseStatus = "pending"
+	ConnectLinkStatusResponseStatusSubmitted ConnectLinkStatusResponseStatus = "submitted"
+)
+
 // Defines values for DeleteCredentialsResponseStatus.
 const (
 	DeleteCredentialsResponseStatusFailure DeleteCredentialsResponseStatus = "failure"
@@ -884,6 +902,89 @@ type CompletionAction struct {
 	Description *string `json:"description,omitempty"`
 	Success     bool    `json:"success"`
 	Type        *string `json:"type,omitempty"`
+}
+
+// ConnectLinkContext defines model for ConnectLinkContext.
+type ConnectLinkContext struct {
+	AttemptsRemaining int       `json:"attempts_remaining"`
+	Domain            string    `json:"domain"`
+	ExpiresAt         time.Time `json:"expires_at"`
+	LogoColor         string    `json:"logo_color"`
+
+	// RequiresTotpSecret Whether the form must collect a TOTP seed.
+	RequiresTotpSecret bool                     `json:"requires_totp_secret"`
+	ServiceName        string                   `json:"service_name"`
+	Status             ConnectLinkContextStatus `json:"status"`
+}
+
+// ConnectLinkContextStatus defines model for ConnectLinkContext.Status.
+type ConnectLinkContextStatus string
+
+// ConnectLinkCreateRequest defines model for ConnectLinkCreateRequest.
+type ConnectLinkCreateRequest struct {
+	// ErrorRedirectUri Where the end user is sent when the connection cannot be completed.
+	ErrorRedirectUri *string `json:"error_redirect_uri,omitempty"`
+
+	// ExternalUserId Your own identifier for the end user. Echoed back on the completion webhook.
+	ExternalUserId *string `json:"external_user_id,omitempty"`
+
+	// Label Name the resulting connection is created with.
+	Label string `json:"label"`
+
+	// MailboxId Mailbox to read email 2FA codes from. Required when the resolved method is email.
+	MailboxId *string `json:"mailbox_id,omitempty"`
+
+	// Schedule Whether the resulting connection re-authenticates on a schedule.
+	Schedule *bool `json:"schedule,omitempty"`
+
+	// SuccessRedirectUri Where the end user is sent once the account is connected.
+	SuccessRedirectUri *string `json:"success_redirect_uri,omitempty"`
+
+	// TemplateId Connector this link collects credentials for.
+	TemplateId string `json:"template_id"`
+
+	// TtlSeconds How long the link stays usable.
+	TtlSeconds *int `json:"ttl_seconds,omitempty"`
+
+	// TwoFaMethod Second factor this connection will use. Required when the connector supports more than one, because the choice decides whether a mailbox is needed.
+	TwoFaMethod *string `json:"two_fa_method,omitempty"`
+
+	// WebhookUrl Receives the signed completion callback. See the connect-link webhook docs.
+	WebhookUrl *string `json:"webhook_url,omitempty"`
+}
+
+// ConnectLinkCreateResponse defines model for ConnectLinkCreateResponse.
+type ConnectLinkCreateResponse struct {
+	ConnectLinkId string `json:"connect_link_id"`
+
+	// ConnectUrl Send your end user here.
+	ConnectUrl string    `json:"connect_url"`
+	ExpiresAt  time.Time `json:"expires_at"`
+
+	// Token Returned once and never again - only its hash is stored.
+	Token string `json:"token"`
+
+	// WebhookSigningSecret Workspace secret to verify the completion webhook with. Present only when a webhook_url was supplied. Stable across links, so it is safe to store once.
+	WebhookSigningSecret *string `json:"webhook_signing_secret,omitempty"`
+}
+
+// ConnectLinkStatusResponse defines model for ConnectLinkStatusResponse.
+type ConnectLinkStatusResponse struct {
+	AttemptsRemaining  int                             `json:"attempts_remaining"`
+	ConnectionStatus   *string                         `json:"connection_status,omitempty"`
+	ErrorRedirectUri   *string                         `json:"error_redirect_uri,omitempty"`
+	FailureCode        *string                         `json:"failure_code,omitempty"`
+	Message            *string                         `json:"message,omitempty"`
+	Status             ConnectLinkStatusResponseStatus `json:"status"`
+	SuccessRedirectUri *string                         `json:"success_redirect_uri,omitempty"`
+}
+
+// ConnectLinkStatusResponseStatus defines model for ConnectLinkStatusResponse.Status.
+type ConnectLinkStatusResponseStatus string
+
+// ConnectLinkSubmitRequest defines model for ConnectLinkSubmitRequest.
+type ConnectLinkSubmitRequest struct {
+	Credentials ManagedAuthCredentials `json:"credentials"`
 }
 
 // Cookie defines model for Cookie.
@@ -1909,6 +2010,14 @@ type MailboxSyncRequest struct {
 type MailboxUpdateRequest struct {
 	AllowAllSenders      bool      `json:"allow_all_senders"`
 	AllowedSenderDomains *[]string `json:"allowed_sender_domains,omitempty"`
+}
+
+// ManagedAuthCredentials defines model for ManagedAuthCredentials.
+type ManagedAuthCredentials struct {
+	Email     *string `json:"email,omitempty"`
+	MfaSecret *string `json:"mfa_secret,omitempty"`
+	Password  *string `json:"password,omitempty"`
+	Username  *string `json:"username,omitempty"`
 }
 
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
@@ -3143,6 +3252,30 @@ type MailboxUpdateParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// ManagedAuthConnectLinkCreateParams defines parameters for ManagedAuthConnectLinkCreate.
+type ManagedAuthConnectLinkCreateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ConnectLinkContextParams defines parameters for ConnectLinkContext.
+type ConnectLinkContextParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
+// ConnectLinkStatusParams defines parameters for ConnectLinkStatus.
+type ConnectLinkStatusParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
+// ConnectLinkSubmitParams defines parameters for ConnectLinkSubmit.
+type ConnectLinkSubmitParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
 // ListPersonasParams defines parameters for ListPersonas.
 type ListPersonasParams struct {
 	// Page Page number
@@ -3598,6 +3731,12 @@ type MailboxSyncJSONRequestBody = MailboxSyncRequest
 
 // MailboxUpdateJSONRequestBody defines body for MailboxUpdate for application/json ContentType.
 type MailboxUpdateJSONRequestBody = MailboxUpdateRequest
+
+// ManagedAuthConnectLinkCreateJSONRequestBody defines body for ManagedAuthConnectLinkCreate for application/json ContentType.
+type ManagedAuthConnectLinkCreateJSONRequestBody = ConnectLinkCreateRequest
+
+// ConnectLinkSubmitJSONRequestBody defines body for ConnectLinkSubmit for application/json ContentType.
+type ConnectLinkSubmitJSONRequestBody = ConnectLinkSubmitRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -9328,6 +9467,22 @@ type ClientInterface interface {
 
 	MailboxUpdate(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ManagedAuthConnectLinkCreateWithBody request with any body
+	ManagedAuthConnectLinkCreateWithBody(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ManagedAuthConnectLinkCreate(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, body ManagedAuthConnectLinkCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkContext request
+	ConnectLinkContext(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkStatus request
+	ConnectLinkStatus(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkSubmitWithBody request with any body
+	ConnectLinkSubmitWithBody(ctx context.Context, params *ConnectLinkSubmitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPersonas request
 	ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9946,6 +10101,78 @@ func (c *Client) MailboxUpdateWithBody(ctx context.Context, mailboxId string, pa
 
 func (c *Client) MailboxUpdate(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMailboxUpdateRequest(c.Server, mailboxId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectLinkCreateWithBody(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectLinkCreateRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ManagedAuthConnectLinkCreate(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, body ManagedAuthConnectLinkCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewManagedAuthConnectLinkCreateRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkContext(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkContextRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkStatus(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkStatusRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkSubmitWithBody(ctx context.Context, params *ConnectLinkSubmitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkSubmitRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkSubmitRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -12885,6 +13112,205 @@ func NewMailboxUpdateRequestWithBody(server string, mailboxId string, params *Ma
 
 			req.Header.Set("x-notte-sdk-version", headerParam1)
 		}
+
+	}
+
+	return req, nil
+}
+
+// NewManagedAuthConnectLinkCreateRequest calls the generic ManagedAuthConnectLinkCreate builder with application/json body
+func NewManagedAuthConnectLinkCreateRequest(server string, params *ManagedAuthConnectLinkCreateParams, body ManagedAuthConnectLinkCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewManagedAuthConnectLinkCreateRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewManagedAuthConnectLinkCreateRequestWithBody generates requests for ManagedAuthConnectLinkCreate with any type of body
+func NewManagedAuthConnectLinkCreateRequestWithBody(server string, params *ManagedAuthConnectLinkCreateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkContextRequest generates requests for ConnectLinkContext
+func NewConnectLinkContextRequest(server string, params *ConnectLinkContextParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/context")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkStatusRequest generates requests for ConnectLinkStatus
+func NewConnectLinkStatusRequest(server string, params *ConnectLinkStatusParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/status")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkSubmitRequest calls the generic ConnectLinkSubmit builder with application/json body
+func NewConnectLinkSubmitRequest(server string, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectLinkSubmitRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewConnectLinkSubmitRequestWithBody generates requests for ConnectLinkSubmit with any type of body
+func NewConnectLinkSubmitRequestWithBody(server string, params *ConnectLinkSubmitParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/submit")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
 
 	}
 
@@ -17078,6 +17504,22 @@ type ClientWithResponsesInterface interface {
 
 	MailboxUpdateWithResponse(ctx context.Context, mailboxId string, params *MailboxUpdateParams, body MailboxUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*MailboxUpdateResult, error)
 
+	// ManagedAuthConnectLinkCreateWithBodyWithResponse request with any body
+	ManagedAuthConnectLinkCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectLinkCreateResult, error)
+
+	ManagedAuthConnectLinkCreateWithResponse(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, body ManagedAuthConnectLinkCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectLinkCreateResult, error)
+
+	// ConnectLinkContextWithResponse request
+	ConnectLinkContextWithResponse(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*ConnectLinkContextResult, error)
+
+	// ConnectLinkStatusWithResponse request
+	ConnectLinkStatusWithResponse(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*ConnectLinkStatusResult, error)
+
+	// ConnectLinkSubmitWithBodyWithResponse request with any body
+	ConnectLinkSubmitWithBodyWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
+
+	ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
+
 	// ListPersonasWithResponse request
 	ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error)
 
@@ -17898,6 +18340,98 @@ func (r MailboxUpdateResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r MailboxUpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ManagedAuthConnectLinkCreateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ConnectLinkCreateResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ManagedAuthConnectLinkCreateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ManagedAuthConnectLinkCreateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkContextResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ConnectLinkContext
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkContextResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkContextResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkStatusResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ConnectLinkStatusResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkStatusResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkStatusResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkSubmitResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *ConnectLinkStatusResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkSubmitResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkSubmitResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -19401,6 +19935,58 @@ func (c *ClientWithResponses) MailboxUpdateWithResponse(ctx context.Context, mai
 	return ParseMailboxUpdateResult(rsp)
 }
 
+// ManagedAuthConnectLinkCreateWithBodyWithResponse request with arbitrary body returning *ManagedAuthConnectLinkCreateResult
+func (c *ClientWithResponses) ManagedAuthConnectLinkCreateWithBodyWithResponse(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ManagedAuthConnectLinkCreateResult, error) {
+	rsp, err := c.ManagedAuthConnectLinkCreateWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectLinkCreateResult(rsp)
+}
+
+func (c *ClientWithResponses) ManagedAuthConnectLinkCreateWithResponse(ctx context.Context, params *ManagedAuthConnectLinkCreateParams, body ManagedAuthConnectLinkCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ManagedAuthConnectLinkCreateResult, error) {
+	rsp, err := c.ManagedAuthConnectLinkCreate(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseManagedAuthConnectLinkCreateResult(rsp)
+}
+
+// ConnectLinkContextWithResponse request returning *ConnectLinkContextResult
+func (c *ClientWithResponses) ConnectLinkContextWithResponse(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*ConnectLinkContextResult, error) {
+	rsp, err := c.ConnectLinkContext(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkContextResult(rsp)
+}
+
+// ConnectLinkStatusWithResponse request returning *ConnectLinkStatusResult
+func (c *ClientWithResponses) ConnectLinkStatusWithResponse(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*ConnectLinkStatusResult, error) {
+	rsp, err := c.ConnectLinkStatus(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkStatusResult(rsp)
+}
+
+// ConnectLinkSubmitWithBodyWithResponse request with arbitrary body returning *ConnectLinkSubmitResult
+func (c *ClientWithResponses) ConnectLinkSubmitWithBodyWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error) {
+	rsp, err := c.ConnectLinkSubmitWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkSubmitResult(rsp)
+}
+
+func (c *ClientWithResponses) ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error) {
+	rsp, err := c.ConnectLinkSubmit(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkSubmitResult(rsp)
+}
+
 // ListPersonasWithResponse request returning *ListPersonasResult
 func (c *ClientWithResponses) ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error) {
 	rsp, err := c.ListPersonas(ctx, params, reqEditors...)
@@ -20877,6 +21463,138 @@ func ParseMailboxUpdateResult(rsp *http.Response) (*MailboxUpdateResult, error) 
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseManagedAuthConnectLinkCreateResult parses an HTTP response from a ManagedAuthConnectLinkCreateWithResponse call
+func ParseManagedAuthConnectLinkCreateResult(rsp *http.Response) (*ManagedAuthConnectLinkCreateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ManagedAuthConnectLinkCreateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ConnectLinkCreateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkContextResult parses an HTTP response from a ConnectLinkContextWithResponse call
+func ParseConnectLinkContextResult(rsp *http.Response) (*ConnectLinkContextResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkContextResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConnectLinkContext
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkStatusResult parses an HTTP response from a ConnectLinkStatusWithResponse call
+func ParseConnectLinkStatusResult(rsp *http.Response) (*ConnectLinkStatusResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkStatusResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConnectLinkStatusResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkSubmitResult parses an HTTP response from a ConnectLinkSubmitWithResponse call
+func ParseConnectLinkSubmitResult(rsp *http.Response) (*ConnectLinkSubmitResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkSubmitResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest ConnectLinkStatusResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
