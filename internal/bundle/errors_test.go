@@ -221,3 +221,12 @@ func TestClauseBoundNamesCollide(t *testing.T) {
 		})
 	}
 }
+
+func TestPackageImportIsRejectedWithAnExplanation(t *testing.T) {
+	msg := wantErr(t, map[string]string{
+		"fn/main.py":         "from .pkg import sub as alias\n\n\ndef run():\n    return alias\n",
+		"fn/pkg/__init__.py": "",
+		"fn/pkg/sub.py":      "def helper():\n    return 1\n",
+	})
+	mustContain(t, msg, "package", "from .pkg.<module> import")
+}

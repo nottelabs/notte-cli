@@ -141,6 +141,16 @@ func collect(fsys fs.FS, p string, mods map[string]*module, stack []string) ([]s
 func load(fsys fs.FS, p string) (*module, error) {
 	raw, err := fs.ReadFile(fsys, p)
 	if err != nil {
+		// A relative import naming a package rather than a module lands here,
+		// because the flattener resolves every target to a single .py file.
+		// `from .pkg import sub` where sub is pkg/sub.py has no single file to
+		// inline, so it is refused rather than emitted as a binding that does
+		// not exist.
+		if dir := strings.TrimSuffix(p, ".py"); dirExists(fsys, dir) {
+			return nil, errAt(p, 0, "cannot inline a package",
+				fmt.Sprintf("%s is a directory; import the module directly, e.g. from .%s.<module> import <name>",
+					dir, path.Base(dir)))
+		}
 		return nil, errAt(p, 0, "cannot read module", "")
 	}
 	src := string(raw)
@@ -211,6 +221,13 @@ func sharesLine(stmts []Stmt, target Stmt) bool {
 		}
 	}
 	return false
+}
+
+// dirExists reports whether a package directory sits where a module was
+// expected, which is the difference between a typo and an unsupported import.
+func dirExists(fsys fs.FS, dir string) bool {
+	info, err := fs.Stat(fsys, dir)
+	return err == nil && info.IsDir()
 }
 
 func firstName(im Import) string {
