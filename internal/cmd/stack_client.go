@@ -77,21 +77,20 @@ func resolveStackTarget(cfg *project.Config) (*stackTarget, error) {
 		// internal/auth already namespaces by the same label. The global
 		// NOTTE_API_KEY is deliberately not consulted: it is not tied to an
 		// endpoint, so using it here is how a prod key reaches staging.
-		// The declared name is tried before the endpoint-derived label, so a
-		// project whose [env.staging] points somewhere unusual still looks up
-		// a credential filed under "staging" rather than one chosen by URL.
-		// The endpoint label remains the fallback, since that is where
-		// `notte auth login` files keys.
+		// Chosen by endpoint, never by the section name. SetKeyringAPIKey
+		// files entries under ResolveEnvLabel(url), so "api_key:staging" means
+		// the credential for the staging *endpoint* — and a project is free to
+		// call any endpoint whatever it likes. An earlier version preferred the
+		// declared name, which meant `[env.staging] api_url = api.notte.cc`
+		// sent a staging credential to production. To bind a specific
+		// credential to a section, set api_key in the block.
 		endpointLabel := auth.ResolveEnvLabel(resolved.APIURL)
-		key, err := auth.GetKeyringAPIKeyForEnv(env)
-		if err != nil && endpointLabel != env {
-			key, err = auth.GetKeyringAPIKeyForEnv(endpointLabel)
-		}
+		key, err := auth.GetKeyringAPIKeyForEnv(endpointLabel)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"no credential for env %q (%s): %w\n"+
-					"  set api_key in [env.%s], or run: notte auth login",
-				env, resolved.APIURL, err, env)
+				"no credential for the endpoint %s (%s) that [env.%s] names: %w\n"+
+					"  set api_key in [env.%s], or run `notte auth login` against that endpoint",
+				resolved.APIURL, endpointLabel, env, err, env)
 		}
 		apiKey = key
 	}
