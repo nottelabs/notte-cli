@@ -525,3 +525,40 @@ func TestDoctorWorksOutsideAStack(t *testing.T) {
 }
 
 var errNoStackForTest = fmt.Errorf("no stack here")
+
+// A notte.toml that exists but fails to parse is not the same as no project.
+// Branching on the load error alone made them indistinguishable, so
+// `doctor --env staging` beside a malformed config silently reported on the
+// ambient endpoint. A flag that cannot be honoured is refused.
+func TestDoctorRefusesEnvItCannotResolve(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	t.Setenv("NOTTE_API_URL", "https://api.notte.cc") // ambient prod
+	stackEnv = "staging"
+
+	_, _, err := doctorClient(nil, errNoStackForTest)
+	if err == nil {
+		t.Fatal("--env staging must not silently fall through to the prod endpoint")
+	}
+	for _, want := range []string{"staging", "api.notte.cc"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error should name %q: %v", want, err)
+		}
+	}
+}
+
+// The fallback still works when --env agrees with the endpoint, or is absent.
+func TestDoctorFallbackAllowedWhenEnvMatches(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	t.Setenv("NOTTE_API_URL", "https://us-dev.notte.cc")
+
+	stackEnv = "dev"
+	if _, label, err := doctorClient(nil, errNoStackForTest); err != nil || label != "dev" {
+		t.Fatalf("matching --env should be honoured: label=%q err=%v", label, err)
+	}
+	stackEnv = ""
+	if _, label, err := doctorClient(nil, errNoStackForTest); err != nil || label != "dev" {
+		t.Fatalf("no --env should follow the endpoint: label=%q err=%v", label, err)
+	}
+}
