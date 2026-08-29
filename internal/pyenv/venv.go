@@ -199,6 +199,9 @@ func (s Stamp) matches(other Stamp) bool {
 	return true
 }
 
+// ReadStamp reports what an environment was built from, for diagnostics.
+func ReadStamp(venvDir string) (Stamp, error) { return readStamp(venvDir) }
+
 func readStamp(venvDir string) (Stamp, error) {
 	raw, err := os.ReadFile(filepath.Join(venvDir, StampName))
 	if err != nil {
