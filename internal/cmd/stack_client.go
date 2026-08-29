@@ -61,6 +61,25 @@ func resolveStackTarget(cfg *project.Config) (*stackTarget, error) {
 			env, project.ConfigName, ambient, ambientLabel, env, ambientLabel)
 	}
 
+	// A section whose URL is definitively another environment is refused. Both
+	// the lockfile key and every report use the section name, so
+	// `[env.staging] api_url = "https://api.notte.cc"` would file production
+	// deployments under staging — and if a [env.prod] block names the same
+	// URL, two lock keys track one set of remote functions and each makes the
+	// other look permanently out of date.
+	//
+	// Only *known* hosts can contradict. A self-hosted or preview endpoint has
+	// no canonical label, so there is nothing for the section name to disagree
+	// with and it stands unchallenged.
+	if resolved.APIURL != "" && auth.IsKnownEnvHost(resolved.APIURL) {
+		if label := auth.ResolveEnvLabel(resolved.APIURL); label != env {
+			return nil, fmt.Errorf(
+				"[env.%s] names %s, which is the %s endpoint.\n"+
+					"  rename the section to [env.%s], or point it at the %s endpoint",
+				env, resolved.APIURL, label, label, env)
+		}
+	}
+
 	if resolved.APIURL == "" {
 		if ambientLabel != env {
 			return nil, fmt.Errorf(
