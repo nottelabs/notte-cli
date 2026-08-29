@@ -38,7 +38,13 @@ func runStackStatus(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	env := envName()
+	// status is offline, so it resolves the label without building a client:
+	// naming an endpoint it never contacts would still have to be right.
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		return err
+	}
+	env := dest.Env
 	lock, err := project.LoadLock(cfg.Root)
 	if err != nil {
 		return err

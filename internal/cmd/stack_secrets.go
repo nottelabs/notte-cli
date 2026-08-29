@@ -78,10 +78,15 @@ func requiredSecrets(ctx context.Context, client *api.NotteClient) (map[string][
 }
 
 func runStackSecretsDiff(cmd *cobra.Command, args []string) error {
-	client, err := GetClient()
+	cfg, err := loadStack()
 	if err != nil {
 		return err
 	}
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		return err
+	}
+	client := dest.client
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
@@ -116,7 +121,7 @@ func runStackSecretsDiff(cmd *cobra.Command, args []string) error {
 
 	if IsJSONOutput() {
 		return GetFormatter().Print(map[string]any{
-			"env": envName(), "missing": missing, "satisfied": satisfied, "unused": extra,
+			"env": dest.Env, "missing": missing, "satisfied": satisfied, "unused": extra,
 		})
 	}
 	for _, s := range missing {
@@ -144,16 +149,19 @@ func runStackSecretsPush(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(cfg.Root, ".env."+envName())
-	if len(args) == 1 {
-		path = args[0]
-	}
-
-	values, err := readEnvFile(path)
+	dest, err := resolveStackTarget(cfg)
 	if err != nil {
 		return err
 	}
-	client, err := GetClient()
+	client := dest.client
+
+	// Defaults to the file named for the environment being written to, so
+	// pushing to staging cannot pick up prod's values.
+	path := filepath.Join(cfg.Root, ".env."+dest.Env)
+	if len(args) == 1 {
+		path = args[0]
+	}
+	values, err := readEnvFile(path)
 	if err != nil {
 		return err
 	}

@@ -68,13 +68,13 @@ func runStackPull(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	env := envName()
-
-	lock, err := project.LoadLock(cfg.Root)
+	dest, err := resolveStackTarget(cfg)
 	if err != nil {
 		return err
 	}
-	client, err := GetClient()
+	env, client := dest.Env, dest.client
+
+	lock, err := project.LoadLock(cfg.Root)
 	if err != nil {
 		return err
 	}

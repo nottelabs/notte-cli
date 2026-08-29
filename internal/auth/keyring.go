@@ -101,7 +101,16 @@ func deleteFromSystemKeyring(key string) error {
 // On first read after upgrade, it falls back to the legacy "api_key" entry and
 // auto-migrates it to the env-qualified key.
 func GetKeyringAPIKey() (string, error) {
-	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
+	return GetKeyringAPIKeyForEnv(ResolveEnvLabel(GetCurrentAPIURL()))
+}
+
+// GetKeyringAPIKeyForEnv retrieves the key stored for a named environment.
+//
+// Callers that already know which environment they are targeting must use this
+// rather than GetKeyringAPIKey, which infers the label from whatever
+// NOTTE_API_URL happens to be. Inferring it is how a credential for one
+// environment reaches another.
+func GetKeyringAPIKeyForEnv(envLabel string) (string, error) {
 	envKey := KeyringKeyForEnv(envLabel)
 
 	// Try env-qualified key first
