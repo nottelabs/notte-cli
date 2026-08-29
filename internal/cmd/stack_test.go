@@ -562,3 +562,29 @@ func TestDoctorFallbackAllowedWhenEnvMatches(t *testing.T) {
 		t.Fatalf("no --env should follow the endpoint: label=%q err=%v", label, err)
 	}
 }
+
+// A project that exists but will not load is not the same as no project. Its
+// [env.*] blocks may name an endpoint other than the ambient one, and being
+// unable to read them is precisely why the ambient endpoint cannot stand in —
+// even when the labels happen to agree.
+func TestDoctorRefusesEnvWhenTheConfigIsUnreadable(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := writeStack(t, map[string]string{"notte.toml": "[project\nname = broken\n"})
+	wd, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	t.Setenv("NOTTE_API_URL", "https://us-staging.notte.cc")
+	stackEnv = "staging" // label matches the ambient endpoint, and still must refuse
+
+	_, _, err := doctorClient(nil, errNoStackForTest)
+	if err == nil {
+		t.Fatal("an unreadable notte.toml must not let --env fall through to the ambient endpoint")
+	}
+	if !strings.Contains(err.Error(), project.ConfigName) {
+		t.Errorf("error should point at the config: %v", err)
+	}
+}

@@ -144,19 +144,44 @@ func doctorClient(cfg *project.Config, cfgErr error) (*api.NotteClient, string, 
 		return dest.client, dest.Env, nil
 	}
 
+	// A project that exists but will not load is not the same as no project.
+	// If notte.toml is present, its [env.*] blocks may name an endpoint other
+	// than the ambient one — and being unable to read them is exactly why the
+	// ambient endpoint cannot stand in for the requested environment, even
+	// when the labels happen to agree.
+	if stackEnv != "" {
+		if _, findErr := project.Find(workingDir()); findErr == nil {
+			return nil, "", fmt.Errorf(
+				"--env %s cannot be resolved because %s could not be read: %v\n"+
+					"  fix it, or drop --env to report on the configured endpoint",
+				stackEnv, project.ConfigName, cfgErr)
+		}
+	}
+
 	client, err := GetClient()
 	if err != nil {
 		return nil, "", err
 	}
 	label := auth.ResolveEnvLabel(client.BaseURL())
 
+	// With no project at all there is nothing for --env to resolve against, so
+	// it is honoured only when it already describes the configured endpoint.
 	if stackEnv != "" && stackEnv != label {
 		return nil, "", fmt.Errorf(
-			"--env %s cannot be resolved: %v\n"+
-				"  the configured endpoint is %s (%s); fix %s, or drop --env to report on %s",
-			stackEnv, cfgErr, client.BaseURL(), label, project.ConfigName, label)
+			"--env %s cannot be resolved: there is no %s here, and the configured endpoint is %s (%s).\n"+
+				"  run `notte stack init`, or drop --env to report on %s",
+			stackEnv, project.ConfigName, client.BaseURL(), label, label)
 	}
 	return client, label, nil
+}
+
+// workingDir is the directory doctor looks for a project in.
+func workingDir() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	return wd
 }
 
 // doctorEnvironment compares the local venv against the runtime it should
