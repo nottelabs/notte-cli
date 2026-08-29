@@ -43,7 +43,11 @@ func runStackSync(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	health, tc, err := stackRuntime(cmd)
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		return err
+	}
+	health, tc, err := stackRuntime(cmd, dest)
 	if err != nil {
 		return err
 	}

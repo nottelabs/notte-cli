@@ -59,6 +59,7 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 // about whether a function is deployable.
 type prepared struct {
 	cfg       *project.Config
+	target    *stackTarget
 	selected  []project.Function
 	artifacts map[string]*bundle.Result
 	results   []checked
@@ -105,7 +106,11 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 
 	// Everything below needs the runtime's description of itself, and there is
 	// no local copy of it to fall back on — that is the point.
-	health, tc, err := stackRuntime(cmd)
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		return nil, err
+	}
+	health, tc, err := stackRuntime(cmd, dest)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +131,7 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 	}
 	reportEnvironment(sync)
 
-	buildDir := cfg.StatePath("build", envName())
+	buildDir := cfg.StatePath("build", dest.Env)
 	if err := os.MkdirAll(buildDir, 0o755); err != nil {
 		return nil, err
 	}
@@ -205,7 +210,7 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 		results = append(results, checked{Name: "(shared)", Problems: shared})
 	}
 
-	return &prepared{cfg: cfg, selected: selected, artifacts: artifacts, results: results, failed: failed}, nil
+	return &prepared{cfg: cfg, target: dest, selected: selected, artifacts: artifacts, results: results, failed: failed}, nil
 }
 
 // mapDiagnostic rewrites an artifact location back to the source it came from.
@@ -295,7 +300,7 @@ func short(sha string) string {
 	return sha
 }
 
-// envName is the key this deploy is recorded under in the lock.
+// envName is the label used before a target has been resolved.
 //
 // It must describe the endpoint actually being written to. Defaulting to
 // "prod" while NOTTE_API_URL points at staging would file staging function ids
@@ -313,16 +318,14 @@ func envName() string {
 	return auth.ResolveEnvLabel(auth.GetCurrentAPIURL())
 }
 
-// stackRuntime resolves credentials and fetches the runtime's report.
-func stackRuntime(cmd *cobra.Command) (*pyenv.Health, *pyenv.Toolchain, error) {
+// stackRuntime fetches the runtime's report from the environment being
+// targeted, not from whatever endpoint is ambient.
+func stackRuntime(cmd *cobra.Command, target *stackTarget) (*pyenv.Health, *pyenv.Toolchain, error) {
 	tc, err := pyenv.FindToolchain()
 	if err != nil {
 		return nil, nil, err
 	}
-	client, err := GetClient()
-	if err != nil {
-		return nil, nil, err
-	}
+	client := target.client
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 

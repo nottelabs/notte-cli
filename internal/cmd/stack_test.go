@@ -360,3 +360,110 @@ func TestSharedSourcesOnlyReportsFilesUsedTwice(t *testing.T) {
 		t.Errorf("users should be sorted, got %v", got[0].Functions)
 	}
 }
+
+// The environment a command records under and the endpoint it writes to must
+// be resolved together. Greptile caught these apart: --env chose the lockfile
+// key while the client came from the ambient NOTTE_API_URL, so
+// `deploy --env staging` against a prod default wrote functions to prod and
+// filed their ids under staging.
+func TestNamingAnEnvironmentCannotSilentlyRetarget(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := initInto(t)
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// staging named, nothing declares it, and the endpoint is prod.
+	t.Setenv("NOTTE_API_URL", "https://api.notte.cc")
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	stackEnv = "staging"
+
+	if _, err := resolveStackTarget(cfg); err == nil {
+		t.Fatal("naming an undeclared environment against a prod endpoint must fail, " +
+			"not quietly deploy to prod and record it as staging")
+	} else {
+		for _, want := range []string{"staging", "api.notte.cc"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error should name %q so the mismatch is obvious: %v", want, err)
+			}
+		}
+	}
+}
+
+// With no --env the label follows the endpoint, so a single-environment
+// project needs no configuration at all.
+func TestUnnamedEnvironmentFollowsTheEndpoint(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := initInto(t)
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	t.Setenv("NOTTE_API_URL", "https://us-staging.notte.cc")
+	stackEnv = ""
+
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dest.Env != "staging" {
+		t.Fatalf("label = %q, want staging", dest.Env)
+	}
+	if dest.APIURL != "https://us-staging.notte.cc" {
+		t.Fatalf("url = %q", dest.APIURL)
+	}
+}
+
+// A declared environment supplies its own endpoint, so it works regardless of
+// what NOTTE_API_URL happens to be.
+func TestDeclaredEnvironmentSuppliesItsOwnEndpoint(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := writeStack(t, map[string]string{
+		"notte.toml": `[project]
+name = "demo"
+
+[env.staging]
+api_url = "https://us-staging.notte.cc"
+api_key = "${env:STAGING_KEY}"
+`,
+		"functions/__init__.py":       "",
+		"functions/hello/__init__.py": "",
+		"functions/hello/main.py":     "def run():\n    return 1\n",
+	})
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("STAGING_KEY", "sk-staging")
+	t.Setenv("NOTTE_API_URL", "https://api.notte.cc") // ambient prod, deliberately
+	stackEnv = "staging"
+
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dest.APIURL != "https://us-staging.notte.cc" {
+		t.Fatalf("a declared api_url must win over the ambient one, got %q", dest.APIURL)
+	}
+	if dest.Env != "staging" {
+		t.Fatalf("label = %q", dest.Env)
+	}
+}
+
+// writeStack builds a project directory from a path->content map.
+func writeStack(t *testing.T, files map[string]string) string {
+	t.Helper()
+	dir := t.TempDir()
+	for rel, body := range files {
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}

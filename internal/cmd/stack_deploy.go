@@ -58,8 +58,6 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		target = args[0]
 	}
-	env := envName()
-
 	// Validation runs first and in full. Uploading code that check would have
 	// rejected just moves the failure somewhere more expensive.
 	prep, err := prepareStack(cmd, target)
@@ -76,10 +74,10 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	client, err := GetClient()
-	if err != nil {
-		return err
-	}
+	// The same client the runtime report came from, so the endpoint that was
+	// validated against is the endpoint written to.
+	env := prep.target.Env
+	client := prep.target.client
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
