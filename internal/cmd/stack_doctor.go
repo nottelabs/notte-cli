@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nottelabs/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/project"
 	"github.com/nottelabs/notte-cli/internal/pyenv"
 )
@@ -61,7 +63,12 @@ func runStackDoctor(cmd *cobra.Command, args []string) error {
 	}
 
 	// --- runtime ---------------------------------------------------------
-	client, clientErr := GetClient()
+	//
+	// Resolved through the same coupling every other stack command uses. An
+	// ambient client labelled with --env would report another environment's
+	// Python version and package list as if they were this one's, which is a
+	// diagnostic command telling a confident lie.
+	client, envLabel, clientErr := doctorClient(cfg, cfgErr)
 	if clientErr != nil {
 		bad("no credentials: %v", clientErr)
 	} else {
@@ -103,7 +110,8 @@ func runStackDoctor(cmd *cobra.Command, args []string) error {
 			}
 		}
 		report["api_url"] = client.BaseURL()
-		ok("api %s (env %s)", client.BaseURL(), envName())
+		report["env"] = envLabel
+		ok("api %s (env %s)", client.BaseURL(), envLabel)
 	}
 
 	if IsJSONOutput() {
@@ -113,6 +121,27 @@ func runStackDoctor(cmd *cobra.Command, args []string) error {
 		PrintInfo(line)
 	}
 	return nil
+}
+
+// doctorClient resolves the endpoint to report on.
+//
+// Inside a stack it is the environment-coupled client, so --env means the same
+// thing here as it does for deploy. Outside one there is no notte.toml to
+// resolve against, and doctor still has to work — it is the command people run
+// when nothing else does.
+func doctorClient(cfg *project.Config, cfgErr error) (*api.NotteClient, string, error) {
+	if cfgErr == nil {
+		dest, err := resolveStackTarget(cfg)
+		if err != nil {
+			return nil, "", err
+		}
+		return dest.client, dest.Env, nil
+	}
+	client, err := GetClient()
+	if err != nil {
+		return nil, "", err
+	}
+	return client, auth.ResolveEnvLabel(client.BaseURL()), nil
 }
 
 // doctorEnvironment compares the local venv against the runtime it should

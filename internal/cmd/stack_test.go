@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -467,3 +468,60 @@ func writeStack(t *testing.T, files map[string]string) string {
 	}
 	return dir
 }
+
+// doctor is a diagnostic command, so an ambient client labelled with --env
+// would report another environment's Python version and package list as if
+// they were this one's — a confident lie from the command people run when
+// nothing else works. Greptile caught this one command left unconverted.
+func TestDoctorResolvesTheSelectedEnvironment(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := writeStack(t, map[string]string{
+		"notte.toml": `[project]
+name = "demo"
+
+[env.staging]
+api_url = "https://us-staging.notte.cc"
+api_key = "${env:STAGING_KEY}"
+`,
+	})
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("STAGING_KEY", "sk-staging")
+	t.Setenv("NOTTE_API_URL", "https://api.notte.cc") // ambient prod
+	stackEnv = "staging"
+
+	client, label, err := doctorClient(cfg, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if label != "staging" {
+		t.Fatalf("label = %q, want staging", label)
+	}
+	if client.BaseURL() != "https://us-staging.notte.cc" {
+		t.Fatalf("doctor would report on %q while labelling it staging", client.BaseURL())
+	}
+}
+
+// Outside a stack there is no notte.toml to resolve against, and doctor still
+// has to work: it is what people run when nothing else does.
+func TestDoctorWorksOutsideAStack(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	stackEnv = ""
+	t.Setenv("NOTTE_API_KEY", "sk-test")
+	t.Setenv("NOTTE_API_URL", "https://us-dev.notte.cc")
+
+	client, label, err := doctorClient(nil, errNoStackForTest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if label != "dev" {
+		t.Fatalf("label = %q, want dev", label)
+	}
+	if client.BaseURL() != "https://us-dev.notte.cc" {
+		t.Fatalf("url = %q", client.BaseURL())
+	}
+}
+
+var errNoStackForTest = fmt.Errorf("no stack here")
