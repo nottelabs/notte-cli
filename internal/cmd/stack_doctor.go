@@ -129,6 +129,12 @@ func runStackDoctor(cmd *cobra.Command, args []string) error {
 // thing here as it does for deploy. Outside one there is no notte.toml to
 // resolve against, and doctor still has to work — it is the command people run
 // when nothing else does.
+//
+// The fallback keys on whether --env was promised, not on why the config is
+// unavailable. An earlier version branched on cfgErr alone, which made a
+// notte.toml that merely fails to parse indistinguishable from no project at
+// all: `doctor --env staging` next to a malformed config silently reported on
+// the ambient endpoint instead. A flag that cannot be honoured is refused.
 func doctorClient(cfg *project.Config, cfgErr error) (*api.NotteClient, string, error) {
 	if cfgErr == nil {
 		dest, err := resolveStackTarget(cfg)
@@ -137,11 +143,20 @@ func doctorClient(cfg *project.Config, cfgErr error) (*api.NotteClient, string, 
 		}
 		return dest.client, dest.Env, nil
 	}
+
 	client, err := GetClient()
 	if err != nil {
 		return nil, "", err
 	}
-	return client, auth.ResolveEnvLabel(client.BaseURL()), nil
+	label := auth.ResolveEnvLabel(client.BaseURL())
+
+	if stackEnv != "" && stackEnv != label {
+		return nil, "", fmt.Errorf(
+			"--env %s cannot be resolved: %v\n"+
+				"  the configured endpoint is %s (%s); fix %s, or drop --env to report on %s",
+			stackEnv, cfgErr, client.BaseURL(), label, project.ConfigName, label)
+	}
+	return client, label, nil
 }
 
 // doctorEnvironment compares the local venv against the runtime it should
