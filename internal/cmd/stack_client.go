@@ -77,7 +77,16 @@ func resolveStackTarget(cfg *project.Config) (*stackTarget, error) {
 		// internal/auth already namespaces by the same label. The global
 		// NOTTE_API_KEY is deliberately not consulted: it is not tied to an
 		// endpoint, so using it here is how a prod key reaches staging.
-		key, err := auth.GetKeyringAPIKeyForEnv(auth.ResolveEnvLabel(resolved.APIURL))
+		// The declared name is tried before the endpoint-derived label, so a
+		// project whose [env.staging] points somewhere unusual still looks up
+		// a credential filed under "staging" rather than one chosen by URL.
+		// The endpoint label remains the fallback, since that is where
+		// `notte auth login` files keys.
+		endpointLabel := auth.ResolveEnvLabel(resolved.APIURL)
+		key, err := auth.GetKeyringAPIKeyForEnv(env)
+		if err != nil && endpointLabel != env {
+			key, err = auth.GetKeyringAPIKeyForEnv(endpointLabel)
+		}
 		if err != nil {
 			return nil, fmt.Errorf(
 				"no credential for env %q (%s): %w\n"+
