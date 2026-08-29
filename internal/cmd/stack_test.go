@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nottelabs/notte-cli/internal/api"
 	"github.com/nottelabs/notte-cli/internal/bundle"
 	"github.com/nottelabs/notte-cli/internal/project"
 )
@@ -262,5 +263,100 @@ func TestSyncIsAliasedToInstall(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("sync should answer to install too, got %v", stackSyncCmd.Aliases)
+	}
+}
+
+// Upstream names are not unique — a real workspace has several functions
+// called "test". Slugging without resolving that collapses them onto one path,
+// and the lock keeps whichever id was recorded last while the rest become
+// unreachable. Found against staging, where 3,200 functions collapsed to 23.
+func TestAssignNamesResolvesCollisionsDeterministically(t *testing.T) {
+	name := func(s string) *string { return &s }
+	remote := []api.FunctionListItemResponse{
+		{FunctionId: "ccc", Name: name("test")},
+		{FunctionId: "aaa", Name: name("test")},
+		{FunctionId: "bbb", Name: name("test")},
+		{FunctionId: "ddd", Name: name("unique")},
+	}
+
+	got := assignNames(remote)
+	if len(got) != 4 {
+		t.Fatalf("every function needs a name: %v", got)
+	}
+	seen := map[string]bool{}
+	for _, n := range got {
+		if seen[n] {
+			t.Fatalf("two functions share the local name %q: %v", n, got)
+		}
+		seen[n] = true
+	}
+	// Lowest id keeps the bare slug, so the mapping does not shuffle when the
+	// listing order changes.
+	if got["aaa"] != "test" {
+		t.Errorf("lowest id should keep the bare slug, got %q", got["aaa"])
+	}
+	if got["ddd"] != "unique" {
+		t.Errorf("an uncontested name should be untouched, got %q", got["ddd"])
+	}
+
+	// Stable across a reordered listing.
+	shuffled := []api.FunctionListItemResponse{remote[3], remote[1], remote[0], remote[2]}
+	for id, n := range assignNames(shuffled) {
+		if got[id] != n {
+			t.Errorf("id %s named %q then %q — assignment is not stable", id, got[id], n)
+		}
+	}
+}
+
+func TestFunctionSlugSanitises(t *testing.T) {
+	name := func(s string) *string { return &s }
+	cases := map[string]string{
+		"HN Top Posts":           "hn_top_posts",
+		"managed auth - bluesky": "managed_auth_bluesky",
+		"  padded  ":             "padded",
+	}
+	for in, want := range cases {
+		if got := functionSlug(api.FunctionListItemResponse{Name: name(in)}); got != want {
+			t.Errorf("%q -> %q, want %q", in, got, want)
+		}
+	}
+	if got := functionSlug(api.FunctionListItemResponse{}); got != "" {
+		t.Errorf("a nameless function should slug to empty, got %q", got)
+	}
+}
+
+func TestReadEnvFileParsesTheUsualForms(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".env.prod")
+	body := "# comment\n\nPLAIN=value\nexport EXPORTED=two\nQUOTED=\"three\"\nSINGLE='four'\nSPACED = five \nnot_upper=ignored\n"
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := readEnvFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"PLAIN": "value", "EXPORTED": "two", "QUOTED": "three", "SINGLE": "four", "SPACED": "five"}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %q, want %q", k, got[k], v)
+		}
+	}
+	// Secret names are uppercase by API rule, so a lowercase key is not one.
+	if _, ok := got["not_upper"]; ok {
+		t.Error("lowercase keys are not valid secret names and should be skipped")
+	}
+}
+
+func TestSharedSourcesOnlyReportsFilesUsedTwice(t *testing.T) {
+	got := sharedSources(map[string][]string{
+		"_shared/http.py": {"b", "a"},
+		"solo/main.py":    {"solo"},
+	})
+	if len(got) != 1 || got[0].Path != "_shared/http.py" {
+		t.Fatalf("got %+v", got)
+	}
+	if got[0].Functions[0] != "a" {
+		t.Errorf("users should be sorted, got %v", got[0].Functions)
 	}
 }

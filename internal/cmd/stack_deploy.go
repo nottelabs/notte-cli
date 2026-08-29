@@ -302,32 +302,17 @@ func configuredSecretNames(ctx context.Context, client *api.NotteClient) (map[st
 
 // remoteFunctionsByName maps upstream names to ids, for the duplicate guard.
 func remoteFunctionsByName(ctx context.Context, client *api.NotteClient) (map[string]string, error) {
-	out := map[string]string{}
-	page := 1
-	for {
-		size := 100
-		resp, err := client.Client().ListFunctionsWithResponse(ctx, &api.ListFunctionsParams{
-			Page: &page, PageSize: &size,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("list functions: %w", err)
-		}
-		if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-			return nil, err
-		}
-		if resp.JSON200 == nil {
-			return out, nil
-		}
-		for _, f := range resp.JSON200.Items {
-			if f.Name != nil {
-				out[*f.Name] = f.FunctionId
-			}
-		}
-		if !resp.JSON200.HasNext {
-			return out, nil
-		}
-		page++
+	functions, err := listAllFunctions(ctx, client)
+	if err != nil {
+		return nil, err
 	}
+	out := map[string]string{}
+	for _, f := range functions {
+		if f.Name != nil {
+			out[*f.Name] = f.FunctionId
+		}
+	}
+	return out, nil
 }
 
 type uploadResult struct {
