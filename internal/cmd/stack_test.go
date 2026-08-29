@@ -588,3 +588,41 @@ func TestDoctorRefusesEnvWhenTheConfigIsUnreadable(t *testing.T) {
 		t.Errorf("error should point at the config: %v", err)
 	}
 }
+
+// A credential is chosen by the endpoint it will be sent to, never by the
+// section name that named it. Keyring entries are filed under
+// ResolveEnvLabel(url) at write time, so "api_key:staging" is the staging
+// *endpoint's* key — and a project may call any endpoint whatever it likes.
+// Preferring the section name meant `[env.staging] api_url = api.notte.cc`
+// would send a staging credential to production.
+func TestCredentialFollowsTheEndpointNotTheSectionName(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := writeStack(t, map[string]string{
+		"notte.toml": `[project]
+name = "demo"
+
+[env.staging]
+api_url = "https://api.notte.cc"
+api_key = "${env:EXPLICIT_KEY}"
+`,
+	})
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("EXPLICIT_KEY", "sk-explicit")
+	stackEnv = "staging"
+
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// An explicit api_key is the supported way to bind a credential to a
+	// section whose name and endpoint disagree.
+	if dest.APIURL != "https://api.notte.cc" {
+		t.Fatalf("url = %q", dest.APIURL)
+	}
+	if dest.Env != "staging" {
+		t.Fatalf("label = %q", dest.Env)
+	}
+}
