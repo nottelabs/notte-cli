@@ -35,6 +35,22 @@ func ResolveEnvLabel(apiURL string) string {
 	return host
 }
 
+// IsKnownEnvHost reports whether an API URL maps to one of the canonical
+// environments, as opposed to a hostname used verbatim as its own label.
+//
+// The difference matters to callers that want to detect a contradiction: a URL
+// that is definitively prod disagreeing with a section called staging is a
+// misconfiguration, while a self-hosted or preview host simply has no
+// canonical label to disagree with.
+func IsKnownEnvHost(apiURL string) bool {
+	u, err := url.Parse(apiURL)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	_, ok := hostToEnvLabel[u.Hostname()]
+	return ok
+}
+
 // KeyringKeyForEnv returns the env-qualified keyring key for the given label.
 func KeyringKeyForEnv(envLabel string) string {
 	return KeyringKey + ":" + envLabel

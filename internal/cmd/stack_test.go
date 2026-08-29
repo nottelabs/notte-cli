@@ -595,7 +595,7 @@ func TestDoctorRefusesEnvWhenTheConfigIsUnreadable(t *testing.T) {
 // *endpoint's* key — and a project may call any endpoint whatever it likes.
 // Preferring the section name meant `[env.staging] api_url = api.notte.cc`
 // would send a staging credential to production.
-func TestCredentialFollowsTheEndpointNotTheSectionName(t *testing.T) {
+func TestSectionNamingAnotherEnvironmentIsRefused(t *testing.T) {
 	defer func() { stackEnv = "" }()
 	dir := writeStack(t, map[string]string{
 		"notte.toml": `[project]
@@ -613,16 +613,45 @@ api_key = "${env:EXPLICIT_KEY}"
 	t.Setenv("EXPLICIT_KEY", "sk-explicit")
 	stackEnv = "staging"
 
-	dest, err := resolveStackTarget(cfg)
+	// A section naming a known endpoint of another environment is refused
+	// outright: the lock key and every report use the section name, so this
+	// would file production deployments under staging.
+	_, err = resolveStackTarget(cfg)
+	if err == nil {
+		t.Fatal("[env.staging] pointing at the prod endpoint must be refused")
+	}
+	for _, want := range []string{"api.notte.cc", "prod"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error should name the contradiction (%q): %v", want, err)
+		}
+	}
+}
+
+// A self-hosted or preview endpoint has no canonical label, so there is
+// nothing for the section name to contradict and it stands.
+func TestCustomEndpointSectionIsAllowed(t *testing.T) {
+	defer func() { stackEnv = "" }()
+	dir := writeStack(t, map[string]string{
+		"notte.toml": `[project]
+name = "demo"
+
+[env.preview]
+api_url = "https://my-branch.internal.example.com"
+api_key = "${env:PREVIEW_KEY}"
+`,
+	})
+	cfg, err := project.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// An explicit api_key is the supported way to bind a credential to a
-	// section whose name and endpoint disagree.
-	if dest.APIURL != "https://api.notte.cc" {
-		t.Fatalf("url = %q", dest.APIURL)
+	t.Setenv("PREVIEW_KEY", "sk-preview")
+	stackEnv = "preview"
+
+	dest, err := resolveStackTarget(cfg)
+	if err != nil {
+		t.Fatalf("an unknown host cannot contradict a section name: %v", err)
 	}
-	if dest.Env != "staging" {
-		t.Fatalf("label = %q", dest.Env)
+	if dest.Env != "preview" || dest.APIURL != "https://my-branch.internal.example.com" {
+		t.Fatalf("got env=%q url=%q", dest.Env, dest.APIURL)
 	}
 }
