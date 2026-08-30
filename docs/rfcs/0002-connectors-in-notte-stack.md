@@ -37,6 +37,7 @@ functions/
   _shared/
     contract.py            LoginResult, VerifierResult, classify_login_failure
     email_2fa.py           the mailbox polling loop, written once
+                           — both become an importable package later; see below
   amazon_search/
     main.py                → a function
   bluesky/
@@ -45,7 +46,11 @@ functions/
     helpers.py             connector-local, bundled into both roles
 ```
 
-**Discovery gains one sentence.** A directory under `functions/` containing `main.py` is a function; one containing `login.py` and `verifier.py` is a connector. Neither, or only one of the pair, is an error naming both options — the same treatment a directory without `main.py` already gets.
+**Discovery gains one sentence, and it is depth-independent.** *Any* directory under `functions/` containing `main.py` is a function; any containing `login.py` and `verifier.py` is a connector. Neither, or only one of the pair, is an error naming both options — the same treatment a directory without `main.py` already gets.
+
+Depth-independence is what lets grouping be a convention rather than a rule. `functions/bluesky/` and `functions/auth/bluesky/` both work, so a project with nine connectors can stay flat and one with fifty can group, without the CLI reserving the name `auth` or anyone migrating. Verified that the bundler already resolves three- and four-dot relative imports, so the deeper layout needs no change to it.
+
+The slug is the directory name, never the path: `functions/auth/bluesky/` deploys as `bluesky`. The catalog slug is globally unique, so a grouping directory must not leak into it.
 
 **This costs nothing in the bundler.** Each role is an ordinary entrypoint, and the existing flattener already handles two of them in one directory sharing local helpers. Verified:
 
@@ -56,9 +61,51 @@ bluesky/verifier.py -> [bluesky/helpers.py  _shared/contract.py  bluesky/verifie
 
 Relative imports stay two dots, exactly as in a function: `from .._shared.contract import LoginResult`.
 
-### Why not a `connectors/` subtree
+### On grouping directories
 
-The obvious alternative is `functions/connectors/<slug>/`, which reads well in a listing. It was rejected because it pushes shared imports to three dots (`from ..._shared.contract import ...`) and introduces a second reserved directory name beside `_shared`. Making the *filename* carry the meaning keeps one flat rule and one import depth.
+An earlier draft argued against `functions/auth/<slug>/` on the grounds that it pushes shared imports to three dots. That objection was too strong: the extra dot is cosmetic, and it was outweighed by something the flat rule genuinely costs — **kind is invisible in a listing**. `ls functions/` showing `amazon_search/ bluesky/ google/ hn_scraper/` tells you nothing about which are connectors. At nine connectors that is fine; at fifty mixed with twenty functions it is not.
+
+Sibling top-level directories (`functions/` beside `auth/`) were also considered and are the weaker option. The bundler roots at `functions_dir`, so siblings force the root up to the repository, putting `notte.toml`, `.notte/` and `pyrightconfig.json` inside the Python package root. They also split shared code: `contract.py` would have to live in one tree and be reached from the other as `from ..functions._shared.http import`, which is worse than the depth it was avoiding.
+
+Depth-independence makes the choice the project's rather than the CLI's.
+
+---
+
+## The shared contract should be a package, not files in the tree
+
+`contract.py` and `email_2fa.py` are not really *the user's* code. They are Notte's runtime contract — `LoginResult`, `VerifierResult`, the ~55 ordered failure phrases in `classify_login_failure`, and the mailbox polling loop. Copying them into every project is how the current design ends up with seven hand-copied 2FA loops and a regex that splices 271 lines into every artifact.
+
+The alternative is an importable package the runner ships, so a connector reads:
+
+```python
+from notte_managed_auth import LoginResult, classify_login_failure
+from notte_managed_auth.email import read_verification_code
+```
+
+**This works, and the part that looked like it would block it does not.** Three facts, checked rather than assumed:
+
+| | |
+|---|---|
+| The server's contract check | only `parsed.variables == ["session_id"]` (`managed_auth/service.py:1396`). Nothing about the return type |
+| `response_format` | connectors never send it, so `check_run_returns_pydantic_model`'s "declared in the same file" rule never applies to them |
+| managed-auth's own check | a string comparison that the annotation reads literally `LoginResult` (`deploy.py:379`) — which an imported name satisfies |
+
+So `contract.py` does not need flattening at all. It becomes an ordinary allowlisted import that survives into the artifact as an import, exactly like `pydantic`.
+
+What that changes:
+
+- **The 271-line splice disappears**, and with it the coupling where editing one shared file changes all nine bundle hashes.
+- **The seven hand-copied 2FA loops disappear** without needing `_shared` to hold them.
+- **`_shared/` gets much lighter**, which incidentally weakens the last argument against grouping directories — there is less left to reach across a dot.
+- **Connectors become nearly single-file**, which is what they looked like before the contract was forced inline.
+
+The requirement is that the package ships in the runner image and appears in its allowlist. That is now *checkable* rather than assumed: `GET /functions/health` lists what the runner has, and today it has no auth package — `google, gspread, httpcloak, httpx, litellm, loguru, notte, notte_agent, notte_browser, notte_core, notte_sdk, playwright, pydantic, requests, typing_extensions`. Adding one would show up there, versioned, with its install source.
+
+### Timing
+
+**Not yet.** The library is worth extracting once the shape has stopped moving, and the way to find that out is to keep building connectors against it internally. `classify_login_failure`'s phrase list in particular is still growing, annotated `(observed)` as each one is read off a live site — a published package would freeze an interface that is still learning.
+
+The natural sequence: keep `_shared/contract.py` in-tree while connectors are built, watch which parts stop changing, and extract when the churn stops. A month or two of real use is a reasonable read. Documenting it as a library is what makes third-party connectors possible at all, so it is a prerequisite for the customer-facing question below, not a parallel track.
 
 ---
 
@@ -147,7 +194,7 @@ A function's contract is `run()` returning a `BaseModel` declared in the same fi
 | `Makefile` | 113 lines | gone — `notte stack` has subcommands |
 | `connectors/*.json` | 9 files | `[connectors.*]` in `notte.toml` |
 | `contract.py` regex splice | `inline_contract()` | an ordinary import |
-| the 2FA polling loop | **hand-copied into 7 login files** | `_shared/email_2fa.py`, imported |
+| the 2FA polling loop | **hand-copied into 7 login files** | imported — from `_shared/` now, from the package later |
 
 That last row is the clearest sign the current model is wrong. `login/email_2fa.py` exists and is imported by exactly two *undeployed* recordings, because a deployed connector is a single file and cannot import it. Seven shipped connectors carry a copy instead.
 
