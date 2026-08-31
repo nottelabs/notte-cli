@@ -2036,6 +2036,7 @@ type LlmModel string
 type MailboxConnectRequest struct {
 	AllowedOrigin      string                         `json:"allowed_origin"`
 	ErrorRedirectUri   string                         `json:"error_redirect_uri"`
+	MailboxId          *string                        `json:"mailbox_id,omitempty"`
 	Provider           *MailboxConnectRequestProvider `json:"provider,omitempty"`
 	SuccessRedirectUri string                         `json:"success_redirect_uri"`
 }
