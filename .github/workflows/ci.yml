@@ -37,6 +37,14 @@ jobs:
             exit 1
           fi
 
+      # Both guards read a live source of truth, so they run with -strict: in CI
+      # an unreachable API or skills repository is a failure, not a skip.
+      - name: Check every API endpoint is exposed or explicitly skipped
+        run: make check-endpoints
+
+      - name: Check every command is documented in notte-skills
+        run: make check-skills
+
       - name: Test
         run: go test -v -race -short -coverprofile=coverage.out ./...
 

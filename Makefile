@@ -1,4 +1,5 @@
-.PHONY: build install clean test test-integration test-all lint fmt generate check setup help
+.PHONY: build install clean test test-integration test-all lint fmt generate check setup help \
+        check-endpoints check-skills check-coverage
 
 VERSION ?= dev
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -71,6 +72,14 @@ fmt: ## Format code
 
 generate: ## Generate code (API client, etc.)
 	./scripts/generate.sh
+
+check-endpoints: ## Fail if an API endpoint is neither reachable from a command nor recorded as skipped
+	@go run ./scripts/checkcoverage -check endpoints -strict
+
+check-skills: ## Fail if a command is undocumented in the notte-skills repository
+	@go run ./scripts/checkcoverage -check skills -strict
+
+check-coverage: check-endpoints check-skills ## Run both coverage guards
 
 check: ## Verify generated code is up to date (fails if `make generate` would produce a diff)
 	@echo "Checking for local changes in generated files..."

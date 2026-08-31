@@ -521,3 +521,31 @@ This project is licensed under the MIT License.
 - [Main repository (nottelabs/notte)](https://github.com/nottelabs/notte)
 
 Copyright © 2025 Notte Labs, Inc.
+
+## Coverage guards
+
+Two checks keep the CLI in step with what surrounds it. Both read a live source
+of truth, so both need the network; `make` runs them with `-strict`, where an
+unreachable source is a failure. The pre-commit hooks run them without it, so an
+offline commit warns and proceeds.
+
+```bash
+make check-endpoints   # every API endpoint is reachable or recorded as skipped
+make check-skills      # every command is documented in nottelabs/notte-skills
+make check-coverage    # both
+```
+
+`check-endpoints` compares the API's OpenAPI spec against the commands. An
+endpoint is covered when a command calls its generated client method; anything
+else has to be listed in [`scripts/endpoint-coverage.txt`](scripts/endpoint-coverage.txt)
+with a reason, as `manual` (a command builds the request itself) or `skip` (not
+exposed on purpose). A line whose endpoint the API no longer serves fails too,
+so the file cannot rot the way the flag generator's endpoint map did.
+
+`check-skills` walks the cobra tree and requires every non-hidden command to be
+mentioned somewhere under `plugins/notte/skills/` in the skills repository. Pass
+`-skills-dir <path>` to check against a working copy before pushing it:
+
+```bash
+go run ./scripts/checkcoverage -check skills -skills-dir ../notte-skills -strict
+```
