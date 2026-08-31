@@ -104,6 +104,8 @@ var endpointMap = map[endpoint]string{
 	{"POST", "/vaults/{vault_id}/credentials"}:    "VaultCredentialsAdd",
 	{"POST", "/functions"}:                        "FunctionCreate",
 	{"POST", "/functions/{function_id}"}:          "FunctionUpdate",
+	{"PATCH", "/functions/{function_id}"}:         "FunctionConfigure",
+	{"POST", "/functions/{function_id}/rollback"}: "FunctionRollback",
 	{"POST", "/functions/{function_id}/schedule"}: "FunctionScheduleSet",
 }
 

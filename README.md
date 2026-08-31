@@ -203,9 +203,13 @@ notte functions show --function-id <id>  # View specific function details (diffe
 notte functions create --file workflow.py --response-format @schema.json  # ... with its response documented
 notte functions update --file workflow.py  # Update current function code
 notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
+notte functions configure --self-healing --instructions "..."  # Set self-healing and its instructions
+notte functions rollback --version <version>  # Restore an earlier version (see `versions` in show)
+notte functions health                # Runtime health: Python version, installed packages, reachability
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
 notte functions run                   # Execute current function
+notte functions run --no-stream       # ... returning only the final response, without streamed logs
 notte functions runs [--page N] [--page-size N] [--running]  # List runs for current function (--running = in-flight only)
 notte functions run-stop --run-id <id>  # Stop a running function execution
 notte functions run-metadata --run-id <id>  # Get run logs and results
@@ -223,6 +227,12 @@ return model:
 python -c 'import json, typing, client; print(json.dumps(typing.get_type_hints(client.run)["return"].model_json_schema()))' > schema.json
 notte functions create --file client.py --response-format @schema.json
 ```
+
+`configure` sends only the flags you pass, so setting `--instructions` leaves
+self-healing untouched. Disable self-healing with `--self-healing=false`: the
+API treats an absent field as "leave it alone" rather than "off". Note that it
+can only be enabled on functions an agent built — a CLI-created function has no
+thread for the healer to resume, and the API rejects it.
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
 
