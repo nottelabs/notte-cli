@@ -19,21 +19,23 @@ import (
 )
 
 var (
-	functionsCreateFile        string
-	functionsCreateName        string
-	functionsCreateDescription string
-	functionsCreateShared      bool
+	functionsCreateFile           string
+	functionsCreateName           string
+	functionsCreateDescription    string
+	functionsCreateShared         bool
+	functionsCreateResponseFormat string
 )
 
 var (
-	functionID               string
-	functionUpdateFile       string
-	functionRunID            string
-	functionMetadataJSON     string
-	functionCronExpression   string
-	functionRunVariables     []string // Variables as key=value pairs
-	functionRunVariablesJSON string   // Variables as JSON string
-	functionSecretValue      string
+	functionID                   string
+	functionUpdateFile           string
+	functionUpdateResponseFormat string
+	functionRunID                string
+	functionMetadataJSON         string
+	functionCronExpression       string
+	functionRunVariables         []string // Variables as key=value pairs
+	functionRunVariablesJSON     string   // Variables as JSON string
+	functionSecretValue          string
 )
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
@@ -267,6 +269,7 @@ func init() {
 	functionsCreateCmd.Flags().StringVar(&functionsCreateName, "name", "", "Function name")
 	functionsCreateCmd.Flags().StringVar(&functionsCreateDescription, "description", "", "Function description")
 	functionsCreateCmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "Make function public")
+	functionsCreateCmd.Flags().StringVar(&functionsCreateResponseFormat, responseFormatFlag, "", responseFormatFlagUsage)
 
 	// Show command flags
 	functionsShowCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -275,6 +278,7 @@ func init() {
 	functionsUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsUpdateCmd.Flags().StringVar(&functionUpdateFile, "file", "", "Path to updated function file (required)")
 	_ = functionsUpdateCmd.MarkFlagRequired("file")
+	functionsUpdateCmd.Flags().StringVar(&functionUpdateResponseFormat, responseFormatFlag, "", responseFormatFlagUsage)
 
 	// Delete command flags
 	functionsDeleteCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -370,6 +374,14 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Resolved before anything is opened or uploaded: a malformed schema is a
+	// typo in the invocation, and reporting it should not depend on the file
+	// or the network being there.
+	responseFormat, err := readResponseFormat(cmd, functionsCreateResponseFormat)
+	if err != nil {
+		return err
+	}
+
 	// Open the function file
 	file, err := os.Open(functionsCreateFile)
 	if err != nil {
@@ -404,6 +416,11 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("shared") {
 		if err := writer.WriteField("shared", fmt.Sprintf("%t", functionsCreateShared)); err != nil {
 			return fmt.Errorf("failed to write shared field: %w", err)
+		}
+	}
+	if responseFormat != "" {
+		if err := writer.WriteField("response_format", responseFormat); err != nil {
+			return fmt.Errorf("failed to write response_format field: %w", err)
 		}
 	}
 
@@ -474,6 +491,11 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	responseFormat, err := readResponseFormat(cmd, functionUpdateResponseFormat)
+	if err != nil {
+		return err
+	}
+
 	// Open the function file
 	file, err := os.Open(functionUpdateFile)
 	if err != nil {
@@ -492,6 +514,12 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 	}
 	if _, err := io.Copy(part, file); err != nil {
 		return fmt.Errorf("failed to copy file data: %w", err)
+	}
+
+	if responseFormat != "" {
+		if err := writer.WriteField("response_format", responseFormat); err != nil {
+			return fmt.Errorf("failed to write response_format field: %w", err)
+		}
 	}
 
 	_ = writer.Close()

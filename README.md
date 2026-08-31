@@ -200,7 +200,9 @@ notte functions list [--page N] [--page-size N] [--include-deleted]  # List func
 notte functions create --file workflow.py  # Create a new function
 notte functions show                  # View current function details
 notte functions show --function-id <id>  # View specific function details (different from current function)
+notte functions create --file workflow.py --response-format @schema.json  # ... with its response documented
 notte functions update --file workflow.py  # Update current function code
+notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
 notte functions run                   # Execute current function
@@ -209,6 +211,17 @@ notte functions run-stop --run-id <id>  # Stop a running function execution
 notte functions run-metadata --run-id <id>  # Get run logs and results
 notte functions schedule --cron "0 9 * * *"  # Schedule current function
 notte functions unschedule            # Remove schedule from current function
+```
+
+`--response-format` takes a JSON Schema describing what `run()` returns, as
+inline JSON, `@file.json`, or `-` for stdin. The API never derives it, so a
+function created without it has no documented response — which is what the
+console reads to show callers the shape they will get back. From a pydantic
+return model:
+
+```bash
+python -c 'import json, typing, client; print(json.dumps(typing.get_type_hints(client.run)["return"].model_json_schema()))' > schema.json
+notte functions create --file client.py --response-format @schema.json
 ```
 
 **Note:** When you create a function, it automatically becomes the "current" function. All subsequent commands use this function by default. Use `--function-id <function-id>` only when you need to manage multiple functions simultaneously or reference a specific function.
