@@ -145,24 +145,34 @@ func TestProfileCookiesSet_AcceptsBothFileShapes(t *testing.T) {
 	}
 }
 
+// Both shapes have to refuse an empty set. `--mode` defaults to replace, so
+// sending zero cookies empties the profile - a destructive result from what is
+// almost always a bad export.
 func TestProfileCookiesSet_RejectsAFileWithNoCookies(t *testing.T) {
-	setupCoverageTest(t)
+	for _, content := range []string{`{"notCookies":1}`, `[]`, `{"cookies":[]}`, `   `} {
+		t.Run(content, func(t *testing.T) {
+			server := setupCoverageTest(t)
 
-	path := filepath.Join(t.TempDir(), "cookies.json")
-	if err := os.WriteFile(path, []byte(`{"notCookies":1}`), 0o600); err != nil {
-		t.Fatalf("writing file: %v", err)
-	}
+			path := filepath.Join(t.TempDir(), "cookies.json")
+			if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+				t.Fatalf("writing file: %v", err)
+			}
 
-	origID, origFile := profileID, profileCookiesFile
-	profileID, profileCookiesFile = profileIDTest, path
-	t.Cleanup(func() { profileID, profileCookiesFile = origID, origFile })
+			origID, origFile := profileID, profileCookiesFile
+			profileID, profileCookiesFile = profileIDTest, path
+			t.Cleanup(func() { profileID, profileCookiesFile = origID, origFile })
 
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
 
-	err := runProfileCookiesSet(cmd, nil)
-	if err == nil || !strings.Contains(err.Error(), "no cookies") {
-		t.Fatalf("expected a no-cookies error, got %v", err)
+			err := runProfileCookiesSet(cmd, nil)
+			if err == nil {
+				t.Fatal("expected an error rather than a request that empties the profile")
+			}
+			if len(server.Requests("/profiles/"+profileIDTest+"/cookies")) != 0 {
+				t.Error("an empty cookie set still reached the API")
+			}
+		})
 	}
 }
 

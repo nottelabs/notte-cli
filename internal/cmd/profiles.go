@@ -316,6 +316,12 @@ func parseProfileCookies(data []byte) (*api.ProfileCookiesImportRequest, error) 
 		if err := json.Unmarshal(trimmed, &cookies); err != nil {
 			return nil, fmt.Errorf("failed to parse cookies JSON: %w", err)
 		}
+		// `[]` parses fine and would be sent as an empty list, which in the
+		// default replace mode empties the profile - a destructive result from
+		// what is almost always a bad export.
+		if len(cookies) == 0 {
+			return nil, emptyCookiesError()
+		}
 		return &api.ProfileCookiesImportRequest{Cookies: cookies}, nil
 	}
 
@@ -324,7 +330,13 @@ func parseProfileCookies(data []byte) (*api.ProfileCookiesImportRequest, error) 
 		return nil, fmt.Errorf("failed to parse cookies JSON: %w", err)
 	}
 	if len(body.Cookies) == 0 {
-		return nil, fmt.Errorf("cookies file %s has no cookies: expected an array, or an object with a \"cookies\" key", profileCookiesFile)
+		return nil, emptyCookiesError()
 	}
 	return &body, nil
+}
+
+func emptyCookiesError() error {
+	return fmt.Errorf(
+		"cookies file %s has no cookies: expected an array, or an object with a \"cookies\" key",
+		profileCookiesFile)
 }
