@@ -121,9 +121,13 @@ var functionsUpdateCmd = &cobra.Command{
 
 var functionsConfigureCmd = &cobra.Command{
 	Use:   "configure",
-	Short: "Set self-healing and its instructions",
-	Long: "Update a function's metadata. Only the flags you pass are sent, so " +
-		"configuring instructions leaves self-healing as it was, and vice versa.",
+	Short: "Set usage notes and self-healing",
+	Long: "Update a function's metadata.\n\n" +
+		"--run-instructions is documentation for whoever calls the function - how long a " +
+		"run takes, what each variable is for, which sites it trips over. It is not " +
+		"input to the self-healing agent.\n\n" +
+		"Only the flags you pass are sent, so setting instructions leaves self-healing " +
+		"as it was, and vice versa.",
 	Args: cobra.NoArgs,
 	RunE: runFunctionConfigure,
 }
@@ -499,14 +503,14 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 
 	// An empty PATCH is accepted by the API and changes nothing, which reads as
 	// success for a command that did not do what the caller meant.
-	if !cmd.Flags().Changed("instructions") && !cmd.Flags().Changed("self-healing") {
-		return errors.New("nothing to configure: pass --instructions, --self-healing, or both")
+	if !cmd.Flags().Changed("run-instructions") && !cmd.Flags().Changed("self-healing") {
+		return errors.New("nothing to configure: pass --run-instructions, --self-healing, or both")
 	}
-	// `--instructions ""` is refused rather than sent. The generated builder
+	// `--run-instructions ""` is refused rather than sent. The generated builder
 	// omits an empty string, so it would otherwise travel as far as an empty
 	// PATCH: accepted, 200, nothing changed, and the caller told it worked.
-	if cmd.Flags().Changed("instructions") && FunctionConfigureInstructions == "" {
-		return errors.New("--instructions cannot be empty")
+	if cmd.Flags().Changed("run-instructions") && FunctionConfigureInstructions == "" {
+		return errors.New("--run-instructions cannot be empty")
 	}
 
 	client, err := GetClient()
