@@ -103,6 +103,10 @@ var FieldDescriptionOverrides = map[string]map[string]string{
 	"VaultUpdate": {
 		"name": "New name for the vault",
 	},
+	"FunctionConfigure": {
+		"instructions": "Instructions the self-healing agent follows when the function breaks",
+		"self_healing": "Let the agent repair the function when a run fails",
+	},
 }
 
 // Field represents a field in an OpenAPI schema

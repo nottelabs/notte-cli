@@ -23,6 +23,7 @@ var (
 	functionMetadataJSON     string
 	functionRunVariables     []string // Variables as key=value pairs
 	functionRunVariablesJSON string   // Variables as JSON string
+	functionRunNoStream      bool     // Opt out of log streaming
 	functionSecretValue      string
 )
 
@@ -116,6 +117,29 @@ var functionsUpdateCmd = &cobra.Command{
 	Short: "Update function",
 	Args:  cobra.NoArgs,
 	RunE:  runFunctionUpdate,
+}
+
+var functionsConfigureCmd = &cobra.Command{
+	Use:   "configure",
+	Short: "Set self-healing and its instructions",
+	Long: "Update a function's metadata. Only the flags you pass are sent, so " +
+		"configuring instructions leaves self-healing as it was, and vice versa.",
+	Args: cobra.NoArgs,
+	RunE: runFunctionConfigure,
+}
+
+var functionsRollbackCmd = &cobra.Command{
+	Use:   "rollback",
+	Short: "Restore an earlier version of the function",
+	Args:  cobra.NoArgs,
+	RunE:  runFunctionRollback,
+}
+
+var functionsHealthCmd = &cobra.Command{
+	Use:   "health",
+	Short: "Show the function runtime's health and available packages",
+	Args:  cobra.NoArgs,
+	RunE:  runFunctionHealth,
 }
 
 var functionsDeleteCmd = &cobra.Command{
@@ -233,6 +257,9 @@ func init() {
 	functionsCmd.AddCommand(functionsCreateCmd)
 	functionsCmd.AddCommand(functionsShowCmd)
 	functionsCmd.AddCommand(functionsUpdateCmd)
+	functionsCmd.AddCommand(functionsConfigureCmd)
+	functionsCmd.AddCommand(functionsRollbackCmd)
+	functionsCmd.AddCommand(functionsHealthCmd)
 	functionsCmd.AddCommand(functionsDeleteCmd)
 	functionsCmd.AddCommand(functionsRunCmd)
 	functionsCmd.AddCommand(functionsRunsCmd)
@@ -261,6 +288,15 @@ func init() {
 	functionsUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	RegisterFunctionUpdateFlags(functionsUpdateCmd)
 
+	// Configure command flags
+	functionsConfigureCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
+	RegisterFunctionConfigureFlags(functionsConfigureCmd)
+
+	// Rollback command flags
+	functionsRollbackCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
+	RegisterFunctionRollbackFlags(functionsRollbackCmd)
+	_ = functionsRollbackCmd.MarkFlagRequired("version")
+
 	// Delete command flags
 	functionsDeleteCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
@@ -268,6 +304,10 @@ func init() {
 	functionsRunCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunCmd.Flags().StringArrayVar(&functionRunVariables, "var", []string{}, "Variable as key=value pair (can be used multiple times)")
 	functionsRunCmd.Flags().StringVar(&functionRunVariablesJSON, "vars", "", "Variables as JSON object string")
+	// An opt-out rather than a --stream toggle: the API streams by default, so
+	// a positive flag would be an opt-in to something already on. Same shape,
+	// and the same reasoning, as --no-solve-captchas on sessions start.
+	functionsRunCmd.Flags().BoolVar(&functionRunNoStream, "no-stream", false, "Return only the final response instead of streaming logs")
 
 	// Runs command flags
 	functionsRunsCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -452,6 +492,105 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 	return GetFormatter().Print(resp.JSON200)
 }
 
+func runFunctionConfigure(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
+	// An empty PATCH is accepted by the API and changes nothing, which reads as
+	// success for a command that did not do what the caller meant.
+	if !cmd.Flags().Changed("instructions") && !cmd.Flags().Changed("self-healing") {
+		return errors.New("nothing to configure: pass --instructions, --self-healing, or both")
+	}
+	// `--instructions ""` is refused rather than sent. The generated builder
+	// omits an empty string, so it would otherwise travel as far as an empty
+	// PATCH: accepted, 200, nothing changed, and the caller told it worked.
+	if cmd.Flags().Changed("instructions") && FunctionConfigureInstructions == "" {
+		return errors.New("--instructions cannot be empty")
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	body, err := BuildFunctionConfigureRequest(cmd)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.FunctionMetadataUpdateParams{}
+	resp, err := client.Client().FunctionMetadataUpdateWithResponse(ctx, functionID, params, *body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
+func runFunctionRollback(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	body, err := BuildFunctionRollbackRequest(cmd)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.FunctionRollbackParams{}
+	resp, err := client.Client().FunctionRollbackWithResponse(ctx, functionID, params, *body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
+// runFunctionHealth reports on the runtime functions execute in: which Python
+// it is, what is installed, and whether it is reachable at all. Not generated —
+// a GET has no request body, which is all the generator reads.
+func runFunctionHealth(cmd *cobra.Command, args []string) error {
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.FunctionRuntimeHealthParams{}
+	resp, err := client.Client().FunctionRuntimeHealthWithResponse(ctx, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
 func runFunctionDelete(cmd *cobra.Command, args []string) error {
 	if err := RequireFunctionID(); err != nil {
 		return err
@@ -535,6 +674,11 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	requestBody := map[string]interface{}{
 		"function_id": functionID,
 		"variables":   variables,
+	}
+	// Sent only when asked. The API's own default is true, so transmitting it
+	// unconditionally would freeze today's server-side behaviour into the client.
+	if functionRunNoStream {
+		requestBody["stream"] = false
 	}
 
 	bodyJSON, err := json.Marshal(requestBody)
