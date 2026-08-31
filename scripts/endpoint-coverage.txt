@@ -1,0 +1,68 @@
+# Endpoints the CLI does not reach through the generated client.
+#
+# Every operation the API serves has to be accounted for: either a command calls
+# its generated client method - which needs no line here, the checker sees the
+# call - or it is listed below with a reason. `make check-endpoints` fails on an
+# endpoint that is neither, so an operation the API grows cannot go unnoticed
+# the way `functions configure`, `rollback` and `health` did.
+#
+#   <verdict> <METHOD> <path> # <reason>
+#
+#   manual  a command reaches it, but builds the request itself
+#   skip    deliberately not exposed by the CLI
+#
+# A line whose path the API no longer serves is also a failure: that is how six
+# entries in the flag generator's endpoint map came to point at nothing.
+
+# --- reached by hand-written requests ---------------------------------------
+manual POST /functions/{function_id}/runs/start # notte functions run builds the body itself to send function_id and variables
+manual POST /sessions/{session_id}/page/screenshot # notte page screenshot writes the image bytes out rather than decoding JSON
+manual GET  /storage/uploads/{filename} # notte files download streams to disk
+manual POST /storage/{session_id}/downloads/{filename} # notte files upload streams from disk
+
+# --- removed from the CLI ----------------------------------------------------
+skip GET    /agents # agents were removed from the CLI in #64
+skip POST   /agents/start # agents were removed from the CLI in #64
+skip GET    /agents/{agent_id} # agents were removed from the CLI in #64
+skip DELETE /agents/{agent_id}/stop # agents were removed from the CLI in #64
+skip GET    /agents/{agent_id}/workflow/code # agents were removed from the CLI in #64
+
+# --- superseded by a session-scoped equivalent -------------------------------
+skip POST /scrape # use notte page scrape, which runs in a session
+skip POST /scrape_from_html # use notte page scrape, which runs in a session
+skip POST /prompts/improve # console-only prompt tooling
+skip POST /prompts/nudge # console-only prompt tooling
+
+# --- browser-first flows the CLI has no shape for ----------------------------
+skip POST   /managed-auth/connect-links # connect links are created and consumed in a browser
+skip POST   /managed-auth/connect-links/context # private endpoint serving the connect-link page
+skip POST   /managed-auth/connect-links/mailboxes # private endpoint serving the connect-link page
+skip POST   /managed-auth/connect-links/mailboxes/connect # private endpoint serving the connect-link page
+skip POST   /managed-auth/connect-links/mailboxes/sync # private endpoint serving the connect-link page
+skip GET    /managed-auth/connect-links/status # private endpoint serving the connect-link page
+skip POST   /managed-auth/connect-links/submit # private endpoint serving the connect-link page
+skip GET    /mailboxes # mailboxes are managed from the console, not the CLI
+skip POST   /mailboxes/connect-token # mailboxes are managed from the console, not the CLI
+skip POST   /mailboxes/sync # mailboxes are managed from the console, not the CLI
+skip GET    /mailboxes/{mailbox_id} # mailboxes are managed from the console, not the CLI
+skip PATCH  /mailboxes/{mailbox_id} # mailboxes are managed from the console, not the CLI
+skip DELETE /mailboxes/{mailbox_id} # mailboxes are managed from the console, not the CLI
+
+# --- excluded from code generation, so no client method exists ---------------
+# See scripts/excluded-endpoints.txt, which strips these before oapi-codegen runs.
+skip POST   /vaults/{vault_id}/card # excluded from codegen: credit-card handling is console-only
+skip GET    /vaults/{vault_id}/card # excluded from codegen: credit-card handling is console-only
+skip DELETE /vaults/{vault_id}/card # excluded from codegen: credit-card handling is console-only
+
+# --- infrastructure, not a user-facing operation -----------------------------
+skip GET  /ready # load-balancer probe
+skip POST /anything/start # anything.notte.cc entry point, not a CLI workflow
+
+# --- not exposed yet ---------------------------------------------------------
+# Each of these is a gap someone should close or rule out; listing them is the
+# point of this file, not an endorsement.
+skip PATCH /personas/{persona_id} # no `personas update` command yet
+skip POST  /profiles/{profile_id}/cookies # no `profiles cookies-set` command yet
+skip GET   /profiles/{profile_id}/cookies # no `profiles cookies` command yet
+skip POST  /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53
+skip GET   /usage/logs # no `usage logs` command yet
