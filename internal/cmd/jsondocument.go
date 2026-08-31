@@ -40,6 +40,13 @@ func readJSONDocumentFlag(cmd *cobra.Command, flagName, value string) (string, e
 			flagName, flagName, err,
 		)
 	}
+	// `null` is valid JSON and unmarshals into a nil map without error, so it
+	// would otherwise pass the check above and be sent verbatim — which on
+	// update replaces a working schema with nothing, the exact outcome the
+	// "unset means send nothing" rule exists to prevent.
+	if document == nil {
+		return "", fmt.Errorf("--%s must be a JSON object, not null", flagName)
+	}
 
 	var compact bytes.Buffer
 	if err := json.Compact(&compact, data); err != nil {

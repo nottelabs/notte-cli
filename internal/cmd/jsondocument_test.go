@@ -199,6 +199,29 @@ func TestFunctionsCreate_RejectsResponseFormatThatIsNotJSON(t *testing.T) {
 	}
 }
 
+// `null` parses as JSON and unmarshals into a nil map without error, so the
+// object check has to reject it explicitly. Sent through, it would blank the
+// schema of the function being updated.
+func TestFunctionsCreate_RejectsNullResponseFormat(t *testing.T) {
+	server := setupCreateTest(t)
+
+	cmd := createCmd(t)
+	if err := cmd.Flags().Set(responseFormatFlag, "null"); err != nil {
+		t.Fatalf("setting flag: %v", err)
+	}
+
+	err := runFunctionsCreate(cmd, nil)
+	if err == nil {
+		t.Fatal("expected an error for --response-format null")
+	}
+	if !strings.Contains(err.Error(), "not null") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(server.Requests("/functions")) != 0 {
+		t.Error("a null schema still reached the API")
+	}
+}
+
 // Scalar form fields follow the same "only if asked" rule as the JSON ones:
 // --shared is registered with the API's default, so sending it unconditionally
 // would freeze today's server-side value into the client.
