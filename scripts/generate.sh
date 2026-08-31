@@ -149,9 +149,11 @@ echo ""
 echo "Generating CLI flags..."
 CMD_OUTPUT_DIR="$PROJECT_ROOT/internal/cmd"
 
-if ! go run "$SCRIPT_DIR/gen-flags"/*.go \
+# Run the package, not a glob of its files: `*.go` sweeps in _test.go files,
+# which `go run` refuses outright.
+if ! (cd "$PROJECT_ROOT" && go run ./scripts/gen-flags \
   -spec /tmp/notte-openapi-3.0.json \
-  -output "$CMD_OUTPUT_DIR"; then
+  -output "$CMD_OUTPUT_DIR"); then
   echo "ERROR: Flag generation failed. See errors above." >&2
   exit 1
 fi

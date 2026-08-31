@@ -209,7 +209,7 @@ notte functions run                   # Execute current function
 notte functions runs [--page N] [--page-size N] [--running]  # List runs for current function (--running = in-flight only)
 notte functions run-stop --run-id <id>  # Stop a running function execution
 notte functions run-metadata --run-id <id>  # Get run logs and results
-notte functions schedule --cron "0 9 * * *"  # Schedule current function
+notte functions schedule --cron "0 12 ? * * *"  # Schedule current function (six-field cron: daily at noon UTC)
 notte functions unschedule            # Remove schedule from current function
 ```
 

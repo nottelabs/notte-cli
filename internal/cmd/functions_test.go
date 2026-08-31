@@ -286,27 +286,27 @@ func TestRunFunctionsCreate_Success(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
-	origFile := functionsCreateFile
-	origName := functionsCreateName
-	origDesc := functionsCreateDescription
-	origShared := functionsCreateShared
+	origFile := FunctionCreateFile
+	origName := FunctionCreateName
+	origDesc := FunctionCreateDescription
+	origShared := FunctionCreateShared
 	t.Cleanup(func() {
-		functionsCreateFile = origFile
-		functionsCreateName = origName
-		functionsCreateDescription = origDesc
-		functionsCreateShared = origShared
+		FunctionCreateFile = origFile
+		FunctionCreateName = origName
+		FunctionCreateDescription = origDesc
+		FunctionCreateShared = origShared
 	})
 
-	functionsCreateFile = tmpFile.Name()
-	functionsCreateName = "Test Function"
-	functionsCreateDescription = "Test description"
+	FunctionCreateFile = tmpFile.Name()
+	FunctionCreateName = "Test Function"
+	FunctionCreateDescription = "Test description"
 
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "")
+	cmd.Flags().BoolVar(&FunctionCreateShared, "shared", false, "")
 	_ = cmd.Flags().Set("shared", "true")
 	cmd.SetContext(context.Background())
 
@@ -330,9 +330,9 @@ func TestRunFunctionsCreate_MissingFile(t *testing.T) {
 	defer server.Close()
 	env.SetEnv("NOTTE_API_URL", server.URL())
 
-	origFile := functionsCreateFile
-	functionsCreateFile = "missing-function.json"
-	t.Cleanup(func() { functionsCreateFile = origFile })
+	origFile := FunctionCreateFile
+	FunctionCreateFile = "missing-function.json"
+	t.Cleanup(func() { FunctionCreateFile = origFile })
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(context.Background())
@@ -385,9 +385,9 @@ func TestRunFunctionUpdate(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
-	origFile := functionUpdateFile
-	functionUpdateFile = tmpFile.Name()
-	t.Cleanup(func() { functionUpdateFile = origFile })
+	origFile := FunctionUpdateFile
+	FunctionUpdateFile = tmpFile.Name()
+	t.Cleanup(func() { FunctionUpdateFile = origFile })
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -615,9 +615,9 @@ func TestRunFunctionSchedule(t *testing.T) {
 	server := setupFunctionTest(t)
 	server.AddResponse("/functions/"+functionIDTest+"/schedule", 200, `{"status":"scheduled"}`)
 
-	origCron := functionCronExpression
-	functionCronExpression = "0 0 * * *"
-	t.Cleanup(func() { functionCronExpression = origCron })
+	origCron := FunctionScheduleSetCron
+	FunctionScheduleSetCron = "0 0 * * *"
+	t.Cleanup(func() { FunctionScheduleSetCron = origCron })
 
 	origFormat := outputFormat
 	outputFormat = "text"
@@ -897,25 +897,25 @@ func TestFunctionsCreate_SetsCurrentFunction(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
-	origFile := functionsCreateFile
-	origName := functionsCreateName
-	origDesc := functionsCreateDescription
+	origFile := FunctionCreateFile
+	origName := FunctionCreateName
+	origDesc := FunctionCreateDescription
 	t.Cleanup(func() {
-		functionsCreateFile = origFile
-		functionsCreateName = origName
-		functionsCreateDescription = origDesc
+		FunctionCreateFile = origFile
+		FunctionCreateName = origName
+		FunctionCreateDescription = origDesc
 	})
 
-	functionsCreateFile = tmpFile.Name()
-	functionsCreateName = "Test Function"
-	functionsCreateDescription = "Test description"
+	FunctionCreateFile = tmpFile.Name()
+	FunctionCreateName = "Test Function"
+	FunctionCreateDescription = "Test description"
 
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "")
+	cmd.Flags().BoolVar(&FunctionCreateShared, "shared", false, "")
 	cmd.SetContext(context.Background())
 
 	testutil.CaptureOutput(func() {

@@ -15,7 +15,10 @@ import (
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
-const testSchema = `{"type":"object","properties":{"is_live":{"type":"boolean"}}}`
+const (
+	responseFormatFlag = "response-format"
+	testSchema         = `{"type":"object","properties":{"is_live":{"type":"boolean"}}}`
+)
 
 // multipartFields decodes a recorded multipart body into its non-file fields.
 // Asserting on the raw string would pass for a body that merely mentions
@@ -61,17 +64,24 @@ func writeTempFunction(t *testing.T) string {
 	return path
 }
 
-// createCmd builds the command runFunctionsCreate expects, with the flags it
-// consults through cmd.Flags().Changed registered on it.
+// createCmd builds a command carrying the real generated flags, so the test
+// exercises the same registration the CLI does rather than a hand-rolled copy.
+// Registration binds and zeroes the flag variables, so --file is set through
+// the flag afterwards, the way an invocation would.
 func createCmd(t *testing.T) *cobra.Command {
 	t.Helper()
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "")
-	cmd.Flags().StringVar(&functionsCreateResponseFormat, responseFormatFlag, "", "")
+	RegisterFunctionCreateFlags(cmd)
 	cmd.SetContext(context.Background())
+	if err := cmd.Flags().Set("file", writeTempFunction(t)); err != nil {
+		t.Fatalf("setting --file: %v", err)
+	}
 
-	orig := functionsCreateResponseFormat
-	t.Cleanup(func() { functionsCreateResponseFormat = orig })
+	t.Cleanup(func() {
+		FunctionCreateResponseFormat = ""
+		FunctionCreateShared = false
+		FunctionCreateName = ""
+	})
 	return cmd
 }
 
@@ -85,14 +95,9 @@ func setupCreateTest(t *testing.T) *testutil.MockServer {
 	env.SetEnv("NOTTE_API_URL", server.URL())
 	server.AddResponse("/functions", 200, functionJSON())
 
-	origFile := functionsCreateFile
-	functionsCreateFile = writeTempFunction(t)
 	origFormat := outputFormat
 	outputFormat = "json"
-	t.Cleanup(func() {
-		functionsCreateFile = origFile
-		outputFormat = origFormat
-	})
+	t.Cleanup(func() { outputFormat = origFormat })
 
 	return server
 }
@@ -194,26 +199,52 @@ func TestFunctionsCreate_RejectsResponseFormatThatIsNotJSON(t *testing.T) {
 	}
 }
 
+// Scalar form fields follow the same "only if asked" rule as the JSON ones:
+// --shared is registered with the API's default, so sending it unconditionally
+// would freeze today's server-side value into the client.
+func TestFunctionsCreate_OmitsSharedWhenUnset(t *testing.T) {
+	server := setupCreateTest(t)
+
+	cmd := createCmd(t)
+	if err := cmd.Flags().Set("name", "Test Function"); err != nil {
+		t.Fatalf("setting --name: %v", err)
+	}
+
+	testutil.CaptureOutput(func() {
+		if err := runFunctionsCreate(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	fields := multipartFields(t, server.Requests("/functions")[0])
+	if _, present := fields["shared"]; present {
+		t.Error("shared was sent for a create that did not pass --shared")
+	}
+	if fields["name"] != "Test Function" {
+		t.Errorf("name = %q, want %q", fields["name"], "Test Function")
+	}
+}
+
 func TestFunctionUpdate_SendsResponseFormat(t *testing.T) {
 	server := setupFunctionTest(t)
 	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
 
-	origFile := functionUpdateFile
 	origFormat := outputFormat
-	functionUpdateFile = writeTempFunction(t)
 	outputFormat = "json"
 	t.Cleanup(func() {
-		functionUpdateFile = origFile
 		outputFormat = origFormat
+		FunctionUpdateResponseFormat = ""
 	})
 
 	cmd := &cobra.Command{}
-	cmd.Flags().StringVar(&functionUpdateResponseFormat, responseFormatFlag, "", "")
+	RegisterFunctionUpdateFlags(cmd)
 	cmd.SetContext(context.Background())
+	if err := cmd.Flags().Set("file", writeTempFunction(t)); err != nil {
+		t.Fatalf("setting --file: %v", err)
+	}
 	if err := cmd.Flags().Set(responseFormatFlag, testSchema); err != nil {
 		t.Fatalf("setting flag: %v", err)
 	}
-	t.Cleanup(func() { functionUpdateResponseFormat = "" })
 
 	testutil.CaptureOutput(func() {
 		if err := runFunctionUpdate(cmd, nil); err != nil {

@@ -13,7 +13,6 @@ import (
 
 var (
 	vaultID                   string
-	vaultUpdateName           string
 	vaultCredentialsGetURL    string
 	vaultCredentialsDeleteURL string
 )
@@ -121,7 +120,7 @@ func init() {
 	// Update command flags
 	vaultsUpdateCmd.Flags().StringVar(&vaultID, "vault-id", "", "Vault ID (required)")
 	_ = vaultsUpdateCmd.MarkFlagRequired("vault-id")
-	vaultsUpdateCmd.Flags().StringVar(&vaultUpdateName, "name", "", "New name for the vault (required)")
+	RegisterVaultUpdateFlags(vaultsUpdateCmd)
 	_ = vaultsUpdateCmd.MarkFlagRequired("name")
 
 	// Delete command flags
@@ -226,12 +225,13 @@ func runVaultUpdate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	body := api.VaultUpdateJSONRequestBody{
-		Name: vaultUpdateName,
+	body, err := BuildVaultUpdateRequest(cmd)
+	if err != nil {
+		return err
 	}
 
 	params := &api.VaultUpdateParams{}
-	resp, err := client.Client().VaultUpdateWithResponse(ctx, vaultID, params, body)
+	resp, err := client.Client().VaultUpdateWithResponse(ctx, vaultID, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

@@ -13,8 +13,9 @@ const (
 	CategoryEnumFlag
 	CategoryFlattenedFlags
 	CategoryRepeatedFlag
-	CategoryJSONFileInput // For complex objects that should be passed via JSON file
-	CategorySkipped       // Fields to skip entirely (don't generate, don't error)
+	CategoryJSONDocument // A JSON document supplied as inline JSON, @file, or stdin
+	CategoryFileUpload   // A multipart file part: the flag takes a path, not content
+	CategorySkipped      // Fields to skip entirely (don't generate, don't error)
 	CategoryUnsupported
 )
 
@@ -28,8 +29,10 @@ func (c FieldCategory) String() string {
 		return "FlattenedFlags"
 	case CategoryRepeatedFlag:
 		return "RepeatedFlag"
-	case CategoryJSONFileInput:
-		return "JSONFileInput"
+	case CategoryJSONDocument:
+		return "JSONDocument"
+	case CategoryFileUpload:
+		return "FileUpload"
 	case CategorySkipped:
 		return "Skipped"
 	case CategoryUnsupported:
@@ -44,8 +47,24 @@ var SkippedFields = map[string]bool{
 	"notifier_config": true,
 }
 
-// JSONFileFields contains field names that should be handled via --field-json @file
-var JSONFileFields = map[string]bool{
+// CommandSkippedFields is SkippedFields scoped to one command, for fields the
+// hand-written command supplies itself.
+//
+// FunctionScheduleSet is the case it exists for: `variables` is required by the
+// schema and is a free-form object, which no flag can express, so
+// runFunctionSchedule hard-codes an empty map after calling the generated
+// builder. Skipping it here keeps that endpoint generating cleanly instead of
+// reporting the same unsupported field on every run.
+var CommandSkippedFields = map[string]map[string]bool{
+	"FunctionScheduleSet": {
+		"variables": true,
+	},
+}
+
+// JSONDocumentFields contains field names carrying a JSON document rather than
+// a plain string. They are typed `string` in the spec because the API stores
+// them verbatim, so only the field name distinguishes them.
+var JSONDocumentFields = map[string]bool{
 	"response_format": true,
 }
 
@@ -64,6 +83,26 @@ var FieldDescriptionOverrides = map[string]map[string]string{
 	"SessionStart": {
 		"browser_type": "The browser type to use. Supported values are chromium and chrome.",
 	},
+	// FastAPI derives multipart bodies from function signatures, so these
+	// fields reach the spec with a title and nothing else. Without an override
+	// the generated help would read "name" and "shared".
+	"FunctionCreate": {
+		"file":        "Path to function file (required)",
+		"name":        "Function name",
+		"description": "Function description",
+		"shared":      "Make function public",
+	},
+	"FunctionUpdate": {
+		"file": "Path to updated function file (required)",
+	},
+	"FunctionScheduleSet": {
+		// Six fields, EventBridge-style: minutes hours day-of-month month
+		// day-of-week year. A five-field crontab line is rejected by the API.
+		"cron": "Cron expression, e.g. \"0 12 ? * * *\" for daily at noon UTC (required)",
+	},
+	"VaultUpdate": {
+		"name": "New name for the vault",
+	},
 }
 
 // Field represents a field in an OpenAPI schema
@@ -80,6 +119,7 @@ type Field struct {
 	Default     interface{}
 	Nullable    bool
 	IsUnionType bool // True if field is an anyOf with enum + string (not a simple enum)
+	IsFile      bool // True if the field is a binary upload rather than a value
 }
 
 // GoType returns the Go type for flag variables (without pointers)
@@ -158,6 +198,9 @@ type CommandConfig struct {
 	HTTPMethod      string
 	RequestBodyType string
 	Fields          []*FieldConfig
+	// IsMultipart selects the builder shape: a typed request struct for a JSON
+	// body, an encoded multipart body for a form one.
+	IsMultipart bool
 }
 
 // FieldConfig represents a field to generate flags for
@@ -183,15 +226,26 @@ func ApplyDescriptionOverride(commandName, fieldName string, field *Field) {
 }
 
 // ClassifyField determines how to generate flags for a field
-func ClassifyField(field *Field, schemas map[string]*Field) (FieldCategory, error) {
+func ClassifyField(commandName string, field *Field, schemas map[string]*Field) (FieldCategory, error) {
 	// Check if field should be skipped entirely
 	if SkippedFields[field.Name] || SkippedFields[field.JSONName] {
 		return CategorySkipped, nil
 	}
+	if cmdSkipped, ok := CommandSkippedFields[commandName]; ok {
+		if cmdSkipped[field.Name] || cmdSkipped[field.JSONName] {
+			return CategorySkipped, nil
+		}
+	}
 
-	// Check if field should use JSON file input
-	if JSONFileFields[field.Name] || JSONFileFields[field.JSONName] {
-		return CategoryJSONFileInput, nil
+	// A binary part is a path on the command line and content on the wire, so
+	// it is checked before the scalar rules that would otherwise see a string.
+	if field.IsFile {
+		return CategoryFileUpload, nil
+	}
+
+	// Check if field carries a JSON document rather than a plain string
+	if JSONDocumentFields[field.Name] || JSONDocumentFields[field.JSONName] {
+		return CategoryJSONDocument, nil
 	}
 
 	// Resolve $ref if present
@@ -414,4 +468,14 @@ func toCamelCase(s string) string {
 
 func toSnakeCase(s string) string {
 	return strings.ReplaceAll(s, "-", "_")
+}
+
+// goLocalName renders a field name as an unexported Go identifier, for locals
+// inside a generated function ("response_format" -> "responseFormat").
+func goLocalName(s string) string {
+	camel := toCamelCase(s)
+	if camel == "" {
+		return camel
+	}
+	return strings.ToLower(camel[:1]) + camel[1:]
 }
