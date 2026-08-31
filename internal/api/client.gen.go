@@ -52,6 +52,18 @@ const (
 	ConnectLinkContextStatusSubmitted ConnectLinkContextStatus = "submitted"
 )
 
+// Defines values for ConnectLinkMailboxConnectRequestProvider.
+const (
+	ConnectLinkMailboxConnectRequestProviderGmail   ConnectLinkMailboxConnectRequestProvider = "gmail"
+	ConnectLinkMailboxConnectRequestProviderOutlook ConnectLinkMailboxConnectRequestProvider = "outlook"
+)
+
+// Defines values for ConnectLinkMailboxSyncRequestProvider.
+const (
+	ConnectLinkMailboxSyncRequestProviderGmail   ConnectLinkMailboxSyncRequestProvider = "gmail"
+	ConnectLinkMailboxSyncRequestProviderOutlook ConnectLinkMailboxSyncRequestProvider = "outlook"
+)
+
 // Defines values for ConnectLinkStatusResponseStatus.
 const (
 	ConnectLinkStatusResponseStatusCompleted ConnectLinkStatusResponseStatus = "completed"
@@ -911,6 +923,9 @@ type ConnectLinkContext struct {
 	ExpiresAt         time.Time `json:"expires_at"`
 	LogoColor         string    `json:"logo_color"`
 
+	// RequiresMailbox Whether the connector reads its second factor from email, so the page must ask which inbox the code will arrive in.
+	RequiresMailbox bool `json:"requires_mailbox"`
+
 	// RequiresTotpSecret Whether the form must collect a TOTP seed.
 	RequiresTotpSecret bool                     `json:"requires_totp_secret"`
 	ServiceName        string                   `json:"service_name"`
@@ -968,6 +983,37 @@ type ConnectLinkCreateResponse struct {
 	WebhookSigningSecret *string `json:"webhook_signing_secret,omitempty"`
 }
 
+// ConnectLinkMailbox defines model for ConnectLinkMailbox.
+type ConnectLinkMailbox struct {
+	EmailAddress string `json:"email_address"`
+	Healthy      bool   `json:"healthy"`
+	Id           string `json:"id"`
+	Provider     string `json:"provider"`
+}
+
+// ConnectLinkMailboxConnectRequest defines model for ConnectLinkMailboxConnectRequest.
+type ConnectLinkMailboxConnectRequest struct {
+	Provider *ConnectLinkMailboxConnectRequestProvider `json:"provider,omitempty"`
+}
+
+// ConnectLinkMailboxConnectRequestProvider defines model for ConnectLinkMailboxConnectRequest.Provider.
+type ConnectLinkMailboxConnectRequestProvider string
+
+// ConnectLinkMailboxConnectResponse defines model for ConnectLinkMailboxConnectResponse.
+type ConnectLinkMailboxConnectResponse struct {
+	ConnectLinkUrl string `json:"connect_link_url"`
+	MailboxId      string `json:"mailbox_id"`
+}
+
+// ConnectLinkMailboxSyncRequest defines model for ConnectLinkMailboxSyncRequest.
+type ConnectLinkMailboxSyncRequest struct {
+	MailboxId string                                 `json:"mailbox_id"`
+	Provider  *ConnectLinkMailboxSyncRequestProvider `json:"provider,omitempty"`
+}
+
+// ConnectLinkMailboxSyncRequestProvider defines model for ConnectLinkMailboxSyncRequest.Provider.
+type ConnectLinkMailboxSyncRequestProvider string
+
 // ConnectLinkStatusResponse defines model for ConnectLinkStatusResponse.
 type ConnectLinkStatusResponse struct {
 	AttemptsRemaining  int                             `json:"attempts_remaining"`
@@ -985,6 +1031,9 @@ type ConnectLinkStatusResponseStatus string
 // ConnectLinkSubmitRequest defines model for ConnectLinkSubmitRequest.
 type ConnectLinkSubmitRequest struct {
 	Credentials ManagedAuthCredentials `json:"credentials"`
+
+	// MailboxId Inbox the second-factor code will arrive in. Required when the connector reads its code from email and the link did not already name one.
+	MailboxId *string `json:"mailbox_id,omitempty"`
 }
 
 // Cookie defines model for Cookie.
@@ -1538,6 +1587,12 @@ type FunctionResponse struct {
 	// Versions The versions of the workflow
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
+}
+
+// FunctionRollbackRequest defines model for FunctionRollbackRequest.
+type FunctionRollbackRequest struct {
+	// Version A version from the function's `versions` history to restore
+	Version string `json:"version"`
 }
 
 // FunctionRunListItemResponse defines model for FunctionRunListItemResponse.
@@ -3159,6 +3214,14 @@ type FunctionForkParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// FunctionRollbackParams defines parameters for FunctionRollback.
+type FunctionRollbackParams struct {
+	// Restricted Whether to restrict the function code
+	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ListFunctionRunsByFunctionIdParams defines parameters for ListFunctionRunsByFunctionId.
 type ListFunctionRunsByFunctionIdParams struct {
 	// Page Page number
@@ -3260,6 +3323,24 @@ type ManagedAuthConnectLinkCreateParams struct {
 
 // ConnectLinkContextParams defines parameters for ConnectLinkContext.
 type ConnectLinkContextParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
+// ConnectLinkMailboxesParams defines parameters for ConnectLinkMailboxes.
+type ConnectLinkMailboxesParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
+// ConnectLinkMailboxConnectParams defines parameters for ConnectLinkMailboxConnect.
+type ConnectLinkMailboxConnectParams struct {
+	// XNotteConnectToken The connect token from the link URL.
+	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
+}
+
+// ConnectLinkMailboxSyncParams defines parameters for ConnectLinkMailboxSync.
+type ConnectLinkMailboxSyncParams struct {
 	// XNotteConnectToken The connect token from the link URL.
 	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
 }
@@ -3714,6 +3795,9 @@ type FunctionMetadataUpdateJSONRequestBody = FunctionMetadataUpdateRequest
 // FunctionUpdateMultipartRequestBody defines body for FunctionUpdate for multipart/form-data ContentType.
 type FunctionUpdateMultipartRequestBody = BodyFunctionUpdateFunctionsFunctionIdPost
 
+// FunctionRollbackJSONRequestBody defines body for FunctionRollback for application/json ContentType.
+type FunctionRollbackJSONRequestBody = FunctionRollbackRequest
+
 // FunctionRunStartJSONRequestBody defines body for FunctionRunStart for application/json ContentType.
 type FunctionRunStartJSONRequestBody = RunFunctionRequest
 
@@ -3734,6 +3818,12 @@ type MailboxUpdateJSONRequestBody = MailboxUpdateRequest
 
 // ManagedAuthConnectLinkCreateJSONRequestBody defines body for ManagedAuthConnectLinkCreate for application/json ContentType.
 type ManagedAuthConnectLinkCreateJSONRequestBody = ConnectLinkCreateRequest
+
+// ConnectLinkMailboxConnectJSONRequestBody defines body for ConnectLinkMailboxConnect for application/json ContentType.
+type ConnectLinkMailboxConnectJSONRequestBody = ConnectLinkMailboxConnectRequest
+
+// ConnectLinkMailboxSyncJSONRequestBody defines body for ConnectLinkMailboxSync for application/json ContentType.
+type ConnectLinkMailboxSyncJSONRequestBody = ConnectLinkMailboxSyncRequest
 
 // ConnectLinkSubmitJSONRequestBody defines body for ConnectLinkSubmit for application/json ContentType.
 type ConnectLinkSubmitJSONRequestBody = ConnectLinkSubmitRequest
@@ -9413,6 +9503,11 @@ type ClientInterface interface {
 	// FunctionFork request
 	FunctionFork(ctx context.Context, functionId string, params *FunctionForkParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FunctionRollbackWithBody request with any body
+	FunctionRollbackWithBody(ctx context.Context, functionId string, params *FunctionRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionRollback(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListFunctionRunsByFunctionId request
 	ListFunctionRunsByFunctionId(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9474,6 +9569,19 @@ type ClientInterface interface {
 
 	// ConnectLinkContext request
 	ConnectLinkContext(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkMailboxes request
+	ConnectLinkMailboxes(ctx context.Context, params *ConnectLinkMailboxesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkMailboxConnectWithBody request with any body
+	ConnectLinkMailboxConnectWithBody(ctx context.Context, params *ConnectLinkMailboxConnectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConnectLinkMailboxConnect(ctx context.Context, params *ConnectLinkMailboxConnectParams, body ConnectLinkMailboxConnectJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectLinkMailboxSyncWithBody request with any body
+	ConnectLinkMailboxSyncWithBody(ctx context.Context, params *ConnectLinkMailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConnectLinkMailboxSync(ctx context.Context, params *ConnectLinkMailboxSyncParams, body ConnectLinkMailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ConnectLinkStatus request
 	ConnectLinkStatus(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -9871,6 +9979,30 @@ func (c *Client) FunctionFork(ctx context.Context, functionId string, params *Fu
 	return c.Client.Do(req)
 }
 
+func (c *Client) FunctionRollbackWithBody(ctx context.Context, functionId string, params *FunctionRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionRollbackRequestWithBody(c.Server, functionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionRollback(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionRollbackRequest(c.Server, functionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListFunctionRunsByFunctionId(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListFunctionRunsByFunctionIdRequest(c.Server, functionId, params)
 	if err != nil {
@@ -10137,6 +10269,66 @@ func (c *Client) ManagedAuthConnectLinkCreate(ctx context.Context, params *Manag
 
 func (c *Client) ConnectLinkContext(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectLinkContextRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkMailboxes(ctx context.Context, params *ConnectLinkMailboxesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkMailboxesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkMailboxConnectWithBody(ctx context.Context, params *ConnectLinkMailboxConnectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkMailboxConnectRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkMailboxConnect(ctx context.Context, params *ConnectLinkMailboxConnectParams, body ConnectLinkMailboxConnectJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkMailboxConnectRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkMailboxSyncWithBody(ctx context.Context, params *ConnectLinkMailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkMailboxSyncRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectLinkMailboxSync(ctx context.Context, params *ConnectLinkMailboxSyncParams, body ConnectLinkMailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectLinkMailboxSyncRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -12138,6 +12330,101 @@ func NewFunctionForkRequest(server string, functionId string, params *FunctionFo
 	return req, nil
 }
 
+// NewFunctionRollbackRequest calls the generic FunctionRollback builder with application/json body
+func NewFunctionRollbackRequest(server string, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionRollbackRequestWithBody(server, functionId, params, "application/json", bodyReader)
+}
+
+// NewFunctionRollbackRequestWithBody generates requests for FunctionRollback with any type of body
+func NewFunctionRollbackRequestWithBody(server string, functionId string, params *FunctionRollbackParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/rollback", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Restricted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "restricted", runtime.ParamLocationQuery, *params.Restricted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewListFunctionRunsByFunctionIdRequest generates requests for ListFunctionRunsByFunctionId
 func NewListFunctionRunsByFunctionIdRequest(server string, functionId string, params *ListFunctionRunsByFunctionIdParams) (*http.Request, error) {
 	var err error
@@ -13207,6 +13494,152 @@ func NewConnectLinkContextRequest(server string, params *ConnectLinkContextParam
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkMailboxesRequest generates requests for ConnectLinkMailboxes
+func NewConnectLinkMailboxesRequest(server string, params *ConnectLinkMailboxesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/mailboxes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkMailboxConnectRequest calls the generic ConnectLinkMailboxConnect builder with application/json body
+func NewConnectLinkMailboxConnectRequest(server string, params *ConnectLinkMailboxConnectParams, body ConnectLinkMailboxConnectJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectLinkMailboxConnectRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewConnectLinkMailboxConnectRequestWithBody generates requests for ConnectLinkMailboxConnect with any type of body
+func NewConnectLinkMailboxConnectRequestWithBody(server string, params *ConnectLinkMailboxConnectParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/mailboxes/connect")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Connect-Token", runtime.ParamLocationHeader, params.XNotteConnectToken)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectLinkMailboxSyncRequest calls the generic ConnectLinkMailboxSync builder with application/json body
+func NewConnectLinkMailboxSyncRequest(server string, params *ConnectLinkMailboxSyncParams, body ConnectLinkMailboxSyncJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectLinkMailboxSyncRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewConnectLinkMailboxSyncRequestWithBody generates requests for ConnectLinkMailboxSync with any type of body
+func NewConnectLinkMailboxSyncRequestWithBody(server string, params *ConnectLinkMailboxSyncParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/managed-auth/connect-links/mailboxes/sync")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -17450,6 +17883,11 @@ type ClientWithResponsesInterface interface {
 	// FunctionForkWithResponse request
 	FunctionForkWithResponse(ctx context.Context, functionId string, params *FunctionForkParams, reqEditors ...RequestEditorFn) (*FunctionForkResult, error)
 
+	// FunctionRollbackWithBodyWithResponse request with any body
+	FunctionRollbackWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionRollbackResult, error)
+
+	FunctionRollbackWithResponse(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRollbackResult, error)
+
 	// ListFunctionRunsByFunctionIdWithResponse request
 	ListFunctionRunsByFunctionIdWithResponse(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*ListFunctionRunsByFunctionIdResult, error)
 
@@ -17511,6 +17949,19 @@ type ClientWithResponsesInterface interface {
 
 	// ConnectLinkContextWithResponse request
 	ConnectLinkContextWithResponse(ctx context.Context, params *ConnectLinkContextParams, reqEditors ...RequestEditorFn) (*ConnectLinkContextResult, error)
+
+	// ConnectLinkMailboxesWithResponse request
+	ConnectLinkMailboxesWithResponse(ctx context.Context, params *ConnectLinkMailboxesParams, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxesResult, error)
+
+	// ConnectLinkMailboxConnectWithBodyWithResponse request with any body
+	ConnectLinkMailboxConnectWithBodyWithResponse(ctx context.Context, params *ConnectLinkMailboxConnectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxConnectResult, error)
+
+	ConnectLinkMailboxConnectWithResponse(ctx context.Context, params *ConnectLinkMailboxConnectParams, body ConnectLinkMailboxConnectJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxConnectResult, error)
+
+	// ConnectLinkMailboxSyncWithBodyWithResponse request with any body
+	ConnectLinkMailboxSyncWithBodyWithResponse(ctx context.Context, params *ConnectLinkMailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxSyncResult, error)
+
+	ConnectLinkMailboxSyncWithResponse(ctx context.Context, params *ConnectLinkMailboxSyncParams, body ConnectLinkMailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxSyncResult, error)
 
 	// ConnectLinkStatusWithResponse request
 	ConnectLinkStatusWithResponse(ctx context.Context, params *ConnectLinkStatusParams, reqEditors ...RequestEditorFn) (*ConnectLinkStatusResult, error)
@@ -18026,6 +18477,29 @@ func (r FunctionForkResult) StatusCode() int {
 	return 0
 }
 
+type FunctionRollbackResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionRollbackResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionRollbackResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListFunctionRunsByFunctionIdResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -18386,6 +18860,75 @@ func (r ConnectLinkContextResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectLinkContextResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkMailboxesResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ConnectLinkMailbox
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkMailboxesResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkMailboxesResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkMailboxConnectResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ConnectLinkMailboxConnectResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkMailboxConnectResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkMailboxConnectResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectLinkMailboxSyncResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ConnectLinkMailbox
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectLinkMailboxSyncResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectLinkMailboxSyncResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -19761,6 +20304,23 @@ func (c *ClientWithResponses) FunctionForkWithResponse(ctx context.Context, func
 	return ParseFunctionForkResult(rsp)
 }
 
+// FunctionRollbackWithBodyWithResponse request with arbitrary body returning *FunctionRollbackResult
+func (c *ClientWithResponses) FunctionRollbackWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionRollbackResult, error) {
+	rsp, err := c.FunctionRollbackWithBody(ctx, functionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionRollbackResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionRollbackWithResponse(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRollbackResult, error) {
+	rsp, err := c.FunctionRollback(ctx, functionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionRollbackResult(rsp)
+}
+
 // ListFunctionRunsByFunctionIdWithResponse request returning *ListFunctionRunsByFunctionIdResult
 func (c *ClientWithResponses) ListFunctionRunsByFunctionIdWithResponse(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*ListFunctionRunsByFunctionIdResult, error) {
 	rsp, err := c.ListFunctionRunsByFunctionId(ctx, functionId, params, reqEditors...)
@@ -19959,6 +20519,49 @@ func (c *ClientWithResponses) ConnectLinkContextWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseConnectLinkContextResult(rsp)
+}
+
+// ConnectLinkMailboxesWithResponse request returning *ConnectLinkMailboxesResult
+func (c *ClientWithResponses) ConnectLinkMailboxesWithResponse(ctx context.Context, params *ConnectLinkMailboxesParams, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxesResult, error) {
+	rsp, err := c.ConnectLinkMailboxes(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkMailboxesResult(rsp)
+}
+
+// ConnectLinkMailboxConnectWithBodyWithResponse request with arbitrary body returning *ConnectLinkMailboxConnectResult
+func (c *ClientWithResponses) ConnectLinkMailboxConnectWithBodyWithResponse(ctx context.Context, params *ConnectLinkMailboxConnectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxConnectResult, error) {
+	rsp, err := c.ConnectLinkMailboxConnectWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkMailboxConnectResult(rsp)
+}
+
+func (c *ClientWithResponses) ConnectLinkMailboxConnectWithResponse(ctx context.Context, params *ConnectLinkMailboxConnectParams, body ConnectLinkMailboxConnectJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxConnectResult, error) {
+	rsp, err := c.ConnectLinkMailboxConnect(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkMailboxConnectResult(rsp)
+}
+
+// ConnectLinkMailboxSyncWithBodyWithResponse request with arbitrary body returning *ConnectLinkMailboxSyncResult
+func (c *ClientWithResponses) ConnectLinkMailboxSyncWithBodyWithResponse(ctx context.Context, params *ConnectLinkMailboxSyncParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxSyncResult, error) {
+	rsp, err := c.ConnectLinkMailboxSyncWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkMailboxSyncResult(rsp)
+}
+
+func (c *ClientWithResponses) ConnectLinkMailboxSyncWithResponse(ctx context.Context, params *ConnectLinkMailboxSyncParams, body ConnectLinkMailboxSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkMailboxSyncResult, error) {
+	rsp, err := c.ConnectLinkMailboxSync(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectLinkMailboxSyncResult(rsp)
 }
 
 // ConnectLinkStatusWithResponse request returning *ConnectLinkStatusResult
@@ -21028,6 +21631,39 @@ func ParseFunctionForkResult(rsp *http.Response) (*FunctionForkResult, error) {
 	return response, nil
 }
 
+// ParseFunctionRollbackResult parses an HTTP response from a FunctionRollbackWithResponse call
+func ParseFunctionRollbackResult(rsp *http.Response) (*FunctionRollbackResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionRollbackResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListFunctionRunsByFunctionIdResult parses an HTTP response from a ListFunctionRunsByFunctionIdWithResponse call
 func ParseListFunctionRunsByFunctionIdResult(rsp *http.Response) (*ListFunctionRunsByFunctionIdResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -21525,6 +22161,105 @@ func ParseConnectLinkContextResult(rsp *http.Response) (*ConnectLinkContextResul
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ConnectLinkContext
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkMailboxesResult parses an HTTP response from a ConnectLinkMailboxesWithResponse call
+func ParseConnectLinkMailboxesResult(rsp *http.Response) (*ConnectLinkMailboxesResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkMailboxesResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ConnectLinkMailbox
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkMailboxConnectResult parses an HTTP response from a ConnectLinkMailboxConnectWithResponse call
+func ParseConnectLinkMailboxConnectResult(rsp *http.Response) (*ConnectLinkMailboxConnectResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkMailboxConnectResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConnectLinkMailboxConnectResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectLinkMailboxSyncResult parses an HTTP response from a ConnectLinkMailboxSyncWithResponse call
+func ParseConnectLinkMailboxSyncResult(rsp *http.Response) (*ConnectLinkMailboxSyncResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectLinkMailboxSyncResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ConnectLinkMailbox
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
