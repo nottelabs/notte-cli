@@ -124,6 +124,16 @@ const (
 	Unreachable FunctionRuntimeHealthResponseStatus = "unreachable"
 )
 
+// Defines values for FunctionSource.
+const (
+	Anything  FunctionSource = "anything"
+	Cli       FunctionSource = "cli"
+	Console   FunctionSource = "console"
+	NodeSdk   FunctionSource = "node-sdk"
+	PythonSdk FunctionSource = "python-sdk"
+	RestApi   FunctionSource = "rest-api"
+)
+
 // Defines values for GetFunctionRunResponseStatus.
 const (
 	GetFunctionRunResponseStatusActive GetFunctionRunResponseStatus = "active"
@@ -1674,6 +1684,9 @@ type FunctionScheduleCreateRequest struct {
 	Cron      string                  `json:"cron"`
 	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
+
+// FunctionSource defines model for FunctionSource.
+type FunctionSource string
 
 // FunctionWithLinkResponse defines model for FunctionWithLinkResponse.
 type FunctionWithLinkResponse struct {
@@ -3230,16 +3243,19 @@ type ListFunctionRunsByFunctionIdParams struct {
 	// PageSize Number of items per page
 	PageSize *int `form:"page_size,omitempty" json:"page_size,omitempty"`
 
-	// OnlyActive Whether to only return active sessions
+	// OnlyActive Whether to only return active function runs
 	OnlyActive *bool `form:"only_active,omitempty" json:"only_active,omitempty"`
 
-	// OnlyCurrentToken Whether to only return sessions for the current token (apikey)
+	// OnlyCurrentToken Whether to only return function runs for the current token (apikey)
 	OnlyCurrentToken *bool `form:"only_current_token,omitempty" json:"only_current_token,omitempty"`
 
-	// IncludeSystem Whether to include internal system sessions
-	IncludeSystem       *bool   `form:"include_system,omitempty" json:"include_system,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// IncludeSystem Whether to include internal system function runs
+	IncludeSystem *bool `form:"include_system,omitempty" json:"include_system,omitempty"`
+
+	// Source Only return runs of functions created from this source
+	Source              *FunctionSource `form:"source,omitempty" json:"source,omitempty"`
+	XNotteRequestOrigin *string         `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string         `json:"x-notte-sdk-version,omitempty"`
 }
 
 // FunctionRunStartParams defines parameters for FunctionRunStart.
@@ -12521,6 +12537,22 @@ func NewListFunctionRunsByFunctionIdRequest(server string, functionId string, pa
 		if params.IncludeSystem != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_system", runtime.ParamLocationQuery, *params.IncludeSystem); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Source != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "source", runtime.ParamLocationQuery, *params.Source); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
