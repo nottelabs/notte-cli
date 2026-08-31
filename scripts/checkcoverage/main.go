@@ -53,6 +53,14 @@ func main() {
 		root = wd
 	}
 
+	// A misspelled -check used to run nothing and exit 0, which is the worst
+	// answer a guard can give: it reports success without having looked.
+	switch *which {
+	case "all", "endpoints", "skills":
+	default:
+		fail("unknown -check %q: want endpoints, skills, or all", *which)
+	}
+
 	if *which == "all" || *which == "endpoints" {
 		if !runEndpointCheck(root, *specURL, *manifest, *strict) {
 			exitStatus = 1

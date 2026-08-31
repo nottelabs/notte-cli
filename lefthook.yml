@@ -28,12 +28,21 @@ pre-commit:
     # notte-skills repository - so both need the network. Without -strict an
     # unreachable source is a warning rather than a blocked commit; CI runs the
     # same checks with -strict, so nothing merges on a skipped check.
+    # The globs cover what can invalidate each answer: a command change, the
+    # manifest itself, and the checker. A manifest-only commit is exactly when
+    # a bad line gets written, so leaving it out would skip the run that
+    # catches it.
     endpoint-coverage:
-      glob: "internal/cmd/*.go"
+      glob:
+        - "internal/cmd/*.go"
+        - "scripts/endpoint-coverage.txt"
+        - "scripts/checkcoverage/*.go"
       run: go run ./scripts/checkcoverage -check endpoints
 
     skill-coverage:
-      glob: "internal/cmd/*.go"
+      glob:
+        - "internal/cmd/*.go"
+        - "scripts/checkcoverage/*.go"
       run: go run ./scripts/checkcoverage -check skills
 
 pre-push:
