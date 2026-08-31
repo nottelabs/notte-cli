@@ -502,6 +502,12 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 	if !cmd.Flags().Changed("instructions") && !cmd.Flags().Changed("self-healing") {
 		return errors.New("nothing to configure: pass --instructions, --self-healing, or both")
 	}
+	// `--instructions ""` is refused rather than sent. The generated builder
+	// omits an empty string, so it would otherwise travel as far as an empty
+	// PATCH: accepted, 200, nothing changed, and the caller told it worked.
+	if cmd.Flags().Changed("instructions") && FunctionConfigureInstructions == "" {
+		return errors.New("--instructions cannot be empty")
+	}
 
 	client, err := GetClient()
 	if err != nil {
