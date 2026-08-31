@@ -5,9 +5,20 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    # Not the default set (opened, synchronize, reopened). Retargeting a
+    # stacked PR onto main after its parent merges fires `edited` and nothing
+    # else, so without this the retargeted PR gets no checks whatsoever - not
+    # a red X, an empty checks list that reads as fine.
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   build:
+    # `edited` fires on every title and description edit too, so the job
+    # itself checks that the base is what changed. `changes.base` is present
+    # in the payload only when it was (carrying base.ref.from and
+    # base.sha.from); a prose edit sends changes.title or changes.body and
+    # this skips. On push there is no action at all, so the guard is a no-op.
+    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -58,6 +69,13 @@ jobs:
     # End-to-end check that `notte skill add` actually installs the skill from
     # the nottelabs/notte-skills repo. Catches regressions where the npx
     # source URL or skill name drifts and the tool reports "No skills found".
+    #
+    # `edited` fires on every title and description edit too, so the job
+    # itself checks that the base is what changed. `changes.base` is present
+    # in the payload only when it was (carrying base.ref.from and
+    # base.sha.from); a prose edit sends changes.title or changes.body and
+    # this skips. On push there is no action at all, so the guard is a no-op.
+    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
