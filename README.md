@@ -203,7 +203,7 @@ notte functions show --function-id <id>  # View specific function details (diffe
 notte functions create --file workflow.py --response-format @schema.json  # ... with its response documented
 notte functions update --file workflow.py  # Update current function code
 notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
-notte functions configure --self-healing --instructions "..."  # Set self-healing and its instructions
+notte functions configure --run-instructions "..." --self-healing  # Set usage notes and self-healing
 notte functions rollback --version <version>  # Restore an earlier version (see `versions` in show)
 notte functions health                # Runtime health: Python version, installed packages, reachability
 notte functions delete                # Delete current function
@@ -217,6 +217,20 @@ notte functions schedule --cron "0 12 ? * * *"  # Schedule current function (six
 notte functions unschedule            # Remove schedule from current function
 ```
 
+### Personas, Profiles and Usage
+
+```bash
+notte personas update --persona-id <id> --name "checkout tester"  # Rename a persona
+notte profiles cookies --profile-id <id>                          # Read a profile's cookies
+notte profiles cookies-set --profile-id <id> --file cookies.json  # Import cookies into a profile
+notte usage logs [--endpoint /sessions/start] [--page N]          # List API requests made with your key
+```
+
+`profiles cookies-set` takes either a bare array of cookies — what Playwright's
+`storageState` and the browser extensions export — or an object with a `cookies`
+key. Add `--source-format chrome` if they came from Chrome, and `--mode append`
+to add to the profile's cookies rather than replace them.
+
 `--response-format` takes a JSON Schema describing what `run()` returns, as
 inline JSON, `@file.json`, or `-` for stdin. The API never derives it, so a
 function created without it has no documented response — which is what the
@@ -228,7 +242,19 @@ python -c 'import json, typing, client; print(json.dumps(typing.get_type_hints(c
 notte functions create --file client.py --response-format @schema.json
 ```
 
-`configure` sends only the flags you pass, so setting `--instructions` leaves
+`--run-instructions` is documentation for whoever *calls* the function — how long a
+run takes, what each variable is for, which sites it trips over:
+
+```bash
+notte functions configure --run-instructions "Takes ~3 min, so call it async. \
+Hits a captcha on the login page every few runs. \
+\`query\` is the search term; \`max_items\` caps the results."
+```
+
+It is not input to the self-healing agent, which is the separate
+`--self-healing` flag.
+
+`configure` sends only the flags you pass, so setting `--run-instructions` leaves
 self-healing untouched. Disable self-healing with `--self-healing=false`: the
 API treats an absent field as "leave it alone" rather than "off". Note that it
 can only be enabled on functions an agent built — a CLI-created function has no

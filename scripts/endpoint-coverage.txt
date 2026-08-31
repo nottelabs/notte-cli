@@ -61,8 +61,4 @@ skip POST /anything/start # anything.notte.cc entry point, not a CLI workflow
 # --- not exposed yet ---------------------------------------------------------
 # Each of these is a gap someone should close or rule out; listing them is the
 # point of this file, not an endorsement.
-skip PATCH /personas/{persona_id} # no `personas update` command yet
-skip POST  /profiles/{profile_id}/cookies # no `profiles cookies-set` command yet
-skip GET   /profiles/{profile_id}/cookies # no `profiles cookies` command yet
-skip POST  /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53
-skip GET   /usage/logs # no `usage logs` command yet
+skip POST /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53

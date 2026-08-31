@@ -56,6 +56,13 @@ var personasSmsCmd = &cobra.Command{
 	RunE:  runPersonaSms,
 }
 
+var personasUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Rename a persona",
+	Args:  cobra.NoArgs,
+	RunE:  runPersonaUpdate,
+}
+
 func init() {
 	rootCmd.AddCommand(personasCmd)
 	personasCmd.AddCommand(personasListCmd)
@@ -63,6 +70,7 @@ func init() {
 	registerFilterFlag(personasListCmd, flagIncludeDeleted, "", "Include deleted personas")
 
 	personasCmd.AddCommand(personasCreateCmd)
+	personasCmd.AddCommand(personasUpdateCmd)
 	personasCmd.AddCommand(personasShowCmd)
 	personasCmd.AddCommand(personasDeleteCmd)
 	personasCmd.AddCommand(personasEmailsCmd)
@@ -70,6 +78,12 @@ func init() {
 
 	// Create command flags (auto-generated)
 	RegisterPersonaCreateFlags(personasCreateCmd)
+
+	// Update command flags
+	personasUpdateCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
+	_ = personasUpdateCmd.MarkFlagRequired("persona-id")
+	RegisterPersonaUpdateFlags(personasUpdateCmd)
+	_ = personasUpdateCmd.MarkFlagRequired("name")
 
 	// Show command flags
 	personasShowCmd.Flags().StringVar(&personaID, "persona-id", "", "Persona ID (required)")
@@ -251,6 +265,33 @@ func runPersonaSms(cmd *cobra.Command, args []string) error {
 
 	params := &api.PersonaSmsListParams{}
 	resp, err := client.Client().PersonaSmsListWithResponse(ctx, personaID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
+func runPersonaUpdate(cmd *cobra.Command, args []string) error {
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	body, err := BuildPersonaUpdateRequest(cmd)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.PersonaUpdateParams{}
+	resp, err := client.Client().PersonaUpdateWithResponse(ctx, personaID, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}

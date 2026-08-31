@@ -9,17 +9,17 @@ import (
 
 // FunctionConfigure command flags
 var (
-	// Instructions the self-healing agent follows when the function breaks
+	// Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over
 	FunctionConfigureInstructions string
 
-	// Let the agent repair the function when a run fails
+	// Let an agent repair the function when a run fails
 	FunctionConfigureSelfHealing bool
 )
 
 // RegisterFunctionConfigureFlags registers all flags for FunctionConfigure command
 func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&FunctionConfigureInstructions, "instructions", "", "Instructions the self-healing agent follows when the function breaks")
-	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let the agent repair the function when a run fails")
+	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
+	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let an agent repair the function when a run fails")
 }
 
 // BuildFunctionConfigureRequest builds the API request from CLI flags

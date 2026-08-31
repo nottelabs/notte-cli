@@ -77,6 +77,29 @@ var FlattenWithoutPrefix = map[string]map[string]bool{
 	},
 }
 
+// FieldFlagNameOverrides renames a flag away from its field name, per command.
+//
+// Only for fields whose API name is ambiguous on a command line.
+// FunctionConfigure's `instructions` is the case it exists for: it documents a
+// function for whoever calls it - how long a run takes, what the variables mean
+// - and bare `--instructions` reads like configuration for the self-healing
+// agent, which is what it was mistaken for.
+var FieldFlagNameOverrides = map[string]map[string]string{
+	"FunctionConfigure": {
+		"instructions": "run-instructions",
+	},
+}
+
+// FlagNameFor returns the flag a field is exposed as.
+func FlagNameFor(commandName, fieldName string) string {
+	if overrides, ok := FieldFlagNameOverrides[commandName]; ok {
+		if name, ok := overrides[fieldName]; ok {
+			return name
+		}
+	}
+	return toKebabCase(fieldName)
+}
+
 // FieldDescriptionOverrides contains command-scoped descriptions for fields
 // whose OpenAPI metadata is currently flattened away before flag generation.
 var FieldDescriptionOverrides = map[string]map[string]string{
@@ -103,9 +126,12 @@ var FieldDescriptionOverrides = map[string]map[string]string{
 	"VaultUpdate": {
 		"name": "New name for the vault",
 	},
+	"PersonaUpdate": {
+		"name": "New name for the persona",
+	},
 	"FunctionConfigure": {
-		"instructions": "Instructions the self-healing agent follows when the function breaks",
-		"self_healing": "Let the agent repair the function when a run fails",
+		"instructions": "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over",
+		"self_healing": "Let an agent repair the function when a run fails",
 	},
 }
 

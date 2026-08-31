@@ -196,3 +196,21 @@ func TestCommandScopedSkipOnlyAppliesToItsCommand(t *testing.T) {
 		t.Error("variables should not be skipped outside FunctionScheduleSet")
 	}
 }
+
+// A flag may be named differently from its API field when the field name is
+// ambiguous on a command line: `instructions` on FunctionConfigure documents
+// the function for its callers, and bare --instructions was read as input to
+// the self-healing agent.
+func TestFlagNameOverrideRenamesOnlyItsOwnCommand(t *testing.T) {
+	if got := FlagNameFor("FunctionConfigure", "instructions"); got != "run-instructions" {
+		t.Errorf("FlagNameFor(FunctionConfigure, instructions) = %q, want run-instructions", got)
+	}
+	// The same field name elsewhere is untouched: `notte page scrape
+	// --instructions` means what it says.
+	if got := FlagNameFor("ScrapeWebpage", "instructions"); got != "instructions" {
+		t.Errorf("FlagNameFor(ScrapeWebpage, instructions) = %q, want instructions", got)
+	}
+	if got := FlagNameFor("FunctionConfigure", "self_healing"); got != "self-healing" {
+		t.Errorf("FlagNameFor(FunctionConfigure, self_healing) = %q, want self-healing", got)
+	}
+}

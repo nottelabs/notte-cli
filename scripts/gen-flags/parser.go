@@ -98,6 +98,7 @@ type endpoint struct {
 var endpointMap = map[endpoint]string{
 	{"POST", "/sessions/start"}:                   "SessionStart",
 	{"POST", "/personas/create"}:                  "PersonaCreate",
+	{"PATCH", "/personas/{persona_id}"}:           "PersonaUpdate",
 	{"POST", "/profiles/create"}:                  "ProfileCreate",
 	{"POST", "/vaults/create"}:                    "VaultCreate",
 	{"PATCH", "/vaults/{vault_id}"}:               "VaultUpdate",
@@ -255,7 +256,7 @@ func processField(commandName, fieldName string, field *Field, schemas map[strin
 		category = CategoryFlattenedFlags
 	}
 
-	flagName := toKebabCase(fieldName)
+	flagName := FlagNameFor(commandName, fieldName)
 	varName := commandName + toCamelCase(fieldName)
 
 	fc := &FieldConfig{

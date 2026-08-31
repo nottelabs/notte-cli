@@ -45,8 +45,8 @@ func TestFunctionConfigure_SendsOnlyTheFlagsPassed(t *testing.T) {
 	t.Cleanup(func() { outputFormat = origFormat })
 
 	cmd := configureCmd(t)
-	if err := cmd.Flags().Set("instructions", "retry the login step"); err != nil {
-		t.Fatalf("setting --instructions: %v", err)
+	if err := cmd.Flags().Set("run-instructions", "retry the login step"); err != nil {
+		t.Fatalf("setting --run-instructions: %v", err)
 	}
 
 	testutil.CaptureOutput(func() {
@@ -123,26 +123,26 @@ func TestFunctionConfigure_RefusesToSendNothing(t *testing.T) {
 }
 
 // The generated builder sends an optional string only when it is non-empty, so
-// `--instructions ""` would reach the API as an empty PATCH: 200, nothing
+// `--run-instructions ""` would reach the API as an empty PATCH: 200, nothing
 // changed, and the caller told it worked. Refused up front instead.
 func TestFunctionConfigure_RejectsEmptyInstructions(t *testing.T) {
 	server := setupFunctionTest(t)
 	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
 
 	cmd := configureCmd(t)
-	if err := cmd.Flags().Set("instructions", ""); err != nil {
-		t.Fatalf("setting --instructions: %v", err)
+	if err := cmd.Flags().Set("run-instructions", ""); err != nil {
+		t.Fatalf("setting --run-instructions: %v", err)
 	}
 
 	err := runFunctionConfigure(cmd, nil)
 	if err == nil {
-		t.Fatal("expected an error for --instructions \"\"")
+		t.Fatal("expected an error for --run-instructions \"\"")
 	}
 	if !strings.Contains(err.Error(), "cannot be empty") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(server.Requests("/functions/"+functionIDTest)) != 0 {
-		t.Error("an empty --instructions still reached the API")
+		t.Error("an empty --run-instructions still reached the API")
 	}
 }
 

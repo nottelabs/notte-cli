@@ -48,15 +48,18 @@ func leafCommands(root *cobra.Command) []string {
 		if c.Hidden || c.Name() == "help" || c.Name() == "completion" {
 			return
 		}
-		children := c.Commands()
-		runnable := false
-		for _, child := range children {
+		hasVisibleChildren := false
+		for _, child := range c.Commands() {
 			if !child.Hidden && child.Name() != "help" && child.Name() != "completion" {
-				runnable = true
+				hasVisibleChildren = true
 				walk(child)
 			}
 		}
-		if !runnable && c != root {
+		// A group that also runs - `notte usage` shows usage and owns
+		// `usage logs` - is a command in its own right, so it needs prose too.
+		// Keying on "has no children" alone would let it slip through the moment
+		// it grew a subcommand.
+		if c != root && (!hasVisibleChildren || c.Runnable()) {
 			leaves = append(leaves, commandPath(c))
 		}
 	}
