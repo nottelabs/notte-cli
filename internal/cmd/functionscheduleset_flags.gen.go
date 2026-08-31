@@ -11,13 +11,13 @@ import (
 
 // FunctionScheduleSet command flags
 var (
-	// Cron expression, e.g. "0 12 ? * * *" for daily at noon UTC (required)
+	// AWS EventBridge schedule expression. Six space-separated fields, minutes first: `minutes hours day-of-month month day-of-week year`. This is neither five-field Unix crontab nor the seconds-first six-field dialect used by Quartz and cron-parser. Exactly one of day-of-month and day-of-week must be `?`, the other must be a real value. Schedules fire in UTC. Example: `0 12 ? * * *` runs daily at noon UTC. `rate(...)` expressions such as `rate(1 hour)` are accepted too.
 	FunctionScheduleSetCron string
 )
 
 // RegisterFunctionScheduleSetFlags registers all flags for FunctionScheduleSet command
 func RegisterFunctionScheduleSetFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&FunctionScheduleSetCron, "cron", "", "Cron expression, e.g. \"0 12 ? * * *\" for daily at noon UTC (required)")
+	cmd.Flags().StringVar(&FunctionScheduleSetCron, "cron", "", "AWS EventBridge schedule expression. Six space-separated fields, minutes first: `minutes hours day-of-month month day-of-week year`. This is neither five-field Unix crontab nor the seconds-first six-field dialect used by Quartz and cron-parser. Exactly one of day-of-month and day-of-week must be `?`, the other must be a real value. Schedules fire in UTC. Example: `0 12 ? * * *` runs daily at noon UTC. `rate(...)` expressions such as `rate(1 hour)` are accepted too.")
 }
 
 // BuildFunctionScheduleSetRequest builds the API request from CLI flags

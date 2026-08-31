@@ -1681,7 +1681,10 @@ type FunctionRuntimeHealthResponseStatus string
 
 // FunctionScheduleCreateRequest defines model for FunctionScheduleCreateRequest.
 type FunctionScheduleCreateRequest struct {
-	Cron      string                  `json:"cron"`
+	// Cron AWS EventBridge schedule expression. Six space-separated fields, minutes first: `minutes hours day-of-month month day-of-week year`. This is neither five-field Unix crontab nor the seconds-first six-field dialect used by Quartz and cron-parser. Exactly one of day-of-month and day-of-week must be `?`, the other must be a real value. Schedules fire in UTC. Example: `0 12 ? * * *` runs daily at noon UTC. `rate(...)` expressions such as `rate(1 hour)` are accepted too.
+	Cron string `json:"cron"`
+
+	// Variables Values passed to the function on every scheduled run. Must supply every function variable that has no default, and no names the function does not declare.
 	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
 
