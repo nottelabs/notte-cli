@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+const (
+	multipartContentType = "multipart/form-data"
+	octetStream          = "application/octet-stream"
+)
+
 // OpenAPISpec represents a simplified OpenAPI 3.0 specification
 type OpenAPISpec struct {
 	OpenAPI    string              `json:"openapi"`
@@ -48,6 +53,11 @@ type SchemaRef struct {
 	AnyOf       []SchemaRef          `json:"anyOf,omitempty"`
 	Description string               `json:"description,omitempty"`
 	Default     interface{}          `json:"default,omitempty"`
+	// Set on multipart file parts. OpenAPI 3.1 spells it contentMediaType and
+	// 3.0 spells it format: binary; the spec we read is converted from 3.1 by
+	// generate.sh, which leaves contentMediaType alone, so both are accepted.
+	ContentMediaType string `json:"contentMediaType,omitempty"`
+	Format           string `json:"format,omitempty"`
 }
 
 type Components struct {
@@ -69,66 +79,130 @@ func ParseOpenAPISpec(filename string) (*OpenAPISpec, error) {
 	return &spec, nil
 }
 
+// endpoint identifies one operation. Keyed by method as well as path because a
+// path is not a command: /functions/{function_id} is `functions update` under
+// POST and a metadata patch under PATCH, and only one of those is generated.
+type endpoint struct {
+	Method string
+	Path   string
+}
+
+// endpointMap lists the operations that generate flags, and is deliberately
+// opt-in: the generated Register*/Build* pair only earns its keep once a
+// hand-written command calls it.
+//
+// Endpoints excluded from the spec by scripts/excluded-endpoints.txt can never
+// appear here — generate.sh filters them out before this runs — so entries for
+// /scrape, /scrape_from_html and /vaults/{vault_id}/card were removed rather
+// than repaired.
+var endpointMap = map[endpoint]string{
+	{"POST", "/sessions/start"}:                   "SessionStart",
+	{"POST", "/personas/create"}:                  "PersonaCreate",
+	{"POST", "/profiles/create"}:                  "ProfileCreate",
+	{"POST", "/vaults/create"}:                    "VaultCreate",
+	{"PATCH", "/vaults/{vault_id}"}:               "VaultUpdate",
+	{"POST", "/vaults/{vault_id}/credentials"}:    "VaultCredentialsAdd",
+	{"POST", "/functions"}:                        "FunctionCreate",
+	{"POST", "/functions/{function_id}"}:          "FunctionUpdate",
+	{"POST", "/functions/{function_id}/schedule"}: "FunctionScheduleSet",
+}
+
+// methods is the set of operations inspected, in a fixed order so a spec that
+// maps two methods on one path generates deterministically.
+//
+// GET is absent on purpose: this generator reads request bodies, and a GET has
+// none. Flags for a GET would come from its query parameters, which are a
+// different feature — see registerPaginationFlags for the hand-written ones.
+var methods = []string{"POST", "PUT", "PATCH"}
+
 // ExtractCommandConfigs extracts command configurations from the spec
 func ExtractCommandConfigs(spec *OpenAPISpec) ([]*CommandConfig, error) {
 	var configs []*CommandConfig
 	schemas := buildSchemaMap(spec)
 
-	// Map of endpoints to command names
-	endpointMap := map[string]string{
-		"/sessions/start":                                 "SessionStart",
-		"/personas/create":                                "PersonaCreate",
-		"/profiles/create":                                "ProfileCreate",
-		"/vaults/create":                                  "VaultCreate",
-		"/vaults/{vault_id}":                              "VaultUpdate",
-		"/vaults/{vault_id}/credentials":                  "VaultCredentialsAdd",
-		"/vaults/{vault_id}/credit-card":                  "VaultCreditCardSet",
-		"/functions/schedule":                             "FunctionScheduleSet",
-		"/functions/{function_id}/runs/{run_id}/metadata": "FunctionRunUpdateMetadata",
-		"/scrape":      "ScrapeWebpage",
-		"/scrape-html": "ScrapeFromHtml",
+	// Sorted so the generator's output does not depend on map iteration order.
+	paths := make([]string, 0, len(spec.Paths))
+	for path := range spec.Paths {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
+	for _, path := range paths {
+		pathItem := spec.Paths[path]
+		for _, method := range methods {
+			commandName, ok := endpointMap[endpoint{method, path}]
+			if !ok {
+				continue
+			}
+			op := pathItem.operation(method)
+			if op == nil || op.RequestBody == nil {
+				return nil, fmt.Errorf(
+					"%s %s is in endpointMap but the spec has no %s body for it "+
+						"(renamed or removed upstream?)", method, path, method)
+			}
+			config, err := extractCommandConfig(commandName, path, method, op, schemas)
+			if err != nil {
+				return nil, err
+			}
+			if config != nil {
+				configs = append(configs, config)
+			}
+		}
 	}
 
-	for path, pathItem := range spec.Paths {
-		commandName, ok := endpointMap[path]
-		if !ok {
-			continue
+	// A path that vanished from the spec used to fall out of the loop silently,
+	// which is how five of the eleven original entries came to point at paths
+	// the API no longer serves without anyone noticing.
+	if len(configs) != len(endpointMap) {
+		found := make(map[string]bool, len(configs))
+		for _, c := range configs {
+			found[c.Name] = true
 		}
-
-		// Check POST operations
-		if pathItem.Post != nil && pathItem.Post.RequestBody != nil {
-			config, err := extractCommandConfig(commandName, path, "POST", pathItem.Post, schemas)
-			if err != nil {
-				return nil, err
-			}
-			if config != nil {
-				configs = append(configs, config)
+		var missing []string
+		for _, name := range endpointMap {
+			if !found[name] {
+				missing = append(missing, name)
 			}
 		}
-
-		// Check PUT operations
-		if pathItem.Put != nil && pathItem.Put.RequestBody != nil {
-			config, err := extractCommandConfig(commandName, path, "PUT", pathItem.Put, schemas)
-			if err != nil {
-				return nil, err
-			}
-			if config != nil {
-				configs = append(configs, config)
-			}
-		}
+		sort.Strings(missing)
+		return nil, fmt.Errorf(
+			"%d endpoint(s) in endpointMap matched nothing in the spec: %s",
+			len(missing), strings.Join(missing, ", "))
 	}
 
 	return configs, nil
 }
 
+// operation returns the operation for an HTTP method, or nil.
+func (p PathItem) operation(method string) *Operation {
+	switch method {
+	case "POST":
+		return p.Post
+	case "PUT":
+		return p.Put
+	case "PATCH":
+		return p.Patch
+	}
+	return nil
+}
+
 func extractCommandConfig(name, path, method string, op *Operation, schemas map[string]*Field) (*CommandConfig, error) {
+	// JSON first: an endpoint offering both is a JSON endpoint that also accepts
+	// a form, and the typed request struct is the better target.
 	content, ok := op.RequestBody.Content["application/json"]
+	multipart := false
 	if !ok {
-		return nil, nil
+		content, ok = op.RequestBody.Content[multipartContentType]
+		multipart = ok
+	}
+	if !ok {
+		return nil, fmt.Errorf(
+			"%s %s has no application/json or %s request body", method, path, multipartContentType)
 	}
 
 	if content.Schema.Ref == "" {
-		return nil, nil
+		return nil, fmt.Errorf(
+			"%s %s request body is an inline schema; only $ref bodies are supported", method, path)
 	}
 
 	// Extract schema name from $ref
@@ -143,6 +217,7 @@ func extractCommandConfig(name, path, method string, op *Operation, schemas map[
 		EndpointPath:    path,
 		HTTPMethod:      method,
 		RequestBodyType: schemaName,
+		IsMultipart:     multipart,
 	}
 
 	// Process fields (sorted for deterministic output)
@@ -167,7 +242,7 @@ func extractCommandConfig(name, path, method string, op *Operation, schemas map[
 func processField(commandName, fieldName string, field *Field, schemas map[string]*Field) (*FieldConfig, error) {
 	ApplyDescriptionOverride(commandName, fieldName, field)
 
-	category, err := ClassifyField(field, schemas)
+	category, err := ClassifyField(commandName, field, schemas)
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +321,7 @@ func convertSchemaRefToField(name string, schemaRef SchemaRef, allSchemas map[st
 		Nullable:    schemaRef.Nullable,
 		Description: schemaRef.Description,
 		Default:     schemaRef.Default,
+		IsFile:      schemaRef.ContentMediaType == octetStream || schemaRef.Format == "binary",
 		Properties:  make(map[string]*Field),
 	}
 

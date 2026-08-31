@@ -157,9 +157,9 @@ func TestRunVaultUpdate(t *testing.T) {
 	server := setupVaultTest(t)
 	server.AddResponse("/vaults/"+vaultIDTest, 200, `{"vault_id":"`+vaultIDTest+`","name":"Vault","created_at":"2020-01-01T00:00:00Z"}`)
 
-	origName := vaultUpdateName
-	vaultUpdateName = "New Name"
-	t.Cleanup(func() { vaultUpdateName = origName })
+	origName := VaultUpdateName
+	VaultUpdateName = "New Name"
+	t.Cleanup(func() { VaultUpdateName = origName })
 
 	origFormat := outputFormat
 	outputFormat = "json"

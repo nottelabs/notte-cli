@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,18 +18,9 @@ import (
 )
 
 var (
-	functionsCreateFile        string
-	functionsCreateName        string
-	functionsCreateDescription string
-	functionsCreateShared      bool
-)
-
-var (
 	functionID               string
-	functionUpdateFile       string
 	functionRunID            string
 	functionMetadataJSON     string
-	functionCronExpression   string
 	functionRunVariables     []string // Variables as key=value pairs
 	functionRunVariablesJSON string   // Variables as JSON string
 	functionSecretValue      string
@@ -262,19 +252,14 @@ func init() {
 	functionSecretsCmd.AddCommand(functionSecretsDeleteCmd)
 
 	// Create command flags
-	functionsCreateCmd.Flags().StringVar(&functionsCreateFile, "file", "", "Path to function file (required)")
-	_ = functionsCreateCmd.MarkFlagRequired("file")
-	functionsCreateCmd.Flags().StringVar(&functionsCreateName, "name", "", "Function name")
-	functionsCreateCmd.Flags().StringVar(&functionsCreateDescription, "description", "", "Function description")
-	functionsCreateCmd.Flags().BoolVar(&functionsCreateShared, "shared", false, "Make function public")
+	RegisterFunctionCreateFlags(functionsCreateCmd)
 
 	// Show command flags
 	functionsShowCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 
 	// Update command flags
 	functionsUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
-	functionsUpdateCmd.Flags().StringVar(&functionUpdateFile, "file", "", "Path to updated function file (required)")
-	_ = functionsUpdateCmd.MarkFlagRequired("file")
+	RegisterFunctionUpdateFlags(functionsUpdateCmd)
 
 	// Delete command flags
 	functionsDeleteCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -308,7 +293,7 @@ func init() {
 
 	// Schedule command flags
 	functionsScheduleCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
-	functionsScheduleCmd.Flags().StringVar(&functionCronExpression, "cron", "", "Cron expression (required)")
+	RegisterFunctionScheduleSetFlags(functionsScheduleCmd)
 	_ = functionsScheduleCmd.MarkFlagRequired("cron")
 
 	// Unschedule command flags
@@ -370,44 +355,10 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Open the function file
-	file, err := os.Open(functionsCreateFile)
+	body, contentType, err := BuildFunctionCreateBody(cmd)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return err
 	}
-	defer func() { _ = file.Close() }()
-
-	// Create multipart form data
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-
-	// Add file field
-	part, err := writer.CreateFormFile("file", filepath.Base(functionsCreateFile))
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("failed to copy file data: %w", err)
-	}
-
-	// Add optional fields
-	if functionsCreateName != "" {
-		if err := writer.WriteField("name", functionsCreateName); err != nil {
-			return fmt.Errorf("failed to write name field: %w", err)
-		}
-	}
-	if functionsCreateDescription != "" {
-		if err := writer.WriteField("description", functionsCreateDescription); err != nil {
-			return fmt.Errorf("failed to write description field: %w", err)
-		}
-	}
-	if cmd.Flags().Changed("shared") {
-		if err := writer.WriteField("shared", fmt.Sprintf("%t", functionsCreateShared)); err != nil {
-			return fmt.Errorf("failed to write shared field: %w", err)
-		}
-	}
-
-	_ = writer.Close()
 
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
@@ -416,8 +367,8 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 	resp, err := client.Client().FunctionCreateWithBodyWithResponse(
 		ctx,
 		params,
-		writer.FormDataContentType(),
-		&buf,
+		contentType,
+		body,
 	)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -474,27 +425,10 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Open the function file
-	file, err := os.Open(functionUpdateFile)
+	body, contentType, err := BuildFunctionUpdateBody(cmd)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return err
 	}
-	defer func() { _ = file.Close() }()
-
-	// Create multipart form data
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-
-	// Add file field
-	part, err := writer.CreateFormFile("file", filepath.Base(functionUpdateFile))
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("failed to copy file data: %w", err)
-	}
-
-	_ = writer.Close()
 
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
@@ -504,8 +438,8 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		ctx,
 		functionID,
 		params,
-		writer.FormDataContentType(),
-		&buf,
+		contentType,
+		body,
 	)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -819,14 +753,19 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	emptyVars := make(map[string]interface{})
-	body := api.FunctionScheduleSetJSONRequestBody{
-		Cron:      functionCronExpression,
-		Variables: &emptyVars,
+	body, err := BuildFunctionScheduleSetRequest(cmd)
+	if err != nil {
+		return err
 	}
+	// Supplied here rather than generated: `variables` is required by the
+	// schema and is a free-form object, which no flag can express, so it is
+	// skipped in the generator (see CommandSkippedFields) and defaulted to the
+	// empty map the API expects.
+	emptyVars := make(map[string]interface{})
+	body.Variables = &emptyVars
 
 	params := &api.FunctionScheduleSetParams{}
-	resp, err := client.Client().FunctionScheduleSetWithResponse(ctx, functionID, params, body)
+	resp, err := client.Client().FunctionScheduleSetWithResponse(ctx, functionID, params, *body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
@@ -835,9 +774,9 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Function %s scheduled with cron expression: %s", functionID, functionCronExpression), map[string]any{
+	return PrintResult(fmt.Sprintf("Function %s scheduled with cron expression: %s", functionID, FunctionScheduleSetCron), map[string]any{
 		"id":   functionID,
-		"cron": functionCronExpression,
+		"cron": FunctionScheduleSetCron,
 	})
 }
 
