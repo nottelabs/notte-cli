@@ -39,9 +39,10 @@ const (
 
 // Config is notte.toml.
 type Config struct {
-	Project   ProjectSection            `toml:"project"`
-	Envs      map[string]EnvConfig      `toml:"env"`
-	Functions map[string]FunctionConfig `toml:"functions"`
+	Project    ProjectSection             `toml:"project"`
+	Envs       map[string]EnvConfig       `toml:"env"`
+	Functions  map[string]FunctionConfig  `toml:"functions"`
+	Connectors map[string]ConnectorConfig `toml:"connectors"`
 
 	// Root is the directory containing notte.toml. Not from the file.
 	Root string `toml:"-"`
@@ -77,6 +78,63 @@ type FunctionConfig struct {
 	// defaults, which is rarely what a 9am job is for, and a function with a
 	// parameter that has no default cannot be scheduled at all.
 	CronVariables map[string]any `toml:"cron_variables"`
+}
+
+// ConnectorConfig is one entry under [connectors.*], keyed by the directory
+// name, which is also the catalog slug.
+//
+// It replaces connectors/<slug>.json entirely. Three fields from that format
+// are deliberately absent: slug, because it is the directory name; the two
+// entrypoint paths, because the layout says where they are; and revision,
+// which is derived from the bundle hash rather than hand-maintained.
+type ConnectorConfig struct {
+	Name            string   `toml:"name"`
+	Domain          string   `toml:"domain"`
+	Category        string   `toml:"category"`
+	Color           string   `toml:"color"`
+	Description     string   `toml:"description"`
+	Method          string   `toml:"method"`
+	LoginURL        string   `toml:"login_url"`
+	AllowedDomains  []string `toml:"allowed_domains"`
+	SupportsTOTP    bool     `toml:"supports_totp"`
+	SupportsEmail   bool     `toml:"supports_email_2fa"`
+	SupportsSMS     bool     `toml:"supports_sms_2fa"`
+	ProxyCountry    string   `toml:"proxy_country"`
+	RequiresHeadful bool     `toml:"requires_headful"`
+
+	// Login and Verifier carry the per-role catalog copy. Neither names a
+	// path: the entrypoints are login.py and verifier.py by definition.
+	Login    RoleConfig `toml:"login"`
+	Verifier RoleConfig `toml:"verifier"`
+}
+
+// RoleConfig is the catalog copy for one half of a connector.
+type RoleConfig struct {
+	Name        string `toml:"name"`
+	Description string `toml:"description"`
+}
+
+var colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// Validate checks the fields the API constrains, so a bad value is caught
+// before an upload rather than as a 422 afterwards.
+func (c ConnectorConfig) Validate(slug string) []string {
+	var problems []string
+	if c.Name == "" {
+		problems = append(problems, fmt.Sprintf("[connectors.%s] needs a name", slug))
+	}
+	if c.Domain == "" {
+		problems = append(problems, fmt.Sprintf("[connectors.%s] needs a domain", slug))
+	}
+	if c.Color != "" && !colorRe.MatchString(c.Color) {
+		problems = append(problems, fmt.Sprintf("[connectors.%s] color %q must be #rrggbb", slug, c.Color))
+	}
+	// proxy_country defaults to "us" server-side; an explicit value must still
+	// look like a country code rather than a country name.
+	if c.ProxyCountry != "" && len(c.ProxyCountry) != 2 {
+		problems = append(problems, fmt.Sprintf("[connectors.%s] proxy_country %q must be a two-letter code", slug, c.ProxyCountry))
+	}
+	return problems
 }
 
 // Param is one of run()'s parameters, as reported by the validator.
