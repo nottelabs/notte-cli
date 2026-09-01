@@ -25,6 +25,7 @@ var (
 	functionRunVariablesJSON string   // Variables as JSON string
 	functionRunNoStream      bool     // Opt out of log streaming
 	functionSecretValue      string
+	functionDownloadVersion  string
 )
 
 // GetCurrentFunctionID returns the function ID from flag, env var, or file (in priority order)
@@ -110,6 +111,13 @@ var functionsShowCmd = &cobra.Command{
 	Short: "Show function details",
 	Args:  cobra.NoArgs,
 	RunE:  runFunctionShow,
+}
+
+var functionsDownloadCmd = &cobra.Command{
+	Use:   "download <file-path>",
+	Short: "Download function code to disk",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runFunctionDownload,
 }
 
 var functionsUpdateCmd = &cobra.Command{
@@ -260,6 +268,7 @@ func init() {
 
 	functionsCmd.AddCommand(functionsCreateCmd)
 	functionsCmd.AddCommand(functionsShowCmd)
+	functionsCmd.AddCommand(functionsDownloadCmd)
 	functionsCmd.AddCommand(functionsUpdateCmd)
 	functionsCmd.AddCommand(functionsConfigureCmd)
 	functionsCmd.AddCommand(functionsRollbackCmd)
@@ -287,6 +296,10 @@ func init() {
 
 	// Show command flags
 	functionsShowCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
+
+	// Download command flags
+	functionsDownloadCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
+	functionsDownloadCmd.Flags().StringVar(&functionDownloadVersion, "version", "", "Function version (defaults to latest)")
 
 	// Update command flags
 	functionsUpdateCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -457,6 +470,47 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 	}
 
 	return GetFormatter().Print(resp.JSON200)
+}
+
+func runFunctionDownload(cmd *cobra.Command, args []string) error {
+	if err := RequireFunctionID(); err != nil {
+		return err
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	params := &api.FunctionDownloadUrlParams{}
+	if functionDownloadVersion != "" {
+		params.Version = &functionDownloadVersion
+	}
+	resp, err := client.Client().FunctionDownloadUrlWithResponse(ctx, functionID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+	if resp.JSON200 == nil || resp.JSON200.Url == "" {
+		return errors.New("no download URL in response")
+	}
+
+	outputPath := args[0]
+	if err := downloadFileWithContext(ctx, resp.JSON200.Url, outputPath); err != nil {
+		return fmt.Errorf("failed to download function: %w", err)
+	}
+
+	return PrintResult(fmt.Sprintf("Function downloaded successfully: %s", outputPath), map[string]any{
+		"function_id": functionID,
+		"path":        outputPath,
+		"version":     functionDownloadVersion,
+		"success":     true,
+	})
 }
 
 func runFunctionUpdate(cmd *cobra.Command, args []string) error {

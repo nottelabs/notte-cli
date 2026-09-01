@@ -3,8 +3,11 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -366,6 +369,46 @@ func TestRunFunctionShow(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+}
+
+func TestRunFunctionDownload_WithVersion(t *testing.T) {
+	server := setupFunctionTest(t)
+	const functionCode = "def run():\n\treturn 'downloaded'\n"
+	fileServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(functionCode))
+	}))
+	t.Cleanup(fileServer.Close)
+
+	response := `{"function_id":"` + functionIDTest + `","latest_version":"v2","status":"active","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z","versions":["v1","v2"],"url":` + strconv.Quote(fileServer.URL) + `}`
+	server.AddResponse("/functions/"+functionIDTest, http.StatusOK, response)
+
+	origVersion := functionDownloadVersion
+	functionDownloadVersion = "v1"
+	t.Cleanup(func() { functionDownloadVersion = origVersion })
+
+	outputPath := filepath.Join(t.TempDir(), "function.py")
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	if err := runFunctionDownload(cmd, []string{outputPath}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("failed to read downloaded function: %v", err)
+	}
+	if string(content) != functionCode {
+		t.Fatalf("downloaded content = %q, want %q", string(content), functionCode)
+	}
+
+	requests := server.Requests("/functions/" + functionIDTest)
+	if len(requests) != 1 {
+		t.Fatalf("request count = %d, want 1", len(requests))
+	}
+	if requests[0].Query != "version=v1" {
+		t.Fatalf("query = %q, want %q", requests[0].Query, "version=v1")
 	}
 }
 
