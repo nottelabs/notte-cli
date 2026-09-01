@@ -473,6 +473,11 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionDownload(cmd *cobra.Command, args []string) error {
+	outputPath := args[0]
+	if !strings.HasSuffix(outputPath, ".py") {
+		return errors.New("file path must end with .py")
+	}
+
 	if err := RequireFunctionID(); err != nil {
 		return err
 	}
@@ -500,15 +505,18 @@ func runFunctionDownload(cmd *cobra.Command, args []string) error {
 		return errors.New("no download URL in response")
 	}
 
-	outputPath := args[0]
 	if err := downloadFileWithContext(ctx, resp.JSON200.Url, outputPath); err != nil {
 		return fmt.Errorf("failed to download function: %w", err)
+	}
+	downloadedVersion := functionDownloadVersion
+	if downloadedVersion == "" {
+		downloadedVersion = resp.JSON200.LatestVersion
 	}
 
 	return PrintResult(fmt.Sprintf("Function downloaded successfully: %s", outputPath), map[string]any{
 		"function_id": functionID,
 		"path":        outputPath,
-		"version":     functionDownloadVersion,
+		"version":     downloadedVersion,
 		"success":     true,
 	})
 }

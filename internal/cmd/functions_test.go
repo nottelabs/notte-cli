@@ -412,6 +412,58 @@ func TestRunFunctionDownload_WithVersion(t *testing.T) {
 	}
 }
 
+func TestRunFunctionDownload_ReportsLatestVersion(t *testing.T) {
+	server := setupFunctionTest(t)
+	fileServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("def run():\n\treturn None\n"))
+	}))
+	t.Cleanup(fileServer.Close)
+
+	response := `{"function_id":"` + functionIDTest + `","latest_version":"v2","status":"active","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z","versions":["v1","v2"],"url":` + strconv.Quote(fileServer.URL) + `}`
+	server.AddResponse("/functions/"+functionIDTest, http.StatusOK, response)
+
+	origVersion := functionDownloadVersion
+	origFormat := outputFormat
+	functionDownloadVersion = ""
+	outputFormat = "json"
+	t.Cleanup(func() {
+		functionDownloadVersion = origVersion
+		outputFormat = origFormat
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	outputPath := filepath.Join(t.TempDir(), "function.py")
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runFunctionDownload(cmd, []string{outputPath}); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	var result struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("failed to parse output: %v", err)
+	}
+	if result.Version != "v2" {
+		t.Fatalf("reported version = %q, want %q", result.Version, "v2")
+	}
+	if requests := server.Requests("/functions/" + functionIDTest); len(requests) != 1 || requests[0].Query != "" {
+		t.Fatalf("latest download sent an unexpected query: %+v", requests)
+	}
+}
+
+func TestRunFunctionDownload_RequiresPythonPath(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runFunctionDownload(cmd, []string{"function.txt"})
+	if err == nil || err.Error() != "file path must end with .py" {
+		t.Fatalf("error = %v, want file extension error", err)
+	}
+}
+
 func TestRunFunctionUpdate(t *testing.T) {
 	server := setupFunctionTest(t)
 	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
