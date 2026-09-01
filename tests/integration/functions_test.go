@@ -112,6 +112,42 @@ func TestFunctionsCreateThenDelete(t *testing.T) {
 	t.Log("Function create then delete test completed successfully")
 }
 
+func TestFunctionsDownloadVersion(t *testing.T) {
+	tmpFile := createTempFunctionFile(t)
+	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "download-integration-test")
+	requireSuccess(t, result)
+
+	var createResp struct {
+		FunctionID    string `json:"function_id"`
+		LatestVersion string `json:"latest_version"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &createResp); err != nil {
+		t.Fatalf("Failed to parse create response: %v", err)
+	}
+	if createResp.FunctionID == "" || createResp.LatestVersion == "" {
+		t.Fatalf("Create response is missing function ID or version: %+v", createResp)
+	}
+	defer cleanupFunction(t, createResp.FunctionID)
+
+	outputPath := filepath.Join(t.TempDir(), "downloaded-function.py")
+	result = runCLI(t, "functions", "download", outputPath,
+		"--function-id", createResp.FunctionID,
+		"--version", createResp.LatestVersion)
+	requireSuccess(t, result)
+
+	downloaded, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("Failed to read downloaded function: %v", err)
+	}
+	original, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("Failed to read original function: %v", err)
+	}
+	if !bytes.Equal(downloaded, original) {
+		t.Fatalf("Downloaded function does not match uploaded function\nwant: %q\ngot:  %q", original, downloaded)
+	}
+}
+
 func TestFunctionSecretsLifecycle(t *testing.T) {
 	secretName := "INTEGRATION_SECRET_" + strings.NewReplacer("-", "_", ":", "_", ".", "_").Replace(time.Now().UTC().Format(time.RFC3339Nano))
 	secretValue := "integration-secret-value"

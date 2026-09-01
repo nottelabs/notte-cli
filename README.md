@@ -200,6 +200,7 @@ notte functions list [--page N] [--page-size N] [--include-deleted]  # List func
 notte functions create --file workflow.py  # Create a new function
 notte functions show                  # View current function details
 notte functions show --function-id <id>  # View specific function details (different from current function)
+notte functions download workflow.py [--version <version>]  # Download current function code to disk
 notte functions create --file workflow.py --response-format @schema.json  # ... with its response documented
 notte functions update --file workflow.py  # Update current function code
 notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
