@@ -18,6 +18,9 @@ func configureCmd(t *testing.T) *cobra.Command {
 	RegisterFunctionConfigureFlags(cmd)
 	cmd.SetContext(context.Background())
 	t.Cleanup(func() {
+		FunctionConfigureName = ""
+		FunctionConfigureDescription = ""
+		FunctionConfigureDomain = ""
 		FunctionConfigureInstructions = ""
 		FunctionConfigureSelfHealing = false
 	})
@@ -112,7 +115,7 @@ func TestFunctionConfigure_RefusesToSendNothing(t *testing.T) {
 
 	err := runFunctionConfigure(configureCmd(t), nil)
 	if err == nil {
-		t.Fatal("expected an error when neither flag is passed")
+		t.Fatal("expected an error when no configure flags are passed")
 	}
 	if !strings.Contains(err.Error(), "nothing to configure") {
 		t.Fatalf("unexpected error: %v", err)
@@ -122,27 +125,78 @@ func TestFunctionConfigure_RefusesToSendNothing(t *testing.T) {
 	}
 }
 
+// Metadata fields added by the OpenAPI regen must be sendable on their own;
+// otherwise configure only works when paired with the older flags.
+func TestFunctionConfigure_SendsMetadataFieldsAlone(t *testing.T) {
+	for _, tc := range []struct {
+		flag  string
+		value string
+		field string
+	}{
+		{flag: "name", value: "checkout", field: "name"},
+		{flag: "description", value: "buys the cart", field: "description"},
+		{flag: "domain", value: "shop.example", field: "domain"},
+	} {
+		t.Run(tc.flag, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+			origFormat := outputFormat
+			outputFormat = "json"
+			t.Cleanup(func() { outputFormat = origFormat })
+
+			cmd := configureCmd(t)
+			if err := cmd.Flags().Set(tc.flag, tc.value); err != nil {
+				t.Fatalf("setting --%s: %v", tc.flag, err)
+			}
+
+			testutil.CaptureOutput(func() {
+				if err := runFunctionConfigure(cmd, nil); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+
+			body := requestBody(t, server.Requests("/functions/"+functionIDTest)[0])
+			if body[tc.field] != tc.value {
+				t.Errorf("%s = %v, want %q", tc.field, body[tc.field], tc.value)
+			}
+			for _, absent := range []string{"instructions", "self_healing", "name", "description", "domain"} {
+				if absent == tc.field {
+					continue
+				}
+				if _, present := body[absent]; present {
+					t.Errorf("%s was sent for a call that only passed --%s", absent, tc.flag)
+				}
+			}
+		})
+	}
+}
+
 // The generated builder sends an optional string only when it is non-empty, so
-// `--run-instructions ""` would reach the API as an empty PATCH: 200, nothing
-// changed, and the caller told it worked. Refused up front instead.
-func TestFunctionConfigure_RejectsEmptyInstructions(t *testing.T) {
-	server := setupFunctionTest(t)
-	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+// `--flag ""` would reach the API as an empty PATCH: 200, nothing changed, and
+// the caller told it worked. Refused up front instead.
+func TestFunctionConfigure_RejectsEmptyStringFlags(t *testing.T) {
+	for _, flag := range []string{"name", "description", "domain", "run-instructions"} {
+		t.Run(flag, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
 
-	cmd := configureCmd(t)
-	if err := cmd.Flags().Set("run-instructions", ""); err != nil {
-		t.Fatalf("setting --run-instructions: %v", err)
-	}
+			cmd := configureCmd(t)
+			if err := cmd.Flags().Set(flag, ""); err != nil {
+				t.Fatalf("setting --%s: %v", flag, err)
+			}
 
-	err := runFunctionConfigure(cmd, nil)
-	if err == nil {
-		t.Fatal("expected an error for --run-instructions \"\"")
-	}
-	if !strings.Contains(err.Error(), "cannot be empty") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(server.Requests("/functions/"+functionIDTest)) != 0 {
-		t.Error("an empty --run-instructions still reached the API")
+			err := runFunctionConfigure(cmd, nil)
+			if err == nil {
+				t.Fatalf("expected an error for --%s \"\"", flag)
+			}
+			if !strings.Contains(err.Error(), "cannot be empty") {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(server.Requests("/functions/"+functionIDTest)) != 0 {
+				t.Errorf("an empty --%s still reached the API", flag)
+			}
+		})
 	}
 }
 
