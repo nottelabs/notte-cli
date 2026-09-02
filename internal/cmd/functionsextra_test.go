@@ -156,7 +156,7 @@ func TestFunctionConfigure_SendsMetadataFieldsAlone(t *testing.T) {
 				}
 			})
 
-			body := requestBody(t, server.Requests("/functions/"+functionIDTest)[0])
+			body := requestBody(t, server.Requests("/functions/" + functionIDTest)[0])
 			if body[tc.field] != tc.value {
 				t.Errorf("%s = %v, want %q", tc.field, body[tc.field], tc.value)
 			}
