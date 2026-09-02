@@ -509,8 +509,7 @@ func TestFunctionsConfigureMetadata(t *testing.T) {
 
 	result = runCLI(t, "functions", "configure",
 		"--function-id", functionID,
-		"--run-instructions", "retry the login step",
-		"--self-healing")
+		"--run-instructions", "retry the login step")
 	requireSuccess(t, result)
 
 	result = runCLI(t, "functions", "show", "--function-id", functionID)
@@ -519,8 +518,15 @@ func TestFunctionsConfigureMetadata(t *testing.T) {
 	if ptrVal(meta.Instructions) != "retry the login step" {
 		t.Fatalf("instructions after configure = %q", ptrVal(meta.Instructions))
 	}
-	if meta.SelfHealing == nil || !*meta.SelfHealing {
-		t.Fatalf("self_healing after configure = %v, want true", meta.SelfHealing)
+
+	// CLI-created functions have no agent thread, so the API refuses self-healing.
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--self-healing")
+	requireFailure(t, result)
+	combined := result.Stdout + result.Stderr
+	if !containsString(combined, "self_healing") && !containsString(combined, "thread") {
+		t.Fatalf("expected API rejection of self-healing on a CLI function, got stdout=%q stderr=%q", result.Stdout, result.Stderr)
 	}
 
 	// Empty PATCH and empty string values must fail before hitting a no-op success.
