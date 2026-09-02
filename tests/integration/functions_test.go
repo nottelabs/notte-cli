@@ -426,6 +426,125 @@ func TestFunctionsUpdate(t *testing.T) {
 	t.Logf("Updated function: %s (new version: %s, total versions: %d)", functionID, updateResp.LatestVersion, len(updateResp.Versions))
 }
 
+func TestFunctionsConfigureMetadata(t *testing.T) {
+	tmpFile := createTempFunctionFile(t)
+
+	result := runCLI(t, "functions", "create", "--file", tmpFile, "--name", "configure-metadata-source")
+	requireSuccess(t, result)
+
+	var createResp struct {
+		FunctionID string `json:"function_id"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &createResp); err != nil {
+		t.Fatalf("Failed to parse create response: %v", err)
+	}
+	functionID := createResp.FunctionID
+	if functionID == "" {
+		t.Fatal("No function ID returned from create command")
+	}
+	defer cleanupFunction(t, functionID)
+
+	type functionMeta struct {
+		FunctionID   string  `json:"function_id"`
+		Name         *string `json:"name"`
+		Description  *string `json:"description"`
+		Domain       *string `json:"domain"`
+		Instructions *string `json:"instructions"`
+		SelfHealing  *bool   `json:"self_healing"`
+	}
+	parseShow := func(stdout string) functionMeta {
+		t.Helper()
+		var meta functionMeta
+		if err := json.Unmarshal([]byte(stdout), &meta); err != nil {
+			t.Fatalf("Failed to parse function show response: %v\nstdout: %s", err, stdout)
+		}
+		return meta
+	}
+	ptrVal := func(p *string) string {
+		if p == nil {
+			return ""
+		}
+		return *p
+	}
+
+	// Each metadata field must be sendable alone against the live endpoint.
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--name", "configure-metadata-renamed")
+	requireSuccess(t, result)
+
+	result = runCLI(t, "functions", "show", "--function-id", functionID)
+	requireSuccess(t, result)
+	meta := parseShow(result.Stdout)
+	if ptrVal(meta.Name) != "configure-metadata-renamed" {
+		t.Fatalf("name after --name configure = %q, want configure-metadata-renamed", ptrVal(meta.Name))
+	}
+
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--description", "integration metadata description")
+	requireSuccess(t, result)
+
+	result = runCLI(t, "functions", "show", "--function-id", functionID)
+	requireSuccess(t, result)
+	meta = parseShow(result.Stdout)
+	if ptrVal(meta.Description) != "integration metadata description" {
+		t.Fatalf("description after --description configure = %q", ptrVal(meta.Description))
+	}
+	if ptrVal(meta.Name) != "configure-metadata-renamed" {
+		t.Fatalf("name changed after --description-only configure: %q", ptrVal(meta.Name))
+	}
+
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--domain", "shop.example")
+	requireSuccess(t, result)
+
+	result = runCLI(t, "functions", "show", "--function-id", functionID)
+	requireSuccess(t, result)
+	meta = parseShow(result.Stdout)
+	if ptrVal(meta.Domain) != "shop.example" {
+		t.Fatalf("domain after --domain configure = %q, want shop.example", ptrVal(meta.Domain))
+	}
+
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--run-instructions", "retry the login step")
+	requireSuccess(t, result)
+
+	result = runCLI(t, "functions", "show", "--function-id", functionID)
+	requireSuccess(t, result)
+	meta = parseShow(result.Stdout)
+	if ptrVal(meta.Instructions) != "retry the login step" {
+		t.Fatalf("instructions after configure = %q", ptrVal(meta.Instructions))
+	}
+
+	// CLI-created functions have no agent thread, so the API refuses self-healing.
+	result = runCLI(t, "functions", "configure",
+		"--function-id", functionID,
+		"--self-healing")
+	requireFailure(t, result)
+	combined := result.Stdout + result.Stderr
+	if !containsString(combined, "self_healing") && !containsString(combined, "thread") {
+		t.Fatalf("expected API rejection of self-healing on a CLI function, got stdout=%q stderr=%q", result.Stdout, result.Stderr)
+	}
+
+	// Empty PATCH and empty string values must fail before hitting a no-op success.
+	result = runCLI(t, "functions", "configure", "--function-id", functionID)
+	requireFailure(t, result)
+	if !containsString(result.Stderr, "nothing to configure") && !containsString(result.Stdout, "nothing to configure") {
+		t.Fatalf("expected nothing-to-configure error, got stdout=%q stderr=%q", result.Stdout, result.Stderr)
+	}
+
+	result = runCLI(t, "functions", "configure", "--function-id", functionID, "--name", "")
+	requireFailure(t, result)
+	if !containsString(result.Stderr, "cannot be empty") && !containsString(result.Stdout, "cannot be empty") {
+		t.Fatalf("expected empty-name error, got stdout=%q stderr=%q", result.Stdout, result.Stderr)
+	}
+
+	t.Log("Function configure metadata path exercised against live API")
+}
+
 func TestFunctionsShowNonexistent(t *testing.T) {
 	// Try to show a non-existent function
 	result := runCLI(t, "functions", "show", "--function-id", "00000000-0000-0000-0000-000000000000")

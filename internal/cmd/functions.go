@@ -129,13 +129,13 @@ var functionsUpdateCmd = &cobra.Command{
 
 var functionsConfigureCmd = &cobra.Command{
 	Use:   "configure",
-	Short: "Set usage notes and self-healing",
+	Short: "Update function metadata",
 	Long: "Update a function's metadata.\n\n" +
+		"Pass any of --name, --description, --domain, --run-instructions, or --self-healing. " +
+		"Only the flags you pass are sent; omitted fields are left unchanged.\n\n" +
 		"--run-instructions is documentation for whoever calls the function - how long a " +
 		"run takes, what each variable is for, which sites it trips over. It is not " +
-		"input to the self-healing agent.\n\n" +
-		"Only the flags you pass are sent, so setting instructions leaves self-healing " +
-		"as it was, and vice versa.",
+		"input to the self-healing agent.",
 	Args: cobra.NoArgs,
 	RunE: runFunctionConfigure,
 }
@@ -565,14 +565,30 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 
 	// An empty PATCH is accepted by the API and changes nothing, which reads as
 	// success for a command that did not do what the caller meant.
-	if !cmd.Flags().Changed("run-instructions") && !cmd.Flags().Changed("self-healing") {
-		return errors.New("nothing to configure: pass --run-instructions, --self-healing, or both")
+	stringFlags := []struct {
+		name  string
+		value string
+	}{
+		{"name", FunctionConfigureName},
+		{"description", FunctionConfigureDescription},
+		{"domain", FunctionConfigureDomain},
+		{"run-instructions", FunctionConfigureInstructions},
 	}
-	// `--run-instructions ""` is refused rather than sent. The generated builder
-	// omits an empty string, so it would otherwise travel as far as an empty
-	// PATCH: accepted, 200, nothing changed, and the caller told it worked.
-	if cmd.Flags().Changed("run-instructions") && FunctionConfigureInstructions == "" {
-		return errors.New("--run-instructions cannot be empty")
+	anyChanged := cmd.Flags().Changed("self-healing")
+	for _, f := range stringFlags {
+		if !cmd.Flags().Changed(f.name) {
+			continue
+		}
+		anyChanged = true
+		// Empty strings are refused rather than sent. The generated builder
+		// omits them, so they would otherwise travel as an empty PATCH:
+		// accepted, 200, nothing changed, and the caller told it worked.
+		if f.value == "" {
+			return fmt.Errorf("--%s cannot be empty", f.name)
+		}
+	}
+	if !anyChanged {
+		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, and/or --self-healing")
 	}
 
 	client, err := GetClient()
