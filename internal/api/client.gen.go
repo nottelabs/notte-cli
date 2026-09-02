@@ -1499,6 +1499,9 @@ type FunctionListItemResponse struct {
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
 
+	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
+	Domain *string `json:"domain,omitempty"`
+
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
@@ -1538,7 +1541,10 @@ type FunctionListItemResponse struct {
 
 // FunctionMetadataUpdateRequest defines model for FunctionMetadataUpdateRequest.
 type FunctionMetadataUpdateRequest struct {
+	Description  *string `json:"description,omitempty"`
+	Domain       *string `json:"domain,omitempty"`
 	Instructions *string `json:"instructions,omitempty"`
+	Name         *string `json:"name,omitempty"`
 	SelfHealing  *bool   `json:"self_healing,omitempty"`
 }
 
@@ -1549,6 +1555,9 @@ type FunctionResponse struct {
 
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
+
+	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
+	Domain *string `json:"domain,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -1698,6 +1707,9 @@ type FunctionWithLinkResponse struct {
 
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
+
+	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
+	Domain *string `json:"domain,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`

@@ -9,8 +9,14 @@ import (
 
 // FunctionConfigure command flags
 var (
+	FunctionConfigureDescription string
+
+	FunctionConfigureDomain string
+
 	// Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over
 	FunctionConfigureInstructions string
+
+	FunctionConfigureName string
 
 	// Let an agent repair the function when a run fails
 	FunctionConfigureSelfHealing bool
@@ -18,7 +24,10 @@ var (
 
 // RegisterFunctionConfigureFlags registers all flags for FunctionConfigure command
 func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&FunctionConfigureDescription, "description", "", "description")
+	cmd.Flags().StringVar(&FunctionConfigureDomain, "domain", "", "domain")
 	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
+	cmd.Flags().StringVar(&FunctionConfigureName, "name", "", "name")
 	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let an agent repair the function when a run fails")
 }
 
@@ -26,8 +35,20 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpdateRequest, error) {
 	body := &api.FunctionMetadataUpdateRequest{}
 
+	if FunctionConfigureDescription != "" {
+		body.Description = &FunctionConfigureDescription
+	}
+
+	if FunctionConfigureDomain != "" {
+		body.Domain = &FunctionConfigureDomain
+	}
+
 	if FunctionConfigureInstructions != "" {
 		body.Instructions = &FunctionConfigureInstructions
+	}
+
+	if FunctionConfigureName != "" {
+		body.Name = &FunctionConfigureName
 	}
 
 	if cmd.Flags().Changed("self-healing") {
