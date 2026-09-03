@@ -30,11 +30,11 @@ func setupPersonaTest(t *testing.T) *testutil.MockServer {
 }
 
 func personaJSON(id string) string {
-	return `{"persona_id":"` + id + `","email":"test@example.com","first_name":"Test","last_name":"User","status":"active"}`
+	return `{"persona_id":"` + id + `","email":"test.user@mail-sand.com","internal_email":"` + id + `@mail-sand.com","first_name":"Test","last_name":"User","status":"active"}`
 }
 
 func personaResponseJSON() string {
-	return `{"persona_id":"` + personaIDTest + `","email":"test@example.com","first_name":"Test","last_name":"User","status":"active"}`
+	return personaJSON(personaIDTest)
 }
 
 func TestRunPersonasList_Success(t *testing.T) {
@@ -63,6 +63,12 @@ func TestRunPersonasList_Success(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+	if !strings.Contains(stdout, `"email":"test.user@mail-sand.com"`) {
+		t.Errorf("expected public email in output, got %q", stdout)
+	}
+	if !strings.Contains(stdout, `"internal_email":"persona_1@mail-sand.com"`) {
+		t.Errorf("expected internal email in output, got %q", stdout)
 	}
 }
 
