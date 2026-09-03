@@ -70,6 +70,17 @@ type FunctionConfig struct {
 	Cron        string   `toml:"cron"`
 	Secrets     []string `toml:"secrets"`
 
+	// Domain is the site the function acts on, used by the catalog.
+	Domain string `toml:"domain"`
+	// Instructions are notes for whoever calls the function: how long a run
+	// takes, what the variables mean, what it trips over.
+	Instructions string `toml:"instructions"`
+	// SelfHealing lets an agent repair the function when a run fails. A
+	// pointer so "unset" is distinguishable from "explicitly false" — the API
+	// omits absent fields, and silently turning a feature off because a
+	// config did not mention it would be a surprising deploy.
+	SelfHealing *bool `toml:"self_healing"`
+
 	// CronVariables are the arguments a scheduled run is invoked with.
 	//
 	// A schedule carries its own variables — POST /functions/{id}/schedule

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,17 +48,6 @@ func init() {
 		"Write the source of functions this tree does not have")
 	stackPullCmd.Flags().IntVar(&stackPullLimit, "limit", 0,
 		"Adopt at most this many functions (0 = all)")
-}
-
-// decryptionKey re-derives the key the API uses to encrypt a download URL.
-//
-// Notte-managed functions return a Fernet token where the URL should be,
-// keyed on the caller's own API key. The rule is duplicated from the backend
-// and there is no way around that until the URL is returned decrypted; keeping
-// it in one place here at least stops it spreading further.
-func decryptionKey(apiKey, functionID string) string {
-	sum := sha256.Sum256([]byte("api_key:" + apiKey + ":workflow_id:" + functionID + ":dumb"))
-	return hex.EncodeToString(sum[:])[:64]
 }
 
 func runStackPull(cmd *cobra.Command, args []string) error {
@@ -322,9 +309,13 @@ func downloadSources(ctx context.Context, client *api.NotteClient, cfg *project.
 
 // downloadOne resolves the signed URL and fetches the code.
 func downloadOne(ctx context.Context, client *api.NotteClient, functionID string) (string, error) {
-	key := decryptionKey(client.APIKey(), functionID)
+	// No decryption key: the API returns a plain signed URL. An earlier version
+	// re-derived one with sha256("api_key:{k}:workflow_id:{id}:dumb")[:64],
+	// copied from the backend — the same duplicated rule marketplace carries.
+	// `notte functions download` never sent one, and a live call confirms the
+	// url field is an ordinary CloudFront link.
 	resp, err := client.Client().FunctionDownloadUrlWithResponse(ctx, functionID,
-		&api.FunctionDownloadUrlParams{DecryptionKey: &key})
+		&api.FunctionDownloadUrlParams{})
 	if err != nil {
 		return "", err
 	}

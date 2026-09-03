@@ -12,6 +12,12 @@ name = "{{.Name}}"
 # [functions.{{.Example}}]
 # name           = "A human-readable name"
 # description    = "What it does"
+# domain         = "example.com"          # the site it acts on
+# instructions   = "Takes ~30s. `query` is the search term."
+#                                         # notes for whoever calls it
+# self_healing   = true                   # only for functions an agent built:
+#                                         # self-heal resumes the thread that
+#                                         # created them, and a CLI deploy has none
 # cron           = "cron(0 9 * * ? *)"   # six-field AWS EventBridge form
 # cron_variables = { name = "scheduled" } # arguments the scheduled run uses;
 #                                         # without these it runs on run()'s defaults
