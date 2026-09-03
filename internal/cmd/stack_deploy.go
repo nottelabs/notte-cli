@@ -161,6 +161,25 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 			"name": w.fn.Name, "function_id": result.id, "version": result.version,
 			"action": verb, "missing_secrets": missing,
 		}
+		// Metadata is applied on every deploy, not only at create. Sending it
+		// with the multipart upload sets it once and then never again, so an
+		// edit to name or description in notte.toml would silently never
+		// reach the deployed function — the gap marketplace still has, where
+		// copy is only editable upstream.
+		// A metadata failure never fails the deploy. The upload has landed, and
+		// refusing the whole command over a catalog field would report a
+		// success as a failure — the same mistake the secrets path avoids.
+		// self_healing in particular is refused outright for anything the CLI
+		// created: it resumes the thread that built the function, and a
+		// CLI-deployed one has none.
+		changed, err := applyMetadata(ctx, client, prep.cfg, w.fn.Name, result.id)
+		if err != nil {
+			PrintInfo("       metadata not applied: " + err.Error())
+			entry["metadata_error"] = err.Error()
+		} else if len(changed) > 0 {
+			PrintInfo("       configured " + strings.Join(changed, ", "))
+			entry["configured"] = changed
+		}
 
 		if len(missing) > 0 {
 			PrintInfo(fmt.Sprintf("       missing secrets: %s — it will fail when invoked", strings.Join(missing, ", ")))
@@ -331,17 +350,14 @@ func uploadFunction(ctx context.Context, client *api.NotteClient, cfg *project.C
 		return nil, err
 	}
 
-	fc := cfg.Functions[w.fn.Name]
 	if w.existingID == "" {
+		// Only what create needs to exist at all. Everything else is applied
+		// afterwards through the metadata endpoint, so the same code path runs
+		// whether this is a create or an update.
 		if err := writer.WriteField("name", deployName(cfg, w.fn.Name)); err != nil {
 			return nil, err
 		}
-		if fc.Description != "" {
-			if err := writer.WriteField("description", fc.Description); err != nil {
-				return nil, err
-			}
-		}
-		if fc.Shared {
+		if cfg.Functions[w.fn.Name].Shared {
 			if err := writer.WriteField("shared", "true"); err != nil {
 				return nil, err
 			}
@@ -380,6 +396,55 @@ func uploadFunction(ctx context.Context, client *api.NotteClient, cfg *project.C
 		res.requiredSecrets = *fn.RequiredSecrets
 	}
 	return res, nil
+}
+
+// applyMetadata pushes the catalog fields notte.toml owns, and reports which
+// ones it sent.
+//
+// It is a no-op when the config sets none, so a project that names nothing
+// makes no extra call. self_healing is a pointer in the config precisely so
+// that "unset" and "explicitly false" differ: turning a feature off because a
+// file did not mention it would be a surprising deploy.
+func applyMetadata(ctx context.Context, client *api.NotteClient, cfg *project.Config,
+	name, functionID string,
+) ([]string, error) {
+	fc := cfg.Functions[name]
+	body := api.FunctionMetadataUpdateJSONRequestBody{}
+	var changed []string
+
+	if configured := deployName(cfg, name); fc.Name != "" {
+		body.Name = &configured
+		changed = append(changed, "name")
+	}
+	if fc.Description != "" {
+		body.Description = &fc.Description
+		changed = append(changed, "description")
+	}
+	if fc.Domain != "" {
+		body.Domain = &fc.Domain
+		changed = append(changed, "domain")
+	}
+	if fc.Instructions != "" {
+		body.Instructions = &fc.Instructions
+		changed = append(changed, "instructions")
+	}
+	if fc.SelfHealing != nil {
+		body.SelfHealing = fc.SelfHealing
+		changed = append(changed, "self_healing")
+	}
+	if len(changed) == 0 {
+		return nil, nil
+	}
+
+	resp, err := client.Client().FunctionMetadataUpdateWithResponse(ctx, functionID,
+		&api.FunctionMetadataUpdateParams{}, body)
+	if err != nil {
+		return nil, fmt.Errorf("configure: %w", err)
+	}
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return nil, fmt.Errorf("configure: %w", err)
+	}
+	return changed, nil
 }
 
 func applySchedule(ctx context.Context, client *api.NotteClient, functionID, cron string, variables map[string]any) error {

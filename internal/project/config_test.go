@@ -291,3 +291,59 @@ func TestScheduleProblemsSilentWithoutASchedule(t *testing.T) {
 		t.Fatalf("got %v", problems)
 	}
 }
+
+// The fields `notte functions configure` can set are declarable, so a deploy
+// pushes them rather than leaving copy editable only upstream.
+func TestFunctionMetadataFieldsParse(t *testing.T) {
+	dir := write(t, map[string]string{
+		"notte.toml": `[project]
+name = "d"
+
+[functions.hello]
+name         = "Hello"
+description  = "Says hello"
+domain       = "example.com"
+instructions = "Takes ~30s."
+self_healing = true
+`,
+	})
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := cfg.Functions["hello"]
+	if fn.Domain != "example.com" || fn.Instructions != "Takes ~30s." {
+		t.Fatalf("got %+v", fn)
+	}
+	if fn.SelfHealing == nil || !*fn.SelfHealing {
+		t.Fatalf("self_healing = %v", fn.SelfHealing)
+	}
+}
+
+// self_healing is a pointer so "unset" differs from "explicitly false".
+// Turning a feature off because a config did not mention it would be a
+// surprising deploy.
+func TestSelfHealingDistinguishesUnsetFromFalse(t *testing.T) {
+	unset := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[functions.hello]\ndescription = \"x\"\n",
+	})
+	cfg, err := Load(unset)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Functions["hello"].SelfHealing != nil {
+		t.Fatal("an unmentioned self_healing must stay nil, not become false")
+	}
+
+	explicit := write(t, map[string]string{
+		"notte.toml": "[project]\nname=\"d\"\n\n[functions.hello]\nself_healing = false\n",
+	})
+	cfg, err = Load(explicit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sh := cfg.Functions["hello"].SelfHealing
+	if sh == nil || *sh {
+		t.Fatalf("an explicit false must be sent, got %v", sh)
+	}
+}
