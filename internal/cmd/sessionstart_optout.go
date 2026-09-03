@@ -20,12 +20,9 @@ import (
 //
 // --no- rather than --disable- specifically because Chromium's own flags are
 // --disable-* (--disable-gpu, --disable-extensions) and this command forwards
-// them verbatim through --chrome-args. Keeping the prefixes distinct means
-// `--no-file-storage --chrome-args="--disable-gpu"` reads unambiguously as one
-// Notte flag and one browser flag.
+// them verbatim through --chrome-args.
 var (
 	sessionsStartNoSolveCaptchas bool
-	sessionsStartNoFileStorage   bool
 )
 
 // sessionStartOptOut pairs a new negative flag with the generated flag it
@@ -48,12 +45,6 @@ func sessionStartOptOuts() []sessionStartOptOut {
 			set:      &sessionsStartNoSolveCaptchas,
 			apply:    func(b *api.ApiSessionStartRequest, enabled bool) { b.SolveCaptchas = &enabled },
 		},
-		{
-			negative: "no-file-storage",
-			original: "use-file-storage",
-			set:      &sessionsStartNoFileStorage,
-			apply:    func(b *api.ApiSessionStartRequest, enabled bool) { b.UseFileStorage = &enabled },
-		},
 	}
 }
 
@@ -62,11 +53,6 @@ func sessionStartOptOuts() []sessionStartOptOut {
 func registerSessionStartOptOutFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&sessionsStartNoSolveCaptchas, "no-solve-captchas", false,
 		"Do not attempt to solve captchas automatically")
-	// No backticks in usage strings: cobra's UnquoteUsage treats the first
-	// backquoted span as the flag's value placeholder, so this rendered as
-	// "--no-file-storage notte page download" in --help.
-	cmd.Flags().BoolVar(&sessionsStartNoFileStorage, "no-file-storage", false,
-		"Do not attach FileStorage. Disables 'notte page download' and 'notte files --from session'")
 }
 
 // validateSessionStartOptOuts rejects a pair whose two spellings were both

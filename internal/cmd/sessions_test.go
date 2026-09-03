@@ -114,7 +114,6 @@ func TestRunSessionsStart(t *testing.T) {
 	origVH := SessionStartViewportHeight
 	origUA := SessionStartUserAgent
 	origCDP := SessionStartCdpUrl
-	origFileStorage := SessionStartUseFileStorage
 	t.Cleanup(func() {
 		SessionStartBrowserType = origBrowser
 		SessionStartIdleTimeoutMinutes = origTimeout
@@ -124,7 +123,6 @@ func TestRunSessionsStart(t *testing.T) {
 		SessionStartViewportHeight = origVH
 		SessionStartUserAgent = origUA
 		SessionStartCdpUrl = origCDP
-		SessionStartUseFileStorage = origFileStorage
 	})
 
 	SessionStartBrowserType = "chrome"
@@ -135,7 +133,6 @@ func TestRunSessionsStart(t *testing.T) {
 	SessionStartViewportHeight = 720
 	SessionStartUserAgent = "test-agent"
 	SessionStartCdpUrl = "ws://cdp"
-	SessionStartUseFileStorage = true
 
 	origFormat := outputFormat
 	outputFormat = "json"
@@ -144,10 +141,8 @@ func TestRunSessionsStart(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "")
-	cmd.Flags().BoolVar(&SessionStartUseFileStorage, "file-storage", false, "")
 	_ = cmd.Flags().Set("proxy", "true")
 	_ = cmd.Flags().Set("solve-captchas", "true")
-	_ = cmd.Flags().Set("file-storage", "true")
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {

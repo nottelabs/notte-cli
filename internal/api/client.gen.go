@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -101,6 +102,12 @@ const (
 const (
 	Failure DeleteVaultResponseStatus = "failure"
 	Success DeleteVaultResponseStatus = "success"
+)
+
+// Defines values for FileSource.
+const (
+	SessionDownload FileSource = "session_download"
+	UserUpload      FileSource = "user_upload"
 )
 
 // Defines values for FunctionRunListItemResponseStatus.
@@ -714,9 +721,6 @@ type ApiSessionStartRequest struct {
 	// SolveCaptchas Whether to try to automatically solve captchas
 	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
 
-	// UseFileStorage Whether FileStorage should be attached to the session.
-	UseFileStorage *bool `json:"use_file_storage,omitempty"`
-
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
 
@@ -761,16 +765,6 @@ type ApiSessionStartRequestScreenshotType string
 // BaseModel defines model for BaseModel.
 type BaseModel = map[string]interface{}
 
-// BodyFileUploadDownloadedFileStorageSessionIdDownloadsFilenamePost defines model for Body_file_upload_downloaded_file_storage__session_id__downloads__filename__post.
-type BodyFileUploadDownloadedFileStorageSessionIdDownloadsFilenamePost struct {
-	File string `json:"file"`
-}
-
-// BodyFileUploadStorageUploadsFilenamePost defines model for Body_file_upload_storage_uploads__filename__post.
-type BodyFileUploadStorageUploadsFilenamePost struct {
-	File string `json:"file"`
-}
-
 // BodyFunctionCreateFunctionsPost defines model for Body_function_create_functions_post.
 type BodyFunctionCreateFunctionsPost struct {
 	Description *string `json:"description,omitempty"`
@@ -793,6 +787,11 @@ type BodyFunctionUpdateFunctionsFunctionIdPost struct {
 // BodySessionCookiesSetSessionsSessionIdCookiesPost defines model for Body_session_cookies_set_sessions__session_id__cookies_post.
 type BodySessionCookiesSetSessionsSessionIdCookiesPost struct {
 	Cookies []Cookie `json:"cookies"`
+}
+
+// BodyUploadSessionFileSessionsSessionIdFilesPost defines model for Body_upload_session_file_sessions__session_id__files_post.
+type BodyUploadSessionFileSessionsSessionIdFilesPost struct {
+	File string `json:"file"`
 }
 
 // BoundingBox defines model for BoundingBox.
@@ -1372,25 +1371,8 @@ type FallbackFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
-// FileInfo defines model for FileInfo.
-type FileInfo struct {
-	FileExt   string  `json:"file_ext"`
-	Name      string  `json:"name"`
-	Size      int     `json:"size"`
-	UpdatedAt *string `json:"updated_at,omitempty"`
-}
-
-// FileLinkResponse defines model for FileLinkResponse.
-type FileLinkResponse struct {
-	// Url URL to download file from
-	Url string `json:"url"`
-}
-
-// FileUploadResponse defines model for FileUploadResponse.
-type FileUploadResponse struct {
-	// Success Whether the upload was successful
-	Success bool `json:"success"`
-}
+// FileSource defines model for FileSource.
+type FileSource string
 
 // FillActionInput defines model for FillAction-Input.
 type FillActionInput struct {
@@ -1875,9 +1857,6 @@ type GlobalScrapeRequest struct {
 	SolveCaptchas *bool  `json:"solve_captchas,omitempty"`
 	Url           string `json:"url"`
 
-	// UseFileStorage Whether FileStorage should be attached to the session.
-	UseFileStorage *bool `json:"use_file_storage,omitempty"`
-
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
 
@@ -2033,12 +2012,6 @@ type LegacyAgentStatusResponse struct {
 type ListCredentialsResponse struct {
 	// Credentials URLs for which we hold credentials
 	Credentials []Credential `json:"credentials"`
-}
-
-// ListFilesResponse defines model for ListFilesResponse.
-type ListFilesResponse struct {
-	// Files List of files with metadata
-	Files []FileInfo `json:"files"`
 }
 
 // LlmModel defines model for LlmModel.
@@ -2767,6 +2740,27 @@ type SessionDebugResponse struct {
 	Ws       WebSocketUrls             `json:"ws"`
 }
 
+// SessionFile defines model for SessionFile.
+type SessionFile struct {
+	Checksum  string       `json:"checksum"`
+	CreatedAt FlexibleTime `json:"created_at"`
+	ExpiresAt FlexibleTime `json:"expires_at"`
+	Filename  string       `json:"filename"`
+	Id        string       `json:"id"`
+	MimeType  string       `json:"mime_type"`
+	SessionId string       `json:"session_id"`
+	Size      int          `json:"size"`
+	Source    FileSource   `json:"source"`
+}
+
+// SessionFilesPage defines model for SessionFilesPage.
+type SessionFilesPage struct {
+	Files  []SessionFile `json:"files"`
+	Limit  int           `json:"limit"`
+	Offset int           `json:"offset"`
+	Total  int           `json:"total"`
+}
+
 // SessionOffsetResponse defines model for SessionOffsetResponse.
 type SessionOffsetResponse struct {
 	// Offset Current state of the session trajectory
@@ -2840,9 +2834,6 @@ type SessionResponse struct {
 	SystemHidden *bool `json:"system_hidden,omitempty"`
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	TimeoutMinutes *int `json:"timeout_minutes,omitempty"`
-
-	// UseFileStorage Whether FileStorage was attached to the session.
-	UseFileStorage *bool `json:"use_file_storage,omitempty"`
 
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
@@ -3602,6 +3593,33 @@ type SessionDebugInfoParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// ListSessionFilesParams defines parameters for ListSessionFiles.
+type ListSessionFilesParams struct {
+	Source              *FileSource `form:"source,omitempty" json:"source,omitempty"`
+	Limit               *int        `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset              *int        `form:"offset,omitempty" json:"offset,omitempty"`
+	XNotteRequestOrigin *string     `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string     `json:"x-notte-sdk-version,omitempty"`
+}
+
+// UploadSessionFileParams defines parameters for UploadSessionFile.
+type UploadSessionFileParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DeleteSessionFileParams defines parameters for DeleteSessionFile.
+type DeleteSessionFileParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DownloadSessionFileParams defines parameters for DownloadSessionFile.
+type DownloadSessionFileParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // SessionNetworkLogsParams defines parameters for SessionNetworkLogs.
 type SessionNetworkLogsParams struct {
 	// Limit Maximum number of batch files to return
@@ -3675,42 +3693,6 @@ type GetSessionScriptParams struct {
 
 	// InferResponseFormat Whether to infer response_format schema for scrape calls that have instructions but no schema
 	InferResponseFormat *bool   `form:"infer_response_format,omitempty" json:"infer_response_format,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileListUploadsParams defines parameters for FileListUploads.
-type FileListUploadsParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileDownloadUploadedFileParams defines parameters for FileDownloadUploadedFile.
-type FileDownloadUploadedFileParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileUploadParams defines parameters for FileUpload.
-type FileUploadParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileListDownloadsParams defines parameters for FileListDownloads.
-type FileListDownloadsParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileDownloadParams defines parameters for FileDownload.
-type FileDownloadParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// FileUploadDownloadedFileParams defines parameters for FileUploadDownloadedFile.
-type FileUploadDownloadedFileParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -3887,6 +3869,9 @@ type SessionStartJSONRequestBody = ApiSessionStartRequest
 // SessionCookiesSetJSONRequestBody defines body for SessionCookiesSet for application/json ContentType.
 type SessionCookiesSetJSONRequestBody = BodySessionCookiesSetSessionsSessionIdCookiesPost
 
+// UploadSessionFileMultipartRequestBody defines body for UploadSessionFile for multipart/form-data ContentType.
+type UploadSessionFileMultipartRequestBody = BodyUploadSessionFileSessionsSessionIdFilesPost
+
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
 type PageExecuteJSONRequestBody PageExecuteJSONBody
 
@@ -3895,12 +3880,6 @@ type PageObserveJSONRequestBody = ObserveRequest
 
 // PageScrapeJSONRequestBody defines body for PageScrape for application/json ContentType.
 type PageScrapeJSONRequestBody = ScrapeRequest
-
-// FileUploadMultipartRequestBody defines body for FileUpload for multipart/form-data ContentType.
-type FileUploadMultipartRequestBody = BodyFileUploadStorageUploadsFilenamePost
-
-// FileUploadDownloadedFileMultipartRequestBody defines body for FileUploadDownloadedFile for multipart/form-data ContentType.
-type FileUploadDownloadedFileMultipartRequestBody = BodyFileUploadDownloadedFileStorageSessionIdDownloadsFilenamePost
 
 // VaultCreateJSONRequestBody defines body for VaultCreate for application/json ContentType.
 type VaultCreateJSONRequestBody = VaultCreateRequest
@@ -4192,14 +4171,6 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "timeout_minutes")
 	}
 
-	if raw, found := object["use_file_storage"]; found {
-		err = json.Unmarshal(raw, &a.UseFileStorage)
-		if err != nil {
-			return fmt.Errorf("error reading 'use_file_storage': %w", err)
-		}
-		delete(object, "use_file_storage")
-	}
-
 	if raw, found := object["user_agent"]; found {
 		err = json.Unmarshal(raw, &a.UserAgent)
 		if err != nil {
@@ -4385,13 +4356,6 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 	object["timeout_minutes"], err = json.Marshal(a.TimeoutMinutes)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'timeout_minutes': %w", err)
-	}
-
-	if a.UseFileStorage != nil {
-		object["use_file_storage"], err = json.Marshal(a.UseFileStorage)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'use_file_storage': %w", err)
-		}
 	}
 
 	if a.UserAgent != nil {
@@ -9719,6 +9683,18 @@ type ClientInterface interface {
 	// SessionDebugInfo request
 	SessionDebugInfo(ctx context.Context, sessionId string, params *SessionDebugInfoParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListSessionFiles request
+	ListSessionFiles(ctx context.Context, sessionId string, params *ListSessionFilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadSessionFileWithBody request with any body
+	UploadSessionFileWithBody(ctx context.Context, sessionId string, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteSessionFile request
+	DeleteSessionFile(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DeleteSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadSessionFile request
+	DownloadSessionFile(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionNetworkLogs request
 	SessionNetworkLogs(ctx context.Context, sessionId string, params *SessionNetworkLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9751,24 +9727,6 @@ type ClientInterface interface {
 
 	// GetSessionScript request
 	GetSessionScript(ctx context.Context, sessionId string, params *GetSessionScriptParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileListUploads request
-	FileListUploads(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileDownloadUploadedFile request
-	FileDownloadUploadedFile(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileUploadWithBody request with any body
-	FileUploadWithBody(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileListDownloads request
-	FileListDownloads(ctx context.Context, sessionId string, params *FileListDownloadsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileDownload request
-	FileDownload(ctx context.Context, sessionId string, filename string, params *FileDownloadParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FileUploadDownloadedFileWithBody request with any body
-	FileUploadDownloadedFileWithBody(ctx context.Context, sessionId string, filename string, params *FileUploadDownloadedFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetUsage request
 	GetUsage(ctx context.Context, params *GetUsageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -10827,6 +10785,54 @@ func (c *Client) SessionDebugInfo(ctx context.Context, sessionId string, params 
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListSessionFiles(ctx context.Context, sessionId string, params *ListSessionFilesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSessionFilesRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UploadSessionFileWithBody(ctx context.Context, sessionId string, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadSessionFileRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteSessionFile(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DeleteSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteSessionFileRequest(c.Server, sessionId, fileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DownloadSessionFile(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadSessionFileRequest(c.Server, sessionId, fileId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) SessionNetworkLogs(ctx context.Context, sessionId string, params *SessionNetworkLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionNetworkLogsRequest(c.Server, sessionId, params)
 	if err != nil {
@@ -10961,78 +10967,6 @@ func (c *Client) SessionStop(ctx context.Context, sessionId string, params *Sess
 
 func (c *Client) GetSessionScript(ctx context.Context, sessionId string, params *GetSessionScriptParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSessionScriptRequest(c.Server, sessionId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileListUploads(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileListUploadsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileDownloadUploadedFile(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileDownloadUploadedFileRequest(c.Server, filename, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileUploadWithBody(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileUploadRequestWithBody(c.Server, filename, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileListDownloads(ctx context.Context, sessionId string, params *FileListDownloadsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileListDownloadsRequest(c.Server, sessionId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileDownload(ctx context.Context, sessionId string, filename string, params *FileDownloadParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileDownloadRequest(c.Server, sessionId, filename, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) FileUploadDownloadedFileWithBody(ctx context.Context, sessionId string, filename string, params *FileUploadDownloadedFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFileUploadDownloadedFileRequestWithBody(c.Server, sessionId, filename, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -15851,6 +15785,316 @@ func NewSessionDebugInfoRequest(server string, sessionId string, params *Session
 	return req, nil
 }
 
+// NewListSessionFilesRequest generates requests for ListSessionFiles
+func NewListSessionFilesRequest(server string, sessionId string, params *ListSessionFilesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/files", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Source != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "source", runtime.ParamLocationQuery, *params.Source); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewUploadSessionFileRequestWithBody generates requests for UploadSessionFile with any type of body
+func NewUploadSessionFileRequestWithBody(server string, sessionId string, params *UploadSessionFileParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/files", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteSessionFileRequest generates requests for DeleteSessionFile
+func NewDeleteSessionFileRequest(server string, sessionId string, fileId openapi_types.UUID, params *DeleteSessionFileParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "file_id", runtime.ParamLocationPath, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/files/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDownloadSessionFileRequest generates requests for DownloadSessionFile
+func NewDownloadSessionFileRequest(server string, sessionId string, fileId openapi_types.UUID, params *DownloadSessionFileParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "file_id", runtime.ParamLocationPath, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/files/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionNetworkLogsRequest generates requests for SessionNetworkLogs
 func NewSessionNetworkLogsRequest(server string, sessionId string, params *SessionNetworkLogsParams) (*http.Request, error) {
 	var err error
@@ -16582,377 +16826,6 @@ func NewGetSessionScriptRequest(server string, sessionId string, params *GetSess
 	if err != nil {
 		return nil, err
 	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileListUploadsRequest generates requests for FileListUploads
-func NewFileListUploadsRequest(server string, params *FileListUploadsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/uploads")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileDownloadUploadedFileRequest generates requests for FileDownloadUploadedFile
-func NewFileDownloadUploadedFileRequest(server string, filename string, params *FileDownloadUploadedFileParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "filename", runtime.ParamLocationPath, filename)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/uploads/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileUploadRequestWithBody generates requests for FileUpload with any type of body
-func NewFileUploadRequestWithBody(server string, filename string, params *FileUploadParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "filename", runtime.ParamLocationPath, filename)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/uploads/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileListDownloadsRequest generates requests for FileListDownloads
-func NewFileListDownloadsRequest(server string, sessionId string, params *FileListDownloadsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/%s/downloads", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileDownloadRequest generates requests for FileDownload
-func NewFileDownloadRequest(server string, sessionId string, filename string, params *FileDownloadParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "filename", runtime.ParamLocationPath, filename)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/%s/downloads/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
-// NewFileUploadDownloadedFileRequestWithBody generates requests for FileUploadDownloadedFile with any type of body
-func NewFileUploadDownloadedFileRequestWithBody(server string, sessionId string, filename string, params *FileUploadDownloadedFileParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "filename", runtime.ParamLocationPath, filename)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/storage/%s/downloads/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -18115,6 +17988,18 @@ type ClientWithResponsesInterface interface {
 	// SessionDebugInfoWithResponse request
 	SessionDebugInfoWithResponse(ctx context.Context, sessionId string, params *SessionDebugInfoParams, reqEditors ...RequestEditorFn) (*SessionDebugInfoResult, error)
 
+	// ListSessionFilesWithResponse request
+	ListSessionFilesWithResponse(ctx context.Context, sessionId string, params *ListSessionFilesParams, reqEditors ...RequestEditorFn) (*ListSessionFilesResult, error)
+
+	// UploadSessionFileWithBodyWithResponse request with any body
+	UploadSessionFileWithBodyWithResponse(ctx context.Context, sessionId string, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionFileResult, error)
+
+	// DeleteSessionFileWithResponse request
+	DeleteSessionFileWithResponse(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DeleteSessionFileParams, reqEditors ...RequestEditorFn) (*DeleteSessionFileResult, error)
+
+	// DownloadSessionFileWithResponse request
+	DownloadSessionFileWithResponse(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResult, error)
+
 	// SessionNetworkLogsWithResponse request
 	SessionNetworkLogsWithResponse(ctx context.Context, sessionId string, params *SessionNetworkLogsParams, reqEditors ...RequestEditorFn) (*SessionNetworkLogsResult, error)
 
@@ -18147,24 +18032,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetSessionScriptWithResponse request
 	GetSessionScriptWithResponse(ctx context.Context, sessionId string, params *GetSessionScriptParams, reqEditors ...RequestEditorFn) (*GetSessionScriptResult, error)
-
-	// FileListUploadsWithResponse request
-	FileListUploadsWithResponse(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*FileListUploadsResult, error)
-
-	// FileDownloadUploadedFileWithResponse request
-	FileDownloadUploadedFileWithResponse(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*FileDownloadUploadedFileResult, error)
-
-	// FileUploadWithBodyWithResponse request with any body
-	FileUploadWithBodyWithResponse(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FileUploadResult, error)
-
-	// FileListDownloadsWithResponse request
-	FileListDownloadsWithResponse(ctx context.Context, sessionId string, params *FileListDownloadsParams, reqEditors ...RequestEditorFn) (*FileListDownloadsResult, error)
-
-	// FileDownloadWithResponse request
-	FileDownloadWithResponse(ctx context.Context, sessionId string, filename string, params *FileDownloadParams, reqEditors ...RequestEditorFn) (*FileDownloadResult, error)
-
-	// FileUploadDownloadedFileWithBodyWithResponse request with any body
-	FileUploadDownloadedFileWithBodyWithResponse(ctx context.Context, sessionId string, filename string, params *FileUploadDownloadedFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FileUploadDownloadedFileResult, error)
 
 	// GetUsageWithResponse request
 	GetUsageWithResponse(ctx context.Context, params *GetUsageParams, reqEditors ...RequestEditorFn) (*GetUsageResult, error)
@@ -19625,6 +19492,97 @@ func (r SessionDebugInfoResult) StatusCode() int {
 	return 0
 }
 
+type ListSessionFilesResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionFilesPage
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSessionFilesResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSessionFilesResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UploadSessionFileResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *SessionFile
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadSessionFileResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadSessionFileResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteSessionFileResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteSessionFileResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteSessionFileResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DownloadSessionFileResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadSessionFileResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadSessionFileResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionNetworkLogsResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -19826,146 +19784,6 @@ func (r GetSessionScriptResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetSessionScriptResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileListUploadsResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ListFilesResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileListUploadsResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileListUploadsResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileDownloadUploadedFileResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *FileLinkResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileDownloadUploadedFileResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileDownloadUploadedFileResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileUploadResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *FileUploadResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileUploadResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileUploadResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileListDownloadsResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ListFilesResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileListDownloadsResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileListDownloadsResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileDownloadResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		union json.RawMessage
-	}
-	JSON422 *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileDownloadResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileDownloadResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FileUploadDownloadedFileResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *FileUploadResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r FileUploadDownloadedFileResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FileUploadDownloadedFileResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -20944,6 +20762,42 @@ func (c *ClientWithResponses) SessionDebugInfoWithResponse(ctx context.Context, 
 	return ParseSessionDebugInfoResult(rsp)
 }
 
+// ListSessionFilesWithResponse request returning *ListSessionFilesResult
+func (c *ClientWithResponses) ListSessionFilesWithResponse(ctx context.Context, sessionId string, params *ListSessionFilesParams, reqEditors ...RequestEditorFn) (*ListSessionFilesResult, error) {
+	rsp, err := c.ListSessionFiles(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSessionFilesResult(rsp)
+}
+
+// UploadSessionFileWithBodyWithResponse request with arbitrary body returning *UploadSessionFileResult
+func (c *ClientWithResponses) UploadSessionFileWithBodyWithResponse(ctx context.Context, sessionId string, params *UploadSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadSessionFileResult, error) {
+	rsp, err := c.UploadSessionFileWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadSessionFileResult(rsp)
+}
+
+// DeleteSessionFileWithResponse request returning *DeleteSessionFileResult
+func (c *ClientWithResponses) DeleteSessionFileWithResponse(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DeleteSessionFileParams, reqEditors ...RequestEditorFn) (*DeleteSessionFileResult, error) {
+	rsp, err := c.DeleteSessionFile(ctx, sessionId, fileId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteSessionFileResult(rsp)
+}
+
+// DownloadSessionFileWithResponse request returning *DownloadSessionFileResult
+func (c *ClientWithResponses) DownloadSessionFileWithResponse(ctx context.Context, sessionId string, fileId openapi_types.UUID, params *DownloadSessionFileParams, reqEditors ...RequestEditorFn) (*DownloadSessionFileResult, error) {
+	rsp, err := c.DownloadSessionFile(ctx, sessionId, fileId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadSessionFileResult(rsp)
+}
+
 // SessionNetworkLogsWithResponse request returning *SessionNetworkLogsResult
 func (c *ClientWithResponses) SessionNetworkLogsWithResponse(ctx context.Context, sessionId string, params *SessionNetworkLogsParams, reqEditors ...RequestEditorFn) (*SessionNetworkLogsResult, error) {
 	rsp, err := c.SessionNetworkLogs(ctx, sessionId, params, reqEditors...)
@@ -21047,60 +20901,6 @@ func (c *ClientWithResponses) GetSessionScriptWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGetSessionScriptResult(rsp)
-}
-
-// FileListUploadsWithResponse request returning *FileListUploadsResult
-func (c *ClientWithResponses) FileListUploadsWithResponse(ctx context.Context, params *FileListUploadsParams, reqEditors ...RequestEditorFn) (*FileListUploadsResult, error) {
-	rsp, err := c.FileListUploads(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileListUploadsResult(rsp)
-}
-
-// FileDownloadUploadedFileWithResponse request returning *FileDownloadUploadedFileResult
-func (c *ClientWithResponses) FileDownloadUploadedFileWithResponse(ctx context.Context, filename string, params *FileDownloadUploadedFileParams, reqEditors ...RequestEditorFn) (*FileDownloadUploadedFileResult, error) {
-	rsp, err := c.FileDownloadUploadedFile(ctx, filename, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileDownloadUploadedFileResult(rsp)
-}
-
-// FileUploadWithBodyWithResponse request with arbitrary body returning *FileUploadResult
-func (c *ClientWithResponses) FileUploadWithBodyWithResponse(ctx context.Context, filename string, params *FileUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FileUploadResult, error) {
-	rsp, err := c.FileUploadWithBody(ctx, filename, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileUploadResult(rsp)
-}
-
-// FileListDownloadsWithResponse request returning *FileListDownloadsResult
-func (c *ClientWithResponses) FileListDownloadsWithResponse(ctx context.Context, sessionId string, params *FileListDownloadsParams, reqEditors ...RequestEditorFn) (*FileListDownloadsResult, error) {
-	rsp, err := c.FileListDownloads(ctx, sessionId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileListDownloadsResult(rsp)
-}
-
-// FileDownloadWithResponse request returning *FileDownloadResult
-func (c *ClientWithResponses) FileDownloadWithResponse(ctx context.Context, sessionId string, filename string, params *FileDownloadParams, reqEditors ...RequestEditorFn) (*FileDownloadResult, error) {
-	rsp, err := c.FileDownload(ctx, sessionId, filename, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileDownloadResult(rsp)
-}
-
-// FileUploadDownloadedFileWithBodyWithResponse request with arbitrary body returning *FileUploadDownloadedFileResult
-func (c *ClientWithResponses) FileUploadDownloadedFileWithBodyWithResponse(ctx context.Context, sessionId string, filename string, params *FileUploadDownloadedFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FileUploadDownloadedFileResult, error) {
-	rsp, err := c.FileUploadDownloadedFileWithBody(ctx, sessionId, filename, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFileUploadDownloadedFileResult(rsp)
 }
 
 // GetUsageWithResponse request returning *GetUsageResult
@@ -23235,6 +23035,134 @@ func ParseSessionDebugInfoResult(rsp *http.Response) (*SessionDebugInfoResult, e
 	return response, nil
 }
 
+// ParseListSessionFilesResult parses an HTTP response from a ListSessionFilesWithResponse call
+func ParseListSessionFilesResult(rsp *http.Response) (*ListSessionFilesResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSessionFilesResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionFilesPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadSessionFileResult parses an HTTP response from a UploadSessionFileWithResponse call
+func ParseUploadSessionFileResult(rsp *http.Response) (*UploadSessionFileResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadSessionFileResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest SessionFile
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteSessionFileResult parses an HTTP response from a DeleteSessionFileWithResponse call
+func ParseDeleteSessionFileResult(rsp *http.Response) (*DeleteSessionFileResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteSessionFileResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadSessionFileResult parses an HTTP response from a DownloadSessionFileWithResponse call
+func ParseDownloadSessionFileResult(rsp *http.Response) (*DownloadSessionFileResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadSessionFileResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case rsp.StatusCode == 200:
+		// Content-type (application/octet-stream) unsupported
+
+	}
+
+	return response, nil
+}
+
 // ParseSessionNetworkLogsResult parses an HTTP response from a SessionNetworkLogsWithResponse call
 func ParseSessionNetworkLogsResult(rsp *http.Response) (*SessionNetworkLogsResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -23515,206 +23443,6 @@ func ParseGetSessionScriptResult(rsp *http.Response) (*GetSessionScriptResult, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest AgentFunctionCodeResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileListUploadsResult parses an HTTP response from a FileListUploadsWithResponse call
-func ParseFileListUploadsResult(rsp *http.Response) (*FileListUploadsResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileListUploadsResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListFilesResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileDownloadUploadedFileResult parses an HTTP response from a FileDownloadUploadedFileWithResponse call
-func ParseFileDownloadUploadedFileResult(rsp *http.Response) (*FileDownloadUploadedFileResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileDownloadUploadedFileResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest FileLinkResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileUploadResult parses an HTTP response from a FileUploadWithResponse call
-func ParseFileUploadResult(rsp *http.Response) (*FileUploadResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileUploadResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest FileUploadResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileListDownloadsResult parses an HTTP response from a FileListDownloadsWithResponse call
-func ParseFileListDownloadsResult(rsp *http.Response) (*FileListDownloadsResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileListDownloadsResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListFilesResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileDownloadResult parses an HTTP response from a FileDownloadWithResponse call
-func ParseFileDownloadResult(rsp *http.Response) (*FileDownloadResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileDownloadResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			union json.RawMessage
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseFileUploadDownloadedFileResult parses an HTTP response from a FileUploadDownloadedFileWithResponse call
-func ParseFileUploadDownloadedFileResult(rsp *http.Response) (*FileUploadDownloadedFileResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FileUploadDownloadedFileResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest FileUploadResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
