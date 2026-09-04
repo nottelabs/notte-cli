@@ -11,7 +11,11 @@ import (
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
-const personaIDTest = "persona_123"
+const (
+	personaIDTest            = "persona_123"
+	personaEmailTest         = "test.user@example.com"
+	personaInternalEmailTest = "persona_123@example.com"
+)
 
 func setupPersonaTest(t *testing.T) *testutil.MockServer {
 	t.Helper()
@@ -30,11 +34,11 @@ func setupPersonaTest(t *testing.T) *testutil.MockServer {
 }
 
 func personaJSON(id string) string {
-	return `{"persona_id":"` + id + `","email":"test@example.com","first_name":"Test","last_name":"User","status":"active"}`
+	return `{"persona_id":"` + id + `","email":"` + personaEmailTest + `","internal_email":"` + id + `@example.com","first_name":"Test","last_name":"User","status":"active"}`
 }
 
 func personaResponseJSON() string {
-	return `{"persona_id":"` + personaIDTest + `","email":"test@example.com","first_name":"Test","last_name":"User","status":"active"}`
+	return `{"persona_id":"` + personaIDTest + `","email":"` + personaEmailTest + `","internal_email":"` + personaInternalEmailTest + `","first_name":"Test","last_name":"User","status":"active"}`
 }
 
 func TestRunPersonasList_Success(t *testing.T) {
@@ -61,8 +65,8 @@ func TestRunPersonasList_Success(t *testing.T) {
 		}
 	})
 
-	if stdout == "" {
-		t.Error("expected output, got empty string")
+	if !strings.Contains(stdout, personaEmailTest) || !strings.Contains(stdout, "persona_1@example.com") {
+		t.Errorf("expected both persona email addresses, got %q", stdout)
 	}
 }
 
@@ -132,8 +136,8 @@ func TestRunPersonasCreate(t *testing.T) {
 		}
 	})
 
-	if stdout == "" {
-		t.Error("expected output, got empty string")
+	if !strings.Contains(stdout, personaEmailTest) || !strings.Contains(stdout, "persona_2@example.com") {
+		t.Errorf("expected both persona email addresses, got %q", stdout)
 	}
 }
 
@@ -155,8 +159,8 @@ func TestRunPersonaShow(t *testing.T) {
 		}
 	})
 
-	if stdout == "" {
-		t.Error("expected output, got empty string")
+	if !strings.Contains(stdout, personaEmailTest) || !strings.Contains(stdout, personaInternalEmailTest) {
+		t.Errorf("expected both persona email addresses, got %q", stdout)
 	}
 }
 
