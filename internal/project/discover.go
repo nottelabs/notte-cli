@@ -300,6 +300,8 @@ func checkUnknownConfig(cfg *Config, functions []Function, connectors []Connecto
 			unknown = append(unknown, name)
 		}
 	}
+	// Sidecars need no such check: one lives inside the unit it configures, so
+	// it cannot name a unit that does not exist.
 	sort.Strings(unknown)
 	if len(unknown) > 0 {
 		problems = append(problems, fmt.Sprintf("configures function(s) that do not exist: %s", strings.Join(unknown, ", ")))
