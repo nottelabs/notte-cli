@@ -4,6 +4,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -65,7 +66,9 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 	}
 	if responseFormat != "" {
 		var document map[string]interface{}
-		if err := json.Unmarshal([]byte(responseFormat), &document); err != nil {
+		decoder := json.NewDecoder(strings.NewReader(responseFormat))
+		decoder.UseNumber()
+		if err := decoder.Decode(&document); err != nil {
 			return nil, fmt.Errorf("failed to parse --response-format: %w", err)
 		}
 		body.ResponseFormat = &document

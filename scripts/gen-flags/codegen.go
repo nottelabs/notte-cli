@@ -20,6 +20,7 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 	needsStrconv := false
 	needsFileIO := false
 	needsJSON := false
+	needsStrings := false
 	for _, fc := range config.Fields {
 		switch fc.Category {
 		case CategoryFileUpload:
@@ -27,10 +28,11 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 			needsFmt = true
 		case CategoryJSONDocument:
 			needsFmt = true
-			// JSON bodies unmarshal the compacted document into a map; multipart
+			// JSON bodies decode the compacted document into a map; multipart
 			// bodies write it as a form string and do not need encoding/json here.
 			if !config.IsMultipart {
 				needsJSON = true
+				needsStrings = true
 			}
 		case CategoryEnumFlag:
 			// Actual union types (anyOf with enum + string), not simple enums
@@ -81,6 +83,9 @@ func GenerateFlagsFile(config *CommandConfig, schemas map[string]*Field) (string
 	}
 	if needsStrconv {
 		buf.WriteString("\t\"strconv\"\n")
+	}
+	if needsStrings {
+		buf.WriteString("\t\"strings\"\n")
 	}
 	buf.WriteString("\n")
 	buf.WriteString("\t\"github.com/spf13/cobra\"\n")
@@ -360,8 +365,9 @@ func generateFilePartMapping(buf *bytes.Buffer, fc *FieldConfig) {
 
 // generateJSONDocumentBodyMapping puts a JSON document onto an application/json
 // body as an object. readJSONDocumentFlag still owns the CLI input shapes
-// (inline / @file / stdin); the compacted string is unmarshaled into the map
-// the generated client field expects.
+// (inline / @file / stdin); the compacted string is decoded into the map the
+// generated client field expects. UseNumber is necessary because JSON Schema
+// permits integers larger than float64 can represent exactly.
 func generateJSONDocumentBodyMapping(buf *bytes.Buffer, fc *FieldConfig) {
 	apiFieldName := toCamelCase(fc.Field.JSONName)
 	if apiFieldName == "" {
@@ -377,7 +383,9 @@ func generateJSONDocumentBodyMapping(buf *bytes.Buffer, fc *FieldConfig) {
 	buf.WriteString("\t}\n")
 	fmt.Fprintf(buf, "\tif %s != \"\" {\n", local)
 	buf.WriteString("\t\tvar document map[string]interface{}\n")
-	fmt.Fprintf(buf, "\t\tif err := json.Unmarshal([]byte(%s), &document); err != nil {\n", local)
+	fmt.Fprintf(buf, "\t\tdecoder := json.NewDecoder(strings.NewReader(%s))\n", local)
+	buf.WriteString("\t\tdecoder.UseNumber()\n")
+	buf.WriteString("\t\tif err := decoder.Decode(&document); err != nil {\n")
 	fmt.Fprintf(buf, "\t\t\treturn nil, fmt.Errorf(\"failed to parse --%s: %%w\", err)\n", fc.FlagName)
 	buf.WriteString("\t\t}\n")
 	fmt.Fprintf(buf, "\t\tbody.%s = &document\n", apiFieldName)

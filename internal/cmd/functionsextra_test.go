@@ -209,6 +209,37 @@ func TestFunctionConfigure_SendsResponseFormatAlone(t *testing.T) {
 	}
 }
 
+// Response schemas are arbitrary JSON Schema documents, so a numeric constraint
+// may be larger than a float64 can represent exactly. The configure builder
+// must preserve that token on the wire rather than round it during decoding.
+func TestFunctionConfigure_PreservesLargeResponseSchemaInteger(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := configureCmd(t)
+	if err := cmd.Flags().Set(
+		"response-format",
+		`{"type":"object","properties":{"id":{"const":9007199254740993}}}`,
+	); err != nil {
+		t.Fatalf("setting --response-format: %v", err)
+	}
+
+	testutil.CaptureOutput(func() {
+		if err := runFunctionConfigure(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	body := server.Requests("/functions/" + functionIDTest)[0].Body
+	if !strings.Contains(body, `"const":9007199254740993`) {
+		t.Errorf("response schema integer was changed on the wire: %s", body)
+	}
+}
+
 // The generated builder sends an optional string only when it is non-empty, so
 // `--flag ""` would reach the API as an empty PATCH: 200, nothing changed, and
 // the caller told it worked. Refused up front instead.

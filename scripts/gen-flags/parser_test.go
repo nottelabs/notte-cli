@@ -202,8 +202,11 @@ func TestJSONBodyGeneratesAJSONDocumentField(t *testing.T) {
 		"func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpdateRequest, error)",
 		`readJSONDocumentFlag(cmd, "response-format", FunctionConfigureResponseFormat)`,
 		"var document map[string]interface{}",
+		"decoder := json.NewDecoder(strings.NewReader(responseFormat))",
+		"decoder.UseNumber()",
 		"body.ResponseFormat = &document",
 		`"encoding/json"`,
+		`"strings"`,
 	} {
 		if !strings.Contains(code, want) {
 			t.Errorf("generated code is missing %q\n%s", want, code)
