@@ -2,6 +2,9 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
@@ -18,6 +21,9 @@ var (
 
 	FunctionConfigureName string
 
+	// JSON document: response-format
+	FunctionConfigureResponseFormat string
+
 	// Let an agent repair the function when a run fails
 	FunctionConfigureSelfHealing bool
 )
@@ -28,6 +34,7 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FunctionConfigureDomain, "domain", "", "domain")
 	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
 	cmd.Flags().StringVar(&FunctionConfigureName, "name", "", "name")
+	cmd.Flags().StringVar(&FunctionConfigureResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
 	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let an agent repair the function when a run fails")
 }
 
@@ -49,6 +56,19 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 
 	if FunctionConfigureName != "" {
 		body.Name = &FunctionConfigureName
+	}
+
+	// response_format (JSON document)
+	responseFormat, err := readJSONDocumentFlag(cmd, "response-format", FunctionConfigureResponseFormat)
+	if err != nil {
+		return nil, err
+	}
+	if responseFormat != "" {
+		var document map[string]interface{}
+		if err := json.Unmarshal([]byte(responseFormat), &document); err != nil {
+			return nil, fmt.Errorf("failed to parse --response-format: %w", err)
+		}
+		body.ResponseFormat = &document
 	}
 
 	if cmd.Flags().Changed("self-healing") {

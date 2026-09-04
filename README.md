@@ -205,6 +205,7 @@ notte functions create --file workflow.py --response-format @schema.json  # ... 
 notte functions update --file workflow.py  # Update current function code
 notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
 notte functions configure --run-instructions "..." --self-healing  # Set usage notes and self-healing
+notte functions configure --response-format @schema.json  # Document run()'s return schema without re-upload
 notte functions rollback --version <version>  # Restore an earlier version (see `versions` in show)
 notte functions health                # Runtime health: Python version, installed packages, reachability
 notte functions delete                # Delete current function
@@ -241,6 +242,8 @@ return model:
 ```bash
 python -c 'import json, typing, client; print(json.dumps(typing.get_type_hints(client.run)["return"].model_json_schema()))' > schema.json
 notte functions create --file client.py --response-format @schema.json
+# Or document it later without re-uploading the code:
+notte functions configure --response-format @schema.json
 ```
 
 `--run-instructions` is documentation for whoever *calls* the function — how long a

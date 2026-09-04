@@ -122,8 +122,8 @@ func TestMultipartBodyGeneratesAFileAndItsFields(t *testing.T) {
 	}
 }
 
-// A JSON body has no writer to put a file part or a document into, so this is
-// reported rather than half-generated.
+// A JSON body has no writer for a file part, so that is reported rather than
+// half-generated. JSON documents are fine: they unmarshal into the body object.
 func TestJSONBodyRejectsAFilePart(t *testing.T) {
 	body := strings.Replace(multipartSpec, `"multipart/form-data"`, `"application/json"`, 1)
 	spec := parse(t, body)
@@ -136,6 +136,78 @@ func TestJSONBodyRejectsAFilePart(t *testing.T) {
 	}
 	if _, _, err := GenerateFlagsFile(config, schemas); err == nil {
 		t.Fatal("expected an error generating a file part into a JSON body")
+	}
+}
+
+// response_format on a JSON PATCH body must land as an object, not a form
+// string: FunctionConfigure is application/json and the client field is a map.
+func TestJSONBodyGeneratesAJSONDocumentField(t *testing.T) {
+	spec := parse(t, `{
+  "openapi": "3.0.3",
+  "paths": {
+    "/functions/{function_id}": {
+      "patch": {
+        "operationId": "function_metadata_update",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/FunctionMetadataUpdateRequest"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FunctionMetadataUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "response_format": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "JSON Schema of run()'s return value"
+          }
+        }
+      }
+    }
+  }
+}`)
+	schemas := buildSchemaMap(spec)
+
+	config, err := extractCommandConfig(
+		"FunctionConfigure",
+		"/functions/{function_id}",
+		"PATCH",
+		spec.Paths["/functions/{function_id}"].Patch,
+		schemas,
+	)
+	if err != nil {
+		t.Fatalf("extracting config: %v", err)
+	}
+	if config.IsMultipart {
+		t.Fatal("config.IsMultipart = true, want false for application/json")
+	}
+
+	code, errs, err := GenerateFlagsFile(config, schemas)
+	if err != nil {
+		t.Fatalf("generating: %v", err)
+	}
+	if len(errs) != 0 {
+		t.Fatalf("unexpected generation errors: %v", errs)
+	}
+
+	for _, want := range []string{
+		"func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpdateRequest, error)",
+		`readJSONDocumentFlag(cmd, "response-format", FunctionConfigureResponseFormat)`,
+		"var document map[string]interface{}",
+		"body.ResponseFormat = &document",
+		`"encoding/json"`,
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("generated code is missing %q\n%s", want, code)
+		}
 	}
 }
 

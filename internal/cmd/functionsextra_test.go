@@ -22,6 +22,7 @@ func configureCmd(t *testing.T) *cobra.Command {
 		FunctionConfigureDescription = ""
 		FunctionConfigureDomain = ""
 		FunctionConfigureInstructions = ""
+		FunctionConfigureResponseFormat = ""
 		FunctionConfigureSelfHealing = false
 	})
 	return cmd
@@ -160,7 +161,7 @@ func TestFunctionConfigure_SendsMetadataFieldsAlone(t *testing.T) {
 			if body[tc.field] != tc.value {
 				t.Errorf("%s = %v, want %q", tc.field, body[tc.field], tc.value)
 			}
-			for _, absent := range []string{"instructions", "self_healing", "name", "description", "domain"} {
+			for _, absent := range []string{"instructions", "self_healing", "name", "description", "domain", "response_format"} {
 				if absent == tc.field {
 					continue
 				}
@@ -169,6 +170,42 @@ func TestFunctionConfigure_SendsMetadataFieldsAlone(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// --response-format must be sendable alone, as a JSON object on the PATCH body.
+func TestFunctionConfigure_SendsResponseFormatAlone(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	schema := `{"type":"object","properties":{"ok":{"type":"boolean"}}}`
+	cmd := configureCmd(t)
+	if err := cmd.Flags().Set("response-format", schema); err != nil {
+		t.Fatalf("setting --response-format: %v", err)
+	}
+
+	testutil.CaptureOutput(func() {
+		if err := runFunctionConfigure(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	body := requestBody(t, server.Requests("/functions/" + functionIDTest)[0])
+	got, ok := body["response_format"].(map[string]any)
+	if !ok {
+		t.Fatalf("response_format = %T %v, want object", body["response_format"], body["response_format"])
+	}
+	if got["type"] != "object" {
+		t.Errorf("response_format.type = %v, want object", got["type"])
+	}
+	for _, absent := range []string{"instructions", "self_healing", "name", "description", "domain"} {
+		if _, present := body[absent]; present {
+			t.Errorf("%s was sent for a call that only passed --response-format", absent)
+		}
 	}
 }
 
