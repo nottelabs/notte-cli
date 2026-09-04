@@ -1527,7 +1527,10 @@ type FunctionMetadataUpdateRequest struct {
 	Domain       *string `json:"domain,omitempty"`
 	Instructions *string `json:"instructions,omitempty"`
 	Name         *string `json:"name,omitempty"`
-	SelfHealing  *bool   `json:"self_healing,omitempty"`
+
+	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
+	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
+	SelfHealing    *bool                   `json:"self_healing,omitempty"`
 }
 
 // FunctionResponse defines model for FunctionResponse.

@@ -131,11 +131,12 @@ var functionsConfigureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Update function metadata",
 	Long: "Update a function's metadata.\n\n" +
-		"Pass any of --name, --description, --domain, --run-instructions, or --self-healing. " +
+		"Pass any of --name, --description, --domain, --run-instructions, --response-format, or --self-healing. " +
 		"Only the flags you pass are sent; omitted fields are left unchanged.\n\n" +
 		"--run-instructions is documentation for whoever calls the function - how long a " +
 		"run takes, what each variable is for, which sites it trips over. It is not " +
-		"input to the self-healing agent.",
+		"input to the self-healing agent.\n\n" +
+		"--response-format is the JSON Schema of what run() returns (inline JSON, @file, or - for stdin).",
 	Args: cobra.NoArgs,
 	RunE: runFunctionConfigure,
 }
@@ -574,7 +575,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		{"domain", FunctionConfigureDomain},
 		{"run-instructions", FunctionConfigureInstructions},
 	}
-	anyChanged := cmd.Flags().Changed("self-healing")
+	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format")
 	for _, f := range stringFlags {
 		if !cmd.Flags().Changed(f.name) {
 			continue
@@ -588,7 +589,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !anyChanged {
-		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, and/or --self-healing")
+		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --response-format, and/or --self-healing")
 	}
 
 	client, err := GetClient()
