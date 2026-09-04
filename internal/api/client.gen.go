@@ -2310,11 +2310,14 @@ type PersonaCreateRequest struct {
 
 // PersonaResponse defines model for PersonaResponse.
 type PersonaResponse struct {
-	// Email Email of the persona
+	// Email Public, human-readable email address of the persona
 	Email string `json:"email"`
 
 	// FirstName First name of the persona
 	FirstName string `json:"first_name"`
+
+	// InternalEmail Internal UUID-backed mailbox address of the persona
+	InternalEmail string `json:"internal_email"`
 
 	// LastName Last name of the persona
 	LastName string  `json:"last_name"`
