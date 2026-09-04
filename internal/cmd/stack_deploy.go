@@ -101,7 +101,7 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 			// Nothing in the lock, but a function of this name upstream. The
 			// API has no unique constraint on name, so creating would silently
 			// make a second one while callers keep the id of the first.
-			if id, clash := remote[deployName(prep.cfg, fn.Name)]; clash && !stackDeployForceCreate {
+			if id, clash := remote[deployName(prep.config[fn.Name], fn.Name)]; clash && !stackDeployForceCreate {
 				return fmt.Errorf(
 					"%q already exists in %s but is not in %s, so deploying would create a duplicate.\n"+
 						"  adopt the existing one:  notte stack pull --env %s\n"+
@@ -131,7 +131,8 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 	deployed := make([]map[string]any, 0, len(writes))
 	var refused int
 	for _, w := range writes {
-		result, err := uploadFunction(ctx, client, prep.cfg, w)
+		fc := prep.config[w.fn.Name]
+		result, err := uploadFunction(ctx, client, fc, w)
 		if err != nil {
 			// Record nothing: the write did not land.
 			return fmt.Errorf("%s: %w", w.fn.Name, err)
@@ -172,7 +173,7 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 		// self_healing in particular is refused outright for anything the CLI
 		// created: it resumes the thread that built the function, and a
 		// CLI-deployed one has none.
-		changed, err := applyMetadata(ctx, client, prep.cfg, w.fn.Name, result.id)
+		changed, err := applyMetadata(ctx, client, fc, deployName(fc, w.fn.Name), result.id)
 		if err != nil {
 			PrintInfo("       metadata not applied: " + err.Error())
 			entry["metadata_error"] = err.Error()
@@ -191,7 +192,7 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 		}
 
 		// Only a function that asked for a schedule can have one refused.
-		cron := prep.cfg.Functions[w.fn.Name].Cron
+		cron := fc.Cron
 		switch {
 		case cron == "":
 			// nothing to schedule
@@ -200,7 +201,7 @@ func runStackDeploy(cmd *cobra.Command, args []string) error {
 			entry["scheduled"] = false
 			PrintInfo("       NOT scheduled — a scheduled run would fail preflight (--allow-missing-secrets to override)")
 		default:
-			if err := applySchedule(ctx, client, result.id, cron, prep.cfg.Functions[w.fn.Name].CronVariables); err != nil {
+			if err := applySchedule(ctx, client, result.id, cron, fc.CronVariables); err != nil {
 				return fmt.Errorf("%s: schedule: %w", w.fn.Name, err)
 			}
 			entry["scheduled"] = true
@@ -276,9 +277,9 @@ func confirmDeploy(in io.Reader, out io.Writer, env string) (bool, error) {
 }
 
 // deployName is the name a function carries upstream.
-func deployName(cfg *project.Config, name string) string {
-	if configured := cfg.Functions[name].Name; configured != "" {
-		return configured
+func deployName(fc project.FunctionConfig, name string) string {
+	if fc.Name != "" {
+		return fc.Name
 	}
 	return name
 }
@@ -338,7 +339,7 @@ type uploadResult struct {
 	requiredSecrets []string
 }
 
-func uploadFunction(ctx context.Context, client *api.NotteClient, cfg *project.Config, w plannedWrite) (*uploadResult, error) {
+func uploadFunction(ctx context.Context, client *api.NotteClient, fc project.FunctionConfig, w plannedWrite) (*uploadResult, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
@@ -354,10 +355,10 @@ func uploadFunction(ctx context.Context, client *api.NotteClient, cfg *project.C
 		// Only what create needs to exist at all. Everything else is applied
 		// afterwards through the metadata endpoint, so the same code path runs
 		// whether this is a create or an update.
-		if err := writer.WriteField("name", deployName(cfg, w.fn.Name)); err != nil {
+		if err := writer.WriteField("name", deployName(fc, w.fn.Name)); err != nil {
 			return nil, err
 		}
-		if cfg.Functions[w.fn.Name].Shared {
+		if fc.Shared {
 			if err := writer.WriteField("shared", "true"); err != nil {
 				return nil, err
 			}
@@ -405,15 +406,14 @@ func uploadFunction(ctx context.Context, client *api.NotteClient, cfg *project.C
 // makes no extra call. self_healing is a pointer in the config precisely so
 // that "unset" and "explicitly false" differ: turning a feature off because a
 // file did not mention it would be a surprising deploy.
-func applyMetadata(ctx context.Context, client *api.NotteClient, cfg *project.Config,
-	name, functionID string,
+func applyMetadata(ctx context.Context, client *api.NotteClient, fc project.FunctionConfig,
+	deployedName, functionID string,
 ) ([]string, error) {
-	fc := cfg.Functions[name]
 	body := api.FunctionMetadataUpdateJSONRequestBody{}
 	var changed []string
 
-	if configured := deployName(cfg, name); fc.Name != "" {
-		body.Name = &configured
+	if fc.Name != "" {
+		body.Name = &deployedName
 		changed = append(changed, "name")
 	}
 	if fc.Description != "" {

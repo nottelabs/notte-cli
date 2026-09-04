@@ -58,9 +58,13 @@ func runStackCheck(cmd *cobra.Command, args []string) error {
 // same pipeline before it uploads anything, so the two can never disagree
 // about whether a function is deployable.
 type prepared struct {
-	cfg       *project.Config
-	target    *stackTarget
-	selected  []project.Function
+	cfg      *project.Config
+	target   *stackTarget
+	selected []project.Function
+	// config is each unit's resolved configuration, central or sidecar. Held
+	// once so no caller reaches back into cfg.Functions and silently ignores a
+	// sidecar.
+	config    map[string]project.FunctionConfig
 	artifacts map[string]*bundle.Result
 	results   []checked
 	failed    int
@@ -83,6 +87,15 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 
 	// Bundling comes first because it needs nothing external. A syntax or
 	// layout problem is reported without ever touching the network.
+	unitConfig := make(map[string]project.FunctionConfig, len(selected))
+	for _, fn := range selected {
+		fc, err := cfg.FunctionConfigFor(fn)
+		if err != nil {
+			return nil, err
+		}
+		unitConfig[fn.Name] = fc
+	}
+
 	fsys := os.DirFS(cfg.FunctionsPath())
 	results := make([]checked, 0, len(selected))
 	artifacts := map[string]*bundle.Result{}
@@ -177,7 +190,7 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 			params = append(params, project.Param{Name: v.Name, HasDefault: v.Default != nil})
 		}
 		results[i].Problems = append(results[i].Problems,
-			cfg.Functions[results[i].Name].ScheduleProblems(results[i].Name, params)...)
+			unitConfig[results[i].Name].ScheduleProblems(results[i].Name, params)...)
 
 		rel, err := filepath.Rel(cfg.Root, artifactPath)
 		if err != nil {
@@ -210,7 +223,7 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 		results = append(results, checked{Name: "(shared)", Problems: shared})
 	}
 
-	return &prepared{cfg: cfg, target: dest, selected: selected, artifacts: artifacts, results: results, failed: failed}, nil
+	return &prepared{cfg: cfg, target: dest, selected: selected, config: unitConfig, artifacts: artifacts, results: results, failed: failed}, nil
 }
 
 // mapDiagnostic rewrites an artifact location back to the source it came from.
