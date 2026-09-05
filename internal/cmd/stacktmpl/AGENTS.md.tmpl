@@ -1,0 +1,47 @@
+# Writing Notte functions in this repo
+
+`notte stack deploy` bundles each function into a single Python file and
+uploads it. These are the rules the runtime enforces — `notte stack check`
+verifies them locally against the runtime's own report, so you get the error
+in a second rather than after an upload.
+
+## Layout
+
+```
+functions/
+  _shared/          underscore means library, never deployed
+    http.py
+  my_function/
+    main.py         the entrypoint — must define exactly one run()
+    parse.py        a helper, bundled into the artifact
+    test_main.py    a test, never bundled
+  quick.py          a single-file function
+```
+
+Import shared code with relative imports: `from .parse import clean`,
+`from .._shared.http import fetch`. They are flattened away at deploy time.
+
+## The contract
+
+- **Exactly one top-level `run()`.** Its parameters become invocation
+  variables, and their defaults are the calling convention.
+- **`run()` must return a `BaseModel` declared in the same file.** Not a
+  `dict`, not a bare `list`, not an imported model — wrap a list in a model.
+- **Only allowlisted imports.** Run `notte stack doctor` to see the exact list
+  the runtime ships, with versions. It is not the same as the SDK's own list.
+- **No `os`.** Read environment variables with
+  `from notte_sdk.types import os`. Bare `import os` is rejected.
+- **No `sys`, `subprocess`, `pathlib`, `importlib`, `tempfile`.**
+
+## Things the bundler rejects, and the fix
+
+| Rejected | Instead |
+|---|---|
+| `from . import parse` then `parse.clean()` | `from .parse import clean` |
+| `from .parse import *` | import the names explicitly |
+| two modules defining the same top-level name | rename one |
+| an import sharing a line with anything else | put each import on its own line |
+| a relative import inside a function body | move it to the top of the file |
+
+Aliases are preserved: `from .parse import clean as scrub` still binds
+`scrub` in the artifact.
