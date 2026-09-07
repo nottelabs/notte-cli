@@ -1561,6 +1561,9 @@ type FunctionResponse struct {
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
+	// ResponseFormat JSON Schema of the value run() returns, or null when the author never documented one.
+	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
+
 	// ScheduleCron Cron expression the function runs on, or null if it is not scheduled.
 	ScheduleCron *string `json:"schedule_cron,omitempty"`
 
@@ -1712,6 +1715,9 @@ type FunctionWithLinkResponse struct {
 	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
+
+	// ResponseFormat JSON Schema of the value run() returns, or null when the author never documented one.
+	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
 
 	// ScheduleCron Cron expression the function runs on, or null if it is not scheduled.
 	ScheduleCron *string `json:"schedule_cron,omitempty"`
@@ -1924,6 +1930,7 @@ type GotoAction struct {
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 	Url         string  `json:"url"`
+	WaitUntil   *string `json:"wait_until,omitempty"`
 }
 
 // GotoNewTabAction defines model for GotoNewTabAction.
