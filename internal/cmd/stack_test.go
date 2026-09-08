@@ -655,3 +655,44 @@ api_key = "${env:PREVIEW_KEY}"
 		t.Fatalf("got env=%q url=%q", dest.Env, dest.APIURL)
 	}
 }
+
+// The scaffolded function ships a scenario so the feature is discoverable —
+// it takes a string and returns a string, so running it is demonstrably safe.
+func TestInitScaffoldsAValidScenario(t *testing.T) {
+	dir := initInto(t)
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarios, err := project.LoadScenarios(cfg, "hello")
+	if err != nil {
+		t.Fatalf("the scaffolded scenario must parse: %v", err)
+	}
+	if len(scenarios) != 1 {
+		t.Fatalf("got %d scenarios", len(scenarios))
+	}
+	// And it must name a real parameter, or `check` fails on a fresh project.
+	if p := scenarios[0].Problems([]project.Param{{Name: "name", HasDefault: true}}); len(p) != 0 {
+		t.Fatalf("scaffolded scenario does not match the scaffolded run(): %v", p)
+	}
+}
+
+// `new` ships none. A scenario is consent to execute, and nobody yet knows
+// what a just-created function will do.
+func TestNewShipsNoScenario(t *testing.T) {
+	dir := initInto(t)
+	if err := runStackNew(nil, []string{"scraper"}); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarios, err := project.LoadScenarios(cfg, "scraper")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 0 {
+		t.Fatalf("a new function must not be pre-opted into execution, got %d", len(scenarios))
+	}
+}

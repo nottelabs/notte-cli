@@ -107,6 +107,12 @@ func runStackInit(cmd *cobra.Command, args []string) error {
 		{filepath.Join(project.DefaultFunctionsDir, "_shared", "__init__.py"), ""},
 		{filepath.Join(project.DefaultFunctionsDir, "hello", "__init__.py"), ""},
 		{filepath.Join(project.DefaultFunctionsDir, "hello", project.EntrypointName), "main.py.tmpl"},
+		// The scaffolded function ships one scenario because it is
+		// demonstrably safe to run — it takes a string and returns a string,
+		// touching nothing. `notte stack new` deliberately ships none: a
+		// scenario is consent to execute, and nobody yet knows what a
+		// just-created function will do.
+		{filepath.Join(project.DefaultFunctionsDir, "hello", project.ScenarioDir, "greets.json"), "scenario.json.tmpl"},
 	}
 
 	var written, skipped []string
