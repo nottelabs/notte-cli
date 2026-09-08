@@ -33,6 +33,33 @@ Import shared code with relative imports: `from .parse import clean`,
   `from notte_sdk.types import os`. Bare `import os` is rejected.
 - **No `sys`, `subprocess`, `pathlib`, `importlib`, `tempfile`.**
 
+## Test scenarios
+
+A function may carry recorded inputs, one JSON file per scenario:
+
+```
+functions/my_function/
+  main.py
+  tests/
+    search.json          {"variables": {"query": "laptop"}}
+    no-results.json      {"variables": {"query": "zzz"}, "expect_empty": true}
+```
+
+The filename is the scenario name, and `variables` is what `run()` receives.
+`notte stack check` verifies every key names a real parameter, so a typo is
+caught without calling anything.
+
+`expect_empty` is per-scenario: a function returning nothing is sometimes the
+expected outcome and sometimes the bug, and only the scenario knows which.
+
+Two things to know before adding one:
+
+- **A scenario is consent to execute.** Nothing runs them today, but they are
+  the opt-in for any gate that does. Do not add one for a function whose
+  inputs would book, send, cancel or delete anything.
+- **Only a directory function can have them.** A single-file `<name>.py` has
+  nowhere to put a `tests/` directory; promote it to a directory first.
+
 ## Things the bundler rejects, and the fix
 
 | Rejected | Instead |
