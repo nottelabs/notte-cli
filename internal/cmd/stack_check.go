@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -35,6 +36,7 @@ type checked struct {
 	Sources        []string `json:"sources"`
 	SourceSHA256   string   `json:"source_sha256"`
 	ArtifactSHA256 string   `json:"artifact_sha256"`
+	Scenarios      int      `json:"scenarios"`
 	Problems       []string `json:"problems,omitempty"`
 }
 
@@ -167,11 +169,17 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 			fmt.Sprintf("%s:%d: %s [%s]", d.Path, d.Line, d.Message, d.Rule))
 	}
 
+	byName := map[string]project.Function{}
+	for _, fn := range selected {
+		byName[fn.Name] = fn
+	}
+
 	for i := range results {
 		res, ok := artifacts[results[i].Name]
 		if !ok {
 			continue
 		}
+		fn := byName[results[i].Name]
 		artifactPath := filepath.Join(buildDir, results[i].Name+".py")
 		if err := os.WriteFile(artifactPath, []byte(res.Code), 0o644); err != nil {
 			return nil, err
@@ -191,6 +199,21 @@ func prepareStack(cmd *cobra.Command, target string) (*prepared, error) {
 		}
 		results[i].Problems = append(results[i].Problems,
 			unitConfig[results[i].Name].ScheduleProblems(results[i].Name, params)...)
+
+		// Scenarios are validated, never executed. Running them means real
+		// invocations against live sites — cloud browser sessions for a
+		// quarter of a corpus like marketplace's — so the gate that would do
+		// that is a separate decision. Checking that a payload names
+		// parameters run() actually takes costs nothing and catches the typo
+		// that would otherwise surface as a failed invocation.
+		scenarios, err := project.LoadScenarios(cfg, path.Dir(fn.Entrypoint))
+		if err != nil {
+			return nil, err
+		}
+		results[i].Scenarios = len(scenarios)
+		for _, sc := range scenarios {
+			results[i].Problems = append(results[i].Problems, sc.Problems(params)...)
+		}
 
 		rel, err := filepath.Rel(cfg.Root, artifactPath)
 		if err != nil {
@@ -296,7 +319,12 @@ func reportChecked(results []checked, failed int) {
 	}
 	for _, r := range results {
 		if len(r.Problems) == 0 {
-			PrintInfo(fmt.Sprintf("  ok   %-24s %d source(s)  %s", r.Name, len(r.Sources), short(r.ArtifactSHA256)))
+			scenarios := ""
+			if r.Scenarios > 0 {
+				scenarios = fmt.Sprintf("  %d scenario(s)", r.Scenarios)
+			}
+			PrintInfo(fmt.Sprintf("  ok   %-24s %d source(s)  %s%s",
+				r.Name, len(r.Sources), short(r.ArtifactSHA256), scenarios))
 			continue
 		}
 		PrintInfo(fmt.Sprintf("  FAIL %s", r.Name))
