@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/nottelabs/notte-cli/internal/api"
 )
 
 type testData struct {
@@ -495,5 +498,43 @@ func TestNewFormatter(t *testing.T) {
 				t.Errorf("NewFormatter(%q) = %s, want %s", tt.format, got, tt.wantType)
 			}
 		})
+	}
+}
+
+// A timestamp is a value to print, not a struct to descend into. Before the
+// Stringer check, time.Time reached only unexported fields and printed a bare
+// "CreatedAt:", and FlexibleTime - which embeds it - added an empty "Time:"
+// underneath, so every timestamp the CLI showed in text form came out blank.
+func TestTextFormatter_Print_Timestamps(t *testing.T) {
+	var buf bytes.Buffer
+	f := &TextFormatter{Writer: &buf}
+
+	moment := time.Date(2026, 9, 9, 15, 4, 5, 0, time.UTC)
+	err := f.Print(struct {
+		Name      string
+		CreatedAt api.FlexibleTime
+		PlainAt   time.Time
+	}{
+		Name:      "checkout",
+		CreatedAt: api.FlexibleTime{Time: moment},
+		PlainAt:   moment,
+	})
+	if err != nil {
+		t.Fatalf("Print failed: %v", err)
+	}
+
+	got := buf.String()
+	if strings.Contains(got, "Time:") {
+		t.Errorf("descended into the timestamp instead of printing it:\n%s", got)
+	}
+	for _, field := range []string{"CreatedAt", "PlainAt"} {
+		for _, line := range strings.Split(got, "\n") {
+			if !strings.HasPrefix(strings.TrimSpace(line), field+":") {
+				continue
+			}
+			if !strings.Contains(line, "2026-09-09") {
+				t.Errorf("%s rendered as %q, want the timestamp", field, line)
+			}
+		}
 	}
 }

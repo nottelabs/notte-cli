@@ -98,6 +98,18 @@ func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
 			fieldValue = fieldValue.Elem()
 		}
 
+		// A struct that renders itself is a value, not a level of nesting.
+		// Timestamps are the case that matters: descending into time.Time
+		// reaches only unexported fields and prints a bare "CreatedAt:", and
+		// FlexibleTime adds an empty "Time:" underneath it, so every timestamp
+		// the CLI shows in text form came out blank.
+		if fieldValue.Kind() == reflect.Struct {
+			if s, ok := fieldValue.Interface().(fmt.Stringer); ok {
+				_, _ = fmt.Fprintf(w, "%s\t%v\n", label, s.String())
+				continue
+			}
+		}
+
 		// Handle nested structs recursively
 		if fieldValue.Kind() == reflect.Struct {
 			_, _ = fmt.Fprintln(w, label)

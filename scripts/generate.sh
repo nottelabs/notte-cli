@@ -147,7 +147,13 @@ fi
 # spec that reintroduces one - a time.Duration in a params struct, say - has to
 # keep it. Comment lines are dropped first so prose mentioning the package does
 # not read as a use.
-if ! grep -vE '^[[:space:]]*//' "$OUTPUT_DIR/client.gen.go" | grep -qE '(^|[^A-Za-z_])time\.[A-Za-z]'; then
+#
+# Deliberately not `grep -q` here: it exits on the first match, and under
+# pipefail the SIGPIPE that kills the upstream grep becomes the pipeline's
+# status. A file that does use the package would then take the branch that
+# deletes its import, intermittently, depending on whether the first grep had
+# already finished writing. Reading all the input costs nothing on one file.
+if ! grep -vE '^[[:space:]]*//' "$OUTPUT_DIR/client.gen.go" | grep -E '(^|[^A-Za-z_])time\.[A-Za-z]' >/dev/null; then
   sed -i.bak '/^	"time"$/d' "$OUTPUT_DIR/client.gen.go"
 fi
 
