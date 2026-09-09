@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net"
@@ -14,9 +15,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"github.com/nottelabs/notte-cli/internal/api"
-	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 // SetupResult contains the result of a browser-based setup
@@ -129,7 +127,7 @@ func (s *SetupServer) handleSetup(w http.ResponseWriter, r *http.Request) {
 
 // GetConsoleAuthURL builds the console authentication URL with callback and state
 func (s *SetupServer) GetConsoleAuthURL() string {
-	consoleURL := config.GetConsoleURL()
+	consoleURL := ConsoleURL()
 	callbackURL := s.baseURL + "/callback"
 
 	authURL, err := url.Parse(consoleURL + "/auth/cli")
@@ -167,32 +165,10 @@ func (s *SetupServer) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Test the API key by making a health check request
-	client, err := api.NewClient(req.APIKey)
-	if err != nil {
+	if err := ValidateAPIKey(r.Context(), req.APIKey); err != nil {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"success": false,
-			"error":   fmt.Sprintf("Invalid API key: %v", err),
-		})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-
-	resp, err := client.Client().HealthCheckWithResponse(ctx)
-	if err != nil {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"success": false,
-			"error":   fmt.Sprintf("Connection failed: %v", err),
-		})
-		return
-	}
-
-	if resp.StatusCode() != 200 {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"success": false,
-			"error":   fmt.Sprintf("API error: %s", resp.Status()),
+			"error":   err.Error(),
 		})
 		return
 	}
@@ -227,31 +203,10 @@ func (s *SetupServer) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate the API key first
-	client, err := api.NewClient(req.APIKey)
-	if err != nil {
+	if err := ValidateAPIKey(r.Context(), req.APIKey); err != nil {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"success": false,
-			"error":   fmt.Sprintf("Invalid API key: %v", err),
-		})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-
-	resp, err := client.Client().HealthCheckWithResponse(ctx)
-	if err != nil {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"success": false,
-			"error":   fmt.Sprintf("Connection failed: %v", err),
-		})
-		return
-	}
-
-	if resp.StatusCode() != 200 {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"success": false,
-			"error":   fmt.Sprintf("API error: %s", resp.Status()),
+			"error":   err.Error(),
 		})
 		return
 	}
@@ -351,32 +306,16 @@ func (s *SetupServer) handleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Validate the API key
-		client, err := api.NewClient(req.Token)
-		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]any{
+		// Validate the API key. A rejected key is the caller's problem (400);
+		// anything else means we could not reach the API to find out (502).
+		if err := ValidateAPIKey(r.Context(), req.Token); err != nil {
+			status := http.StatusBadGateway
+			if errors.Is(err, ErrInvalidAPIKey) {
+				status = http.StatusBadRequest
+			}
+			writeJSON(w, status, map[string]any{
 				"success": false,
-				"error":   fmt.Sprintf("Invalid API key: %v", err),
-			})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
-		resp, err := client.Client().HealthCheckWithResponse(ctx)
-		if err != nil {
-			writeJSON(w, http.StatusBadGateway, map[string]any{
-				"success": false,
-				"error":   fmt.Sprintf("Connection failed: %v", err),
-			})
-			return
-		}
-
-		if resp.StatusCode() != 200 {
-			writeJSON(w, http.StatusBadGateway, map[string]any{
-				"success": false,
-				"error":   fmt.Sprintf("API error: %s", resp.Status()),
+				"error":   err.Error(),
 			})
 			return
 		}
