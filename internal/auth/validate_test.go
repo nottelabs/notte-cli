@@ -59,14 +59,24 @@ func TestValidateAPIKeyUsesConfiguredAPI(t *testing.T) {
 	if stub.hits != 1 {
 		t.Fatalf("configured API received %d requests, want 1", stub.hits)
 	}
-	if stub.auth == "" {
-		t.Error("request carried no Authorization header, so the key was never checked")
+	// The key has to actually be presented; a request without it proves nothing
+	// about the key, which is how validating against /health passed for any
+	// string at all.
+	if want := "Bearer sk-notte-test"; stub.auth != want {
+		t.Errorf("Authorization header = %q, want %q", stub.auth, want)
 	}
 }
 
 func TestValidateAPIKeyRequiresAnAuthenticatedEndpoint(t *testing.T) {
-	// /health answers 200 without a credential, so validating against it
-	// accepted anything. Whatever endpoint is used must be one that 401s.
+	// The endpoint is pinned rather than merely checked against /health: any
+	// other unauthenticated endpoint would reintroduce the bug just as well,
+	// and a negative assertion against one path would not notice.
+	//
+	// If this ever needs to change, the replacement has to be an endpoint that
+	// answers 401 to an unknown key. /health does not - it answers 200 with no
+	// credential at all, which is what let any string validate.
+	const authenticatedPath = "/usage"
+
 	stub := newAPIStub(t, http.StatusOK, `{}`)
 	t.Setenv(config.EnvAPIURL, stub.server.URL)
 
@@ -74,8 +84,8 @@ func TestValidateAPIKeyRequiresAnAuthenticatedEndpoint(t *testing.T) {
 		t.Fatalf("ValidateAPIKey() = %v, want nil", err)
 	}
 
-	if stub.path == "/health" {
-		t.Errorf("validated against %s, which does not require authentication", stub.path)
+	if stub.path != authenticatedPath {
+		t.Errorf("validated against %q, want %q", stub.path, authenticatedPath)
 	}
 }
 
