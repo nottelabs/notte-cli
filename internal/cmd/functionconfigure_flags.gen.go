@@ -13,6 +13,9 @@ import (
 
 // FunctionConfigure command flags
 var (
+	// Runtime this function's runs use unless a run overrides it: standard or extended
+	FunctionConfigureDefaultRuntime string
+
 	FunctionConfigureDescription string
 
 	FunctionConfigureDomain string
@@ -31,6 +34,7 @@ var (
 
 // RegisterFunctionConfigureFlags registers all flags for FunctionConfigure command
 func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&FunctionConfigureDefaultRuntime, "default-runtime", "", "Runtime this function's runs use unless a run overrides it: standard or extended")
 	cmd.Flags().StringVar(&FunctionConfigureDescription, "description", "", "description")
 	cmd.Flags().StringVar(&FunctionConfigureDomain, "domain", "", "domain")
 	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
@@ -42,6 +46,10 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 // BuildFunctionConfigureRequest builds the API request from CLI flags
 func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpdateRequest, error) {
 	body := &api.FunctionMetadataUpdateRequest{}
+
+	if FunctionConfigureDefaultRuntime != "" {
+		body.DefaultRuntime = &FunctionConfigureDefaultRuntime
+	}
 
 	if FunctionConfigureDescription != "" {
 		body.Description = &FunctionConfigureDescription

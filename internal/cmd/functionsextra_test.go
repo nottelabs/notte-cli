@@ -23,6 +23,7 @@ func configureCmd(t *testing.T) *cobra.Command {
 		FunctionConfigureDomain = ""
 		FunctionConfigureInstructions = ""
 		FunctionConfigureResponseFormat = ""
+		FunctionConfigureDefaultRuntime = ""
 		FunctionConfigureSelfHealing = false
 	})
 	return cmd
@@ -456,6 +457,58 @@ func TestFunctionRun_RejectsUnknownRuntime(t *testing.T) {
 		t.Errorf("error = %q, want it to mention invalid --runtime", err)
 	}
 	if got := server.Requests("/functions/" + functionIDTest + "/runs/start"); len(got) != 0 {
+		t.Errorf("sent %d requests despite an invalid runtime, want 0", len(got))
+	}
+}
+
+// --default-runtime is the whole point of a call that passes only it, so the
+// "nothing to configure" guard has to count it as a change.
+func TestFunctionConfigure_SendsDefaultRuntimeAlone(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := configureCmd(t)
+	if err := cmd.Flags().Set("default-runtime", "extended"); err != nil {
+		t.Fatalf("setting --default-runtime: %v", err)
+	}
+
+	testutil.CaptureOutput(func() {
+		if err := runFunctionConfigure(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	requests := server.Requests("/functions/" + functionIDTest)
+	if len(requests) != 1 {
+		t.Fatalf("got %d requests, want 1", len(requests))
+	}
+	body := requestBody(t, requests[0])
+	if body["default_runtime"] != "extended" {
+		t.Errorf("default_runtime = %v, want extended", body["default_runtime"])
+	}
+}
+
+func TestFunctionConfigure_RejectsUnknownDefaultRuntime(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+	cmd := configureCmd(t)
+	if err := cmd.Flags().Set("default-runtime", "lambda"); err != nil {
+		t.Fatalf("setting --default-runtime: %v", err)
+	}
+
+	err := runFunctionConfigure(cmd, nil)
+	if err == nil {
+		t.Fatal("expected an error for an unknown default runtime")
+	}
+	if !strings.Contains(err.Error(), "invalid --default-runtime") {
+		t.Errorf("error = %q, want it to mention invalid --default-runtime", err)
+	}
+	if got := server.Requests("/functions/" + functionIDTest); len(got) != 0 {
 		t.Errorf("sent %d requests despite an invalid runtime, want 0", len(got))
 	}
 }
