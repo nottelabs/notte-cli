@@ -1,0 +1,14 @@
+from pydantic import BaseModel
+
+
+class Response(BaseModel):
+    """run()'s return type. It must be a BaseModel declared in this file —
+    that is what lets the deployed function document its own schema."""
+
+    message: str
+
+
+def run(name: str = "world") -> Response:
+    """The entrypoint. Parameters become invocation variables, so their
+    defaults are the calling convention."""
+    return Response(message=f"hello, {name}")
