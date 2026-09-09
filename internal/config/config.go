@@ -125,11 +125,3 @@ func (c *Config) SaveToPath(path string) error {
 
 	return os.WriteFile(path, data, 0o600)
 }
-
-// GetConsoleURL returns the console URL from env var or default
-func GetConsoleURL() string {
-	if url := os.Getenv(EnvConsoleURL); url != "" {
-		return url
-	}
-	return DefaultConsoleURL
-}

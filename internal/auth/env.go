@@ -35,6 +35,39 @@ func ResolveEnvLabel(apiURL string) string {
 	return host
 }
 
+// consoleByEnvLabel maps an environment to the console that issues its keys.
+//
+// Only environments whose console is known are listed. Guessing one would
+// recreate the problem this exists to solve: an unlisted environment falls back
+// to the default rather than to a plausible-looking hostname that may belong to
+// something else.
+var consoleByEnvLabel = map[string]string{
+	"prod":    config.DefaultConsoleURL,
+	"staging": "https://staging-console.notte.cc",
+}
+
+// ConsoleURL returns the console to sign in through.
+//
+// NOTTE_CONSOLE_URL wins when set. Otherwise the console is derived from the
+// API being used, because the two have to agree: the console hands back one of
+// its own API keys, and login stores it under the environment NOTTE_API_URL
+// names. Defaulting to production regardless meant that pointing only
+// NOTTE_API_URL at another environment sent the browser to the production
+// console and filed a production key under that environment's name.
+//
+// An environment with no known console falls back to the default. That
+// combination no longer passes silently: the key is validated against the
+// configured API, which rejects a key issued by a different one.
+func ConsoleURL() string {
+	if u := os.Getenv(config.EnvConsoleURL); u != "" {
+		return u
+	}
+	if u, ok := consoleByEnvLabel[ResolveEnvLabel(GetCurrentAPIURL())]; ok {
+		return u
+	}
+	return config.DefaultConsoleURL
+}
+
 // KeyringKeyForEnv returns the env-qualified keyring key for the given label.
 func KeyringKeyForEnv(envLabel string) string {
 	return KeyringKey + ":" + envLabel
