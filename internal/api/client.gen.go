@@ -110,6 +110,18 @@ const (
 	UserUpload      FileSource = "user_upload"
 )
 
+// Defines values for FunctionListItemResponseDefaultRuntime.
+const (
+	FunctionListItemResponseDefaultRuntimeExtended FunctionListItemResponseDefaultRuntime = "extended"
+	FunctionListItemResponseDefaultRuntimeStandard FunctionListItemResponseDefaultRuntime = "standard"
+)
+
+// Defines values for FunctionResponseDefaultRuntime.
+const (
+	FunctionResponseDefaultRuntimeExtended FunctionResponseDefaultRuntime = "extended"
+	FunctionResponseDefaultRuntimeStandard FunctionResponseDefaultRuntime = "standard"
+)
+
 // Defines values for FunctionRunListItemResponseStatus.
 const (
 	FunctionRunListItemResponseStatusActive FunctionRunListItemResponseStatus = "active"
@@ -139,6 +151,12 @@ const (
 	NodeSdk   FunctionSource = "node-sdk"
 	PythonSdk FunctionSource = "python-sdk"
 	RestApi   FunctionSource = "rest-api"
+)
+
+// Defines values for FunctionWithLinkResponseDefaultRuntime.
+const (
+	Extended FunctionWithLinkResponseDefaultRuntime = "extended"
+	Standard FunctionWithLinkResponseDefaultRuntime = "standard"
 )
 
 // Defines values for GetFunctionRunResponseStatus.
@@ -424,12 +442,6 @@ const (
 	Za ProxyGeolocationCountry = "za"
 	Zm ProxyGeolocationCountry = "zm"
 	Zw ProxyGeolocationCountry = "zw"
-)
-
-// Defines values for RunFunctionRequestRuntime.
-const (
-	Extended RunFunctionRequestRuntime = "extended"
-	Standard RunFunctionRequestRuntime = "standard"
 )
 
 // Defines values for SecretNamespace.
@@ -1482,7 +1494,8 @@ type FrameData struct {
 // FunctionListItemResponse defines model for FunctionListItemResponse.
 type FunctionListItemResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt FlexibleTime `json:"created_at"`
+	CreatedAt      time.Time                               `json:"created_at"`
+	DefaultRuntime *FunctionListItemResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
@@ -1527,12 +1540,16 @@ type FunctionListItemResponse struct {
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
+// FunctionListItemResponseDefaultRuntime defines model for FunctionListItemResponse.DefaultRuntime.
+type FunctionListItemResponseDefaultRuntime string
+
 // FunctionMetadataUpdateRequest defines model for FunctionMetadataUpdateRequest.
 type FunctionMetadataUpdateRequest struct {
-	Description  *string `json:"description,omitempty"`
-	Domain       *string `json:"domain,omitempty"`
-	Instructions *string `json:"instructions,omitempty"`
-	Name         *string `json:"name,omitempty"`
+	DefaultRuntime *string `json:"default_runtime,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	Domain         *string `json:"domain,omitempty"`
+	Instructions   *string `json:"instructions,omitempty"`
+	Name           *string `json:"name,omitempty"`
 
 	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
 	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
@@ -1542,7 +1559,8 @@ type FunctionMetadataUpdateRequest struct {
 // FunctionResponse defines model for FunctionResponse.
 type FunctionResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt FlexibleTime `json:"created_at"`
+	CreatedAt      time.Time                       `json:"created_at"`
+	DefaultRuntime *FunctionResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
@@ -1601,6 +1619,9 @@ type FunctionResponse struct {
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
+
+// FunctionResponseDefaultRuntime defines model for FunctionResponse.DefaultRuntime.
+type FunctionResponseDefaultRuntime string
 
 // FunctionRollbackRequest defines model for FunctionRollbackRequest.
 type FunctionRollbackRequest struct {
@@ -1697,7 +1718,8 @@ type FunctionSource string
 // FunctionWithLinkResponse defines model for FunctionWithLinkResponse.
 type FunctionWithLinkResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt FlexibleTime `json:"created_at"`
+	CreatedAt      time.Time                               `json:"created_at"`
+	DefaultRuntime *FunctionWithLinkResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
 	Description *string `json:"description,omitempty"`
@@ -1759,6 +1781,9 @@ type FunctionWithLinkResponse struct {
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
+
+// FunctionWithLinkResponseDefaultRuntime defines model for FunctionWithLinkResponse.DefaultRuntime.
+type FunctionWithLinkResponseDefaultRuntime string
 
 // GetCookiesResponse defines model for GetCookiesResponse.
 type GetCookiesResponse struct {
@@ -2471,8 +2496,8 @@ type RootModelAny = interface{}
 
 // RunFunctionRequest defines model for RunFunctionRequest.
 type RunFunctionRequest struct {
-	// Runtime standard uses Lambda; extended uses the configured AgentCore runtime.
-	Runtime *RunFunctionRequestRuntime `json:"runtime,omitempty"`
+	// Runtime Override the saved function runtime; omit to inherit its default
+	Runtime *string `json:"runtime,omitempty"`
 
 	// Stream Whether to stream logs, or only return final response
 	Stream *bool `json:"stream,omitempty"`
@@ -2483,9 +2508,6 @@ type RunFunctionRequest struct {
 	// WorkflowId The ID of the function to run
 	WorkflowId string `json:"workflow_id"`
 }
-
-// RunFunctionRequestRuntime standard uses Lambda; extended uses the configured AgentCore runtime.
-type RunFunctionRequestRuntime string
 
 // RuntimePackage defines model for RuntimePackage.
 type RuntimePackage struct {
