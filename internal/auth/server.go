@@ -15,8 +15,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 // SetupResult contains the result of a browser-based setup
@@ -129,7 +127,7 @@ func (s *SetupServer) handleSetup(w http.ResponseWriter, r *http.Request) {
 
 // GetConsoleAuthURL builds the console authentication URL with callback and state
 func (s *SetupServer) GetConsoleAuthURL() string {
-	consoleURL := config.GetConsoleURL()
+	consoleURL := ConsoleURL()
 	callbackURL := s.baseURL + "/callback"
 
 	authURL, err := url.Parse(consoleURL + "/auth/cli")
