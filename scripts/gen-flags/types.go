@@ -132,6 +132,11 @@ var FieldDescriptionOverrides = map[string]map[string]string{
 	"FunctionConfigure": {
 		"instructions": "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over",
 		"self_healing": "Let an agent repair the function when a run fails",
+		// Typed as a plain string in the spec, so it arrives with no
+		// description and no enum; without this the help would read
+		// "default-runtime". No backticks: cobra reads the first backticked
+		// span in a usage string as the flag's argument placeholder.
+		"default_runtime": "Runtime this function's runs use unless a run overrides it: standard or extended",
 	},
 }
 

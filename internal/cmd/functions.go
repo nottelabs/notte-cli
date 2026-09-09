@@ -132,11 +132,13 @@ var functionsConfigureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Update function metadata",
 	Long: "Update a function's metadata.\n\n" +
-		"Pass any of --name, --description, --domain, --run-instructions, --response-format, or --self-healing. " +
+		"Pass any of --name, --description, --domain, --run-instructions, --default-runtime, --response-format, or --self-healing. " +
 		"Only the flags you pass are sent; omitted fields are left unchanged.\n\n" +
 		"--run-instructions is documentation for whoever calls the function - how long a " +
 		"run takes, what each variable is for, which sites it trips over. It is not " +
 		"input to the self-healing agent.\n\n" +
+		"--default-runtime is the runtime every run of this function uses unless that run " +
+		"passes `functions run --runtime`.\n\n" +
 		"--response-format is the JSON Schema of what run() returns (inline JSON, @file, or - for stdin).",
 	Args: cobra.NoArgs,
 	RunE: runFunctionConfigure,
@@ -327,9 +329,9 @@ func init() {
 	// a positive flag would be an opt-in to something already on. Same shape,
 	// and the same reasoning, as --no-solve-captchas on sessions start.
 	functionsRunCmd.Flags().BoolVar(&functionRunNoStream, "no-stream", false, "Return only the final response instead of streaming logs")
-	functionsRunCmd.Flags().StringVar(&functionRunRuntime, "runtime", "", fmt.Sprintf("Execution runtime: %s (Lambda) or %s (the configured AgentCore runtime). Server default when unset", api.Standard, api.Extended))
+	functionsRunCmd.Flags().StringVar(&functionRunRuntime, "runtime", "", fmt.Sprintf("Run on %s for this run only, overriding the function's default-runtime", strings.Join(runtimeValues, " or ")))
 	_ = functionsRunCmd.RegisterFlagCompletionFunc("runtime", func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-		return []string{string(api.Standard), string(api.Extended)}, cobra.ShellCompDirectiveNoFileComp
+		return runtimeValues, cobra.ShellCompDirectiveNoFileComp
 	})
 
 	// Runs command flags
@@ -564,6 +566,28 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 	return GetFormatter().Print(resp.JSON200)
 }
 
+// runtimeValues are the runtimes a function can execute on. The request bodies
+// type `runtime` and `default_runtime` as plain strings, so the set is taken
+// from the enum the responses still carry. Prefixed constants on purpose: the
+// unprefixed `Standard`/`Extended` pair has already been reassigned to a
+// different type by one regeneration, which a rename would catch but a silent
+// retyping would not.
+var runtimeValues = []string{
+	string(api.FunctionResponseDefaultRuntimeStandard),
+	string(api.FunctionResponseDefaultRuntimeExtended),
+}
+
+// validateRuntime rejects an unknown runtime locally so a typo costs a message
+// rather than a 422. The cost is an edit here if the API grows a third runtime.
+func validateRuntime(flagName, value string) error {
+	for _, v := range runtimeValues {
+		if value == v {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid --%s %q: expected %s", flagName, value, strings.Join(runtimeValues, " or "))
+}
+
 func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 	if err := RequireFunctionID(); err != nil {
 		return err
@@ -579,6 +603,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		{"description", FunctionConfigureDescription},
 		{"domain", FunctionConfigureDomain},
 		{"run-instructions", FunctionConfigureInstructions},
+		{"default-runtime", FunctionConfigureDefaultRuntime},
 	}
 	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format")
 	for _, f := range stringFlags {
@@ -594,7 +619,12 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !anyChanged {
-		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --response-format, and/or --self-healing")
+		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, and/or --self-healing")
+	}
+	if cmd.Flags().Changed("default-runtime") {
+		if err := validateRuntime("default-runtime", FunctionConfigureDefaultRuntime); err != nil {
+			return err
+		}
 	}
 
 	client, err := GetClient()
@@ -768,18 +798,13 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	if functionRunNoStream {
 		requestBody["stream"] = false
 	}
-	// Same reasoning for omitting it when unset: the server picks the runtime,
-	// and sending its current choice back would pin it. The valid values are
-	// spelled out here rather than left to the API so a typo costs a message
-	// instead of a 422 - at the price of needing an edit here if the spec grows
-	// a third runtime.
+	// Omitted unless asked: the run now inherits the function's saved
+	// default_runtime, and sending that value back would pin it.
 	if functionRunRuntime != "" {
-		switch api.RunFunctionRequestRuntime(functionRunRuntime) {
-		case api.Standard, api.Extended:
-			requestBody["runtime"] = functionRunRuntime
-		default:
-			return fmt.Errorf("invalid --runtime %q: expected %s or %s", functionRunRuntime, api.Standard, api.Extended)
+		if err := validateRuntime("runtime", functionRunRuntime); err != nil {
+			return err
 		}
+		requestBody["runtime"] = functionRunRuntime
 	}
 
 	bodyJSON, err := json.Marshal(requestBody)
