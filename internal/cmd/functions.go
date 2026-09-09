@@ -24,6 +24,7 @@ var (
 	functionRunVariables     []string // Variables as key=value pairs
 	functionRunVariablesJSON string   // Variables as JSON string
 	functionRunNoStream      bool     // Opt out of log streaming
+	functionRunRuntime       string   // Which execution runtime to run on
 	functionSecretValue      string
 	functionDownloadVersion  string
 )
@@ -326,6 +327,10 @@ func init() {
 	// a positive flag would be an opt-in to something already on. Same shape,
 	// and the same reasoning, as --no-solve-captchas on sessions start.
 	functionsRunCmd.Flags().BoolVar(&functionRunNoStream, "no-stream", false, "Return only the final response instead of streaming logs")
+	functionsRunCmd.Flags().StringVar(&functionRunRuntime, "runtime", "", fmt.Sprintf("Execution runtime: %s (Lambda) or %s (the configured AgentCore runtime). Server default when unset", api.Standard, api.Extended))
+	_ = functionsRunCmd.RegisterFlagCompletionFunc("runtime", func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+		return []string{string(api.Standard), string(api.Extended)}, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	// Runs command flags
 	functionsRunsCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
@@ -762,6 +767,19 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 	// unconditionally would freeze today's server-side behaviour into the client.
 	if functionRunNoStream {
 		requestBody["stream"] = false
+	}
+	// Same reasoning for omitting it when unset: the server picks the runtime,
+	// and sending its current choice back would pin it. The valid values are
+	// spelled out here rather than left to the API so a typo costs a message
+	// instead of a 422 - at the price of needing an edit here if the spec grows
+	// a third runtime.
+	if functionRunRuntime != "" {
+		switch api.RunFunctionRequestRuntime(functionRunRuntime) {
+		case api.Standard, api.Extended:
+			requestBody["runtime"] = functionRunRuntime
+		default:
+			return fmt.Errorf("invalid --runtime %q: expected %s or %s", functionRunRuntime, api.Standard, api.Extended)
+		}
 	}
 
 	bodyJSON, err := json.Marshal(requestBody)

@@ -382,3 +382,80 @@ func TestFunctionRun_SendsStreamOnlyWithNoStream(t *testing.T) {
 		})
 	}
 }
+
+func TestFunctionRun_SendsRuntimeOnlyWhenSet(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		runtime string
+		want    any
+	}{
+		{name: "default omits runtime", runtime: "", want: nil},
+		{name: "--runtime standard is sent", runtime: "standard", want: "standard"},
+		{name: "--runtime extended is sent", runtime: "extended", want: "extended"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest+"/runs/start", 200, functionRunJSON())
+
+			origFormat := outputFormat
+			origRuntime := functionRunRuntime
+			outputFormat = "json"
+			functionRunRuntime = tc.runtime
+			t.Cleanup(func() {
+				outputFormat = origFormat
+				functionRunRuntime = origRuntime
+			})
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+
+			testutil.CaptureOutput(func() {
+				if err := runFunctionRun(cmd, nil); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+
+			requests := server.Requests("/functions/" + functionIDTest + "/runs/start")
+			if len(requests) != 1 {
+				t.Fatalf("got %d requests, want 1", len(requests))
+			}
+			body := requestBody(t, requests[0])
+			got, present := body["runtime"]
+			if tc.want == nil {
+				if present {
+					t.Errorf("runtime was sent as %v without --runtime", got)
+				}
+				return
+			}
+			if !present {
+				t.Fatal("runtime was not sent despite --runtime")
+			}
+			if got != tc.want {
+				t.Errorf("runtime = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFunctionRun_RejectsUnknownRuntime(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest+"/runs/start", 200, functionRunJSON())
+
+	origRuntime := functionRunRuntime
+	functionRunRuntime = "lambda"
+	t.Cleanup(func() { functionRunRuntime = origRuntime })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	err := runFunctionRun(cmd, nil)
+	if err == nil {
+		t.Fatal("expected an error for an unknown runtime")
+	}
+	if !strings.Contains(err.Error(), "invalid --runtime") {
+		t.Errorf("error = %q, want it to mention invalid --runtime", err)
+	}
+	if got := server.Requests("/functions/" + functionIDTest + "/runs/start"); len(got) != 0 {
+		t.Errorf("sent %d requests despite an invalid runtime, want 0", len(got))
+	}
+}
