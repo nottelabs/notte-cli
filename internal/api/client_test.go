@@ -404,3 +404,63 @@ func TestDefaultContext(t *testing.T) {
 		t.Error("DefaultContext() should return context.Background()")
 	}
 }
+
+// A caller's deadline must interrupt both retry paths rather than waiting for
+// the full backoff and issuing more requests with an already-canceled context.
+func TestResilientTransport_DoWithRetry_InterruptsBackoff(t *testing.T) {
+	for _, networkError := range []bool{false, true} {
+		name := "server error"
+		if networkError {
+			name = "network error"
+		}
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+			defer cancel()
+			calls := 0
+			rt := &resilientTransport{
+				retryConfig: &RetryConfig{MaxRetries: 2, InitialBackoff: time.Second, MaxBackoff: time.Second},
+				base: transportFunc(func(*http.Request) (*http.Response, error) {
+					calls++
+					if networkError {
+						return nil, errors.New("network unavailable")
+					}
+					return &http.Response{StatusCode: http.StatusServiceUnavailable, Body: io.NopCloser(strings.NewReader("unavailable"))}, nil
+				}),
+			}
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.test", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			start := time.Now()
+			_, err = rt.doWithRetry(req)
+			if !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("expected deadline error, got %v", err)
+			}
+			if elapsed := time.Since(start); elapsed >= 500*time.Millisecond {
+				t.Fatalf("deadline failed to interrupt backoff: %s", elapsed)
+			}
+			if calls != 1 {
+				t.Fatalf("made %d requests, expected one before cancellation", calls)
+			}
+		})
+	}
+}
+
+func TestResilientTransport_DoWithRetry_AlreadyCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	rt := &resilientTransport{
+		retryConfig: DefaultRetryConfig(),
+		base: transportFunc(func(*http.Request) (*http.Response, error) {
+			t.Error("canceled request reached the transport")
+			return nil, errors.New("unexpected request")
+		}),
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rt.doWithRetry(req); !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected cancellation, got %v", err)
+	}
+}

@@ -328,17 +328,16 @@ func TestFunctionHealth_ReadsTheRuntime(t *testing.T) {
 	}
 }
 
-// The API streams by default, so the field is sent only to turn it off.
-// Transmitting it either way would freeze today's server-side default into the
-// client — the same reasoning behind the generated builders' Changed() guards.
-func TestFunctionRun_SendsStreamOnlyWithNoStream(t *testing.T) {
+// --no-stream controls local log output. Startup always requests a stream so
+// the runner can acknowledge execution before the function finishes.
+func TestFunctionRun_AlwaysStartsWithStream(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		noStream bool
 		want     any
 	}{
-		{name: "default omits stream", noStream: false, want: nil},
-		{name: "--no-stream sends false", noStream: true, want: false},
+		{name: "default", noStream: false, want: true},
+		{name: "--no-stream", noStream: true, want: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := setupFunctionTest(t)
@@ -368,14 +367,8 @@ func TestFunctionRun_SendsStreamOnlyWithNoStream(t *testing.T) {
 			}
 			body := requestBody(t, requests[0])
 			got, present := body["stream"]
-			if tc.want == nil {
-				if present {
-					t.Errorf("stream was sent as %v without --no-stream", got)
-				}
-				return
-			}
 			if !present {
-				t.Fatal("stream was not sent despite --no-stream")
+				t.Fatal("stream was not sent")
 			}
 			if got != tc.want {
 				t.Errorf("stream = %v, want %v", got, tc.want)

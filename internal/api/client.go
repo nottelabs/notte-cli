@@ -150,6 +150,10 @@ func (t *resilientTransport) doWithRetry(req *http.Request) (*http.Response, err
 	var err error
 
 	for attempt := 0; attempt <= t.retryConfig.MaxRetries; attempt++ {
+		if err := req.Context().Err(); err != nil {
+			return nil, err
+		}
+
 		// Clone request for each attempt
 		reqCopy := cloneRequest(req)
 
@@ -160,7 +164,7 @@ func (t *resilientTransport) doWithRetry(req *http.Request) (*http.Response, err
 				return nil, err
 			}
 			if attempt < t.retryConfig.MaxRetries {
-				time.Sleep(t.retryConfig.Backoff(attempt))
+				sleepWithContext(req.Context(), t.retryConfig.Backoff(attempt))
 				continue
 			}
 			return nil, err
@@ -176,7 +180,7 @@ func (t *resilientTransport) doWithRetry(req *http.Request) (*http.Response, err
 
 		// Sleep before retry
 		if attempt < t.retryConfig.MaxRetries {
-			time.Sleep(t.retryConfig.Backoff(attempt))
+			sleepWithContext(req.Context(), t.retryConfig.Backoff(attempt))
 		}
 	}
 
