@@ -120,9 +120,42 @@ sed -i.bak 's/^func NewClient(/func newGeneratedClient(/g' "$OUTPUT_DIR/client.g
 sed -i.bak 's/NewClient(server, opts\.\.\.)/newGeneratedClient(server, opts...)/g' "$OUTPUT_DIR/client.gen.go"
 
 # Replace time.Time with FlexibleTime in struct fields for flexible timestamp parsing
-# This handles API responses that don't include timezone info
-sed -i.bak 's/\(	[A-Za-z]*\) time\.Time /\1 FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
-sed -i.bak 's/\(	[A-Za-z]*\) \*time\.Time /\1 *FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+# This handles API responses that don't include timezone info.
+#
+# The gap between the field name and its type is one space in a struct whose
+# names happen to be the same length and gofmt's alignment padding otherwise, so
+# both are matched: `  *` rather than a single space, and rather than GNU sed's
+# `\+`, which BSD sed on macOS reads as a literal plus. Matching only one space
+# is how FunctionResponse.created_at silently lost FlexibleTime when the spec
+# grew a longer field beside it. gofmt below restores the alignment.
+sed -i.bak 's/\(	[A-Za-z]*\)  *time\.Time /\1 FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+sed -i.bak 's/\(	[A-Za-z]*\)  *\*time\.Time /\1 *FlexibleTime /g' "$OUTPUT_DIR/client.gen.go"
+
+# A timestamp the substitution above missed parses only RFC3339, so a response
+# without timezone info fails to decode and the command dies on a field it was
+# only going to print. That failure reaches a user, not this script, so fail
+# here instead: a new spelling of a time field should stop the regeneration.
+if REMAINING=$(grep -nE '^	[A-Za-z]+ +\*?time\.Time' "$OUTPUT_DIR/client.gen.go"); then
+  echo "Error: struct fields still typed time.Time after the FlexibleTime substitution:" >&2
+  echo "$REMAINING" >&2
+  echo "Widen the sed patterns above to cover them." >&2
+  exit 1
+fi
+
+# With every timestamp now a FlexibleTime, nothing in the file refers to the
+# time package and Go refuses to compile an unused import. Conditional because a
+# spec that reintroduces one - a time.Duration in a params struct, say - has to
+# keep it. Comment lines are dropped first so prose mentioning the package does
+# not read as a use.
+#
+# Deliberately not `grep -q` here: it exits on the first match, and under
+# pipefail the SIGPIPE that kills the upstream grep becomes the pipeline's
+# status. A file that does use the package would then take the branch that
+# deletes its import, intermittently, depending on whether the first grep had
+# already finished writing. Reading all the input costs nothing on one file.
+if ! grep -vE '^[[:space:]]*//' "$OUTPUT_DIR/client.gen.go" | grep -E '(^|[^A-Za-z_])time\.[A-Za-z]' >/dev/null; then
+  sed -i.bak '/^	"time"$/d' "$OUTPUT_DIR/client.gen.go"
+fi
 
 # Add omitempty to pointer fields that don't have it (optional fields shouldn't serialize as null)
 sed -i.bak -E 's/(\*[^`]+`json:"[^",]+)"`/\1,omitempty"`/g' "$OUTPUT_DIR/client.gen.go"

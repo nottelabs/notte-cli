@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -684,11 +683,11 @@ type ApiAgentStartRequest_ReasoningModel struct {
 type ApiExecutionResponse struct {
 	Action          ApiExecutionResponse_Action `json:"action"`
 	Data            *DataSpace                  `json:"data,omitempty"`
-	EndedAt         time.Time                   `json:"ended_at"`
+	EndedAt         FlexibleTime                `json:"ended_at"`
 	Exception       *string                     `json:"exception,omitempty"`
 	ExceptionDetail *SerializedError            `json:"exception_detail,omitempty"`
 	Message         string                      `json:"message"`
-	StartedAt       time.Time                   `json:"started_at"`
+	StartedAt       FlexibleTime                `json:"started_at"`
 	Success         bool                        `json:"success"`
 }
 
@@ -945,10 +944,10 @@ type CompletionAction struct {
 
 // ConnectLinkContext defines model for ConnectLinkContext.
 type ConnectLinkContext struct {
-	AttemptsRemaining int       `json:"attempts_remaining"`
-	Domain            string    `json:"domain"`
-	ExpiresAt         time.Time `json:"expires_at"`
-	LogoColor         string    `json:"logo_color"`
+	AttemptsRemaining int          `json:"attempts_remaining"`
+	Domain            string       `json:"domain"`
+	ExpiresAt         FlexibleTime `json:"expires_at"`
+	LogoColor         string       `json:"logo_color"`
 
 	// RequiresMailbox Whether the connector reads its second factor from email, so the page must ask which inbox the code will arrive in.
 	RequiresMailbox bool `json:"requires_mailbox"`
@@ -1000,8 +999,8 @@ type ConnectLinkCreateResponse struct {
 	ConnectLinkId string `json:"connect_link_id"`
 
 	// ConnectUrl Send your end user here.
-	ConnectUrl string    `json:"connect_url"`
-	ExpiresAt  time.Time `json:"expires_at"`
+	ConnectUrl string       `json:"connect_url"`
+	ExpiresAt  FlexibleTime `json:"expires_at"`
 
 	// Token Returned once and never again - only its hash is stored.
 	Token string `json:"token"`
@@ -1494,7 +1493,7 @@ type FrameData struct {
 // FunctionListItemResponse defines model for FunctionListItemResponse.
 type FunctionListItemResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt      time.Time                               `json:"created_at"`
+	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionListItemResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
@@ -1559,7 +1558,7 @@ type FunctionMetadataUpdateRequest struct {
 // FunctionResponse defines model for FunctionResponse.
 type FunctionResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt      time.Time                       `json:"created_at"`
+	CreatedAt      FlexibleTime                    `json:"created_at"`
 	DefaultRuntime *FunctionResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
@@ -1641,7 +1640,7 @@ type FunctionRunListItemResponse struct {
 	Local         *bool                             `json:"local,omitempty"`
 	SessionId     *string                           `json:"session_id,omitempty"`
 	Status        FunctionRunListItemResponseStatus `json:"status"`
-	UpdatedAt     time.Time                         `json:"updated_at"`
+	UpdatedAt     FlexibleTime                      `json:"updated_at"`
 	WorkflowId    *string                           `json:"workflow_id,omitempty"`
 	WorkflowRunId *string                           `json:"workflow_run_id,omitempty"`
 }
@@ -1718,7 +1717,7 @@ type FunctionSource string
 // FunctionWithLinkResponse defines model for FunctionWithLinkResponse.
 type FunctionWithLinkResponse struct {
 	// CreatedAt The creation time of the workflow
-	CreatedAt      time.Time                               `json:"created_at"`
+	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionWithLinkResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
 	// Description The description of the workflow
@@ -2238,11 +2237,11 @@ type NudgePromptResponse struct {
 
 // Observation defines model for Observation.
 type Observation struct {
-	EndedAt    time.Time        `json:"ended_at"`
+	EndedAt    FlexibleTime     `json:"ended_at"`
 	Metadata   SnapshotMetadata `json:"metadata"`
 	Screenshot Screenshot       `json:"screenshot"`
 	Space      ActionSpace      `json:"space"`
-	StartedAt  time.Time        `json:"started_at"`
+	StartedAt  FlexibleTime     `json:"started_at"`
 }
 
 // ObserveRequest defines model for ObserveRequest.
@@ -2700,7 +2699,7 @@ type SecretListResponse struct {
 
 // SecretMetadata defines model for SecretMetadata.
 type SecretMetadata struct {
-	CreatedAt  time.Time       `json:"created_at"`
+	CreatedAt  FlexibleTime    `json:"created_at"`
 	Id         string          `json:"id"`
 	KeyHint    string          `json:"key_hint"`
 	LastUsedAt *string         `json:"last_used_at,omitempty"`
@@ -3014,7 +3013,7 @@ type UpdateFunctionRunResponse struct {
 	// FunctionRunId The ID of the function run
 	FunctionRunId string                           `json:"function_run_id"`
 	Status        *UpdateFunctionRunResponseStatus `json:"status,omitempty"`
-	UpdatedAt     time.Time                        `json:"updated_at"`
+	UpdatedAt     FlexibleTime                     `json:"updated_at"`
 	WorkflowId    *string                          `json:"workflow_id,omitempty"`
 	WorkflowRunId *string                          `json:"workflow_run_id,omitempty"`
 }
@@ -3071,9 +3070,9 @@ type UploadFileActionOutput_Selector struct {
 
 // UsageLog defines model for UsageLog.
 type UsageLog struct {
-	CreatedAt  time.Time `json:"created_at"`
-	DurationMs int       `json:"duration_ms"`
-	Endpoint   string    `json:"endpoint"`
+	CreatedAt  FlexibleTime `json:"created_at"`
+	DurationMs int          `json:"duration_ms"`
+	Endpoint   string       `json:"endpoint"`
 }
 
 // UsageResponse defines model for UsageResponse.
@@ -3125,10 +3124,10 @@ type ValidationError_Loc_Item struct {
 
 // Vault defines model for Vault.
 type Vault struct {
-	CreatedAt  time.Time `json:"created_at"`
-	ForPersona *bool     `json:"for_persona,omitempty"`
-	Name       string    `json:"name"`
-	VaultId    string    `json:"vault_id"`
+	CreatedAt  FlexibleTime `json:"created_at"`
+	ForPersona *bool        `json:"for_persona,omitempty"`
+	Name       string       `json:"name"`
+	VaultId    string       `json:"vault_id"`
 }
 
 // VaultCreateRequest defines model for VaultCreateRequest.
