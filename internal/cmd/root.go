@@ -136,7 +136,14 @@ func GetClient() (*api.NotteClient, error) {
 		opts = append(opts, api.WithRequestOrigin(origin))
 	}
 
-	return api.NewClientWithURL(apiKey, baseURL, Version, opts...)
+	client, err := api.NewClientWithURL(apiKey, baseURL, Version, opts...)
+	if err != nil {
+		return nil, err
+	}
+	// Commands enforce --timeout through their request contexts. The client's
+	// shorter default must not silently override a caller's explicit timeout.
+	client.HTTPClient().Timeout = time.Duration(requestTimeout) * time.Second
+	return client, nil
 }
 
 // GetContextWithTimeout wraps the provided context with a timeout

@@ -211,13 +211,28 @@ notte functions health                # Runtime health: Python version, installe
 notte functions delete                # Delete current function
 notte functions fork                  # Fork current function to new version
 notte functions run                   # Execute current function
-notte functions run --no-stream       # ... returning only the final response, without streamed logs
+notte functions run --no-stream       # Poll until complete, returning final run metadata without log output
+notte functions run --no-wait          # Return the run ID after startup
+notte functions run-metadata --wait --run-id <id> [--wait-timeout 30m]  # Wait for an existing run
 notte functions runs [--page N] [--page-size N] [--running]  # List runs for current function (--running = in-flight only)
 notte functions run-stop --run-id <id>  # Stop a running function execution
 notte functions run-metadata --run-id <id>  # Get run logs and results
 notte functions schedule --cron "0 12 ? * * *"  # Schedule current function (six-field cron: daily at noon UTC)
 notte functions unschedule            # Remove schedule from current function
 ```
+
+Function runs print their ID and a tracking command to stderr as soon as the
+server creates the run. After the runner accepts the request, the CLI closes the
+response stream and polls metadata. `--timeout` applies to each API request;
+`--wait-timeout` limits the total wait (unlimited by default). `--no-wait` returns
+after startup so another command can wait separately.
+
+In JSON mode, stdout contains one object: the run ID and status with `--no-wait`,
+or final run metadata (including `status`, `logs`, and the stored `result` string)
+when waiting. Logs are printed to stderr as they become available in metadata;
+some runners persist logs only at completion. `--no-stream` suppresses those
+log messages. An interrupted or timed-out CLI does not cancel the server run:
+resume with `run-metadata --wait`, or explicitly stop it with `run-stop`.
 
 ### Personas, Profiles and Usage
 
@@ -250,7 +265,7 @@ notte functions configure --response-format @schema.json
 run takes, what each variable is for, which sites it trips over:
 
 ```bash
-notte functions configure --run-instructions "Takes ~3 min, so call it async. \
+notte functions configure --run-instructions "Takes ~3 min, so call it with --no-wait. \
 Hits a captcha on the login page every few runs. \
 \`query\` is the search term; \`max_items\` caps the results."
 ```

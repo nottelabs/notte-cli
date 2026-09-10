@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,6 +22,7 @@ var (
 	functionRunVariablesJSON string   // Variables as JSON string
 	functionRunNoStream      bool     // Opt out of log streaming
 	functionRunRuntime       string   // Which execution runtime to run on
+	functionRunNoWait        bool
 	functionSecretValue      string
 	functionDownloadVersion  string
 )
@@ -168,6 +166,7 @@ var functionsDeleteCmd = &cobra.Command{
 var functionsRunCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run the function",
+	Long:  "Start the function, print its run ID, and poll until it finishes.\nUse --no-wait to return after startup, then run-metadata --wait to wait separately.\n--timeout limits each API request, not the total execution time.\nInterrupting the CLI does not stop the function; use run-stop to cancel it.",
 	Args:  cobra.NoArgs,
 	RunE:  runFunctionRun,
 }
@@ -325,10 +324,13 @@ func init() {
 	functionsRunCmd.Flags().StringVar(&functionID, "function-id", "", "Function ID (uses current function if not specified)")
 	functionsRunCmd.Flags().StringArrayVar(&functionRunVariables, "var", []string{}, "Variable as key=value pair (can be used multiple times)")
 	functionsRunCmd.Flags().StringVar(&functionRunVariablesJSON, "vars", "", "Variables as JSON object string")
-	// An opt-out rather than a --stream toggle: the API streams by default, so
-	// a positive flag would be an opt-in to something already on. Same shape,
-	// and the same reasoning, as --no-solve-captchas on sessions start.
-	functionsRunCmd.Flags().BoolVar(&functionRunNoStream, "no-stream", false, "Return only the final response instead of streaming logs")
+	functionsRunCmd.Flags().BoolVar(&functionRunNoStream, "no-stream", false, "Suppress log output while waiting for the final run metadata")
+	functionsRunCmd.Flags().BoolVar(&functionRunNoWait, "no-wait", false, "Return the run ID after startup without waiting for completion")
+	for _, cmd := range []*cobra.Command{functionsRunCmd, functionsRunMetadataCmd} {
+		cmd.Flags().Duration("wait-timeout", 0, "Maximum time to wait for completion (e.g. 30m; 0 waits indefinitely)")
+	}
+	functionsRunMetadataCmd.Flags().Bool("wait", false, "Poll until the run finishes; --timeout applies to each request")
+	functionsRunMetadataCmd.Flags().Bool("no-stream", false, "Suppress log output while waiting for the final run metadata")
 	functionsRunCmd.Flags().StringVar(&functionRunRuntime, "runtime", "", fmt.Sprintf("Run on %s for this run only, overriding the function's default-runtime", strings.Join(runtimeValues, " or ")))
 	_ = functionsRunCmd.RegisterFlagCompletionFunc("runtime", func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 		return runtimeValues, cobra.ShellCompDirectiveNoFileComp
@@ -765,9 +767,6 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
-
 	// Parse variables
 	variables := make(map[string]interface{})
 
@@ -776,6 +775,9 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 		if err := json.Unmarshal([]byte(functionRunVariablesJSON), &variables); err != nil {
 			return fmt.Errorf("failed to parse --vars JSON: %w", err)
 		}
+	}
+	if variables == nil {
+		return errors.New("--vars must be a JSON object")
 	}
 
 	// Then, parse key=value pairs (these override JSON if there's a conflict)
@@ -787,62 +789,12 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 		variables[parts[0]] = parts[1]
 	}
 
-	// The generated client doesn't support request body for FunctionRunStart,
-	// so we need to make a manual request with the function_id in the body
-	requestBody := map[string]interface{}{
-		"function_id": functionID,
-		"variables":   variables,
-	}
-	// Sent only when asked. The API's own default is true, so transmitting it
-	// unconditionally would freeze today's server-side behaviour into the client.
-	if functionRunNoStream {
-		requestBody["stream"] = false
-	}
-	// Omitted unless asked: the run now inherits the function's saved
-	// default_runtime, and sending that value back would pin it.
 	if functionRunRuntime != "" {
 		if err := validateRuntime("runtime", functionRunRuntime); err != nil {
 			return err
 		}
-		requestBody["runtime"] = functionRunRuntime
 	}
-
-	bodyJSON, err := json.Marshal(requestBody)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request body: %w", err)
-	}
-
-	url := fmt.Sprintf("%s/functions/%s/runs/start", client.BaseURL(), functionID)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyJSON))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-notte-api-key", client.APIKey())
-
-	httpResp, err := client.HTTPClient().Do(req)
-	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-	defer func() { _ = httpResp.Body.Close() }()
-
-	body, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if err := HandleAPIResponse(httpResp, body); err != nil {
-		return err
-	}
-
-	// Parse and print the response
-	var result interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return GetFormatter().Print(result)
+	return startAndWaitFunction(cmd, client, variables)
 }
 
 func runFunctionRuns(cmd *cobra.Command, args []string) error {
@@ -948,6 +900,9 @@ func runFunctionRunStop(cmd *cobra.Command, args []string) error {
 }
 
 func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
+	if wait, _ := cmd.Flags().GetBool("wait"); wait {
+		return runFunctionRunWait(cmd, args)
+	}
 	if err := RequireFunctionID(); err != nil {
 		return err
 	}
