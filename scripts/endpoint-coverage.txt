@@ -59,7 +59,6 @@ skip DELETE /vaults/{vault_id}/card # excluded from codegen: credit-card handlin
 # --- infrastructure, not a user-facing operation -----------------------------
 skip GET  /ready # load-balancer probe
 skip POST /anything/start # anything.notte.cc entry point, not a CLI workflow
-skip POST /proxies/gateway/credentials # internal function-runner endpoint for short-lived gateway credentials
 
 # --- not exposed yet ---------------------------------------------------------
 # Each of these is a gap someone should close or rule out; listing them is the
