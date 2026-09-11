@@ -2350,6 +2350,8 @@ type PersonaCreateRequest struct {
 
 // PersonaResponse defines model for PersonaResponse.
 type PersonaResponse struct {
+	CreatedAt FlexibleTime `json:"created_at"`
+
 	// Email Public, human-readable email address of the persona
 	Email string `json:"email"`
 
