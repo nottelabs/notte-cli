@@ -443,6 +443,15 @@ const (
 	Zw ProxyGeolocationCountry = "zw"
 )
 
+// Defines values for ReplayMissingResponseReplayStatus.
+const (
+	Failed            ReplayMissingResponseReplayStatus = "failed"
+	Processing        ReplayMissingResponseReplayStatus = "processing"
+	Unavailable       ReplayMissingResponseReplayStatus = "unavailable"
+	Unknown           ReplayMissingResponseReplayStatus = "unknown"
+	WaitingForSession ReplayMissingResponseReplayStatus = "waiting_for_session"
+)
+
 // Defines values for SecretNamespace.
 const (
 	FunctionEnv SecretNamespace = "function_env"
@@ -2451,28 +2460,6 @@ type ProfileResponse struct {
 	UpdatedAt FlexibleTime `json:"updated_at"`
 }
 
-// ProxyCredentialRequest defines model for ProxyCredentialRequest.
-type ProxyCredentialRequest struct {
-	// City Evomi city id or display name, e.g. `new.york`. Wins over country.
-	City *string `json:"city,omitempty"`
-
-	// Country ISO 3166-1 alpha-2 country code, e.g. `us`.
-	Country *string `json:"country,omitempty"`
-}
-
-// ProxyCredentialResponse defines model for ProxyCredentialResponse.
-type ProxyCredentialResponse struct {
-	ExpiresAt FlexibleTime `json:"expires_at"`
-	Password  string       `json:"password"`
-
-	// ProxyUrlPlain `http://user:pass@host:3128`, for clients that cannot.
-	ProxyUrlPlain string `json:"proxy_url_plain"`
-
-	// ProxyUrlTls `https://user:pass@host:443`, for clients that do TLS to the proxy.
-	ProxyUrlTls string `json:"proxy_url_tls"`
-	Username    string `json:"username"`
-}
-
 // ProxyGeolocationCountry defines model for ProxyGeolocationCountry.
 type ProxyGeolocationCountry string
 
@@ -2482,6 +2469,20 @@ type ReloadAction struct {
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
+
+// ReplayMissingResponse defines model for ReplayMissingResponse.
+type ReplayMissingResponse struct {
+	Detail       string                            `json:"detail"`
+	Error        string                            `json:"error"`
+	Message      string                            `json:"message"`
+	ReplayStatus ReplayMissingResponseReplayStatus `json:"replay_status"`
+	Retryable    bool                              `json:"retryable"`
+	SessionId    *string                           `json:"session_id,omitempty"`
+	Status       int                               `json:"status"`
+}
+
+// ReplayMissingResponseReplayStatus defines model for ReplayMissingResponse.ReplayStatus.
+type ReplayMissingResponseReplayStatus string
 
 // ReplayResponse defines model for ReplayResponse.
 type ReplayResponse struct {
@@ -3579,12 +3580,6 @@ type ProfileDuplicateParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// MintProxyCredentialsParams defines parameters for MintProxyCredentials.
-type MintProxyCredentialsParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
 // SearchWebParams defines parameters for SearchWeb.
 type SearchWebParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -3933,9 +3928,6 @@ type ProfileCookiesSetJSONRequestBody = ProfileCookiesImportRequest
 
 // ProfileDuplicateJSONRequestBody defines body for ProfileDuplicate for application/json ContentType.
 type ProfileDuplicateJSONRequestBody = ProfileDuplicateRequest
-
-// MintProxyCredentialsJSONRequestBody defines body for MintProxyCredentials for application/json ContentType.
-type MintProxyCredentialsJSONRequestBody = ProxyCredentialRequest
 
 // SearchWebJSONRequestBody defines body for SearchWeb for application/json ContentType.
 type SearchWebJSONRequestBody = SearchRequest
@@ -9719,11 +9711,6 @@ type ClientInterface interface {
 
 	ProfileDuplicate(ctx context.Context, profileId string, params *ProfileDuplicateParams, body ProfileDuplicateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// MintProxyCredentialsWithBody request with any body
-	MintProxyCredentialsWithBody(ctx context.Context, params *MintProxyCredentialsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	MintProxyCredentials(ctx context.Context, params *MintProxyCredentialsParams, body MintProxyCredentialsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ReadyCheck request
 	ReadyCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10668,30 +10655,6 @@ func (c *Client) ProfileDuplicateWithBody(ctx context.Context, profileId string,
 
 func (c *Client) ProfileDuplicate(ctx context.Context, profileId string, params *ProfileDuplicateParams, body ProfileDuplicateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProfileDuplicateRequest(c.Server, profileId, params, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) MintProxyCredentialsWithBody(ctx context.Context, params *MintProxyCredentialsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewMintProxyCredentialsRequestWithBody(c.Server, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) MintProxyCredentials(ctx context.Context, params *MintProxyCredentialsParams, body MintProxyCredentialsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewMintProxyCredentialsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -15009,72 +14972,6 @@ func NewProfileDuplicateRequestWithBody(server string, profileId string, params 
 	return req, nil
 }
 
-// NewMintProxyCredentialsRequest calls the generic MintProxyCredentials builder with application/json body
-func NewMintProxyCredentialsRequest(server string, params *MintProxyCredentialsParams, body MintProxyCredentialsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewMintProxyCredentialsRequestWithBody(server, params, "application/json", bodyReader)
-}
-
-// NewMintProxyCredentialsRequestWithBody generates requests for MintProxyCredentials with any type of body
-func NewMintProxyCredentialsRequestWithBody(server string, params *MintProxyCredentialsParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/proxies/gateway/credentials")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XNotteRequestOrigin != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-request-origin", headerParam0)
-		}
-
-		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
-
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("x-notte-sdk-version", headerParam1)
-		}
-
-	}
-
-	return req, nil
-}
-
 // NewReadyCheckRequest generates requests for ReadyCheck
 func NewReadyCheckRequest(server string) (*http.Request, error) {
 	var err error
@@ -18130,11 +18027,6 @@ type ClientWithResponsesInterface interface {
 
 	ProfileDuplicateWithResponse(ctx context.Context, profileId string, params *ProfileDuplicateParams, body ProfileDuplicateJSONRequestBody, reqEditors ...RequestEditorFn) (*ProfileDuplicateResult, error)
 
-	// MintProxyCredentialsWithBodyWithResponse request with any body
-	MintProxyCredentialsWithBodyWithResponse(ctx context.Context, params *MintProxyCredentialsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MintProxyCredentialsResult, error)
-
-	MintProxyCredentialsWithResponse(ctx context.Context, params *MintProxyCredentialsParams, body MintProxyCredentialsJSONRequestBody, reqEditors ...RequestEditorFn) (*MintProxyCredentialsResult, error)
-
 	// ReadyCheckWithResponse request
 	ReadyCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ReadyCheckResult, error)
 
@@ -19409,29 +19301,6 @@ func (r ProfileDuplicateResult) StatusCode() int {
 	return 0
 }
 
-type MintProxyCredentialsResult struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ProxyCredentialResponse
-	JSON422      *HTTPValidationError
-}
-
-// Status returns HTTPResponse.Status
-func (r MintProxyCredentialsResult) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r MintProxyCredentialsResult) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ReadyCheckResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -19939,6 +19808,8 @@ type SessionReplayResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ReplayResponse
+	JSON404      *ReplayMissingResponse
+	JSON410      *ReplayMissingResponse
 	JSON422      *HTTPValidationError
 }
 
@@ -20834,23 +20705,6 @@ func (c *ClientWithResponses) ProfileDuplicateWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseProfileDuplicateResult(rsp)
-}
-
-// MintProxyCredentialsWithBodyWithResponse request with arbitrary body returning *MintProxyCredentialsResult
-func (c *ClientWithResponses) MintProxyCredentialsWithBodyWithResponse(ctx context.Context, params *MintProxyCredentialsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MintProxyCredentialsResult, error) {
-	rsp, err := c.MintProxyCredentialsWithBody(ctx, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseMintProxyCredentialsResult(rsp)
-}
-
-func (c *ClientWithResponses) MintProxyCredentialsWithResponse(ctx context.Context, params *MintProxyCredentialsParams, body MintProxyCredentialsJSONRequestBody, reqEditors ...RequestEditorFn) (*MintProxyCredentialsResult, error) {
-	rsp, err := c.MintProxyCredentials(ctx, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseMintProxyCredentialsResult(rsp)
 }
 
 // ReadyCheckWithResponse request returning *ReadyCheckResult
@@ -22884,39 +22738,6 @@ func ParseProfileDuplicateResult(rsp *http.Response) (*ProfileDuplicateResult, e
 	return response, nil
 }
 
-// ParseMintProxyCredentialsResult parses an HTTP response from a MintProxyCredentialsWithResponse call
-func ParseMintProxyCredentialsResult(rsp *http.Response) (*MintProxyCredentialsResult, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &MintProxyCredentialsResult{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ProxyCredentialResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest HTTPValidationError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseReadyCheckResult parses an HTTP response from a ReadyCheckWithResponse call
 func ParseReadyCheckResult(rsp *http.Response) (*ReadyCheckResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -23645,6 +23466,20 @@ func ParseSessionReplayResult(rsp *http.Response) (*SessionReplayResult, error) 
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ReplayMissingResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 410:
+		var dest ReplayMissingResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON410 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
