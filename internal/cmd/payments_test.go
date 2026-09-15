@@ -174,3 +174,41 @@ func TestPaymentStatusAndAPIErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestPaymentWaitVerification(t *testing.T) {
+	for _, resolution := range []string{"auto_resume", "create_new_spend_request", "create_new_spend_request_after_completion"} {
+		t.Run(resolution, func(t *testing.T) {
+			calls := 0
+			client := paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != "GET" {
+					t.Error("verification must not create or approve spending")
+				}
+				calls++
+				if calls > 2 {
+					_, _ = fmt.Fprintf(w, `{"id":%q,"status":"ready"}`, paymentTestID)
+					return
+				}
+				status := "requires_action"
+				if resolution != "auto_resume" {
+					status = "failed"
+				}
+				_, _ = fmt.Fprintf(w, `{"id":%q,"status":%q,"next_action":{"type":"three_d_secure","resolution":%q,"action_url":"https://app.link.com/verify"},"error_code":"link_new_spend_request_required"}`, paymentTestID, status, resolution)
+			})
+			cmd := &cobra.Command{}
+			var stderr bytes.Buffer
+			cmd.SetErr(&stderr)
+			var resultErr error
+			testutil.CaptureOutput(func() { resultErr = waitPayment(cmd, context.Background(), client, paymentTestID, time.Millisecond) })
+			if strings.Count(stderr.String(), "Complete verification:") != 1 {
+				t.Fatalf("missing or duplicate instructions: %s", stderr.String())
+			}
+			if resolution == "auto_resume" {
+				if resultErr != nil || calls != 3 {
+					t.Fatalf("did not resume: %v (%d calls)", resultErr, calls)
+				}
+			} else if resultErr == nil || calls != 1 || !strings.Contains(stderr.String(), "new idempotency key") {
+				t.Fatalf("must stop and explain new request: %v %s", resultErr, stderr.String())
+			}
+		})
+	}
+}

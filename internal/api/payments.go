@@ -20,24 +20,33 @@ type SessionPaymentRequest struct {
 	Mode         string `json:"mode"`
 }
 
+// PaymentNextAction describes verification completed by the wallet owner.
+type PaymentNextAction struct {
+	Type       string  `json:"type"`
+	Resolution string  `json:"resolution"`
+	ActionURL  *string `json:"action_url,omitempty"`
+	ExpiresAt  *string `json:"expires_at,omitempty"`
+}
+
 // PaymentStatus contains only the public, sanitized payment fields.
 // Ready indicates that credentials are installed, not that a purchase succeeded.
 type PaymentStatus struct {
-	ID               string  `json:"id"`
-	SessionID        string  `json:"session_id"`
-	Status           string  `json:"status"`
-	Mode             string  `json:"mode"`
-	Amount           int64   `json:"amount"`
-	Currency         string  `json:"currency"`
-	MerchantName     string  `json:"merchant_name"`
-	MerchantURL      string  `json:"merchant_url"`
-	VaultID          *string `json:"vault_id,omitempty"`
-	ApprovalURL      *string `json:"approval_url,omitempty"`
-	ConnectionURL    *string `json:"connection_url,omitempty"`
-	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
-	ExpiresAt        *string `json:"expires_at,omitempty"`
-	ErrorCode        *string `json:"error_code,omitempty"`
-	PurchaseStatus   string  `json:"purchase_status"`
+	ID               string             `json:"id"`
+	SessionID        string             `json:"session_id"`
+	Status           string             `json:"status"`
+	Mode             string             `json:"mode"`
+	Amount           int64              `json:"amount"`
+	Currency         string             `json:"currency"`
+	MerchantName     string             `json:"merchant_name"`
+	MerchantURL      string             `json:"merchant_url"`
+	VaultID          *string            `json:"vault_id,omitempty"`
+	ApprovalURL      *string            `json:"approval_url,omitempty"`
+	ConnectionURL    *string            `json:"connection_url,omitempty"`
+	ConnectionPhrase *string            `json:"connection_phrase,omitempty"`
+	ExpiresAt        *string            `json:"expires_at,omitempty"`
+	ErrorCode        *string            `json:"error_code,omitempty"`
+	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
+	PurchaseStatus   string             `json:"purchase_status"`
 }
 
 // Payment calls the payment endpoints through the shared authenticated transport.

@@ -613,6 +613,11 @@ Sandbox (`--mode test`) is the default. The server must enable payments; live
 requests additionally require server-side live enablement. There is no separate
 connect command: the first request returns a wallet connection URL and phrase.
 After connection, the payment status provides a spending approval URL.
+If Link requires additional wallet verification, `payment wait` prints the action
+URL. Resumable verification keeps waiting on the same request. When Link requires
+a new spend request, the command exits with instructions to complete verification
+and request payment again with a new idempotency key. `payment status -o json`
+includes the structured `next_action` instructions.
 
 `wait` displays connection and approval instructions on stderr as they become
 available and prints one final result on stdout when ready. It exits nonzero on

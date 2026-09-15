@@ -92,7 +92,7 @@ func newPaymentCommand() *cobra.Command {
 		return GetFormatter().Print(result)
 	}}
 	var timeout time.Duration
-	wait := &cobra.Command{Use: "wait PAYMENT_ID", Short: "Wait until credentials are ready or the payment fails", Long: "Wait until the temporary card is installed in the session vault. Ready does not mean a purchase succeeded. Connection and approval instructions appear on stderr. Exiting does not cancel provisioning.", Args: paymentIDArg, RunE: func(cmd *cobra.Command, args []string) error {
+	wait := &cobra.Command{Use: "wait PAYMENT_ID", Short: "Wait until credentials are ready or the payment fails", Long: "Wait until the temporary card is installed in the session vault. Ready does not mean a purchase succeeded. Connection, approval, and verification instructions appear on stderr. Exiting does not cancel provisioning.", Args: paymentIDArg, RunE: func(cmd *cobra.Command, args []string) error {
 		if timeout < 0 {
 			return fmt.Errorf("--wait-timeout must not be negative")
 		}
@@ -156,6 +156,17 @@ func waitPayment(cmd *cobra.Command, ctx context.Context, client *api.NotteClien
 		if result.Status == "awaiting_approval" && result.ApprovalURL != nil {
 			instructions = "Approve spending: " + *result.ApprovalURL
 		}
+		if result.NextAction != nil {
+			instructions = "Wallet verification required: " + result.NextAction.Type
+			if result.NextAction.ActionURL != nil {
+				instructions += "\nComplete verification: " + *result.NextAction.ActionURL
+			}
+			if result.NextAction.Resolution == "auto_resume" {
+				instructions += "\nWaiting for Link to verify completion; this request will resume automatically."
+			} else {
+				instructions += "\nAfter completing this action, run `notte payment request` again with a new idempotency key."
+			}
+		}
 		if instructions != "" && instructions != lastInstructions {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), instructions)
 			lastInstructions = instructions
@@ -165,6 +176,10 @@ func waitPayment(cmd *cobra.Command, ctx context.Context, client *api.NotteClien
 			return GetFormatter().Print(result)
 		case "declined", "expired", "failed", "closed":
 			return fmt.Errorf("payment %s ended with status %s (error_code: %s)", id, result.Status, paymentErrorCode(result))
+		case "requires_action":
+			if result.NextAction == nil || result.NextAction.Resolution != "auto_resume" {
+				return fmt.Errorf("payment %s requires a new request after wallet verification; inspect with `notte payment status %s`", id, id)
+			}
 		case "creating", "awaiting_connection", "awaiting_approval", "approved", "provisioning":
 		default:
 			return fmt.Errorf("unknown payment status %q; inspect with `notte payment status %s`", result.Status, id)
