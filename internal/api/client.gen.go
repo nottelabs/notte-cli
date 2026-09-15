@@ -244,6 +244,26 @@ const (
 	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
+// Defines values for PaymentNextActionResolution.
+const (
+	AutoResume                           PaymentNextActionResolution = "auto_resume"
+	CreateNewSpendRequest                PaymentNextActionResolution = "create_new_spend_request"
+	CreateNewSpendRequestAfterCompletion PaymentNextActionResolution = "create_new_spend_request_after_completion"
+)
+
+// Defines values for PaymentNextActionType.
+const (
+	AddPaymentMethod     PaymentNextActionType = "add_payment_method"
+	ContactSupport       PaymentNextActionType = "contact_support"
+	IdentityVerification PaymentNextActionType = "identity_verification"
+	ReAuthorize          PaymentNextActionType = "re_authorize"
+	SelectPaymentMethod  PaymentNextActionType = "select_payment_method"
+	SsnVerification      PaymentNextActionType = "ssn_verification"
+	ThreeDSecure         PaymentNextActionType = "three_d_secure"
+	ThreeDSecureRetry    PaymentNextActionType = "three_d_secure_retry"
+	UpdatePaymentMethod  PaymentNextActionType = "update_payment_method"
+)
+
 // Defines values for PaymentRequestMode.
 const (
 	Live PaymentRequestMode = "live"
@@ -2429,14 +2449,40 @@ type ParameterInfo struct {
 	Type    *string `json:"type,omitempty"`
 }
 
+// PaymentNextAction defines model for PaymentNextAction.
+type PaymentNextAction struct {
+	ActionUrl  *string                     `json:"action_url,omitempty"`
+	ExpiresAt  *string                     `json:"expires_at,omitempty"`
+	Resolution PaymentNextActionResolution `json:"resolution"`
+	Type       PaymentNextActionType       `json:"type"`
+}
+
+// PaymentNextActionResolution defines model for PaymentNextAction.Resolution.
+type PaymentNextActionResolution string
+
+// PaymentNextActionType defines model for PaymentNextAction.Type.
+type PaymentNextActionType string
+
 // PaymentRequest defines model for PaymentRequest.
 type PaymentRequest struct {
-	Amount       int                 `json:"amount"`
-	Currency     string              `json:"currency"`
-	Description  string              `json:"description"`
-	MerchantName string              `json:"merchant_name"`
-	MerchantUrl  string              `json:"merchant_url"`
-	Mode         *PaymentRequestMode `json:"mode,omitempty"`
+	// Amount Amount in currency units, e.g. 100.91 means USD 100.91. Never rounded.
+	Amount       PaymentRequest_Amount `json:"amount"`
+	Currency     string                `json:"currency"`
+	Description  string                `json:"description"`
+	MerchantName string                `json:"merchant_name"`
+	MerchantUrl  string                `json:"merchant_url"`
+	Mode         *PaymentRequestMode   `json:"mode,omitempty"`
+}
+
+// PaymentRequestAmount0 defines model for .
+type PaymentRequestAmount0 = float32
+
+// PaymentRequestAmount1 defines model for .
+type PaymentRequestAmount1 = string
+
+// PaymentRequest_Amount Amount in currency units, e.g. 100.91 means USD 100.91. Never rounded.
+type PaymentRequest_Amount struct {
+	union json.RawMessage
 }
 
 // PaymentRequestMode defines model for PaymentRequest.Mode.
@@ -2444,21 +2490,23 @@ type PaymentRequestMode string
 
 // PaymentResponse defines model for PaymentResponse.
 type PaymentResponse struct {
-	Amount           int     `json:"amount"`
-	ApprovalUrl      *string `json:"approval_url,omitempty"`
-	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
-	ConnectionUrl    *string `json:"connection_url,omitempty"`
-	Currency         string  `json:"currency"`
-	ErrorCode        *string `json:"error_code,omitempty"`
-	ExpiresAt        *string `json:"expires_at,omitempty"`
-	Id               string  `json:"id"`
-	MerchantName     string  `json:"merchant_name"`
-	MerchantUrl      string  `json:"merchant_url"`
-	Mode             string  `json:"mode"`
-	PurchaseStatus   *string `json:"purchase_status,omitempty"`
-	SessionId        string  `json:"session_id"`
-	Status           string  `json:"status"`
-	VaultId          *string `json:"vault_id,omitempty"`
+	// Amount Amount in currency units, serialized as an exact decimal string.
+	Amount           string             `json:"amount"`
+	ApprovalUrl      *string            `json:"approval_url,omitempty"`
+	ConnectionPhrase *string            `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string            `json:"connection_url,omitempty"`
+	Currency         string             `json:"currency"`
+	ErrorCode        *string            `json:"error_code,omitempty"`
+	ExpiresAt        *string            `json:"expires_at,omitempty"`
+	Id               string             `json:"id"`
+	MerchantName     string             `json:"merchant_name"`
+	MerchantUrl      string             `json:"merchant_url"`
+	Mode             string             `json:"mode"`
+	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
+	PurchaseStatus   *string            `json:"purchase_status,omitempty"`
+	SessionId        string             `json:"session_id"`
+	Status           string             `json:"status"`
+	VaultId          *string            `json:"vault_id,omitempty"`
 }
 
 // PersonaCreateRequest defines model for PersonaCreateRequest.
@@ -3840,9 +3888,13 @@ type PageExecuteJSONBody struct {
 
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
-	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
+	CaptchaTimeoutSeconds *float32 `form:"captcha_timeout_seconds,omitempty" json:"captcha_timeout_seconds,omitempty"`
+	TargetPageId          *string  `form:"target_page_id,omitempty" json:"target_page_id,omitempty"`
+	TargetGeneration      *int     `form:"target_generation,omitempty" json:"target_generation,omitempty"`
+	UpdateMetadata        *bool    `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin   *string  `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string  `json:"x-notte-sdk-version,omitempty"`
 }
 
 // PageObserveParams defines parameters for PageObserve.
@@ -9023,6 +9075,68 @@ func (t MultiFactorFillActionOutput_Value) MarshalJSON() ([]byte, error) {
 }
 
 func (t *MultiFactorFillActionOutput_Value) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPaymentRequestAmount0 returns the union data inside the PaymentRequest_Amount as a PaymentRequestAmount0
+func (t PaymentRequest_Amount) AsPaymentRequestAmount0() (PaymentRequestAmount0, error) {
+	var body PaymentRequestAmount0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPaymentRequestAmount0 overwrites any union data inside the PaymentRequest_Amount as the provided PaymentRequestAmount0
+func (t *PaymentRequest_Amount) FromPaymentRequestAmount0(v PaymentRequestAmount0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePaymentRequestAmount0 performs a merge with any union data inside the PaymentRequest_Amount, using the provided PaymentRequestAmount0
+func (t *PaymentRequest_Amount) MergePaymentRequestAmount0(v PaymentRequestAmount0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPaymentRequestAmount1 returns the union data inside the PaymentRequest_Amount as a PaymentRequestAmount1
+func (t PaymentRequest_Amount) AsPaymentRequestAmount1() (PaymentRequestAmount1, error) {
+	var body PaymentRequestAmount1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPaymentRequestAmount1 overwrites any union data inside the PaymentRequest_Amount as the provided PaymentRequestAmount1
+func (t *PaymentRequest_Amount) FromPaymentRequestAmount1(v PaymentRequestAmount1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePaymentRequestAmount1 performs a merge with any union data inside the PaymentRequest_Amount, using the provided PaymentRequestAmount1
+func (t *PaymentRequest_Amount) MergePaymentRequestAmount1(v PaymentRequestAmount1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PaymentRequest_Amount) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PaymentRequest_Amount) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -16689,6 +16803,70 @@ func NewPageExecuteRequestWithBody(server string, sessionId string, params *Page
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if params.CaptchaId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "captcha_id", runtime.ParamLocationQuery, *params.CaptchaId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CaptchaTimeoutSeconds != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "captcha_timeout_seconds", runtime.ParamLocationQuery, *params.CaptchaTimeoutSeconds); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetPageId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_page_id", runtime.ParamLocationQuery, *params.TargetPageId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetGeneration != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_generation", runtime.ParamLocationQuery, *params.TargetGeneration); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
 
 		if params.UpdateMetadata != nil {
 
