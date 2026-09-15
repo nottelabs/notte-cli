@@ -44,7 +44,7 @@ func TestPaymentRequest(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-key" || r.Header.Get("Idempotency-Key") != "replay-key" {
 			t.Error("missing auth or idempotency key")
 		}
-		var p api.PaymentRequest
+		var p api.SessionPaymentRequest
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			t.Error(err)
 		}

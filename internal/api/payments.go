@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// PaymentRequest requests spending in integer minor currency units.
-type PaymentRequest struct {
+// SessionPaymentRequest requests spending in integer minor currency units.
+type SessionPaymentRequest struct {
 	Amount       int64  `json:"amount"`
 	Currency     string `json:"currency"`
 	MerchantURL  string `json:"merchant_url"`
@@ -42,7 +42,7 @@ type PaymentStatus struct {
 
 // Payment calls the payment endpoints through the shared authenticated transport.
 // These endpoints are kept separate from the periodically regenerated client.
-func (c *NotteClient) Payment(ctx context.Context, sessionID, paymentID, key string, payload *PaymentRequest) (*PaymentStatus, *http.Response, []byte, error) {
+func (c *NotteClient) Payment(ctx context.Context, sessionID, paymentID, key string, payload *SessionPaymentRequest) (*PaymentStatus, *http.Response, []byte, error) {
 	method, path := http.MethodGet, "/payments/"+url.PathEscape(paymentID)
 	var body []byte
 	var err error

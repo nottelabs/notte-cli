@@ -19,7 +19,7 @@ func init() { rootCmd.AddCommand(newPaymentCommand()) }
 
 func newPaymentCommand() *cobra.Command {
 	group := &cobra.Command{Use: "payment", Short: "Request a temporary card for a browser session"}
-	var body api.PaymentRequest
+	var body api.SessionPaymentRequest
 	var sessionID, key string
 	request := &cobra.Command{Use: "request", Short: "Request spending and receive wallet connection or approval instructions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if _, err := uuid.Parse(sessionID); err != nil {
@@ -123,7 +123,7 @@ func paymentIDArg(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func fetchPayment(ctx context.Context, client *api.NotteClient, sessionID, paymentID, key string, body *api.PaymentRequest) (*api.PaymentStatus, error) {
+func fetchPayment(ctx context.Context, client *api.NotteClient, sessionID, paymentID, key string, body *api.SessionPaymentRequest) (*api.PaymentStatus, error) {
 	ctx, cancel := GetContextWithTimeout(ctx)
 	defer cancel()
 	result, resp, raw, err := client.Payment(ctx, sessionID, paymentID, key, body)
