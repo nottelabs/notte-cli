@@ -43,6 +43,14 @@ const (
 	ApiSessionStartRequestScreenshotTypeRaw        ApiSessionStartRequestScreenshotType = "raw"
 )
 
+// Defines values for CaptchaStatusState.
+const (
+	CaptchaStatusStateCancelled CaptchaStatusState = "cancelled"
+	CaptchaStatusStateFailed    CaptchaStatusState = "failed"
+	CaptchaStatusStateSolved    CaptchaStatusState = "solved"
+	CaptchaStatusStateSolving   CaptchaStatusState = "solving"
+)
+
 // Defines values for ConnectLinkContextStatus.
 const (
 	ConnectLinkContextStatusCompleted ConnectLinkContextStatus = "completed"
@@ -217,6 +225,23 @@ const (
 const (
 	MailboxConnectionProviderGmail            MailboxConnectionProvider = "gmail"
 	MailboxConnectionProviderMicrosoftOutlook MailboxConnectionProvider = "microsoft_outlook"
+)
+
+// Defines values for ManagedAuthOperationStatus.
+const (
+	ManagedAuthOperationStatusCancelled ManagedAuthOperationStatus = "cancelled"
+	ManagedAuthOperationStatusFailed    ManagedAuthOperationStatus = "failed"
+	ManagedAuthOperationStatusPending   ManagedAuthOperationStatus = "pending"
+	ManagedAuthOperationStatusRunning   ManagedAuthOperationStatus = "running"
+	ManagedAuthOperationStatusSucceeded ManagedAuthOperationStatus = "succeeded"
+)
+
+// Defines values for ManagedAuthReadinessStatus.
+const (
+	ManagedAuthReadinessStatusActive         ManagedAuthReadinessStatus = "active"
+	ManagedAuthReadinessStatusAuthenticating ManagedAuthReadinessStatus = "authenticating"
+	ManagedAuthReadinessStatusClosed         ManagedAuthReadinessStatus = "closed"
+	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
 // Defines values for ProfileCookiesImportRequestMode.
@@ -445,11 +470,11 @@ const (
 
 // Defines values for ReplayMissingResponseReplayStatus.
 const (
-	Failed            ReplayMissingResponseReplayStatus = "failed"
-	Processing        ReplayMissingResponseReplayStatus = "processing"
-	Unavailable       ReplayMissingResponseReplayStatus = "unavailable"
-	Unknown           ReplayMissingResponseReplayStatus = "unknown"
-	WaitingForSession ReplayMissingResponseReplayStatus = "waiting_for_session"
+	ReplayMissingResponseReplayStatusFailed            ReplayMissingResponseReplayStatus = "failed"
+	ReplayMissingResponseReplayStatusProcessing        ReplayMissingResponseReplayStatus = "processing"
+	ReplayMissingResponseReplayStatusUnavailable       ReplayMissingResponseReplayStatus = "unavailable"
+	ReplayMissingResponseReplayStatusUnknown           ReplayMissingResponseReplayStatus = "unknown"
+	ReplayMissingResponseReplayStatusWaitingForSession ReplayMissingResponseReplayStatus = "waiting_for_session"
 )
 
 // Defines values for SecretNamespace.
@@ -469,10 +494,11 @@ const (
 
 // Defines values for SessionResponseStatus.
 const (
-	SessionResponseStatusActive   SessionResponseStatus = "active"
-	SessionResponseStatusClosed   SessionResponseStatus = "closed"
-	SessionResponseStatusError    SessionResponseStatus = "error"
-	SessionResponseStatusTimedOut SessionResponseStatus = "timed_out"
+	SessionResponseStatusActive         SessionResponseStatus = "active"
+	SessionResponseStatusAuthenticating SessionResponseStatus = "authenticating"
+	SessionResponseStatusClosed         SessionResponseStatus = "closed"
+	SessionResponseStatusError          SessionResponseStatus = "error"
+	SessionResponseStatusTimedOut       SessionResponseStatus = "timed_out"
 )
 
 // Defines values for SpaceCategory.
@@ -691,6 +717,9 @@ type ApiAgentStartRequest_ReasoningModel struct {
 // ApiExecutionResponse defines model for ApiExecutionResponse.
 type ApiExecutionResponse struct {
 	Action          ApiExecutionResponse_Action `json:"action"`
+	ActionExecuted  *bool                       `json:"action_executed,omitempty"`
+	Captcha         *CaptchaStatus              `json:"captcha,omitempty"`
+	Code            *string                     `json:"code,omitempty"`
 	Data            *DataSpace                  `json:"data,omitempty"`
 	EndedAt         FlexibleTime                `json:"ended_at"`
 	Exception       *string                     `json:"exception,omitempty"`
@@ -713,8 +742,9 @@ type ApiSessionStartRequest struct {
 	// AspectRatio Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
-	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Authentication finishes before the session is returned unless wait_for_authentication is false.
-	AuthIds *[]string `json:"auth_ids,omitempty"`
+	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Initial verification runs before returning; when login is needed, the session returns as authenticating. Poll /sessions/{id}/auth for readiness.
+	AuthIds   *[]string `json:"auth_ids,omitempty"`
+	AuthRetry *int      `json:"auth_retry,omitempty"`
 
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
@@ -759,7 +789,7 @@ type ApiSessionStartRequest struct {
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width,omitempty"`
 
-	// WaitForAuthentication Whether to wait for Managed Auth profile restoration and authentication before returning the session. When false, authentication continues in the background after the browser is ready.
+	// WaitForAuthentication SDK waiting preference. The API always verifies inline and returns authenticating when background login is needed; SDKs implement waiting through readiness polling.
 	WaitForAuthentication *bool `json:"wait_for_authentication,omitempty"`
 
 	// WebBotAuth Whether to use web bot authentication.
@@ -842,6 +872,19 @@ type CaptchaSolveAction struct {
 	Description *string `json:"description,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
+
+// CaptchaStatus defines model for CaptchaStatus.
+type CaptchaStatus struct {
+	CaptchaId    string             `json:"captcha_id"`
+	Generation   int                `json:"generation"`
+	Message      *string            `json:"message,omitempty"`
+	PageId       string             `json:"page_id"`
+	RetryAfterMs *int               `json:"retry_after_ms,omitempty"`
+	State        CaptchaStatusState `json:"state"`
+}
+
+// CaptchaStatusState defines model for CaptchaStatus.State.
+type CaptchaStatusState string
 
 // CheckActionInput defines model for CheckAction-Input.
 type CheckActionInput struct {
@@ -1850,7 +1893,8 @@ type GlobalScrapeRequest struct {
 	AspectRatio *string `json:"aspect_ratio,omitempty"`
 
 	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session before it is returned.
-	AuthIds *[]string `json:"auth_ids,omitempty"`
+	AuthIds   *[]string `json:"auth_ids,omitempty"`
+	AuthRetry *int      `json:"auth_retry,omitempty"`
 
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
@@ -2125,6 +2169,38 @@ type ManagedAuthCredentials struct {
 	Password  *string `json:"password,omitempty"`
 	Username  *string `json:"username,omitempty"`
 }
+
+// ManagedAuthOperation defines model for ManagedAuthOperation.
+type ManagedAuthOperation struct {
+	Attempt       *int                       `json:"attempt,omitempty"`
+	AuthRetry     *int                       `json:"auth_retry,omitempty"`
+	Authenticated *bool                      `json:"authenticated,omitempty"`
+	ConnectionId  string                     `json:"connection_id"`
+	CreatedAt     FlexibleTime               `json:"created_at"`
+	Deadline      FlexibleTime               `json:"deadline"`
+	Error         *string                    `json:"error,omitempty"`
+	FailureCode   *string                    `json:"failure_code,omitempty"`
+	Id            string                     `json:"id"`
+	Phase         string                     `json:"phase"`
+	SessionId     *string                    `json:"session_id,omitempty"`
+	Source        string                     `json:"source"`
+	Status        ManagedAuthOperationStatus `json:"status"`
+	UpdatedAt     FlexibleTime               `json:"updated_at"`
+}
+
+// ManagedAuthOperationStatus defines model for ManagedAuthOperation.Status.
+type ManagedAuthOperationStatus string
+
+// ManagedAuthReadiness defines model for ManagedAuthReadiness.
+type ManagedAuthReadiness struct {
+	Error      *string                    `json:"error,omitempty"`
+	Operations *[]ManagedAuthOperation    `json:"operations,omitempty"`
+	SessionId  string                     `json:"session_id"`
+	Status     ManagedAuthReadinessStatus `json:"status"`
+}
+
+// ManagedAuthReadinessStatus defines model for ManagedAuthReadiness.Status.
+type ManagedAuthReadinessStatus string
 
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
@@ -2893,10 +2969,8 @@ type SessionResponse struct {
 	SessionId string `json:"session_id"`
 
 	// SolveCaptchas Whether to solve captchas.
-	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
-
-	// Status Session status
-	Status SessionResponseStatus `json:"status"`
+	SolveCaptchas *bool                 `json:"solve_captchas,omitempty"`
+	Status        SessionResponseStatus `json:"status"`
 
 	// Steps Steps of the session
 	Steps *[]map[string]interface{} `json:"steps,omitempty"`
@@ -2926,7 +3000,7 @@ type SessionResponse struct {
 // SessionResponseBrowserType defines model for SessionResponse.BrowserType.
 type SessionResponseBrowserType string
 
-// SessionResponseStatus Session status
+// SessionResponseStatus defines model for SessionResponse.Status.
 type SessionResponseStatus string
 
 // SmsReadAction defines model for SmsReadAction.
@@ -3640,6 +3714,12 @@ type SessionStartParams struct {
 
 // SessionStatusParams defines parameters for SessionStatus.
 type SessionStatusParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SessionAuthReadinessParams defines parameters for SessionAuthReadiness.
+type SessionAuthReadinessParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -9744,6 +9824,9 @@ type ClientInterface interface {
 	// SessionStatus request
 	SessionStatus(ctx context.Context, sessionId string, params *SessionStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionAuthReadiness request
+	SessionAuthReadiness(ctx context.Context, sessionId string, params *SessionAuthReadinessParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionCookiesGet request
 	SessionCookiesGet(ctx context.Context, sessionId string, params *SessionCookiesGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10799,6 +10882,18 @@ func (c *Client) SessionStart(ctx context.Context, params *SessionStartParams, b
 
 func (c *Client) SessionStatus(ctx context.Context, sessionId string, params *SessionStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionStatusRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionAuthReadiness(ctx context.Context, sessionId string, params *SessionAuthReadinessParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionAuthReadinessRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -15609,6 +15704,66 @@ func NewSessionStatusRequest(server string, sessionId string, params *SessionSta
 	return req, nil
 }
 
+// NewSessionAuthReadinessRequest generates requests for SessionAuthReadiness
+func NewSessionAuthReadinessRequest(server string, sessionId string, params *SessionAuthReadinessParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/auth", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionCookiesGetRequest generates requests for SessionCookiesGet
 func NewSessionCookiesGetRequest(server string, sessionId string, params *SessionCookiesGetParams) (*http.Request, error) {
 	var err error
@@ -18060,6 +18215,9 @@ type ClientWithResponsesInterface interface {
 	// SessionStatusWithResponse request
 	SessionStatusWithResponse(ctx context.Context, sessionId string, params *SessionStatusParams, reqEditors ...RequestEditorFn) (*SessionStatusResult, error)
 
+	// SessionAuthReadinessWithResponse request
+	SessionAuthReadinessWithResponse(ctx context.Context, sessionId string, params *SessionAuthReadinessParams, reqEditors ...RequestEditorFn) (*SessionAuthReadinessResult, error)
+
 	// SessionCookiesGetWithResponse request
 	SessionCookiesGetWithResponse(ctx context.Context, sessionId string, params *SessionCookiesGetParams, reqEditors ...RequestEditorFn) (*SessionCookiesGetResult, error)
 
@@ -19506,6 +19664,29 @@ func (r SessionStatusResult) StatusCode() int {
 	return 0
 }
 
+type SessionAuthReadinessResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ManagedAuthReadiness
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionAuthReadinessResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionAuthReadinessResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionCookiesGetResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -20810,6 +20991,15 @@ func (c *ClientWithResponses) SessionStatusWithResponse(ctx context.Context, ses
 		return nil, err
 	}
 	return ParseSessionStatusResult(rsp)
+}
+
+// SessionAuthReadinessWithResponse request returning *SessionAuthReadinessResult
+func (c *ClientWithResponses) SessionAuthReadinessWithResponse(ctx context.Context, sessionId string, params *SessionAuthReadinessParams, reqEditors ...RequestEditorFn) (*SessionAuthReadinessResult, error) {
+	rsp, err := c.SessionAuthReadiness(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionAuthReadinessResult(rsp)
 }
 
 // SessionCookiesGetWithResponse request returning *SessionCookiesGetResult
@@ -23004,6 +23194,39 @@ func ParseSessionStatusResult(rsp *http.Response) (*SessionStatusResult, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionAuthReadinessResult parses an HTTP response from a SessionAuthReadinessWithResponse call
+func ParseSessionAuthReadinessResult(rsp *http.Response) (*SessionAuthReadinessResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionAuthReadinessResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ManagedAuthReadiness
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
