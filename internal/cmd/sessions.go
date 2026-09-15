@@ -34,6 +34,7 @@ var (
 )
 
 var (
+	sessionStatusAuth         bool
 	sessionID                 string
 	sessionExecuteAction      string
 	sessionScrapeInstructions string
@@ -358,6 +359,7 @@ func init() {
 	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
 
 	// Status command flags
+	sessionsStatusCmd.Flags().BoolVar(&sessionStatusAuth, "auth", false, "Show managed authentication readiness and operations")
 	sessionsStatusCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Stop command flags
@@ -623,6 +625,17 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
+
+	if sessionStatusAuth {
+		resp, err := client.Client().SessionAuthReadinessWithResponse(ctx, sessionID, &api.SessionAuthReadinessParams{})
+		if err != nil {
+			return fmt.Errorf("API request failed: %w", err)
+		}
+		if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+			return err
+		}
+		return GetFormatter().Print(resp.JSON200)
+	}
 
 	params := &api.SessionStatusParams{}
 	resp, err := client.Client().SessionStatusWithResponse(ctx, sessionID, params)

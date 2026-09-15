@@ -103,6 +103,7 @@ response for scripting.
 notte sessions list [--page N] [--page-size N] [-a|--all]  # List running sessions (-a includes stopped)
 notte sessions start [flags]          # Start a new session
 notte sessions status                 # Get current session status
+notte sessions status --auth          # Get managed authentication readiness and operation details
 notte sessions stop                   # Stop current session
 notte sessions cookies                # Get all cookies from current session
 notte sessions cookies-set --file cookies.json  # Set cookies in current session

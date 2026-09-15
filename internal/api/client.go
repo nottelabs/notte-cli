@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
@@ -58,6 +59,11 @@ func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption
 		return nil, fmt.Errorf("API key is required")
 	}
 
+	apiURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid API URL: %w", err)
+	}
+
 	nc := &NotteClient{
 		baseURL:        baseURL,
 		apiKey:         apiKey,
@@ -75,6 +81,7 @@ func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption
 	nc.httpClient = &http.Client{
 		Timeout: 45 * time.Second,
 		Transport: &resilientTransport{
+			apiOrigin:      apiURL,
 			apiKey:         apiKey,
 			version:        version,
 			requestOrigin:  nc.requestOrigin,
@@ -102,6 +109,7 @@ func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption
 
 // resilientTransport wraps http.RoundTripper with auth, retry, and circuit breaker
 type resilientTransport struct {
+	apiOrigin      *url.URL
 	apiKey         string
 	version        string
 	requestOrigin  string
@@ -118,15 +126,21 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		}
 	}
 
-	// Add auth header
-	req.Header.Set("Authorization", "Bearer "+t.apiKey)
-
-	// Add tracking headers
-	req.Header.Set("x-notte-request-origin", t.requestOrigin)
-	req.Header.Set("x-notte-sdk-version", t.version)
-
-	// Add idempotency key for mutating requests
-	AddIdempotencyKey(req)
+	// Work on a copy: transports must not mutate the caller's request headers.
+	req = req.Clone(req.Context())
+	// Redirects to signed storage URLs must not receive the API bearer token.
+	// Compare scheme and authority (including port), not just the hostname.
+	if t.apiOrigin == nil || (req.URL.Scheme == t.apiOrigin.Scheme && req.URL.Host == t.apiOrigin.Host) {
+		req.Header.Set("Authorization", "Bearer "+t.apiKey)
+		req.Header.Set("x-notte-request-origin", t.requestOrigin)
+		req.Header.Set("x-notte-sdk-version", t.version)
+		AddIdempotencyKey(req)
+	} else {
+		req.Header.Del("Authorization")
+		req.Header.Del("x-notte-request-origin")
+		req.Header.Del("x-notte-sdk-version")
+		req.Header.Del(IdempotencyKeyHeader)
+	}
 
 	// Execute with retry
 	resp, err := t.doWithRetry(req)
