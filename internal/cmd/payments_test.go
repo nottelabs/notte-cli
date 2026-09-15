@@ -48,14 +48,14 @@ func TestPaymentRequest(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			t.Error(err)
 		}
-		if p.Mode != "test" || p.Amount != 100 {
+		if p.Mode != "test" || p.Amount != "100.91" {
 			t.Errorf("unexpected body: %+v", p)
 		}
 		w.WriteHeader(202)
 		_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_connection","connection_url":"https://app.link.com/device","access_token":"must-not-print"}`, paymentTestID)
 	})
 	cmd := newPaymentCommand()
-	cmd.SetArgs([]string{"request", "--session-id", paymentTestID, "--amount", "100", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100), "--idempotency-key", "replay-key"})
+	cmd.SetArgs([]string{"request", "--session-id", paymentTestID, "--amount", "100.91", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100), "--idempotency-key", "replay-key"})
 	var stderr bytes.Buffer
 	cmd.SetErr(&stderr)
 	out, _ := testutil.CaptureOutput(func() {
@@ -136,10 +136,10 @@ func TestPaymentWaitCancellation(t *testing.T) {
 }
 
 func TestPaymentRequestValidation(t *testing.T) {
-	for _, args := range [][]string{{"--amount", "1.5"}, {"--amount", "0"}, {"--amount", "50001"}, {"--currency", "USD"}, {"--merchant-url", "http://example.com"}, {"--merchant-url", "https://user:pass@example.com"}, {"--description", "short"}, {"--mode", "production"}} {
+	for _, args := range [][]string{{"--amount", "1e2"}, {"--amount", "NaN"}, {"--amount", "-1"}, {"--amount", "0"}, {"--amount", "50001"}, {"--currency", "USD"}, {"--merchant-url", "http://example.com"}, {"--merchant-url", "https://user:pass@example.com"}, {"--description", "short"}, {"--mode", "production"}} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
 			cmd := newPaymentCommand()
-			base := []string{"request", "--session-id", paymentTestID, "--amount", "100", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100)}
+			base := []string{"request", "--session-id", paymentTestID, "--amount", "100.91", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100)}
 			cmd.SetArgs(append(base, args...))
 			cmd.SetOut(&bytes.Buffer{})
 			cmd.SetErr(&bytes.Buffer{})

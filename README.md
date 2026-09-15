@@ -602,10 +602,10 @@ go run ./scripts/checkcoverage -check skills -skills-dir ../notte-skills -strict
 
 ### Session payments
 
-Request spending for an existing session (amounts use integer minor units):
+Request spending for an existing session (amounts use currency units):
 
 ```bash
-notte payment request --session-id "$SESSION_ID" --amount 100 --currency usd \
+notte payment request --session-id "$SESSION_ID" --amount 1.00 --currency usd \
   --merchant-url https://example.com --merchant-name Example \
   --description "Buy one sandbox item for this browser session, with a maximum total of one US dollar including all applicable fees." \
   --idempotency-key "$REQUEST_KEY" -o json
@@ -633,7 +633,9 @@ request without creating another one.
 `ready` means the temporary card is available for existing vault placeholders.
 It does not confirm a merchant purchase. Payment commands never return card
 numbers, security codes, or wallet tokens. Descriptions must contain 100 to 4000
-characters; supported request amounts are 1 to 50000 minor units.
+characters. `--amount 100.91 --currency usd` requests USD 100.91. The backend
+validates currency precision without rounding and enforces a 50,000-minor-unit
+limit (USD 500.00).
 
 The deployed sandbox lifecycle test runs real CLI subprocesses and creates a
 short-lived browser session and unapproved test spend request. It checks request

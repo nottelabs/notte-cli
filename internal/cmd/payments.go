@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net/url"
 	"regexp"
 	"strings"
@@ -20,16 +21,23 @@ func init() { rootCmd.AddCommand(newPaymentCommand()) }
 func newPaymentCommand() *cobra.Command {
 	group := &cobra.Command{Use: "payment", Short: "Request a temporary card for a browser session"}
 	var body api.SessionPaymentRequest
-	var sessionID, key string
+	var sessionID, key, amount string
 	request := &cobra.Command{Use: "request", Short: "Request spending and receive wallet connection or approval instructions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if _, err := uuid.Parse(sessionID); err != nil {
 			if err := ValidateSessionID(sessionID)(); err != nil {
 				return err
 			}
 		}
-		if body.Amount < 1 || body.Amount > 50000 {
-			return fmt.Errorf("--amount must be an integer between 1 and 50000 minor units")
+		if len(amount) > 24 || !regexp.MustCompile(`^(0|[1-9][0-9]*)(\.[0-9]+)?$`).MatchString(amount) {
+			return fmt.Errorf("--amount must be a positive decimal in currency units (e.g. 100.91)")
 		}
+		parsed, ok := new(big.Rat).SetString(amount)
+		if !ok || parsed.Sign() <= 0 || parsed.Cmp(big.NewRat(50000, 1)) > 0 {
+			return fmt.Errorf("--amount must be positive and within the currency's spending limit")
+		}
+		// Preserve the user's decimal text; the API validates currency precision
+		// and converts to Link minor units without floating-point arithmetic.
+		body.Amount = amount
 		if !regexp.MustCompile(`^[a-z]{3}$`).MatchString(body.Currency) {
 			return fmt.Errorf("--currency must be three lowercase letters")
 		}
@@ -69,7 +77,7 @@ func newPaymentCommand() *cobra.Command {
 	}}
 	f := request.Flags()
 	f.StringVar(&sessionID, "session-id", "", "Existing browser session ID")
-	f.Int64Var(&body.Amount, "amount", 0, "Amount in integer minor units (100 = USD 1.00)")
+	f.StringVar(&amount, "amount", "", "Amount in currency units (100.91 = USD 100.91)")
 	f.StringVar(&body.Currency, "currency", "usd", "Three-letter lowercase currency")
 	f.StringVar(&body.MerchantURL, "merchant-url", "", "HTTPS merchant URL")
 	f.StringVar(&body.MerchantName, "merchant-name", "", "Merchant name")

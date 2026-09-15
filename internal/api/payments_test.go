@@ -22,18 +22,18 @@ func TestPaymentTransport(t *testing.T) {
 					t.Error("wrong request")
 				}
 				w.WriteHeader(status)
-				_, _ = w.Write([]byte(`{"id":"payment","status":"awaiting_approval","card_number":"secret"}`))
+				_, _ = w.Write([]byte(`{"id":"payment","status":"awaiting_approval","amount":"100.91","card_number":"secret"}`))
 			}))
 			defer server.Close()
 			client, err := NewClientWithURL("key", server.URL, "")
 			if err != nil {
 				t.Fatal(err)
 			}
-			result, resp, _, err := client.Payment(context.Background(), "sess_test", "", "stable-key", &SessionPaymentRequest{Amount: 100, Mode: "test"})
+			result, resp, _, err := client.Payment(context.Background(), "sess_test", "", "stable-key", &SessionPaymentRequest{Amount: "100.91", Mode: "test"})
 			if err != nil || resp.StatusCode != status || calls != 1 {
 				t.Fatalf("unexpected response: %v %v calls=%d", resp, err, calls)
 			}
-			if status == 202 && (result == nil || result.ID != "payment") {
+			if status == 202 && (result == nil || result.ID != "payment" || result.Amount != "100.91") {
 				t.Fatal("missing response")
 			}
 			if status != 202 && result != nil {

@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-// SessionPaymentRequest requests spending in integer minor currency units.
+// SessionPaymentRequest requests spending in currency units, preserving the decimal text.
 type SessionPaymentRequest struct {
-	Amount       int64  `json:"amount"`
+	Amount       string `json:"amount"`
 	Currency     string `json:"currency"`
 	MerchantURL  string `json:"merchant_url"`
 	MerchantName string `json:"merchant_name"`
@@ -35,7 +35,7 @@ type PaymentStatus struct {
 	SessionID        string             `json:"session_id"`
 	Status           string             `json:"status"`
 	Mode             string             `json:"mode"`
-	Amount           int64              `json:"amount"`
+	Amount           json.Number        `json:"amount"`
 	Currency         string             `json:"currency"`
 	MerchantName     string             `json:"merchant_name"`
 	MerchantURL      string             `json:"merchant_url"`

@@ -54,16 +54,16 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 	})
 
 	type payment struct {
-		ID               string `json:"id"`
-		SessionID        string `json:"session_id"`
-		Status           string `json:"status"`
-		Mode             string `json:"mode"`
-		Amount           int64  `json:"amount"`
-		Currency         string `json:"currency"`
-		PurchaseStatus   string `json:"purchase_status"`
-		ConnectionURL    string `json:"connection_url"`
-		ConnectionPhrase string `json:"connection_phrase"`
-		ApprovalURL      string `json:"approval_url"`
+		ID               string      `json:"id"`
+		SessionID        string      `json:"session_id"`
+		Status           string      `json:"status"`
+		Mode             string      `json:"mode"`
+		Amount           json.Number `json:"amount"`
+		Currency         string      `json:"currency"`
+		PurchaseStatus   string      `json:"purchase_status"`
+		ConnectionURL    string      `json:"connection_url"`
+		ConnectionPhrase string      `json:"connection_phrase"`
+		ApprovalURL      string      `json:"approval_url"`
 	}
 	decode := func(result CLIResult) payment {
 		t.Helper()
@@ -81,13 +81,13 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 		if err := json.Unmarshal([]byte(result.Stdout), &p); err != nil {
 			t.Fatal("invalid payment JSON")
 		}
-		if p.ID == "" || p.SessionID != session.ID || p.Mode != "test" || p.Amount != 100 || p.Currency != "usd" || p.PurchaseStatus != "unverified" {
+		if p.ID == "" || p.SessionID != session.ID || p.Mode != "test" || (p.Amount != "1.00" && p.Amount != "1") || p.Currency != "usd" || p.PurchaseStatus != "unverified" {
 			t.Fatal("payment identity, sandbox mode, amount, or purchase semantics did not match")
 		}
 		return p
 	}
 	key := "cli-payment-e2e-" + uuid.NewString()
-	args := []string{"payment", "request", "--session-id", session.ID, "--amount", "100", "--currency", "usd", "--mode", "test", "--merchant-url", "https://example.com", "--merchant-name", "CLI sandbox integration test", "--description", "Exercise the sandbox payment lifecycle for a CLI integration test. No wallet approval, real purchase, or merchant order is involved.", "--idempotency-key", key}
+	args := []string{"payment", "request", "--session-id", session.ID, "--amount", "1.00", "--currency", "usd", "--mode", "test", "--merchant-url", "https://example.com", "--merchant-name", "CLI sandbox integration test", "--description", "Exercise the sandbox payment lifecycle for a CLI integration test. No wallet approval, real purchase, or merchant order is involved.", "--idempotency-key", key}
 	requested := decode(runCLI(t, args...))
 	replay := decode(runCLI(t, args...))
 	if replay.ID != requested.ID {
