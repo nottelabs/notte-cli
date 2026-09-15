@@ -1470,3 +1470,25 @@ func TestSessionStatus_UsesCurrentSession(t *testing.T) {
 		t.Error("expected output, got empty string")
 	}
 }
+
+func TestRunSessionStatusAuth(t *testing.T) {
+	server := setupSessionTest(t)
+	server.AddResponse("/sessions/"+sessionIDTest+"/auth", 200, `{"session_id":"sess_123","status":"authenticating","operations":[]}`)
+	oldAuth, oldFormat := sessionStatusAuth, outputFormat
+	sessionStatusAuth, outputFormat = true, "json"
+	t.Cleanup(func() { sessionStatusAuth, outputFormat = oldAuth, oldFormat })
+	command := &cobra.Command{}
+	command.SetContext(context.Background())
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runSessionStatus(command, nil); err != nil {
+			t.Fatal(err)
+		}
+	})
+	var result map[string]any
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result["status"] != "authenticating" {
+		t.Fatalf("unexpected readiness: %s", stdout)
+	}
+}

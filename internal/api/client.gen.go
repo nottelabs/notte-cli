@@ -244,6 +244,12 @@ const (
 	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
+// Defines values for PaymentRequestMode.
+const (
+	Live PaymentRequestMode = "live"
+	Test PaymentRequestMode = "test"
+)
+
 // Defines values for ProfileCookiesImportRequestMode.
 const (
 	ProfileCookiesImportRequestModeAppend  ProfileCookiesImportRequestMode = "append"
@@ -2423,6 +2429,38 @@ type ParameterInfo struct {
 	Type    *string `json:"type,omitempty"`
 }
 
+// PaymentRequest defines model for PaymentRequest.
+type PaymentRequest struct {
+	Amount       int                 `json:"amount"`
+	Currency     string              `json:"currency"`
+	Description  string              `json:"description"`
+	MerchantName string              `json:"merchant_name"`
+	MerchantUrl  string              `json:"merchant_url"`
+	Mode         *PaymentRequestMode `json:"mode,omitempty"`
+}
+
+// PaymentRequestMode defines model for PaymentRequest.Mode.
+type PaymentRequestMode string
+
+// PaymentResponse defines model for PaymentResponse.
+type PaymentResponse struct {
+	Amount           int     `json:"amount"`
+	ApprovalUrl      *string `json:"approval_url,omitempty"`
+	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string `json:"connection_url,omitempty"`
+	Currency         string  `json:"currency"`
+	ErrorCode        *string `json:"error_code,omitempty"`
+	ExpiresAt        *string `json:"expires_at,omitempty"`
+	Id               string  `json:"id"`
+	MerchantName     string  `json:"merchant_name"`
+	MerchantUrl      string  `json:"merchant_url"`
+	Mode             string  `json:"mode"`
+	PurchaseStatus   *string `json:"purchase_status,omitempty"`
+	SessionId        string  `json:"session_id"`
+	Status           string  `json:"status"`
+	VaultId          *string `json:"vault_id,omitempty"`
+}
+
 // PersonaCreateRequest defines model for PersonaCreateRequest.
 type PersonaCreateRequest struct {
 	// CreatePhoneNumber Whether to create a phone number for the persona
@@ -3526,6 +3564,12 @@ type ConnectLinkSubmitParams struct {
 	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
 }
 
+// GetPaymentParams defines parameters for GetPayment.
+type GetPaymentParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ListPersonasParams defines parameters for ListPersonas.
 type ListPersonasParams struct {
 	// Page Page number
@@ -3822,6 +3866,14 @@ type PageScreenshotParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// CreatePaymentParams defines parameters for CreatePayment.
+type CreatePaymentParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	IdempotencyKey      string  `json:"idempotency-key"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // SessionReplayParams defines parameters for SessionReplay.
 type SessionReplayParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -4032,6 +4084,9 @@ type PageObserveJSONRequestBody = ObserveRequest
 
 // PageScrapeJSONRequestBody defines body for PageScrape for application/json ContentType.
 type PageScrapeJSONRequestBody = ScrapeRequest
+
+// CreatePaymentJSONRequestBody defines body for CreatePayment for application/json ContentType.
+type CreatePaymentJSONRequestBody = PaymentRequest
 
 // VaultCreateJSONRequestBody defines body for VaultCreate for application/json ContentType.
 type VaultCreateJSONRequestBody = VaultCreateRequest
@@ -9739,6 +9794,9 @@ type ClientInterface interface {
 
 	ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPayment request
+	GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPersonas request
 	ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -9873,6 +9931,11 @@ type ClientInterface interface {
 
 	// PageScreenshot request
 	PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePaymentWithBody request with any body
+	CreatePaymentWithBody(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePayment(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SessionReplay request
 	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -10520,6 +10583,18 @@ func (c *Client) ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmi
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPaymentRequest(c.Server, paymentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListPersonas(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPersonasRequest(c.Server, params)
 	if err != nil {
@@ -11098,6 +11173,30 @@ func (c *Client) PageScrape(ctx context.Context, sessionId string, params *PageS
 
 func (c *Client) PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPageScreenshotRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePaymentWithBody(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePaymentRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePayment(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePaymentRequest(c.Server, sessionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -13904,6 +14003,66 @@ func NewConnectLinkSubmitRequestWithBody(server string, params *ConnectLinkSubmi
 		}
 
 		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetPaymentRequest generates requests for GetPayment
+func NewGetPaymentRequest(server string, paymentId openapi_types.UUID, params *GetPaymentParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "payment_id", runtime.ParamLocationPath, paymentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
 
 	}
 
@@ -16858,6 +17017,110 @@ func NewPageScreenshotRequest(server string, sessionId string, params *PageScree
 	return req, nil
 }
 
+// NewCreatePaymentRequest calls the generic CreatePayment builder with application/json body
+func NewCreatePaymentRequest(server string, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePaymentRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewCreatePaymentRequestWithBody generates requests for CreatePayment with any type of body
+func NewCreatePaymentRequestWithBody(server string, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/payments", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "idempotency-key", runtime.ParamLocationHeader, params.IdempotencyKey)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("idempotency-key", headerParam0)
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam1)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam2)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionReplayRequest generates requests for SessionReplay
 func NewSessionReplayRequest(server string, sessionId string, params *SessionReplayParams) (*http.Request, error) {
 	var err error
@@ -18130,6 +18393,9 @@ type ClientWithResponsesInterface interface {
 
 	ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
 
+	// GetPaymentWithResponse request
+	GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error)
+
 	// ListPersonasWithResponse request
 	ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error)
 
@@ -18264,6 +18530,11 @@ type ClientWithResponsesInterface interface {
 
 	// PageScreenshotWithResponse request
 	PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error)
+
+	// CreatePaymentWithBodyWithResponse request with any body
+	CreatePaymentWithBodyWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error)
+
+	CreatePaymentWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error)
 
 	// SessionReplayWithResponse request
 	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
@@ -19137,6 +19408,29 @@ func (r ConnectLinkSubmitResult) StatusCode() int {
 	return 0
 }
 
+type GetPaymentResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaymentResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPaymentResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPaymentResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListPersonasResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -19985,6 +20279,29 @@ func (r PageScreenshotResult) StatusCode() int {
 	return 0
 }
 
+type CreatePaymentResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *PaymentResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePaymentResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePaymentResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionReplayResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -20722,6 +21039,15 @@ func (c *ClientWithResponses) ConnectLinkSubmitWithResponse(ctx context.Context,
 	return ParseConnectLinkSubmitResult(rsp)
 }
 
+// GetPaymentWithResponse request returning *GetPaymentResult
+func (c *ClientWithResponses) GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error) {
+	rsp, err := c.GetPayment(ctx, paymentId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPaymentResult(rsp)
+}
+
 // ListPersonasWithResponse request returning *ListPersonasResult
 func (c *ClientWithResponses) ListPersonasWithResponse(ctx context.Context, params *ListPersonasParams, reqEditors ...RequestEditorFn) (*ListPersonasResult, error) {
 	rsp, err := c.ListPersonas(ctx, params, reqEditors...)
@@ -21149,6 +21475,23 @@ func (c *ClientWithResponses) PageScreenshotWithResponse(ctx context.Context, se
 		return nil, err
 	}
 	return ParsePageScreenshotResult(rsp)
+}
+
+// CreatePaymentWithBodyWithResponse request with arbitrary body returning *CreatePaymentResult
+func (c *ClientWithResponses) CreatePaymentWithBodyWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error) {
+	rsp, err := c.CreatePaymentWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePaymentResult(rsp)
+}
+
+func (c *ClientWithResponses) CreatePaymentWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error) {
+	rsp, err := c.CreatePayment(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePaymentResult(rsp)
 }
 
 // SessionReplayWithResponse request returning *SessionReplayResult
@@ -22466,6 +22809,39 @@ func ParseConnectLinkSubmitResult(rsp *http.Response) (*ConnectLinkSubmitResult,
 	return response, nil
 }
 
+// ParseGetPaymentResult parses an HTTP response from a GetPaymentWithResponse call
+func ParseGetPaymentResult(rsp *http.Response) (*GetPaymentResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPaymentResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaymentResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListPersonasResult parses an HTTP response from a ListPersonasWithResponse call
 func ParseListPersonasResult(rsp *http.Response) (*ListPersonasResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -23656,6 +24032,39 @@ func ParsePageScreenshotResult(rsp *http.Response) (*PageScreenshotResult, error
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePaymentResult parses an HTTP response from a CreatePaymentWithResponse call
+func ParseCreatePaymentResult(rsp *http.Response) (*CreatePaymentResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePaymentResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest PaymentResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError

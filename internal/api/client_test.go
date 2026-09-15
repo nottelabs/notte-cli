@@ -464,3 +464,50 @@ func TestResilientTransport_DoWithRetry_AlreadyCanceled(t *testing.T) {
 		t.Fatalf("expected cancellation, got %v", err)
 	}
 }
+
+func TestClientRedirectDoesNotSendAPIKeyToStorage(t *testing.T) {
+	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("storage received Authorization: %q", got)
+		}
+		if r.URL.Query().Get("X-Amz-Signature") != "signed" {
+			t.Error("signed query was lost")
+		}
+		_, _ = w.Write([]byte("file contents"))
+	}))
+	defer storage.Close()
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer test-key" {
+			t.Error("API request was not authenticated")
+		}
+		if r.URL.Path == "/download" {
+			http.Redirect(w, r, "/signed", http.StatusTemporaryRedirect)
+			return
+		}
+		http.Redirect(w, r, storage.URL+"/file?X-Amz-Signature=signed", http.StatusTemporaryRedirect)
+	}))
+	defer apiServer.Close()
+	client, err := NewClientWithURL("test-key", apiServer.URL, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodGet, apiServer.URL+"/download", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := client.HTTPClient().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "file contents" {
+		t.Fatalf("unexpected download: %q", body)
+	}
+	if req.Header.Get("Authorization") != "" {
+		t.Error("transport mutated caller's headers")
+	}
+}
