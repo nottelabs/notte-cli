@@ -625,3 +625,22 @@ request without creating another one.
 It does not confirm a merchant purchase. Payment commands never return card
 numbers, security codes, or wallet tokens. Descriptions must contain 100 to 4000
 characters; supported request amounts are 1 to 50000 minor units.
+
+The deployed sandbox lifecycle test runs real CLI subprocesses and creates a
+short-lived browser session and unapproved test spend request. It checks request
+replay, status, wait timeout, and session-close cleanup without approving a wallet
+request or submitting a merchant payment:
+
+```bash
+NOTTE_API_URL=https://YOUR_ENABLED_TEST_DEPLOYMENT \
+NOTTE_PAYMENT_E2E_REQUIRED=1 \
+go test -tags=integration ./tests/integration \
+  -run '^TestPaymentSandboxLifecycle$' -count=1 -v
+```
+
+Supply `NOTTE_API_KEY` through the environment. The normal integration suite
+skips this case only when the API explicitly returns `payments_disabled`.
+`NOTTE_PAYMENT_E2E_REQUIRED=1` makes that condition fail instead, so a release
+validation cannot count a disabled feature as a passed payment test. Auth and
+configuration errors always fail. Use a dedicated test principal without someone
+concurrently approving its payment requests.
