@@ -206,27 +206,33 @@ func TestRunPageFill(t *testing.T) {
 }
 
 func TestRunPageFill_WithVaultField(t *testing.T) {
-	server := setupPageTest(t)
-	path := "/sessions/" + pageSessionIDTest + "/page/execute"
-	server.AddResponse(path, 200, pageExecResponse())
-
-	origVaultField := pageFillVaultField
-	pageFillVaultField = "email"
-	t.Cleanup(func() { pageFillVaultField = origVaultField })
-
-	cmd := &cobra.Command{}
-	cmd.SetContext(context.Background())
-
-	if err := runPageFill(cmd, []string{"#email"}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	requests := server.Requests(path)
-	if len(requests) != 1 {
-		t.Fatalf("got %d requests, want 1", len(requests))
-	}
-	if !strings.Contains(requests[0].Body, `"value":"user@example.org"`) {
-		t.Errorf("request body does not contain the email sentinel: %s", requests[0].Body)
+	for _, tc := range []struct{ field, placeholder string }{
+		{"email", "user@example.org"},
+		{"card_number", "4242 4242 4242 4242"},
+		{"card_holder_name", "John Doe"},
+		{"card_expiration", "[CardExpirationPlaceholder]"},
+		{"card_cvv", "[CardCVVPlaceholder]"},
+	} {
+		t.Run(tc.field, func(t *testing.T) {
+			server := setupPageTest(t)
+			path := "/sessions/" + pageSessionIDTest + "/page/execute"
+			server.AddResponse(path, 200, pageExecResponse())
+			origVaultField := pageFillVaultField
+			pageFillVaultField = tc.field
+			t.Cleanup(func() { pageFillVaultField = origVaultField })
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+			if err := runPageFill(cmd, []string{"#field"}); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			requests := server.Requests(path)
+			if len(requests) != 1 {
+				t.Fatalf("got %d requests, want 1", len(requests))
+			}
+			if !strings.Contains(requests[0].Body, `"value":"`+tc.placeholder+`"`) {
+				t.Errorf("request must send the placeholder for %s: %s", tc.field, requests[0].Body)
+			}
+		})
 	}
 }
 

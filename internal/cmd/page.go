@@ -183,7 +183,8 @@ attached to the current session.
 
 Use --vault-field instead of a value to keep credentials out of the command:
   notte page fill "input[name=email]" --vault-field email
-  notte page fill "input[name=password]" --vault-field password`,
+  notte page fill "input[name=password]" --vault-field password
+  notte page fill "input[autocomplete=cc-number]" --vault-field card_number`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runPageFill,
 }
@@ -811,7 +812,7 @@ func init() {
 	// fill flags
 	pageFillCmd.Flags().BoolVar(&pageFillClear, "clear", false, "Clear the field before filling")
 	pageFillCmd.Flags().BoolVar(&pageFillEnter, "enter", false, "Press Enter after filling")
-	pageFillCmd.Flags().StringVar(&pageFillVaultField, "vault-field", "", "Fill from the session vault (email, username, password, mfa)")
+	pageFillCmd.Flags().StringVar(&pageFillVaultField, "vault-field", "", "Fill from the session vault ("+strings.Join(credentials.Fields(), ", ")+")")
 	_ = pageFillCmd.RegisterFlagCompletionFunc("vault-field", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return credentials.Fields(), cobra.ShellCompDirectiveNoFileComp
 	})

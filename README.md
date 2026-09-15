@@ -152,7 +152,11 @@ notte page scrape --instructions "..." # Scrape content from the page
 notte page click "@B3"            # Click an element by ID
 notte page fill "@I1" "text"    # Fill an input field
 notte page fill "#email" --vault-field email       # Fill from the session vault
-notte page fill "#password" --vault-field password # Supports email, username, password, and mfa
+notte page fill "#password" --vault-field password # Fill the stored password
+notte page fill "#card-number" --vault-field card_number
+notte page fill "#card-name" --vault-field card_holder_name
+notte page fill "#card-expiry" --vault-field card_expiration
+notte page fill "#card-cvc" --vault-field card_cvv
 notte page goto "https://example.com" # Navigate to a URL
 notte page back                       # Go back in history
 notte page forward                    # Go forward in history
