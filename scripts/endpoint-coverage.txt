@@ -15,6 +15,8 @@
 # entries in the flag generator's endpoint map came to point at nothing.
 
 # --- reached by hand-written requests ---------------------------------------
+manual POST /sessions/{session_id}/payments # notte payment request uses the shared authenticated transport
+manual GET /payments/{payment_id} # notte payment status and wait use the shared authenticated transport
 manual POST /functions/{function_id}/runs/start # notte functions run builds the body itself to send function_id and variables
 manual POST /sessions/{session_id}/page/screenshot # notte page screenshot writes the image bytes out rather than decoding JSON
 manual GET  /sessions/{session_id}/files # notte files list builds the source-filtered request itself

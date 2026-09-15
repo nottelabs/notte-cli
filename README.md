@@ -595,3 +595,33 @@ mentioned somewhere under `plugins/notte/skills/` in the skills repository. Pass
 ```bash
 go run ./scripts/checkcoverage -check skills -skills-dir ../notte-skills -strict
 ```
+
+### Session payments
+
+Request spending for an existing session (amounts use integer minor units):
+
+```bash
+notte payment request --session-id "$SESSION_ID" --amount 100 --currency usd \
+  --merchant-url https://example.com --merchant-name Example \
+  --description "Buy one sandbox item for this browser session, with a maximum total of one US dollar including all applicable fees." \
+  --idempotency-key "$REQUEST_KEY" -o json
+notte payment status "$PAYMENT_ID" -o json
+notte payment wait "$PAYMENT_ID" --wait-timeout 10m -o json
+```
+
+Sandbox (`--mode test`) is the default. The server must enable payments; live
+requests additionally require server-side live enablement. There is no separate
+connect command: the first request returns a wallet connection URL and phrase.
+After connection, the payment status provides a spending approval URL.
+
+`wait` displays connection and approval instructions on stderr as they become
+available and prints one final result on stdout when ready. It exits nonzero on
+failure, expiration, decline, session closure, or timeout. Stopping the CLI does
+not cancel provisioning; resume with the same payment ID. Requests print their
+idempotency key on stderr; reuse it with the same inputs to recover an uncertain
+request without creating another one.
+
+`ready` means the temporary card is available for existing vault placeholders.
+It does not confirm a merchant purchase. Payment commands never return card
+numbers, security codes, or wallet tokens. Descriptions must contain 100 to 4000
+characters; supported request amounts are 1 to 50000 minor units.
