@@ -317,7 +317,29 @@ notte profiles list [--page N] [--page-size N] [--name "..."] [--include-deleted
 notte profiles create                    # Create a new profile
 notte profiles show --profile-id <id>    # View profile details
 notte profiles delete --profile-id <id>  # Delete a profile
+notte profiles sync                      # Copy your local browser login into a profile
 ```
+
+`profiles sync` reads the cookies from a local Firefox, Chrome, Brave, Edge or
+Chromium profile and uploads them into a Notte profile, so remote sessions start
+already logged in. The cookies are read from a copy of the browser's own files on
+your machine (and, for the Chromium browsers, decrypted with the key from your OS
+keychain); nothing is sent until you confirm, and `--domain` limits the sync to
+the sites you name.
+
+```bash
+notte profiles sync                                        # pick a browser profile, create a Notte profile
+notte profiles sync --domain github.com --domain mail.google.com   # only these sites (and subdomains)
+notte profiles sync --profile-id <id>                      # refresh an existing profile after a re-login
+notte profiles sync --browser brave --local-profile Work   # choose the source without the prompt
+```
+
+Then start a session with it: `notte sessions start --profile-id <id>`. Re-run
+`sync` whenever the local login changes. Supported on macOS and Linux; for the
+Chromium browsers the first run asks permission to read the browser key from your
+OS keychain (Firefox stores cookies in the clear and needs no such permission).
+Scoped syncs into an existing profile may want `--mode append` so other sites'
+cookies are kept.
 
 ### Files
 
