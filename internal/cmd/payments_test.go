@@ -360,3 +360,50 @@ func TestPaymentRecoveryWithoutRequestMode(t *testing.T) {
 		}
 	}
 }
+
+func TestPaymentDisconnect(t *testing.T) {
+	for _, mode := range []string{"", "test", "live"} {
+		t.Run(mode, func(t *testing.T) {
+			paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != "POST" || r.URL.Path != "/payments/disconnect" || r.Header.Get("Authorization") != "Bearer test-key" {
+					t.Fatal("wrong authenticated endpoint")
+				}
+				var body map[string]string
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					t.Fatal(err)
+				}
+				value, present := body["mode"]
+				if value != mode || (mode == "" && present) {
+					t.Fatalf("unexpected mode %v", body)
+				}
+				_, _ = w.Write([]byte(`{"mode":"live","status":"disconnected","access_token":"must-not-print"}`))
+			})
+			cmd := newPaymentCommand()
+			args := []string{"disconnect"}
+			if mode != "" {
+				args = append(args, "--mode", mode)
+			}
+			cmd.SetArgs(args)
+			out, _ := testutil.CaptureOutput(func() {
+				if err := cmd.Execute(); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if strings.Contains(out, "must-not-print") || !strings.Contains(out, "disconnected") {
+				t.Fatal(out)
+			}
+		})
+	}
+}
+
+func TestPaymentDisconnectActivePayments(t *testing.T) {
+	paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(409)
+		_, _ = w.Write([]byte(`{"detail":"wallet_has_active_payments"}`))
+	})
+	cmd := newPaymentCommand()
+	cmd.SetArgs([]string{"disconnect", "--mode", "live"})
+	if err := cmd.Execute(); err == nil || !strings.Contains(err.Error(), "wallet_has_active_payments") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -52,6 +52,35 @@ func newPaymentCommand() *cobra.Command {
 	}}
 	connect.Flags().StringVar(&connectMode, "mode", "", "Wallet mode: test or live (defaults to the API setting)")
 	group.AddCommand(connect)
+	var disconnectMode string
+	disconnect := &cobra.Command{Use: "disconnect", Short: "Disconnect your Link wallet for one mode", Long: "Revoke and forget the selected wallet connection, then use payment connect to choose another account. The other mode is unaffected. Active payments and card cleanup must finish first.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+		if cmd.Flags().Changed("mode") && disconnectMode != "test" && disconnectMode != "live" {
+			return fmt.Errorf("--mode must be test or live")
+		}
+		client, err := GetClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := GetContextWithTimeout(cmd.Context())
+		defer cancel()
+		result, resp, raw, err := client.DisconnectPaymentWallet(ctx, disconnectMode)
+		if err != nil {
+			return fmt.Errorf("wallet disconnect failed: %w", err)
+		}
+		if err := HandleAPIResponse(resp, raw); err != nil {
+			return err
+		}
+		if result == nil || result.Status != "disconnected" || (result.Mode != "test" && result.Mode != "live") {
+			return fmt.Errorf("invalid wallet disconnect response")
+		}
+		return GetFormatter().Print(struct {
+			Mode   string `json:"mode"`
+			Status string `json:"status"`
+		}{Mode: result.Mode, Status: result.Status})
+	}}
+	disconnect.Flags().StringVar(&disconnectMode, "mode", "", "Wallet mode: test or live (defaults to the API setting)")
+	group.AddCommand(disconnect)
+
 	var body api.SessionPaymentRequest
 	var sessionID, key, amount string
 	request := &cobra.Command{Use: "request", Short: "Request spending from a connected wallet and receive approval instructions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
