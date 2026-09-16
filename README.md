@@ -602,10 +602,18 @@ go run ./scripts/checkcoverage -check skills -skills-dir ../notte-skills -strict
 
 ### Session payments
 
-Request spending for an existing session (amounts use currency units):
+Connect your wallet first. This returns a URL and phrase; authorize in your browser.
+Completion is recorded in the background. Re-run the same command to confirm
+`connected` or retrieve the pending link:
 
 ```bash
-notte payment request --session-id "$SESSION_ID" --amount 1.00 --currency usd \
+notte payment connect --mode test -o json
+```
+
+Then request spending for an existing session (amounts use currency units):
+
+```bash
+notte payment request --session-id "$SESSION_ID" --mode test --amount 1.00 --currency usd \
   --merchant-url https://example.com --merchant-name Example \
   --description "Buy one sandbox item for this browser session, with a maximum total of one US dollar including all applicable fees." \
   --idempotency-key "$REQUEST_KEY" -o json
@@ -613,17 +621,19 @@ notte payment status "$PAYMENT_ID" -o json
 notte payment wait "$PAYMENT_ID" --wait-timeout 10m -o json
 ```
 
-Sandbox (`--mode test`) is the default. The server must enable payments; live
-requests additionally require server-side live enablement. There is no separate
-connect command: the first request returns a wallet connection URL and phrase.
-After connection, the payment status provides a spending approval URL.
+Use `--mode test` on both commands for a development/test payment. Wallet
+connections are scoped to your authenticated account and mode. Requests fail with
+`wallet_not_connected` until connection completes; they do not start connection
+or reserve a card slot. Once connected, a request provides a spending approval
+URL. Send that URL to the user before waiting for the card.
+
 If Link requires additional wallet verification, `payment wait` prints the action
 URL. Resumable verification keeps waiting on the same request. When Link requires
 a new spend request, the command exits with instructions to complete verification
 and request payment again with a new idempotency key. `payment status -o json`
 includes the structured `next_action` instructions.
 
-`wait` displays connection and approval instructions on stderr as they become
+`wait` displays approval and verification instructions on stderr as they become
 available and prints one final result on stdout when ready. It exits nonzero on
 failure, expiration, decline, session closure, or timeout. Stopping the CLI does
 not cancel provisioning; resume with the same payment ID. Requests print their

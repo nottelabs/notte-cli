@@ -52,7 +52,7 @@ func TestPaymentRequest(t *testing.T) {
 			t.Errorf("unexpected body: %+v", p)
 		}
 		w.WriteHeader(202)
-		_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_connection","connection_url":"https://app.link.com/device","access_token":"must-not-print"}`, paymentTestID)
+		_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_approval","approval_url":"https://app.link.com/device","access_token":"must-not-print"}`, paymentTestID)
 	})
 	cmd := newPaymentCommand()
 	cmd.SetArgs([]string{"request", "--session-id", paymentTestID, "--amount", "100.91", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100), "--idempotency-key", "replay-key"})
@@ -67,7 +67,7 @@ func TestPaymentRequest(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result["status"] != "awaiting_connection" || strings.Contains(out, "must-not-print") {
+	if result["status"] != "awaiting_approval" || strings.Contains(out, "must-not-print") {
 		t.Fatalf("unsafe or incorrect result: %s", out)
 	}
 	if !strings.Contains(stderr.String(), "replay-key") {
@@ -210,5 +210,50 @@ func TestPaymentWaitVerification(t *testing.T) {
 				t.Fatalf("must stop and explain new request: %v %s", resultErr, stderr.String())
 			}
 		})
+	}
+}
+
+func TestPaymentConnectWithoutSession(t *testing.T) {
+	for _, state := range []string{"awaiting_connection", "connected"} {
+		t.Run(state, func(t *testing.T) {
+			paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != "POST" || r.URL.Path != "/payments/connect" || r.Header.Get("Authorization") != "Bearer test-key" {
+					t.Fatalf("unexpected connection request")
+				}
+				var body map[string]string
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					t.Fatal(err)
+				}
+				if body["mode"] != "test" {
+					t.Fatal("wrong mode")
+				}
+				_, _ = fmt.Fprintf(w, `{"id":%q,"status":%q,"mode":"test","connection_url":"https://app.link.com/device/setup","connection_phrase":"test-phrase","access_token":"secret-must-not-print","device_code":"private-device"}`, paymentTestID, state)
+			})
+			cmd := newPaymentCommand()
+			cmd.SetArgs([]string{"connect", "--mode", "test"})
+			out, _ := testutil.CaptureOutput(func() {
+				if err := cmd.Execute(); err != nil {
+					t.Fatal(err)
+				}
+			})
+			var result map[string]any
+			if err := json.Unmarshal([]byte(out), &result); err != nil {
+				t.Fatal(err)
+			}
+			if result["status"] != state || strings.Contains(out, "secret-must-not-print") || strings.Contains(out, "private-device") {
+				t.Fatalf("unsafe response %s", out)
+			}
+		})
+	}
+}
+
+func TestPaymentRequestRequiresWalletConnection(t *testing.T) {
+	client := paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(409)
+		_, _ = w.Write([]byte(`{"detail":"wallet_not_connected"}`))
+	})
+	_, err := fetchPayment(context.Background(), client, paymentTestID, "", "key", &api.SessionPaymentRequest{Mode: "live"})
+	if err == nil || !strings.Contains(err.Error(), "notte payment connect --mode live") {
+		t.Fatalf("missing connection guidance: %v", err)
 	}
 }

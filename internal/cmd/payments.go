@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net/url"
@@ -20,9 +21,40 @@ func init() { rootCmd.AddCommand(newPaymentCommand()) }
 
 func newPaymentCommand() *cobra.Command {
 	group := &cobra.Command{Use: "payment", Short: "Request a temporary card for a browser session"}
+	var connectMode string
+	connect := &cobra.Command{Use: "connect", Short: "Connect your Link wallet before requesting spending", Long: "Return a Link wallet connection URL and phrase. Open the URL to authorize Notte. Completion is detected in the background; this command does not wait. Run it again to retrieve the pending link or confirm connected. No browser session is required.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+		if connectMode != "test" && connectMode != "live" {
+			return fmt.Errorf("--mode must be test or live")
+		}
+		client, err := GetClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := GetContextWithTimeout(cmd.Context())
+		defer cancel()
+		result, resp, raw, err := client.ConnectPaymentWallet(ctx, connectMode)
+		if err != nil {
+			return fmt.Errorf("wallet connection failed: %w", err)
+		}
+		if err := HandleAPIResponse(resp, raw); err != nil {
+			return err
+		}
+		if result == nil || result.ID == "" || result.Status == "" {
+			return fmt.Errorf("invalid wallet connection response")
+		}
+		if err := GetFormatter().Print(result); err != nil {
+			return err
+		}
+		if result.Status == "failed" || result.Status == "expired" {
+			return fmt.Errorf("wallet connection %s; run `notte payment connect --mode %s` again", result.Status, connectMode)
+		}
+		return nil
+	}}
+	connect.Flags().StringVar(&connectMode, "mode", "test", "Wallet mode: test or live")
+	group.AddCommand(connect)
 	var body api.SessionPaymentRequest
 	var sessionID, key, amount string
-	request := &cobra.Command{Use: "request", Short: "Request spending and receive wallet connection or approval instructions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+	request := &cobra.Command{Use: "request", Short: "Request spending from a connected wallet and receive approval instructions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if _, err := uuid.Parse(sessionID); err != nil {
 			if err := ValidateSessionID(sessionID)(); err != nil {
 				return err
@@ -137,6 +169,18 @@ func fetchPayment(ctx context.Context, client *api.NotteClient, sessionID, payme
 	result, resp, raw, err := client.Payment(ctx, sessionID, paymentID, key, body)
 	if err != nil {
 		return nil, fmt.Errorf("payment request failed: %w", err)
+	}
+	if resp != nil && resp.StatusCode == 409 {
+		var detail struct {
+			Detail string `json:"detail"`
+		}
+		if json.Unmarshal(raw, &detail) == nil && detail.Detail == "wallet_not_connected" {
+			mode := "test"
+			if body != nil {
+				mode = body.Mode
+			}
+			return nil, fmt.Errorf("wallet_not_connected: run `notte payment connect --mode %s`, complete authorization, then retry this request", mode)
+		}
 	}
 	if err := HandleAPIResponse(resp, raw); err != nil {
 		return nil, err

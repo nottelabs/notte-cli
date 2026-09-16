@@ -86,3 +86,42 @@ func (c *NotteClient) Payment(ctx context.Context, sessionID, paymentID, key str
 	err = json.Unmarshal(body, &result)
 	return &result, resp, body, err
 }
+
+// WalletConnectionStatus never exposes device credentials or wallet tokens.
+type WalletConnectionStatus struct {
+	ID               string  `json:"id"`
+	Mode             string  `json:"mode"`
+	Status           string  `json:"status"`
+	ConnectionURL    *string `json:"connection_url,omitempty"`
+	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
+	ExpiresAt        *string `json:"expires_at,omitempty"`
+	ErrorCode        *string `json:"error_code,omitempty"`
+}
+
+// ConnectPaymentWallet creates or retrieves the caller's connection for a mode.
+func (c *NotteClient) ConnectPaymentWallet(ctx context.Context, mode string) (*WalletConnectionStatus, *http.Response, []byte, error) {
+	body, err := json.Marshal(map[string]string{"mode": mode})
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL(), "/")+"/payments/connect", bytes.NewReader(body))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.HTTPClient().Do(req)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, resp, nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, resp, raw, nil
+	}
+	var result WalletConnectionStatus
+	err = json.Unmarshal(raw, &result)
+	return &result, resp, raw, err
+}

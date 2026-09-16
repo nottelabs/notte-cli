@@ -88,6 +88,38 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 	}
 	key := "cli-payment-e2e-" + uuid.NewString()
 	args := []string{"payment", "request", "--session-id", session.ID, "--amount", "1.00", "--currency", "usd", "--mode", "test", "--merchant-url", "https://example.com", "--merchant-name", "CLI sandbox integration test", "--description", "Exercise the sandbox payment lifecycle for a CLI integration test. No wallet approval, real purchase, or merchant order is involved.", "--idempotency-key", key}
+	// Connect is independent of the browser session and does not wait for a human.
+	connected := runCLI(t, "payment", "connect", "--mode", "test")
+	requireSuccess(t, connected)
+	var wallet struct {
+		ID               string `json:"id"`
+		Status           string `json:"status"`
+		ConnectionURL    string `json:"connection_url"`
+		ConnectionPhrase string `json:"connection_phrase"`
+	}
+	if err := json.Unmarshal([]byte(connected.Stdout), &wallet); err != nil {
+		t.Fatal(err)
+	}
+	if wallet.Status != "connected" {
+		deadline := time.Now().Add(30 * time.Second)
+		for wallet.Status == "creating" && time.Now().Before(deadline) {
+			time.Sleep(2 * time.Second)
+			connected = runCLI(t, "payment", "connect", "--mode", "test")
+			requireSuccess(t, connected)
+			if err := json.Unmarshal([]byte(connected.Stdout), &wallet); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if wallet.Status != "awaiting_connection" || wallet.ConnectionURL == "" || wallet.ConnectionPhrase == "" {
+			t.Fatal("missing wallet connection instructions")
+		}
+		denied := runCLI(t, args...)
+		requireFailure(t, denied)
+		if !strings.Contains(denied.Stderr, "wallet_not_connected") || !strings.Contains(denied.Stderr, "payment connect") {
+			t.Fatal("missing connect-first guidance")
+		}
+		return // Manual wallet authorization is intentionally not automated in CI.
+	}
 	requested := decode(runCLI(t, args...))
 	replay := decode(runCLI(t, args...))
 	if replay.ID != requested.ID {
@@ -99,15 +131,11 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 	// reconciler, including a wallet already connected by a prior sandbox run.
 	deadline := time.Now().Add(90 * time.Second)
 	current := get()
-	for (current.Status == "creating" || (current.Status == "awaiting_connection" && (current.ConnectionURL == "" || current.ConnectionPhrase == ""))) && time.Now().Before(deadline) {
+	for (current.Status == "creating") && time.Now().Before(deadline) {
 		time.Sleep(2 * time.Second)
 		current = get()
 	}
 	switch current.Status {
-	case "awaiting_connection":
-		if current.ConnectionURL == "" || current.ConnectionPhrase == "" {
-			t.Fatal("missing wallet connection instructions")
-		}
 	case "awaiting_approval":
 		if current.ApprovalURL == "" {
 			t.Fatal("missing spending approval URL")
@@ -122,7 +150,7 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 		t.Fatal("wait timeout did not preserve JSON stdout and recovery instructions")
 	}
 	current = get()
-	if current.Status != "awaiting_connection" && current.Status != "awaiting_approval" && current.Status != "creating" {
+	if current.Status != "awaiting_approval" && current.Status != "creating" {
 		t.Fatalf("wait timeout changed request to unexpected status %s", current.Status)
 	}
 
