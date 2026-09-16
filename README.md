@@ -621,7 +621,7 @@ notte payment status "$PAYMENT_ID" -o json
 notte payment wait "$PAYMENT_ID" --wait-timeout 10m -o json
 ```
 
-Use `--mode test` on both commands for a development/test payment. Wallet
+When `--mode` is omitted, both commands use the API default. Use `--mode test` on both commands for a development/test payment. Wallet
 connections are scoped to your authenticated account and mode. Requests fail with
 `wallet_not_connected` until connection completes; they do not start connection
 or reserve a card slot. Once connected, a request provides a spending approval

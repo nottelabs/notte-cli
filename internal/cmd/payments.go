@@ -23,7 +23,7 @@ func newPaymentCommand() *cobra.Command {
 	group := &cobra.Command{Use: "payment", Short: "Request a temporary card for a browser session"}
 	var connectMode string
 	connect := &cobra.Command{Use: "connect", Short: "Connect your Link wallet before requesting spending", Long: "Return a Link wallet connection URL and phrase. Open the URL to authorize Notte. Completion is detected in the background; this command does not wait. Run it again to retrieve the pending link or confirm connected. No browser session is required.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-		if connectMode != "test" && connectMode != "live" {
+		if cmd.Flags().Changed("mode") && connectMode != "test" && connectMode != "live" {
 			return fmt.Errorf("--mode must be test or live")
 		}
 		client, err := GetClient()
@@ -46,11 +46,11 @@ func newPaymentCommand() *cobra.Command {
 			return err
 		}
 		if result.Status == "failed" || result.Status == "expired" {
-			return fmt.Errorf("wallet connection %s; run `notte payment connect --mode %s` again", result.Status, connectMode)
+			return fmt.Errorf("wallet connection %s; run `%s` again", result.Status, paymentConnectCommand(connectMode))
 		}
 		return nil
 	}}
-	connect.Flags().StringVar(&connectMode, "mode", "test", "Wallet mode: test or live")
+	connect.Flags().StringVar(&connectMode, "mode", "", "Wallet mode: test or live (defaults to the API setting)")
 	group.AddCommand(connect)
 	var body api.SessionPaymentRequest
 	var sessionID, key, amount string
@@ -83,7 +83,7 @@ func newPaymentCommand() *cobra.Command {
 		if n := utf8.RuneCountInString(body.Description); n < 100 || n > 4000 {
 			return fmt.Errorf("--description must contain 100 to 4000 characters")
 		}
-		if body.Mode != "test" && body.Mode != "live" {
+		if cmd.Flags().Changed("mode") && body.Mode != "test" && body.Mode != "live" {
 			return fmt.Errorf("--mode must be test or live")
 		}
 		if key == "" {
@@ -114,7 +114,7 @@ func newPaymentCommand() *cobra.Command {
 	f.StringVar(&body.MerchantURL, "merchant-url", "", "HTTPS merchant URL")
 	f.StringVar(&body.MerchantName, "merchant-name", "", "Merchant name")
 	f.StringVar(&body.Description, "description", "", "Purchase description (100 to 4000 characters)")
-	f.StringVar(&body.Mode, "mode", "test", "Payment mode: test or live (requires backend enablement)")
+	f.StringVar(&body.Mode, "mode", "", "Payment mode: test or live (defaults to the API setting)")
 	f.StringVar(&key, "idempotency-key", "", "Reuse this key with the same request to recover a previous attempt")
 	for _, name := range []string{"session-id", "amount", "merchant-url", "merchant-name", "description"} {
 		_ = request.MarkFlagRequired(name)
@@ -175,11 +175,10 @@ func fetchPayment(ctx context.Context, client *api.NotteClient, sessionID, payme
 			Detail string `json:"detail"`
 		}
 		if json.Unmarshal(raw, &detail) == nil && detail.Detail == "wallet_not_connected" {
-			mode := "test"
-			if body != nil {
-				mode = body.Mode
+			if body == nil {
+				return nil, fmt.Errorf("wallet_not_connected: reconnect with `notte payment connect --mode test` or `--mode live`, matching the original payment mode, then retry")
 			}
-			return nil, fmt.Errorf("wallet_not_connected: run `notte payment connect --mode %s`, complete authorization, then retry this request", mode)
+			return nil, fmt.Errorf("wallet_not_connected: run `%s`, complete authorization, then retry this request", paymentConnectCommand(body.Mode))
 		}
 	}
 	if err := HandleAPIResponse(resp, raw); err != nil {
@@ -263,4 +262,12 @@ func paymentAmountLimit(currency string) *big.Rat {
 	default:
 		return big.NewRat(500, 1)
 	}
+}
+
+func paymentConnectCommand(mode string) string {
+	command := "notte payment connect"
+	if mode != "" {
+		command += " --mode " + mode
+	}
+	return command
 }

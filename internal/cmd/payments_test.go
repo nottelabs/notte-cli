@@ -48,7 +48,7 @@ func TestPaymentRequest(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			t.Error(err)
 		}
-		if p.Mode != "test" || p.Amount != "100.91" {
+		if p.Mode != "" || p.Amount != "100.91" {
 			t.Errorf("unexpected body: %+v", p)
 		}
 		w.WriteHeader(202)
@@ -302,5 +302,61 @@ func TestPaymentRequestAmountLimits(t *testing.T) {
 				}
 			})
 		})
+	}
+}
+
+func TestPaymentModes(t *testing.T) {
+	for _, command := range []string{"connect", "request"} {
+		for _, mode := range []string{"", "test", "live"} {
+			t.Run(command+"/"+mode, func(t *testing.T) {
+				expected := mode
+
+				paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+					var body map[string]any
+					if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+						t.Fatal(err)
+					}
+					actual, present := body["mode"]
+					if expected == "" && present {
+						t.Errorf("mode must be omitted: %v", actual)
+					}
+					if expected != "" && actual != expected {
+						t.Errorf("mode = %v, want %s", body["mode"], expected)
+					}
+					_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_approval"}`, paymentTestID)
+				})
+				args := []string{command}
+				if command == "request" {
+					args = append(args, "--session-id", paymentTestID, "--amount", "1.00", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100))
+				}
+				if mode != "" {
+					args = append(args, "--mode", mode)
+				}
+				cmd := newPaymentCommand()
+				cmd.SetArgs(args)
+				if err := cmd.Execute(); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
+	}
+}
+
+func TestPaymentRecoveryWithoutRequestMode(t *testing.T) {
+	client := paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(409)
+		_, _ = w.Write([]byte(`{"detail":"wallet_not_connected"}`))
+	})
+	for _, body := range []*api.SessionPaymentRequest{nil, {}} {
+		_, err := fetchPayment(context.Background(), client, paymentTestID, paymentTestID, "key", body)
+		if err == nil {
+			t.Fatal("expected recovery instructions")
+		}
+		if body == nil && !strings.Contains(err.Error(), "matching the original payment mode") {
+			t.Fatal(err)
+		}
+		if body != nil && !strings.Contains(err.Error(), "`notte payment connect`") {
+			t.Fatal(err)
+		}
 	}
 }

@@ -17,7 +17,7 @@ type SessionPaymentRequest struct {
 	MerchantURL  string `json:"merchant_url"`
 	MerchantName string `json:"merchant_name"`
 	Description  string `json:"description"`
-	Mode         string `json:"mode"`
+	Mode         string `json:"mode,omitempty"`
 }
 
 // PaymentVerificationAction describes verification completed by the wallet owner.
@@ -100,7 +100,10 @@ type WalletConnectionStatus struct {
 
 // ConnectPaymentWallet creates or retrieves the caller's connection for a mode.
 func (c *NotteClient) ConnectPaymentWallet(ctx context.Context, mode string) (*WalletConnectionStatus, *http.Response, []byte, error) {
-	body, err := json.Marshal(map[string]string{"mode": mode})
+	payload := struct {
+		Mode string `json:"mode,omitempty"`
+	}{Mode: mode}
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, nil, nil, err
 	}
