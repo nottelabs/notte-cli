@@ -257,3 +257,50 @@ func TestPaymentRequestRequiresWalletConnection(t *testing.T) {
 		t.Fatalf("missing connection guidance: %v", err)
 	}
 }
+
+func TestPaymentRequestAmountLimits(t *testing.T) {
+	for _, tc := range []struct {
+		currency, amount string
+		allowed          bool
+	}{
+		{"usd", "500.00", true},
+		{"usd", "500.01", false},
+		{"usd", "1000", false},
+		{"eur", "500", true},
+		{"eur", "500.01", false},
+		{"jpy", "50000", true},
+		{"jpy", "50001", false},
+		{"isk", "500", true},
+		{"isk", "501", false},
+		{"ugx", "500", true},
+		{"ugx", "501", false},
+	} {
+		t.Run(tc.currency+"/"+tc.amount, func(t *testing.T) {
+			calls := 0
+			paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+				calls++
+				var body api.SessionPaymentRequest
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					t.Error(err)
+				}
+				if body.Amount != tc.amount {
+					t.Errorf("amount changed: %s", body.Amount)
+				}
+				w.WriteHeader(202)
+				_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_approval"}`, paymentTestID)
+			})
+			cmd := newPaymentCommand()
+			cmd.SetArgs([]string{"request", "--session-id", paymentTestID, "--amount", tc.amount, "--currency", tc.currency, "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100)})
+			cmd.SetErr(&bytes.Buffer{})
+			_, _ = testutil.CaptureOutput(func() {
+				err := cmd.Execute()
+				if tc.allowed && (err != nil || calls != 1) {
+					t.Fatalf("expected request, got %v and %d calls", err, calls)
+				}
+				if !tc.allowed && (err == nil || !strings.Contains(err.Error(), "spending limit") || calls != 0) {
+					t.Fatalf("expected local rejection, got %v and %d calls", err, calls)
+				}
+			})
+		})
+	}
+}

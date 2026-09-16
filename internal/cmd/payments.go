@@ -64,7 +64,7 @@ func newPaymentCommand() *cobra.Command {
 			return fmt.Errorf("--amount must be a positive decimal in currency units (e.g. 100.91)")
 		}
 		parsed, ok := new(big.Rat).SetString(amount)
-		if !ok || parsed.Sign() <= 0 || parsed.Cmp(big.NewRat(50000, 1)) > 0 {
+		if !ok || parsed.Sign() <= 0 || parsed.Cmp(paymentAmountLimit(body.Currency)) > 0 {
 			return fmt.Errorf("--amount must be positive and within the currency's spending limit")
 		}
 		// Preserve the user's decimal text; the API validates currency precision
@@ -251,4 +251,16 @@ func paymentErrorCode(p *api.PaymentStatus) string {
 		return *p.ErrorCode
 	}
 	return "none"
+}
+
+// Stripe represents these currencies in whole units. Other supported currencies,
+// including ISK and UGX, use hundredths on the wire. The API remains authoritative
+// for currency availability and precision.
+func paymentAmountLimit(currency string) *big.Rat {
+	switch currency {
+	case "bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "vnd", "vuv", "xaf", "xof", "xpf":
+		return big.NewRat(50000, 1)
+	default:
+		return big.NewRat(500, 1)
+	}
 }
