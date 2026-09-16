@@ -48,7 +48,7 @@ func TestPaymentRequest(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			t.Error(err)
 		}
-		if p.Mode != "test" || p.Amount != "100.91" {
+		if p.Mode != "live" || p.Amount != "100.91" {
 			t.Errorf("unexpected body: %+v", p)
 		}
 		w.WriteHeader(202)
@@ -302,5 +302,40 @@ func TestPaymentRequestAmountLimits(t *testing.T) {
 				}
 			})
 		})
+	}
+}
+
+func TestPaymentModes(t *testing.T) {
+	for _, command := range []string{"connect", "request"} {
+		for _, mode := range []string{"", "test", "live"} {
+			t.Run(command+"/"+mode, func(t *testing.T) {
+				expected := mode
+				if expected == "" {
+					expected = "live"
+				}
+				paymentTestEnv(t, func(w http.ResponseWriter, r *http.Request) {
+					var body map[string]any
+					if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+						t.Fatal(err)
+					}
+					if body["mode"] != expected {
+						t.Errorf("mode = %v, want %s", body["mode"], expected)
+					}
+					_, _ = fmt.Fprintf(w, `{"id":%q,"status":"awaiting_approval"}`, paymentTestID)
+				})
+				args := []string{command}
+				if command == "request" {
+					args = append(args, "--session-id", paymentTestID, "--amount", "1.00", "--merchant-url", "https://example.com", "--merchant-name", "Example", "--description", strings.Repeat("x", 100))
+				}
+				if mode != "" {
+					args = append(args, "--mode", mode)
+				}
+				cmd := newPaymentCommand()
+				cmd.SetArgs(args)
+				if err := cmd.Execute(); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
 	}
 }

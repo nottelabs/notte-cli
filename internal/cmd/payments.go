@@ -50,7 +50,7 @@ func newPaymentCommand() *cobra.Command {
 		}
 		return nil
 	}}
-	connect.Flags().StringVar(&connectMode, "mode", "test", "Wallet mode: test or live")
+	connect.Flags().StringVar(&connectMode, "mode", "live", "Wallet mode: test or live")
 	group.AddCommand(connect)
 	var body api.SessionPaymentRequest
 	var sessionID, key, amount string
@@ -114,7 +114,7 @@ func newPaymentCommand() *cobra.Command {
 	f.StringVar(&body.MerchantURL, "merchant-url", "", "HTTPS merchant URL")
 	f.StringVar(&body.MerchantName, "merchant-name", "", "Merchant name")
 	f.StringVar(&body.Description, "description", "", "Purchase description (100 to 4000 characters)")
-	f.StringVar(&body.Mode, "mode", "test", "Payment mode: test or live (requires backend enablement)")
+	f.StringVar(&body.Mode, "mode", "live", "Payment mode: test or live (requires backend enablement)")
 	f.StringVar(&key, "idempotency-key", "", "Reuse this key with the same request to recover a previous attempt")
 	for _, name := range []string{"session-id", "amount", "merchant-url", "merchant-name", "description"} {
 		_ = request.MarkFlagRequired(name)
@@ -175,7 +175,7 @@ func fetchPayment(ctx context.Context, client *api.NotteClient, sessionID, payme
 			Detail string `json:"detail"`
 		}
 		if json.Unmarshal(raw, &detail) == nil && detail.Detail == "wallet_not_connected" {
-			mode := "test"
+			mode := "live"
 			if body != nil {
 				mode = body.Mode
 			}
