@@ -901,6 +901,7 @@ type CaptchaSolveAction struct {
 
 // CaptchaStatus defines model for CaptchaStatus.
 type CaptchaStatus struct {
+	CancelReason *string            `json:"cancel_reason,omitempty"`
 	CaptchaId    string             `json:"captcha_id"`
 	Generation   int                `json:"generation"`
 	Message      *string            `json:"message,omitempty"`
