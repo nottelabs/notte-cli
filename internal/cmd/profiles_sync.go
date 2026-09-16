@@ -51,8 +51,17 @@ func init() {
 }
 
 func runProfilesSync(cmd *cobra.Command, args []string) error {
+	if !browser.SupportedPlatform() {
+		return fmt.Errorf("syncing cookies from a local browser is supported on macOS and Linux only")
+	}
 	if syncMode != "replace" && syncMode != "append" {
 		return fmt.Errorf("invalid --mode %q: expected \"replace\" or \"append\"", syncMode)
+	}
+	// An explicit --domain that normalizes to nothing (e.g. \".\" or a blank)
+	// must be rejected rather than silently treated as "all domains", which
+	// would upload every cookie under --yes.
+	if len(syncDomains) > 0 && !hasValidDomain(syncDomains) {
+		return fmt.Errorf("--domain was given but contains no valid domain")
 	}
 
 	profile, err := resolveLocalProfile()
@@ -186,6 +195,17 @@ func resolveLocalProfile() (browser.Profile, error) {
 		return candidates[0], nil
 	}
 	return pickProfile(candidates)
+}
+
+// hasValidDomain reports whether at least one --domain argument survives the
+// same normalization the reader applies (trim, drop a leading dot).
+func hasValidDomain(domains []string) bool {
+	for _, d := range domains {
+		if strings.TrimPrefix(strings.TrimSpace(d), ".") != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func filterByProfileName(profiles []browser.Profile, query string) []browser.Profile {

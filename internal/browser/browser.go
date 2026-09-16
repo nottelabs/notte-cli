@@ -56,6 +56,12 @@ var SupportedBrowsers = []Browser{
 	{ID: "firefox", DisplayName: "Firefox", kind: firefoxKind, macDir: "Firefox", linuxDir: "firefox"},
 }
 
+// SupportedPlatform reports whether reading local browser cookies is available
+// on the current OS. Only macOS and Linux are supported today.
+func SupportedPlatform() bool {
+	return runtime.GOOS == "darwin" || runtime.GOOS == "linux"
+}
+
 // BrowserByID returns the supported browser with the given id.
 func BrowserByID(id string) (Browser, bool) {
 	for _, b := range SupportedBrowsers {

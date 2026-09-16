@@ -82,6 +82,29 @@ func TestFilterByProfileName(t *testing.T) {
 	}
 }
 
+func TestHasValidDomain(t *testing.T) {
+	valid := [][]string{
+		{"github.com"},
+		{" ", "github.com"},
+		{".github.com"},
+	}
+	for _, in := range valid {
+		if !hasValidDomain(in) {
+			t.Errorf("hasValidDomain(%q) = false, want true", in)
+		}
+	}
+	invalid := [][]string{
+		{" "},
+		{"."},
+		{"", " ", "."},
+	}
+	for _, in := range invalid {
+		if hasValidDomain(in) {
+			t.Errorf("hasValidDomain(%q) = true, want false", in)
+		}
+	}
+}
+
 func TestConfirmSyncWithIO(t *testing.T) {
 	var out strings.Builder
 	for _, answer := range []string{"y\n", "yes\n", "Y\n"} {

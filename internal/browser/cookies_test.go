@@ -64,7 +64,7 @@ func buildCookieDB(t *testing.T, key []byte, version int) Profile {
 		`CREATE TABLE cookies (
 			host_key TEXT, name TEXT, value TEXT, encrypted_value BLOB,
 			path TEXT, expires_utc INTEGER, is_secure INTEGER, is_httponly INTEGER,
-			has_expires INTEGER, samesite INTEGER)`,
+			has_expires INTEGER, samesite INTEGER, top_frame_site_key TEXT DEFAULT '')`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
@@ -72,11 +72,11 @@ func buildCookieDB(t *testing.T, key []byte, version int) Profile {
 		}
 	}
 
-	insert := func(host, name, value string, enc []byte, expiresUTC int64, hasExpires, samesite int) {
+	insert := func(host, name, value string, enc []byte, expiresUTC int64, hasExpires, samesite int, topFrame string) {
 		if _, err := db.Exec(
-			`INSERT INTO cookies (host_key, name, value, encrypted_value, path, expires_utc, is_secure, is_httponly, has_expires, samesite)
-			 VALUES (?, ?, ?, ?, '/', ?, 1, 1, ?, ?)`,
-			host, name, value, enc, expiresUTC, hasExpires, samesite); err != nil {
+			`INSERT INTO cookies (host_key, name, value, encrypted_value, path, expires_utc, is_secure, is_httponly, has_expires, samesite, top_frame_site_key)
+			 VALUES (?, ?, ?, ?, '/', ?, 1, 1, ?, ?, ?)`,
+			host, name, value, enc, expiresUTC, hasExpires, samesite, topFrame); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -85,10 +85,11 @@ func buildCookieDB(t *testing.T, key []byte, version int) Profile {
 	const expiresUnix = 2000000000
 	expiresUTC := int64((expiresUnix + chromeEpochOffset) * 1_000_000)
 
-	insert("github.com", "session_id", "", encryptV10(t, key, "secret-value", version), expiresUTC, 1, 1) // persistent, Lax
-	insert(".github.com", "sub", "", encryptV10(t, key, "sub-value", version), 0, 0, 2)                   // session cookie, Strict, subdomain
-	insert("example.com", "other", "", encryptV10(t, key, "nope", version), expiresUTC, 1, 0)             // unrelated domain
-	insert("plain.com", "legacy", "plaintext-value", nil, expiresUTC, 1, 0)                               // pre-encryption plaintext, None
+	insert("github.com", "session_id", "", encryptV10(t, key, "secret-value", version), expiresUTC, 1, 1, "")                   // persistent, Lax
+	insert(".github.com", "sub", "", encryptV10(t, key, "sub-value", version), 0, 0, 2, "")                                     // session cookie, Strict, subdomain
+	insert("example.com", "other", "", encryptV10(t, key, "nope", version), expiresUTC, 1, 0, "")                               // unrelated domain
+	insert("plain.com", "legacy", "plaintext-value", nil, expiresUTC, 1, 0, "")                                                 // pre-encryption plaintext, None
+	insert("github.com", "partitioned", "", encryptV10(t, key, "part-value", version), expiresUTC, 1, 1, "https://ads.example") // CHIPS partition -> skipped
 
 	return Profile{Dir: "Default", Name: "Test", path: dir}
 }
@@ -109,12 +110,15 @@ func TestReadCookiesRoundTrip(t *testing.T) {
 		t.Errorf("DecryptFailures = %d, want 0", res.DecryptFailures)
 	}
 	if len(res.Cookies) != 4 {
-		t.Fatalf("got %d cookies, want 4", len(res.Cookies))
+		t.Fatalf("got %d cookies, want 4 (partitioned cookie excluded)", len(res.Cookies))
 	}
 
 	byName := map[string]Cookie{}
 	for _, c := range res.Cookies {
 		byName[c.Name] = c
+	}
+	if _, ok := byName["partitioned"]; ok {
+		t.Error("partitioned (CHIPS) cookie should be skipped")
 	}
 
 	if got := byName["session_id"]; got.Value != "secret-value" {
@@ -177,6 +181,50 @@ func TestReadCookiesWrongKeyFailsSoftly(t *testing.T) {
 	}
 	if !legacyOK {
 		t.Error("plaintext legacy cookie should survive a wrong key")
+	}
+}
+
+// TestCopyDBSnapshotWithWAL covers the fallback path used when VACUUM INTO is
+// unavailable: the sidecars must be copied so uncheckpointed rows survive.
+func TestCopyDBSnapshotWithWAL(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "Cookies")
+
+	db, err := sql.Open("sqlite", "file:"+dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	for _, s := range []string{
+		`PRAGMA journal_mode=WAL`,
+		`CREATE TABLE t (v TEXT)`,
+		`INSERT INTO t VALUES ('kept-in-wal')`,
+	} {
+		if _, err := db.Exec(s); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The connection stays open so the row lives in -wal, not yet checkpointed
+	// into the main file.
+	if _, err := os.Stat(dbPath + "-wal"); err != nil {
+		t.Skip("sqlite driver did not produce a -wal sidecar")
+	}
+
+	snap, err := copyDBSnapshot(dbPath, t.TempDir())
+	if err != nil {
+		t.Fatalf("copyDBSnapshot: %v", err)
+	}
+	sdb, err := sql.Open("sqlite", "file:"+snap+"?mode=ro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = sdb.Close() }()
+	var got string
+	if err := sdb.QueryRow(`SELECT v FROM t`).Scan(&got); err != nil {
+		t.Fatalf("reading snapshot: %v", err)
+	}
+	if got != "kept-in-wal" {
+		t.Errorf("snapshot lost the WAL row: got %q", got)
 	}
 }
 

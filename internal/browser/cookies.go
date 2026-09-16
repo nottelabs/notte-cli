@@ -75,12 +75,12 @@ func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) 
 	// The copy holds live session tokens; remove it as soon as we are done.
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	copyPath, err := copyDBSnapshot(dbPath, tmpDir)
+	snapshot, err := snapshotDB(dbPath, tmpDir)
 	if err != nil {
 		return ReadResult{}, err
 	}
 
-	db, err := sql.Open("sqlite", "file:"+copyPath+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+snapshot+"?mode=ro")
 	if err != nil {
 		return ReadResult{}, err
 	}
@@ -90,7 +90,7 @@ func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) 
 	filters := normalizeDomains(domains)
 
 	rows, err := db.Query(`SELECT host_key, name, value, encrypted_value, path,
-		expires_utc, is_secure, is_httponly, has_expires, samesite FROM cookies`)
+		expires_utc, is_secure, is_httponly, has_expires, samesite, top_frame_site_key FROM cookies`)
 	if err != nil {
 		return ReadResult{}, fmt.Errorf("could not read cookies: %w", err)
 	}
@@ -104,12 +104,20 @@ func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) 
 			expiresUTC                   int64
 			isSecure, isHTTPOnly         int
 			hasExpires, sameSite         int
+			topFrameSite                 string
 		)
 		if err := rows.Scan(&host, &name, &plainValue, &encrypted, &path,
-			&expiresUTC, &isSecure, &isHTTPOnly, &hasExpires, &sameSite); err != nil {
+			&expiresUTC, &isSecure, &isHTTPOnly, &hasExpires, &sameSite, &topFrameSite); err != nil {
 			return ReadResult{}, err
 		}
 
+		// Skip partitioned cookies (CHIPS): a non-empty top_frame_site_key means
+		// the cookie only exists under that top-level site. Uploading it as an
+		// ordinary cookie would drop the partition and collide with the real
+		// login cookie, so only the unpartitioned default jar is synced.
+		if topFrameSite != "" {
+			continue
+		}
 		if !domainMatches(host, filters) {
 			continue
 		}
@@ -154,15 +162,34 @@ func (p Profile) cookieDBPath() string {
 	return ""
 }
 
-// copyDBSnapshot copies the cookie DB and its WAL sidecars to tmpDir so we can
-// read a consistent snapshot while the browser is still running. Copying only
-// the main file (and not -wal/-shm) is the classic mistake that yields stale or
-// inconsistent reads, so all three are copied when present.
+// snapshotDB produces a temp copy of the cookie database that is safe to read
+// while the browser is running. It prefers SQLite's VACUUM INTO, which writes a
+// transactionally-consistent copy (WAL included) from a read transaction; when
+// the browser holds a lock that denies that read (Firefox does), it falls back
+// to copying the files.
+func snapshotDB(dbPath, tmpDir string) (string, error) {
+	dst := filepath.Join(tmpDir, "snapshot.db")
+	src, err := sql.Open("sqlite", "file:"+dbPath+"?mode=ro&_pragma=busy_timeout(3000)")
+	if err == nil {
+		_, execErr := src.Exec("VACUUM INTO '" + strings.ReplaceAll(dst, "'", "''") + "'")
+		_ = src.Close()
+		if execErr == nil {
+			return dst, nil
+		}
+		_ = os.Remove(dst) // a failed VACUUM may leave a partial file
+	}
+	return copyDBSnapshot(dbPath, tmpDir)
+}
+
+// copyDBSnapshot copies the cookie DB and its WAL sidecars to tmpDir, used when
+// VACUUM INTO is unavailable. The sidecars are copied before the main file: if
+// the browser checkpoints in between, the copied main file already contains the
+// checkpointed pages and the (older) WAL simply replays them idempotently,
+// whereas copying the main file first could miss a checkpoint that truncates
+// the WAL. Copying only the main file is the classic mistake that yields stale
+// reads, so all present files are copied.
 func copyDBSnapshot(dbPath, tmpDir string) (string, error) {
 	dst := filepath.Join(tmpDir, "Cookies")
-	if err := copyFile(dbPath, dst); err != nil {
-		return "", err
-	}
 	for _, suffix := range []string{"-wal", "-shm"} {
 		src := dbPath + suffix
 		if _, err := os.Stat(src); err != nil {
@@ -171,6 +198,9 @@ func copyDBSnapshot(dbPath, tmpDir string) (string, error) {
 		if err := copyFile(src, dst+suffix); err != nil {
 			return "", err
 		}
+	}
+	if err := copyFile(dbPath, dst); err != nil {
+		return "", err
 	}
 	return dst, nil
 }

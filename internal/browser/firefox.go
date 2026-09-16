@@ -138,12 +138,12 @@ func (p Profile) readFirefoxCookies(domains []string) (ReadResult, error) {
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	copyPath, err := copyDBSnapshot(dbPath, tmpDir)
+	snapshot, err := snapshotDB(dbPath, tmpDir)
 	if err != nil {
 		return ReadResult{}, err
 	}
 
-	db, err := sql.Open("sqlite", "file:"+copyPath+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+snapshot+"?mode=ro")
 	if err != nil {
 		return ReadResult{}, err
 	}
