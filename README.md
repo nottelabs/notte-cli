@@ -152,7 +152,11 @@ notte page scrape --instructions "..." # Scrape content from the page
 notte page click "@B3"            # Click an element by ID
 notte page fill "@I1" "text"    # Fill an input field
 notte page fill "#email" --vault-field email       # Fill from the session vault
-notte page fill "#password" --vault-field password # Supports email, username, password, and mfa
+notte page fill "#password" --vault-field password # Fill the stored password
+notte page fill "#card-number" --vault-field card_number
+notte page fill "#card-name" --vault-field card_holder_name
+notte page fill "#card-expiry" --vault-field card_expiration
+notte page fill "#card-cvc" --vault-field card_cvv
 notte page goto "https://example.com" # Navigate to a URL
 notte page back                       # Go back in history
 notte page forward                    # Go forward in history
@@ -595,3 +599,69 @@ mentioned somewhere under `plugins/notte/skills/` in the skills repository. Pass
 ```bash
 go run ./scripts/checkcoverage -check skills -skills-dir ../notte-skills -strict
 ```
+
+### Session payments
+
+Connect your wallet first. This returns a URL and phrase; authorize in your browser.
+Completion is recorded in the background. Re-run the same command to confirm
+`connected` or retrieve the pending link:
+
+```bash
+notte payment connect --mode test -o json
+```
+
+Then request spending for an existing session (amounts use currency units):
+
+```bash
+notte payment request --session-id "$SESSION_ID" --mode test --amount 1.00 --currency usd \
+  --merchant-url https://example.com --merchant-name Example \
+  --description "Buy one sandbox item for this browser session, with a maximum total of one US dollar including all applicable fees." \
+  --idempotency-key "$REQUEST_KEY" -o json
+notte payment status "$PAYMENT_ID" -o json
+notte payment wait "$PAYMENT_ID" --wait-timeout 10m -o json
+```
+
+Use `--mode test` on both commands for a development/test payment. Wallet
+connections are scoped to your authenticated account and mode. Requests fail with
+`wallet_not_connected` until connection completes; they do not start connection
+or reserve a card slot. Once connected, a request provides a spending approval
+URL. Send that URL to the user before waiting for the card.
+
+If Link requires additional wallet verification, `payment wait` prints the action
+URL. Resumable verification keeps waiting on the same request. When Link requires
+a new spend request, the command exits with instructions to complete verification
+and request payment again with a new idempotency key. `payment status -o json`
+includes the structured `next_action` instructions.
+
+`wait` displays approval and verification instructions on stderr as they become
+available and prints one final result on stdout when ready. It exits nonzero on
+failure, expiration, decline, session closure, or timeout. Stopping the CLI does
+not cancel provisioning; resume with the same payment ID. Requests print their
+idempotency key on stderr; reuse it with the same inputs to recover an uncertain
+request without creating another one.
+
+`ready` means the temporary card is available for existing vault placeholders.
+It does not confirm a merchant purchase. Payment commands never return card
+numbers, security codes, or wallet tokens. Descriptions must contain 100 to 4000
+characters. `--amount 100.91 --currency usd` requests USD 100.91. The backend
+validates currency precision without rounding and enforces a 50,000-minor-unit
+limit (USD 500.00).
+
+The deployed sandbox lifecycle test runs real CLI subprocesses and creates a
+short-lived browser session and unapproved test spend request. It checks request
+replay, status, wait timeout, and session-close cleanup without approving a wallet
+request or submitting a merchant payment:
+
+```bash
+NOTTE_API_URL=https://YOUR_ENABLED_TEST_DEPLOYMENT \
+NOTTE_PAYMENT_E2E_REQUIRED=1 \
+go test -tags=integration ./tests/integration \
+  -run '^TestPaymentSandboxLifecycle$' -count=1 -v
+```
+
+Supply `NOTTE_API_KEY` through the environment. The normal integration suite
+skips this case only when the API explicitly returns `payments_disabled`.
+`NOTTE_PAYMENT_E2E_REQUIRED=1` makes that condition fail instead, so a release
+validation cannot count a disabled feature as a passed payment test. Auth and
+configuration errors always fail. Use a dedicated test principal without someone
+concurrently approving its payment requests.

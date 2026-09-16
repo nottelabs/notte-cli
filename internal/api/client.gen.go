@@ -244,10 +244,36 @@ const (
 	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
+// Defines values for PaymentConnectRequestMode.
+const (
+	PaymentConnectRequestModeLive PaymentConnectRequestMode = "live"
+	PaymentConnectRequestModeTest PaymentConnectRequestMode = "test"
+)
+
+// Defines values for PaymentNextActionResolution.
+const (
+	AutoResume                           PaymentNextActionResolution = "auto_resume"
+	CreateNewSpendRequest                PaymentNextActionResolution = "create_new_spend_request"
+	CreateNewSpendRequestAfterCompletion PaymentNextActionResolution = "create_new_spend_request_after_completion"
+)
+
+// Defines values for PaymentNextActionType.
+const (
+	AddPaymentMethod     PaymentNextActionType = "add_payment_method"
+	ContactSupport       PaymentNextActionType = "contact_support"
+	IdentityVerification PaymentNextActionType = "identity_verification"
+	ReAuthorize          PaymentNextActionType = "re_authorize"
+	SelectPaymentMethod  PaymentNextActionType = "select_payment_method"
+	SsnVerification      PaymentNextActionType = "ssn_verification"
+	ThreeDSecure         PaymentNextActionType = "three_d_secure"
+	ThreeDSecureRetry    PaymentNextActionType = "three_d_secure_retry"
+	UpdatePaymentMethod  PaymentNextActionType = "update_payment_method"
+)
+
 // Defines values for PaymentRequestMode.
 const (
-	Live PaymentRequestMode = "live"
-	Test PaymentRequestMode = "test"
+	PaymentRequestModeLive PaymentRequestMode = "live"
+	PaymentRequestModeTest PaymentRequestMode = "test"
 )
 
 // Defines values for ProfileCookiesImportRequestMode.
@@ -881,6 +907,7 @@ type CaptchaSolveAction struct {
 
 // CaptchaStatus defines model for CaptchaStatus.
 type CaptchaStatus struct {
+	CancelReason *string            `json:"cancel_reason,omitempty"`
 	CaptchaId    string             `json:"captcha_id"`
 	Generation   int                `json:"generation"`
 	Message      *string            `json:"message,omitempty"`
@@ -2429,14 +2456,59 @@ type ParameterInfo struct {
 	Type    *string `json:"type,omitempty"`
 }
 
+// PaymentConnectRequest defines model for PaymentConnectRequest.
+type PaymentConnectRequest struct {
+	Mode *PaymentConnectRequestMode `json:"mode,omitempty"`
+}
+
+// PaymentConnectRequestMode defines model for PaymentConnectRequest.Mode.
+type PaymentConnectRequestMode string
+
+// PaymentConnectionResponse defines model for PaymentConnectionResponse.
+type PaymentConnectionResponse struct {
+	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string `json:"connection_url,omitempty"`
+	ErrorCode        *string `json:"error_code,omitempty"`
+	ExpiresAt        *string `json:"expires_at,omitempty"`
+	Id               string  `json:"id"`
+	Mode             string  `json:"mode"`
+	Status           string  `json:"status"`
+}
+
+// PaymentNextAction defines model for PaymentNextAction.
+type PaymentNextAction struct {
+	ActionUrl  *string                     `json:"action_url,omitempty"`
+	ExpiresAt  *string                     `json:"expires_at,omitempty"`
+	Resolution PaymentNextActionResolution `json:"resolution"`
+	Type       PaymentNextActionType       `json:"type"`
+}
+
+// PaymentNextActionResolution defines model for PaymentNextAction.Resolution.
+type PaymentNextActionResolution string
+
+// PaymentNextActionType defines model for PaymentNextAction.Type.
+type PaymentNextActionType string
+
 // PaymentRequest defines model for PaymentRequest.
 type PaymentRequest struct {
-	Amount       int                 `json:"amount"`
-	Currency     string              `json:"currency"`
-	Description  string              `json:"description"`
-	MerchantName string              `json:"merchant_name"`
-	MerchantUrl  string              `json:"merchant_url"`
-	Mode         *PaymentRequestMode `json:"mode,omitempty"`
+	// Amount Amount in currency units, e.g. 100.91 means USD 100.91. Never rounded.
+	Amount       PaymentRequest_Amount `json:"amount"`
+	Currency     string                `json:"currency"`
+	Description  string                `json:"description"`
+	MerchantName string                `json:"merchant_name"`
+	MerchantUrl  string                `json:"merchant_url"`
+	Mode         *PaymentRequestMode   `json:"mode,omitempty"`
+}
+
+// PaymentRequestAmount0 defines model for .
+type PaymentRequestAmount0 = float32
+
+// PaymentRequestAmount1 defines model for .
+type PaymentRequestAmount1 = string
+
+// PaymentRequest_Amount Amount in currency units, e.g. 100.91 means USD 100.91. Never rounded.
+type PaymentRequest_Amount struct {
+	union json.RawMessage
 }
 
 // PaymentRequestMode defines model for PaymentRequest.Mode.
@@ -2444,21 +2516,23 @@ type PaymentRequestMode string
 
 // PaymentResponse defines model for PaymentResponse.
 type PaymentResponse struct {
-	Amount           int     `json:"amount"`
-	ApprovalUrl      *string `json:"approval_url,omitempty"`
-	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
-	ConnectionUrl    *string `json:"connection_url,omitempty"`
-	Currency         string  `json:"currency"`
-	ErrorCode        *string `json:"error_code,omitempty"`
-	ExpiresAt        *string `json:"expires_at,omitempty"`
-	Id               string  `json:"id"`
-	MerchantName     string  `json:"merchant_name"`
-	MerchantUrl      string  `json:"merchant_url"`
-	Mode             string  `json:"mode"`
-	PurchaseStatus   *string `json:"purchase_status,omitempty"`
-	SessionId        string  `json:"session_id"`
-	Status           string  `json:"status"`
-	VaultId          *string `json:"vault_id,omitempty"`
+	// Amount Amount in currency units, serialized as an exact decimal string.
+	Amount           string             `json:"amount"`
+	ApprovalUrl      *string            `json:"approval_url,omitempty"`
+	ConnectionPhrase *string            `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string            `json:"connection_url,omitempty"`
+	Currency         string             `json:"currency"`
+	ErrorCode        *string            `json:"error_code,omitempty"`
+	ExpiresAt        *string            `json:"expires_at,omitempty"`
+	Id               string             `json:"id"`
+	MerchantName     string             `json:"merchant_name"`
+	MerchantUrl      string             `json:"merchant_url"`
+	Mode             string             `json:"mode"`
+	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
+	PurchaseStatus   *string            `json:"purchase_status,omitempty"`
+	SessionId        string             `json:"session_id"`
+	Status           string             `json:"status"`
+	VaultId          *string            `json:"vault_id,omitempty"`
 }
 
 // PersonaCreateRequest defines model for PersonaCreateRequest.
@@ -3564,6 +3638,12 @@ type ConnectLinkSubmitParams struct {
 	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
 }
 
+// ConnectPaymentWalletParams defines parameters for ConnectPaymentWallet.
+type ConnectPaymentWalletParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // GetPaymentParams defines parameters for GetPayment.
 type GetPaymentParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -3840,9 +3920,13 @@ type PageExecuteJSONBody struct {
 
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
-	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
+	CaptchaTimeoutSeconds *float32 `form:"captcha_timeout_seconds,omitempty" json:"captcha_timeout_seconds,omitempty"`
+	TargetPageId          *string  `form:"target_page_id,omitempty" json:"target_page_id,omitempty"`
+	TargetGeneration      *int     `form:"target_generation,omitempty" json:"target_generation,omitempty"`
+	UpdateMetadata        *bool    `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin   *string  `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string  `json:"x-notte-sdk-version,omitempty"`
 }
 
 // PageObserveParams defines parameters for PageObserve.
@@ -4045,6 +4129,9 @@ type ConnectLinkMailboxSyncJSONRequestBody = ConnectLinkMailboxSyncRequest
 
 // ConnectLinkSubmitJSONRequestBody defines body for ConnectLinkSubmit for application/json ContentType.
 type ConnectLinkSubmitJSONRequestBody = ConnectLinkSubmitRequest
+
+// ConnectPaymentWalletJSONRequestBody defines body for ConnectPaymentWallet for application/json ContentType.
+type ConnectPaymentWalletJSONRequestBody = PaymentConnectRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -9027,6 +9114,68 @@ func (t *MultiFactorFillActionOutput_Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsPaymentRequestAmount0 returns the union data inside the PaymentRequest_Amount as a PaymentRequestAmount0
+func (t PaymentRequest_Amount) AsPaymentRequestAmount0() (PaymentRequestAmount0, error) {
+	var body PaymentRequestAmount0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPaymentRequestAmount0 overwrites any union data inside the PaymentRequest_Amount as the provided PaymentRequestAmount0
+func (t *PaymentRequest_Amount) FromPaymentRequestAmount0(v PaymentRequestAmount0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePaymentRequestAmount0 performs a merge with any union data inside the PaymentRequest_Amount, using the provided PaymentRequestAmount0
+func (t *PaymentRequest_Amount) MergePaymentRequestAmount0(v PaymentRequestAmount0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPaymentRequestAmount1 returns the union data inside the PaymentRequest_Amount as a PaymentRequestAmount1
+func (t PaymentRequest_Amount) AsPaymentRequestAmount1() (PaymentRequestAmount1, error) {
+	var body PaymentRequestAmount1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPaymentRequestAmount1 overwrites any union data inside the PaymentRequest_Amount as the provided PaymentRequestAmount1
+func (t *PaymentRequest_Amount) FromPaymentRequestAmount1(v PaymentRequestAmount1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePaymentRequestAmount1 performs a merge with any union data inside the PaymentRequest_Amount, using the provided PaymentRequestAmount1
+func (t *PaymentRequest_Amount) MergePaymentRequestAmount1(v PaymentRequestAmount1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PaymentRequest_Amount) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PaymentRequest_Amount) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsSelectDropdownOptionActionInputSelector0 returns the union data inside the SelectDropdownOptionActionInput_Selector as a SelectDropdownOptionActionInputSelector0
 func (t SelectDropdownOptionActionInput_Selector) AsSelectDropdownOptionActionInputSelector0() (SelectDropdownOptionActionInputSelector0, error) {
 	var body SelectDropdownOptionActionInputSelector0
@@ -9793,6 +9942,11 @@ type ClientInterface interface {
 	ConnectLinkSubmitWithBody(ctx context.Context, params *ConnectLinkSubmitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectPaymentWalletWithBody request with any body
+	ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPayment request
 	GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -10573,6 +10727,30 @@ func (c *Client) ConnectLinkSubmitWithBody(ctx context.Context, params *ConnectL
 
 func (c *Client) ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectLinkSubmitRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectPaymentWalletRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectPaymentWalletRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -14009,6 +14187,72 @@ func NewConnectLinkSubmitRequestWithBody(server string, params *ConnectLinkSubmi
 	return req, nil
 }
 
+// NewConnectPaymentWalletRequest calls the generic ConnectPaymentWallet builder with application/json body
+func NewConnectPaymentWalletRequest(server string, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectPaymentWalletRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewConnectPaymentWalletRequestWithBody generates requests for ConnectPaymentWallet with any type of body
+func NewConnectPaymentWalletRequestWithBody(server string, params *ConnectPaymentWalletParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/connect")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewGetPaymentRequest generates requests for GetPayment
 func NewGetPaymentRequest(server string, paymentId openapi_types.UUID, params *GetPaymentParams) (*http.Request, error) {
 	var err error
@@ -16690,6 +16934,70 @@ func NewPageExecuteRequestWithBody(server string, sessionId string, params *Page
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.CaptchaId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "captcha_id", runtime.ParamLocationQuery, *params.CaptchaId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CaptchaTimeoutSeconds != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "captcha_timeout_seconds", runtime.ParamLocationQuery, *params.CaptchaTimeoutSeconds); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetPageId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_page_id", runtime.ParamLocationQuery, *params.TargetPageId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetGeneration != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_generation", runtime.ParamLocationQuery, *params.TargetGeneration); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.UpdateMetadata != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
@@ -18393,6 +18701,11 @@ type ClientWithResponsesInterface interface {
 
 	ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
 
+	// ConnectPaymentWalletWithBodyWithResponse request with any body
+	ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
+
+	ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
+
 	// GetPaymentWithResponse request
 	GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error)
 
@@ -19402,6 +19715,29 @@ func (r ConnectLinkSubmitResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectLinkSubmitResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectPaymentWalletResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaymentConnectionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectPaymentWalletResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectPaymentWalletResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21037,6 +21373,23 @@ func (c *ClientWithResponses) ConnectLinkSubmitWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseConnectLinkSubmitResult(rsp)
+}
+
+// ConnectPaymentWalletWithBodyWithResponse request with arbitrary body returning *ConnectPaymentWalletResult
+func (c *ClientWithResponses) ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error) {
+	rsp, err := c.ConnectPaymentWalletWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectPaymentWalletResult(rsp)
+}
+
+func (c *ClientWithResponses) ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error) {
+	rsp, err := c.ConnectPaymentWallet(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectPaymentWalletResult(rsp)
 }
 
 // GetPaymentWithResponse request returning *GetPaymentResult
@@ -22796,6 +23149,39 @@ func ParseConnectLinkSubmitResult(rsp *http.Response) (*ConnectLinkSubmitResult,
 			return nil, err
 		}
 		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectPaymentWalletResult parses an HTTP response from a ConnectPaymentWalletWithResponse call
+func ParseConnectPaymentWalletResult(rsp *http.Response) (*ConnectPaymentWalletResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectPaymentWalletResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaymentConnectionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
