@@ -244,6 +244,12 @@ const (
 	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
+// Defines values for PaymentConnectRequestMode.
+const (
+	PaymentConnectRequestModeLive PaymentConnectRequestMode = "live"
+	PaymentConnectRequestModeTest PaymentConnectRequestMode = "test"
+)
+
 // Defines values for PaymentNextActionResolution.
 const (
 	AutoResume                           PaymentNextActionResolution = "auto_resume"
@@ -266,8 +272,8 @@ const (
 
 // Defines values for PaymentRequestMode.
 const (
-	Live PaymentRequestMode = "live"
-	Test PaymentRequestMode = "test"
+	PaymentRequestModeLive PaymentRequestMode = "live"
+	PaymentRequestModeTest PaymentRequestMode = "test"
 )
 
 // Defines values for ProfileCookiesImportRequestMode.
@@ -2450,6 +2456,25 @@ type ParameterInfo struct {
 	Type    *string `json:"type,omitempty"`
 }
 
+// PaymentConnectRequest defines model for PaymentConnectRequest.
+type PaymentConnectRequest struct {
+	Mode *PaymentConnectRequestMode `json:"mode,omitempty"`
+}
+
+// PaymentConnectRequestMode defines model for PaymentConnectRequest.Mode.
+type PaymentConnectRequestMode string
+
+// PaymentConnectionResponse defines model for PaymentConnectionResponse.
+type PaymentConnectionResponse struct {
+	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string `json:"connection_url,omitempty"`
+	ErrorCode        *string `json:"error_code,omitempty"`
+	ExpiresAt        *string `json:"expires_at,omitempty"`
+	Id               string  `json:"id"`
+	Mode             string  `json:"mode"`
+	Status           string  `json:"status"`
+}
+
 // PaymentNextAction defines model for PaymentNextAction.
 type PaymentNextAction struct {
 	ActionUrl  *string                     `json:"action_url,omitempty"`
@@ -3613,6 +3638,12 @@ type ConnectLinkSubmitParams struct {
 	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
 }
 
+// ConnectPaymentWalletParams defines parameters for ConnectPaymentWallet.
+type ConnectPaymentWalletParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // GetPaymentParams defines parameters for GetPayment.
 type GetPaymentParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -4098,6 +4129,9 @@ type ConnectLinkMailboxSyncJSONRequestBody = ConnectLinkMailboxSyncRequest
 
 // ConnectLinkSubmitJSONRequestBody defines body for ConnectLinkSubmit for application/json ContentType.
 type ConnectLinkSubmitJSONRequestBody = ConnectLinkSubmitRequest
+
+// ConnectPaymentWalletJSONRequestBody defines body for ConnectPaymentWallet for application/json ContentType.
+type ConnectPaymentWalletJSONRequestBody = PaymentConnectRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -9909,6 +9943,11 @@ type ClientInterface interface {
 
 	ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConnectPaymentWalletWithBody request with any body
+	ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPayment request
 	GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10688,6 +10727,30 @@ func (c *Client) ConnectLinkSubmitWithBody(ctx context.Context, params *ConnectL
 
 func (c *Client) ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectLinkSubmitRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectPaymentWalletRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectPaymentWalletRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -14118,6 +14181,72 @@ func NewConnectLinkSubmitRequestWithBody(server string, params *ConnectLinkSubmi
 		}
 
 		req.Header.Set("X-Notte-Connect-Token", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewConnectPaymentWalletRequest calls the generic ConnectPaymentWallet builder with application/json body
+func NewConnectPaymentWalletRequest(server string, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectPaymentWalletRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewConnectPaymentWalletRequestWithBody generates requests for ConnectPaymentWallet with any type of body
+func NewConnectPaymentWalletRequestWithBody(server string, params *ConnectPaymentWalletParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/connect")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
 
 	}
 
@@ -18572,6 +18701,11 @@ type ClientWithResponsesInterface interface {
 
 	ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
 
+	// ConnectPaymentWalletWithBodyWithResponse request with any body
+	ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
+
+	ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
+
 	// GetPaymentWithResponse request
 	GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error)
 
@@ -19581,6 +19715,29 @@ func (r ConnectLinkSubmitResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectLinkSubmitResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectPaymentWalletResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaymentConnectionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectPaymentWalletResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectPaymentWalletResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21216,6 +21373,23 @@ func (c *ClientWithResponses) ConnectLinkSubmitWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseConnectLinkSubmitResult(rsp)
+}
+
+// ConnectPaymentWalletWithBodyWithResponse request with arbitrary body returning *ConnectPaymentWalletResult
+func (c *ClientWithResponses) ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error) {
+	rsp, err := c.ConnectPaymentWalletWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectPaymentWalletResult(rsp)
+}
+
+func (c *ClientWithResponses) ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error) {
+	rsp, err := c.ConnectPaymentWallet(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectPaymentWalletResult(rsp)
 }
 
 // GetPaymentWithResponse request returning *GetPaymentResult
@@ -22975,6 +23149,39 @@ func ParseConnectLinkSubmitResult(rsp *http.Response) (*ConnectLinkSubmitResult,
 			return nil, err
 		}
 		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectPaymentWalletResult parses an HTTP response from a ConnectPaymentWalletWithResponse call
+func ParseConnectPaymentWalletResult(rsp *http.Response) (*ConnectPaymentWalletResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectPaymentWalletResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaymentConnectionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
