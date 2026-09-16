@@ -14,6 +14,13 @@ linters:
   exclusions:
     paths:
       - internal/api  # Generated code
+    rules:
+      # staticcheck's SA5011 does not model t.Fatal as terminating, so the
+      # common `if x == nil { t.Fatal(...) }` guard followed by a deref reads as
+      # a possible nil dereference. It is a false positive in tests, where a
+      # nil deref surfaces immediately as a panic anyway.
+      - path: _test\.go
+        text: SA5011
 
 formatters:
   enable:

@@ -250,6 +250,12 @@ const (
 	PaymentConnectRequestModeTest PaymentConnectRequestMode = "test"
 )
 
+// Defines values for PaymentDisconnectResponseMode.
+const (
+	PaymentDisconnectResponseModeLive PaymentDisconnectResponseMode = "live"
+	PaymentDisconnectResponseModeTest PaymentDisconnectResponseMode = "test"
+)
+
 // Defines values for PaymentNextActionResolution.
 const (
 	AutoResume                           PaymentNextActionResolution = "auto_resume"
@@ -272,8 +278,8 @@ const (
 
 // Defines values for PaymentRequestMode.
 const (
-	PaymentRequestModeLive PaymentRequestMode = "live"
-	PaymentRequestModeTest PaymentRequestMode = "test"
+	Live PaymentRequestMode = "live"
+	Test PaymentRequestMode = "test"
 )
 
 // Defines values for ProfileCookiesImportRequestMode.
@@ -2475,6 +2481,15 @@ type PaymentConnectionResponse struct {
 	Status           string  `json:"status"`
 }
 
+// PaymentDisconnectResponse defines model for PaymentDisconnectResponse.
+type PaymentDisconnectResponse struct {
+	Mode   PaymentDisconnectResponseMode `json:"mode"`
+	Status *string                       `json:"status,omitempty"`
+}
+
+// PaymentDisconnectResponseMode defines model for PaymentDisconnectResponse.Mode.
+type PaymentDisconnectResponseMode string
+
 // PaymentNextAction defines model for PaymentNextAction.
 type PaymentNextAction struct {
 	ActionUrl  *string                     `json:"action_url,omitempty"`
@@ -3644,6 +3659,12 @@ type ConnectPaymentWalletParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// DisconnectPaymentWalletParams defines parameters for DisconnectPaymentWallet.
+type DisconnectPaymentWalletParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // GetPaymentParams defines parameters for GetPayment.
 type GetPaymentParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -4132,6 +4153,9 @@ type ConnectLinkSubmitJSONRequestBody = ConnectLinkSubmitRequest
 
 // ConnectPaymentWalletJSONRequestBody defines body for ConnectPaymentWallet for application/json ContentType.
 type ConnectPaymentWalletJSONRequestBody = PaymentConnectRequest
+
+// DisconnectPaymentWalletJSONRequestBody defines body for DisconnectPaymentWallet for application/json ContentType.
+type DisconnectPaymentWalletJSONRequestBody = PaymentConnectRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -9948,6 +9972,11 @@ type ClientInterface interface {
 
 	ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DisconnectPaymentWalletWithBody request with any body
+	DisconnectPaymentWalletWithBody(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DisconnectPaymentWallet(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPayment request
 	GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10751,6 +10780,30 @@ func (c *Client) ConnectPaymentWalletWithBody(ctx context.Context, params *Conne
 
 func (c *Client) ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectPaymentWalletRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DisconnectPaymentWalletWithBody(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisconnectPaymentWalletRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DisconnectPaymentWallet(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisconnectPaymentWalletRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -14208,6 +14261,72 @@ func NewConnectPaymentWalletRequestWithBody(server string, params *ConnectPaymen
 	}
 
 	operationPath := fmt.Sprintf("/payments/connect")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDisconnectPaymentWalletRequest calls the generic DisconnectPaymentWallet builder with application/json body
+func NewDisconnectPaymentWalletRequest(server string, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDisconnectPaymentWalletRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewDisconnectPaymentWalletRequestWithBody generates requests for DisconnectPaymentWallet with any type of body
+func NewDisconnectPaymentWalletRequestWithBody(server string, params *DisconnectPaymentWalletParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/disconnect")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -18706,6 +18825,11 @@ type ClientWithResponsesInterface interface {
 
 	ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
 
+	// DisconnectPaymentWalletWithBodyWithResponse request with any body
+	DisconnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error)
+
+	DisconnectPaymentWalletWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error)
+
 	// GetPaymentWithResponse request
 	GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error)
 
@@ -19738,6 +19862,29 @@ func (r ConnectPaymentWalletResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectPaymentWalletResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DisconnectPaymentWalletResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaymentDisconnectResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DisconnectPaymentWalletResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisconnectPaymentWalletResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21390,6 +21537,23 @@ func (c *ClientWithResponses) ConnectPaymentWalletWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseConnectPaymentWalletResult(rsp)
+}
+
+// DisconnectPaymentWalletWithBodyWithResponse request with arbitrary body returning *DisconnectPaymentWalletResult
+func (c *ClientWithResponses) DisconnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error) {
+	rsp, err := c.DisconnectPaymentWalletWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisconnectPaymentWalletResult(rsp)
+}
+
+func (c *ClientWithResponses) DisconnectPaymentWalletWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error) {
+	rsp, err := c.DisconnectPaymentWallet(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisconnectPaymentWalletResult(rsp)
 }
 
 // GetPaymentWithResponse request returning *GetPaymentResult
@@ -23178,6 +23342,39 @@ func ParseConnectPaymentWalletResult(rsp *http.Response) (*ConnectPaymentWalletR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PaymentConnectionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDisconnectPaymentWalletResult parses an HTTP response from a DisconnectPaymentWalletWithResponse call
+func ParseDisconnectPaymentWalletResult(rsp *http.Response) (*DisconnectPaymentWalletResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisconnectPaymentWalletResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaymentDisconnectResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
