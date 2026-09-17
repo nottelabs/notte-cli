@@ -40,6 +40,7 @@ skip POST /prompts/improve # console-only prompt tooling
 skip POST /prompts/nudge # console-only prompt tooling
 
 # --- browser-first flows the CLI has no shape for ----------------------------
+skip GET    /sessions/{session_id}/profile-preview # hidden session-viewer endpoint for the profile-save confirmation
 skip POST   /managed-auth/connect-links # connect links are created and consumed in a browser
 skip POST   /managed-auth/connect-links/context # private endpoint serving the connect-link page
 skip POST   /managed-auth/connect-links/mailboxes # private endpoint serving the connect-link page
