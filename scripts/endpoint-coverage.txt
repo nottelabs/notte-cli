@@ -17,7 +17,6 @@
 # --- reached by hand-written requests ---------------------------------------
 manual POST /payments/disconnect # notte payment disconnect uses the shared authenticated transport
 manual POST /payments/connect # notte payment connect uses the shared authenticated transport
-skip POST /payments/disconnect # not yet exposed by the CLI
 manual POST /sessions/{session_id}/payments # notte payment request uses the shared authenticated transport
 manual GET /payments/{payment_id} # notte payment status and wait use the shared authenticated transport
 manual POST /functions/{function_id}/runs/start # notte functions run builds the body itself to send function_id and variables
