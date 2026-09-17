@@ -100,6 +100,15 @@ type WalletConnectionStatus struct {
 
 // ConnectPaymentWallet creates or retrieves the caller's connection for a mode.
 func (c *NotteClient) ConnectPaymentWallet(ctx context.Context, mode string) (*WalletConnectionStatus, *http.Response, []byte, error) {
+	return c.paymentWalletOperation(ctx, "/payments/connect", mode)
+}
+
+// DisconnectPaymentWallet revokes and forgets one mode without affecting the other.
+func (c *NotteClient) DisconnectPaymentWallet(ctx context.Context, mode string) (*WalletConnectionStatus, *http.Response, []byte, error) {
+	return c.paymentWalletOperation(ctx, "/payments/disconnect", mode)
+}
+
+func (c *NotteClient) paymentWalletOperation(ctx context.Context, path, mode string) (*WalletConnectionStatus, *http.Response, []byte, error) {
 	payload := struct {
 		Mode string `json:"mode,omitempty"`
 	}{Mode: mode}
@@ -107,7 +116,7 @@ func (c *NotteClient) ConnectPaymentWallet(ctx context.Context, mode string) (*W
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL(), "/")+"/payments/connect", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL(), "/")+path, bytes.NewReader(body))
 	if err != nil {
 		return nil, nil, nil, err
 	}

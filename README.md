@@ -649,6 +649,11 @@ connections are scoped to your authenticated account and mode. Requests fail wit
 or reserve a card slot. Once connected, a request provides a spending approval
 URL. Send that URL to the user before waiting for the card.
 
+To switch wallets, run `notte payment disconnect --mode live`, then
+`notte payment connect --mode live`. Disconnect affects only the selected mode
+and refuses while payments or card cleanup are still active. Use `--mode test`
+for the test wallet. Omitting the mode uses the API default.
+
 If Link requires additional wallet verification, `payment wait` prints the action
 URL. Resumable verification keeps waiting on the same request. When Link requires
 a new spend request, the command exits with instructions to complete verification
