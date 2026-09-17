@@ -2481,6 +2481,11 @@ type PaymentConnectionResponse struct {
 	Status           string  `json:"status"`
 }
 
+// PaymentDisconnectError defines model for PaymentDisconnectError.
+type PaymentDisconnectError struct {
+	Detail string `json:"detail"`
+}
+
 // PaymentDisconnectResponse defines model for PaymentDisconnectResponse.
 type PaymentDisconnectResponse struct {
 	Mode   PaymentDisconnectResponseMode `json:"mode"`
@@ -3048,6 +3053,12 @@ type SessionProfile struct {
 
 	// Persist Whether to save browser state to profile on session close
 	Persist *bool `json:"persist,omitempty"`
+}
+
+// SessionProfilePreviewResponse defines model for SessionProfilePreviewResponse.
+type SessionProfilePreviewResponse struct {
+	CookieDomains *[]string       `json:"cookie_domains,omitempty"`
+	Profile       *SessionProfile `json:"profile,omitempty"`
 }
 
 // SessionResponse defines model for SessionResponse.
@@ -3975,6 +3986,13 @@ type PageScreenshotParams struct {
 type CreatePaymentParams struct {
 	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
 	IdempotencyKey      string  `json:"idempotency-key"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SessionProfilePreviewParams defines parameters for SessionProfilePreview.
+type SessionProfilePreviewParams struct {
+	IncludeCookies      *bool   `form:"include_cookies,omitempty" json:"include_cookies,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -10120,6 +10138,9 @@ type ClientInterface interface {
 
 	CreatePayment(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionProfilePreview request
+	SessionProfilePreview(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionReplay request
 	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -11428,6 +11449,18 @@ func (c *Client) CreatePaymentWithBody(ctx context.Context, sessionId string, pa
 
 func (c *Client) CreatePayment(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePaymentRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionProfilePreview(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionProfilePreviewRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -17548,6 +17581,88 @@ func NewCreatePaymentRequestWithBody(server string, sessionId string, params *Cr
 	return req, nil
 }
 
+// NewSessionProfilePreviewRequest generates requests for SessionProfilePreview
+func NewSessionProfilePreviewRequest(server string, sessionId string, params *SessionProfilePreviewParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/profile-preview", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.IncludeCookies != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_cookies", runtime.ParamLocationQuery, *params.IncludeCookies); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionReplayRequest generates requests for SessionReplay
 func NewSessionReplayRequest(server string, sessionId string, params *SessionReplayParams) (*http.Request, error) {
 	var err error
@@ -18973,6 +19088,9 @@ type ClientWithResponsesInterface interface {
 
 	CreatePaymentWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error)
 
+	// SessionProfilePreviewWithResponse request
+	SessionProfilePreviewWithResponse(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*SessionProfilePreviewResult, error)
+
 	// SessionReplayWithResponse request
 	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
 
@@ -19872,7 +19990,10 @@ type DisconnectPaymentWalletResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *PaymentDisconnectResponse
+	JSON403      *PaymentDisconnectError
+	JSON409      *PaymentDisconnectError
 	JSON422      *HTTPValidationError
+	JSON503      *PaymentDisconnectError
 }
 
 // Status returns HTTPResponse.Status
@@ -20779,6 +20900,29 @@ func (r CreatePaymentResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreatePaymentResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SessionProfilePreviewResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionProfilePreviewResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionProfilePreviewResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionProfilePreviewResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -22009,6 +22153,15 @@ func (c *ClientWithResponses) CreatePaymentWithResponse(ctx context.Context, ses
 		return nil, err
 	}
 	return ParseCreatePaymentResult(rsp)
+}
+
+// SessionProfilePreviewWithResponse request returning *SessionProfilePreviewResult
+func (c *ClientWithResponses) SessionProfilePreviewWithResponse(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*SessionProfilePreviewResult, error) {
+	rsp, err := c.SessionProfilePreview(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionProfilePreviewResult(rsp)
 }
 
 // SessionReplayWithResponse request returning *SessionReplayResult
@@ -23380,12 +23533,33 @@ func ParseDisconnectPaymentWalletResult(rsp *http.Response) (*DisconnectPaymentW
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest PaymentDisconnectError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest PaymentDisconnectError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest PaymentDisconnectError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
 
 	}
 
@@ -24648,6 +24822,39 @@ func ParseCreatePaymentResult(rsp *http.Response) (*CreatePaymentResult, error) 
 			return nil, err
 		}
 		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionProfilePreviewResult parses an HTTP response from a SessionProfilePreviewWithResponse call
+func ParseSessionProfilePreviewResult(rsp *http.Response) (*SessionProfilePreviewResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionProfilePreviewResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionProfilePreviewResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
