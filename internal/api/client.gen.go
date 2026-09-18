@@ -203,7 +203,7 @@ const (
 	AnthropicclaudeSonnet4520250929       LlmModel = "anthropic/claude-sonnet-4-5-20250929"
 	CerebrasgptOss120b                    LlmModel = "cerebras/gpt-oss-120b"
 	DeepseekdeepseekR1                    LlmModel = "deepseek/deepseek-r1"
-	Geminigemini25Flash                   LlmModel = "gemini/gemini-2.5-flash"
+	Geminigemini35Flash                   LlmModel = "gemini/gemini-3.5-flash"
 	GroqgptOss120b                        LlmModel = "groq/gpt-oss-120b"
 	MinimaxminimaxM25                     LlmModel = "minimax/minimax-m2.5"
 	MoonshotkimiK25                       LlmModel = "moonshot/kimi-k2.5"
@@ -211,7 +211,7 @@ const (
 	Openroutergooglegemma327bIt           LlmModel = "openrouter/google/gemma-3-27b-it"
 	PerplexitysonarPro                    LlmModel = "perplexity/sonar-pro"
 	TogetherAimetaLlamallama3370bInstruct LlmModel = "together_ai/meta-llama/llama-3.3-70b-instruct"
-	VertexAigemini25Flash                 LlmModel = "vertex_ai/gemini-2.5-flash"
+	VertexAigemini35Flash                 LlmModel = "vertex_ai/gemini-3.5-flash"
 	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
 )
 
