@@ -1492,3 +1492,52 @@ func TestRunSessionStatusAuth(t *testing.T) {
 		t.Fatalf("unexpected readiness: %s", stdout)
 	}
 }
+
+func TestSessionsStart_AnnouncesStoppingPreviousSession(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	tmpDir := setupSessionFileTest(t)
+
+	configDir := filepath.Join(tmpDir, config.ConfigDirName)
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("failed to create config dir: %v", err)
+	}
+	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
+	if err := os.WriteFile(sessionFile, []byte("sess_old_123"), 0o600); err != nil {
+		t.Fatalf("failed to write session file: %v", err)
+	}
+
+	server.AddResponse("/sessions/sess_old_123/stop", 200, sessionJSON())
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new_456","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
+
+	origID := sessionID
+	sessionID = ""
+	t.Cleanup(func() { sessionID = origID })
+
+	// --yes: the replace prompt never appears, so the stop must announce itself.
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runSessionsStart(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "Stopped session sess_old_123") {
+		t.Errorf("expected the replaced session to be announced, got: %q", stdout)
+	}
+}

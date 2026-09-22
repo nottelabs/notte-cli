@@ -349,7 +349,7 @@ func init() {
 	registerSessionStartOptOutFlags(sessionsStartCmd)
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
-	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Implies --proxy")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Selects a proxy on its own; do not combine with --proxy")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtServer, "proxy-external-server", "", "External proxy server URL (e.g. http://proxy:8080). Enables external proxy")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtUsername, "proxy-external-username", "", "External proxy username")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtPassword, "proxy-external-password", "", "External proxy password")
@@ -485,6 +485,10 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			cancel()
 			if stopErr != nil {
 				PrintInfo(fmt.Sprintf("Warning: could not stop session %s: %v", existingSessionID, stopErr))
+			} else {
+				// Say so out loud: with --yes the prompt never appears, and an
+				// unannounced stop reads like the new session evicted the old one.
+				PrintInfo(fmt.Sprintf("Stopped session %s before starting the new one.", existingSessionID))
 			}
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
