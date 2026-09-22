@@ -481,8 +481,13 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 			}
 			ctx, cancel := GetContextWithTimeout(cmd.Context())
 			params := &api.SessionStopParams{}
-			_, stopErr := stopClient.Client().SessionStopWithResponse(ctx, existingSessionID, params)
+			stopResp, stopErr := stopClient.Client().SessionStopWithResponse(ctx, existingSessionID, params)
 			cancel()
+			// A rejected stop comes back as a non-2xx response with a nil error,
+			// so the status has to be checked before reporting success.
+			if stopErr == nil && stopResp != nil {
+				stopErr = HandleAPIResponse(stopResp.HTTPResponse, stopResp.Body)
+			}
 			if stopErr != nil {
 				PrintInfo(fmt.Sprintf("Warning: could not stop session %s: %v", existingSessionID, stopErr))
 			} else {
