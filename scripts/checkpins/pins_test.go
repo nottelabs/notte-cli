@@ -13,6 +13,11 @@ import (
 	"testing"
 )
 
+// usesRef extracts the action reference from any line carrying a `uses:` key,
+// whether written as a block entry or inside an inline mapping such as
+// `- {uses: actions/checkout@v6}`. The trailing comment, if any, is kept.
+var usesRef = regexp.MustCompile(`\buses:\s*["']?([^"',}\n]+)`)
+
 // pinned matches `owner/repo@<40 hex chars> # vX.Y.Z`, with an optional
 // subpath after the repo.
 var pinned = regexp.MustCompile(`^[\w.-]+/[\w.-]+(/[\w./-]+)?@[0-9a-f]{40}\s+#\s*v\S+$`)
@@ -36,12 +41,11 @@ func TestWorkflowActionsArePinnedToCommitSHAs(t *testing.T) {
 		line := 0
 		for scanner.Scan() {
 			line++
-			text := strings.TrimSpace(scanner.Text())
-			text = strings.TrimPrefix(text, "- ")
-			if !strings.HasPrefix(text, "uses:") {
+			m := usesRef.FindStringSubmatch(scanner.Text())
+			if m == nil {
 				continue
 			}
-			ref := strings.TrimSpace(strings.TrimPrefix(text, "uses:"))
+			ref := strings.TrimSpace(m[1])
 			// Local actions and container images are not fetched from a
 			// third-party git ref, so there is no tag to pin.
 			if strings.HasPrefix(ref, "./") || strings.HasPrefix(ref, "docker://") {
