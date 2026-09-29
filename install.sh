@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install the notte CLI from its GitHub releases.
 #
-#   curl -fsSL https://raw.githubusercontent.com/nottelabs/notte-cli/main/install.sh | sh
+#   curl -fsSL https://notte.cc/install-cli.sh | sh
 #
 # Environment variables:
 #   NOTTE_VERSION      version to install, e.g. 0.0.48 (default: latest release)
