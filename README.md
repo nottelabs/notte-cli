@@ -33,7 +33,7 @@ The Notte CLI brings the full power of [notte.cc](https://notte.cc?ref=github) t
 ### Install script (macOS and Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nottelabs/notte-cli/main/install.sh | sh
+curl -fsSL https://notte.cc/install-cli.sh | sh
 ```
 
 Installs the latest release to `/usr/local/bin`. Set `NOTTE_VERSION` to install a specific version, or `NOTTE_INSTALL_DIR` to install somewhere else.

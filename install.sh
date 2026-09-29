@@ -100,17 +100,22 @@ main() {
 	fi
 	echo "Installed notte $version to $dir/notte"
 
-	# Check that the notte the shell will actually run is the one just installed:
-	# another copy earlier on PATH (e.g. an older one in /usr/local/bin when sudo
-	# was denied) would shadow it. test -ef compares the files themselves (device
-	# and inode), so relative, symlinked or slash-terminated spellings of the same
-	# file are equal, with no external tool and no risk of a path read as an option.
+	# Check that the notte the shell will actually run is this version: another
+	# copy earlier on PATH (e.g. an older one in /usr/local/bin when sudo was
+	# denied) would shadow it. Asking it for its version, rather than comparing
+	# paths, accepts any spelling of the same file and identical copies elsewhere.
 	resolved=$(command -v notte 2>/dev/null || true)
 	if [ -z "$resolved" ]; then
 		echo "Add $dir to your PATH to use notte"
-	elif ! [ "$resolved" -ef "$dir/notte" ]; then
-		echo "Warning: $resolved comes before $dir/notte on your PATH, so running notte still uses it." >&2
-		echo "Remove $resolved or put $dir first on your PATH." >&2
+	else
+		running=$("$resolved" version 2>/dev/null || true)
+		case "$running" in
+		*" $version") ;;
+		*)
+			echo "Warning: $resolved comes before $dir/notte on your PATH, so running notte still uses it." >&2
+			echo "Remove $resolved or put $dir first on your PATH." >&2
+			;;
+		esac
 	fi
 }
 
