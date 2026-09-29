@@ -102,12 +102,13 @@ main() {
 
 	# Check that the notte the shell will actually run is the one just installed:
 	# another copy earlier on PATH (e.g. an older one in /usr/local/bin when sudo
-	# was denied) would shadow it. Comparing contents rather than paths keeps
-	# relative, symlinked or slash-terminated spellings of the same file equal.
+	# was denied) would shadow it. test -ef compares the files themselves (device
+	# and inode), so relative, symlinked or slash-terminated spellings of the same
+	# file are equal, with no external tool and no risk of a path read as an option.
 	resolved=$(command -v notte 2>/dev/null || true)
 	if [ -z "$resolved" ]; then
 		echo "Add $dir to your PATH to use notte"
-	elif ! cmp -s "$resolved" "$dir/notte"; then
+	elif ! [ "$resolved" -ef "$dir/notte" ]; then
 		echo "Warning: $resolved comes before $dir/notte on your PATH, so running notte still uses it." >&2
 		echo "Remove $resolved or put $dir first on your PATH." >&2
 	fi
