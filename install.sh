@@ -96,6 +96,8 @@ main() {
 			install_to "$dir" "" || fail "could not install to $dir"
 		fi
 	fi
+	# Absolute path without trailing slashes, so it compares equal to what PATH lookup returns.
+	dir=$(cd -- "$dir" && pwd)
 	echo "Installed notte $version to $dir/notte"
 
 	# Check which notte the shell will actually run: another copy earlier on PATH
