@@ -98,10 +98,15 @@ main() {
 	fi
 	echo "Installed notte $version to $dir/notte"
 
-	case ":$PATH:" in
-	*":$dir:"*) ;;
-	*) echo "Add $dir to your PATH to use notte" ;;
-	esac
+	# Check which notte the shell will actually run: another copy earlier on PATH
+	# (e.g. an older one in /usr/local/bin when sudo was denied) would shadow this one.
+	resolved=$(command -v notte 2>/dev/null || true)
+	if [ -z "$resolved" ]; then
+		echo "Add $dir to your PATH to use notte"
+	elif [ "$resolved" != "$dir/notte" ]; then
+		echo "Warning: $resolved comes before $dir/notte on your PATH, so running notte still uses it." >&2
+		echo "Remove $resolved or put $dir first on your PATH." >&2
+	fi
 }
 
 main
