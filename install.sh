@@ -44,7 +44,9 @@ if [ -z "$version" ]; then
 	# releases/latest redirects to the newest tag, e.g. .../releases/tag/v1.2.3
 	latest_url=$(curl -fsSL -o /dev/null -w '%{url_effective}' "$RELEASES/latest")
 	version="${latest_url##*/tag/v}"
-	[ -n "$version" ] && [ "$version" != "$latest_url" ] || fail "could not resolve the latest release"
+	if [ -z "$version" ] || [ "$version" = "$latest_url" ]; then
+		fail "could not resolve the latest release"
+	fi
 fi
 version="${version#v}"
 
