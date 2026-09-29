@@ -118,3 +118,30 @@ jobs:
             echo "::error::notte skill add --upgrade did not leave notte-browser/SKILL.md installed"
             exit 1
           fi
+
+  install-script:
+    # End-to-end check that install.sh installs the latest release: resolves
+    # the version, verifies the checksum and puts a working binary on PATH.
+    #
+    # `edited` fires on every title and description edit too, so the job
+    # itself checks that the base is what changed. `changes.base` is present
+    # in the payload only when it was (carrying base.ref.from and
+    # base.sha.from); a prose edit sends changes.title or changes.body and
+    # this skips. On push there is no action at all, so the guard is a no-op.
+    if: github.event.action != 'edited' || github.event.changes.base != null
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: shellcheck
+        if: runner.os == 'Linux'
+        run: shellcheck install.sh
+
+      - name: install.sh
+        run: |
+          set -euo pipefail
+          sh install.sh
+          notte version
