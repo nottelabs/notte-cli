@@ -82,7 +82,9 @@ main() {
 	tar -xzf "$tmp/$archive" -C "$tmp" notte
 
 	if [ -n "${NOTTE_INSTALL_DIR:-}" ]; then
-		dir="$NOTTE_INSTALL_DIR"
+		# Drop trailing slashes so messages read dir/notte, keeping a bare / as is.
+		dir="${NOTTE_INSTALL_DIR%"${NOTTE_INSTALL_DIR##*[!/]}"}"
+		dir="${dir:-/}"
 		install_to "$dir" "" || fail "could not install to $dir"
 	else
 		dir=/usr/local/bin
@@ -96,16 +98,16 @@ main() {
 			install_to "$dir" "" || fail "could not install to $dir"
 		fi
 	fi
-	# Absolute path without trailing slashes, so it compares equal to what PATH lookup returns.
-	dir=$(cd -- "$dir" && pwd)
 	echo "Installed notte $version to $dir/notte"
 
-	# Check which notte the shell will actually run: another copy earlier on PATH
-	# (e.g. an older one in /usr/local/bin when sudo was denied) would shadow this one.
+	# Check that the notte the shell will actually run is the one just installed:
+	# another copy earlier on PATH (e.g. an older one in /usr/local/bin when sudo
+	# was denied) would shadow it. Comparing contents rather than paths keeps
+	# relative, symlinked or slash-terminated spellings of the same file equal.
 	resolved=$(command -v notte 2>/dev/null || true)
 	if [ -z "$resolved" ]; then
 		echo "Add $dir to your PATH to use notte"
-	elif [ "$resolved" != "$dir/notte" ]; then
+	elif ! cmp -s "$resolved" "$dir/notte"; then
 		echo "Warning: $resolved comes before $dir/notte on your PATH, so running notte still uses it." >&2
 		echo "Remove $resolved or put $dir first on your PATH." >&2
 	fi
