@@ -56,10 +56,10 @@ var (
 	// The vault to use for the session
 	SessionStartVaultId string
 
-	// The height of the viewport
+	// Viewport height in pixels (minimum 500). Set together with viewport_width.
 	SessionStartViewportHeight int
 
-	// The width of the viewport
+	// Viewport width in pixels (minimum 500). Set together with viewport_height.
 	SessionStartViewportWidth int
 
 	// SDK waiting preference. The API always verifies inline and returns authenticating when background login is needed; SDKs implement waiting through readiness polling.
@@ -88,8 +88,8 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas (API default: true)")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
 	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
-	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "The height of the viewport")
-	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "The width of the viewport")
+	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "Viewport height in pixels (minimum 500). Set together with viewport_width.")
+	cmd.Flags().IntVar(&SessionStartViewportWidth, "viewport-width", 0, "Viewport width in pixels (minimum 500). Set together with viewport_height.")
 	cmd.Flags().BoolVar(&SessionStartWaitForAuthentication, "wait-for-authentication", false, "SDK waiting preference. The API always verifies inline and returns authenticating when background login is needed; SDKs implement waiting through readiness polling. (API default: true)")
 	cmd.Flags().BoolVar(&SessionStartWebBotAuth, "web-bot-auth", false, "Whether to use web bot authentication. (API default: false)")
 }
