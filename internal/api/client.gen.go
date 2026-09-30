@@ -821,10 +821,10 @@ type ApiSessionStartRequest struct {
 	// VaultId The vault to use for the session
 	VaultId *string `json:"vault_id,omitempty"`
 
-	// ViewportHeight The height of the viewport
+	// ViewportHeight Viewport height in pixels (minimum 500). Set together with viewport_width.
 	ViewportHeight *int `json:"viewport_height,omitempty"`
 
-	// ViewportWidth The width of the viewport
+	// ViewportWidth Viewport width in pixels (minimum 500). Set together with viewport_height.
 	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WaitForAuthentication SDK waiting preference. The API always verifies inline and returns authenticating when background login is needed; SDKs implement waiting through readiness polling.
@@ -1959,6 +1959,9 @@ type GlobalScrapeRequest struct {
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
 
+	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+	Model *GlobalScrapeRequest_Model `json:"model,omitempty"`
+
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
 
@@ -1997,10 +2000,10 @@ type GlobalScrapeRequest struct {
 	// VaultId The vault to use for the session
 	VaultId *string `json:"vault_id,omitempty"`
 
-	// ViewportHeight The height of the viewport
+	// ViewportHeight Viewport height in pixels (minimum 500). Set together with viewport_width.
 	ViewportHeight *int `json:"viewport_height,omitempty"`
 
-	// ViewportWidth The width of the viewport
+	// ViewportWidth Viewport width in pixels (minimum 500). Set together with viewport_height.
 	ViewportWidth *int `json:"viewport_width,omitempty"`
 
 	// WaitForAuthentication Whether to wait for Managed Auth before returning the session. Defaults to true. When true, authentication failure or timeout fails session creation; when false, authentication continues in the background after the browser is ready.
@@ -2012,6 +2015,14 @@ type GlobalScrapeRequest struct {
 
 // GlobalScrapeRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 type GlobalScrapeRequestBrowserType string
+
+// GlobalScrapeRequestModel1 defines model for .
+type GlobalScrapeRequestModel1 = string
+
+// GlobalScrapeRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+type GlobalScrapeRequest_Model struct {
+	union json.RawMessage
+}
 
 // GlobalScrapeRequestProxies0 defines model for .
 type GlobalScrapeRequestProxies0 = []GlobalScrapeRequest_Proxies_0_Item
@@ -2809,6 +2820,9 @@ type ScrapeFromHtmlRequest struct {
 	// Instructions User description as to what needs to be scraped
 	Instructions *string `json:"instructions,omitempty"`
 
+	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+	Model *ScrapeFromHtmlRequest_Model `json:"model,omitempty"`
+
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
 
@@ -2831,6 +2845,14 @@ type ScrapeFromHtmlRequest struct {
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
 }
 
+// ScrapeFromHtmlRequestModel1 defines model for .
+type ScrapeFromHtmlRequestModel1 = string
+
+// ScrapeFromHtmlRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+type ScrapeFromHtmlRequest_Model struct {
+	union json.RawMessage
+}
+
 // ScrapeRequest defines model for ScrapeRequest.
 type ScrapeRequest struct {
 	// IgnoredTags HTML tags to ignore from the page
@@ -2838,6 +2860,9 @@ type ScrapeRequest struct {
 
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
 	Instructions *string `json:"instructions,omitempty"`
+
+	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+	Model *ScrapeRequest_Model `json:"model,omitempty"`
 
 	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
 	OnlyImages *bool `json:"only_images,omitempty"`
@@ -2859,6 +2884,14 @@ type ScrapeRequest struct {
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
+}
+
+// ScrapeRequestModel1 defines model for .
+type ScrapeRequestModel1 = string
+
+// ScrapeRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
+type ScrapeRequest_Model struct {
+	union json.RawMessage
 }
 
 // ScrapeSchemaResponse defines model for ScrapeSchemaResponse.
@@ -8721,6 +8754,68 @@ func (t *FormFillAction_Value_AdditionalProperties) UnmarshalJSON(b []byte) erro
 	return err
 }
 
+// AsLlmModel returns the union data inside the GlobalScrapeRequest_Model as a LlmModel
+func (t GlobalScrapeRequest_Model) AsLlmModel() (LlmModel, error) {
+	var body LlmModel
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLlmModel overwrites any union data inside the GlobalScrapeRequest_Model as the provided LlmModel
+func (t *GlobalScrapeRequest_Model) FromLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLlmModel performs a merge with any union data inside the GlobalScrapeRequest_Model, using the provided LlmModel
+func (t *GlobalScrapeRequest_Model) MergeLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGlobalScrapeRequestModel1 returns the union data inside the GlobalScrapeRequest_Model as a GlobalScrapeRequestModel1
+func (t GlobalScrapeRequest_Model) AsGlobalScrapeRequestModel1() (GlobalScrapeRequestModel1, error) {
+	var body GlobalScrapeRequestModel1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGlobalScrapeRequestModel1 overwrites any union data inside the GlobalScrapeRequest_Model as the provided GlobalScrapeRequestModel1
+func (t *GlobalScrapeRequest_Model) FromGlobalScrapeRequestModel1(v GlobalScrapeRequestModel1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGlobalScrapeRequestModel1 performs a merge with any union data inside the GlobalScrapeRequest_Model, using the provided GlobalScrapeRequestModel1
+func (t *GlobalScrapeRequest_Model) MergeGlobalScrapeRequestModel1(v GlobalScrapeRequestModel1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GlobalScrapeRequest_Model) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GlobalScrapeRequest_Model) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsNotteProxy returns the union data inside the GlobalScrapeRequest_Proxies_0_Item as a NotteProxy
 func (t GlobalScrapeRequest_Proxies_0_Item) AsNotteProxy() (NotteProxy, error) {
 	var body NotteProxy
@@ -9214,6 +9309,130 @@ func (t PaymentRequest_Amount) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PaymentRequest_Amount) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsLlmModel returns the union data inside the ScrapeFromHtmlRequest_Model as a LlmModel
+func (t ScrapeFromHtmlRequest_Model) AsLlmModel() (LlmModel, error) {
+	var body LlmModel
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLlmModel overwrites any union data inside the ScrapeFromHtmlRequest_Model as the provided LlmModel
+func (t *ScrapeFromHtmlRequest_Model) FromLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLlmModel performs a merge with any union data inside the ScrapeFromHtmlRequest_Model, using the provided LlmModel
+func (t *ScrapeFromHtmlRequest_Model) MergeLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrapeFromHtmlRequestModel1 returns the union data inside the ScrapeFromHtmlRequest_Model as a ScrapeFromHtmlRequestModel1
+func (t ScrapeFromHtmlRequest_Model) AsScrapeFromHtmlRequestModel1() (ScrapeFromHtmlRequestModel1, error) {
+	var body ScrapeFromHtmlRequestModel1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrapeFromHtmlRequestModel1 overwrites any union data inside the ScrapeFromHtmlRequest_Model as the provided ScrapeFromHtmlRequestModel1
+func (t *ScrapeFromHtmlRequest_Model) FromScrapeFromHtmlRequestModel1(v ScrapeFromHtmlRequestModel1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrapeFromHtmlRequestModel1 performs a merge with any union data inside the ScrapeFromHtmlRequest_Model, using the provided ScrapeFromHtmlRequestModel1
+func (t *ScrapeFromHtmlRequest_Model) MergeScrapeFromHtmlRequestModel1(v ScrapeFromHtmlRequestModel1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ScrapeFromHtmlRequest_Model) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ScrapeFromHtmlRequest_Model) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsLlmModel returns the union data inside the ScrapeRequest_Model as a LlmModel
+func (t ScrapeRequest_Model) AsLlmModel() (LlmModel, error) {
+	var body LlmModel
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLlmModel overwrites any union data inside the ScrapeRequest_Model as the provided LlmModel
+func (t *ScrapeRequest_Model) FromLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLlmModel performs a merge with any union data inside the ScrapeRequest_Model, using the provided LlmModel
+func (t *ScrapeRequest_Model) MergeLlmModel(v LlmModel) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrapeRequestModel1 returns the union data inside the ScrapeRequest_Model as a ScrapeRequestModel1
+func (t ScrapeRequest_Model) AsScrapeRequestModel1() (ScrapeRequestModel1, error) {
+	var body ScrapeRequestModel1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrapeRequestModel1 overwrites any union data inside the ScrapeRequest_Model as the provided ScrapeRequestModel1
+func (t *ScrapeRequest_Model) FromScrapeRequestModel1(v ScrapeRequestModel1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrapeRequestModel1 performs a merge with any union data inside the ScrapeRequest_Model, using the provided ScrapeRequestModel1
+func (t *ScrapeRequest_Model) MergeScrapeRequestModel1(v ScrapeRequestModel1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ScrapeRequest_Model) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ScrapeRequest_Model) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
