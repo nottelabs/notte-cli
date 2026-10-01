@@ -212,7 +212,7 @@ const (
 	PerplexitysonarPro                    LlmModel = "perplexity/sonar-pro"
 	TogetherAimetaLlamallama3370bInstruct LlmModel = "together_ai/meta-llama/llama-3.3-70b-instruct"
 	VertexAigemini35Flash                 LlmModel = "vertex_ai/gemini-3.5-flash"
-	Xaigrok41FastNonReasoning             LlmModel = "xai/grok-4-1-fast-non-reasoning"
+	Xaigrok43                             LlmModel = "xai/grok-4.3"
 )
 
 // Defines values for MailboxConnectRequestProvider.
