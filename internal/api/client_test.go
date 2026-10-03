@@ -511,3 +511,22 @@ func TestClientRedirectDoesNotSendAPIKeyToStorage(t *testing.T) {
 		t.Error("transport mutated caller's headers")
 	}
 }
+
+func TestNewClient_HonorsProxyEnvironment(t *testing.T) {
+	client, err := NewClient("test-api-key")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	rt, ok := client.HTTPClient().Transport.(*resilientTransport)
+	if !ok {
+		t.Fatalf("got transport %T, want *resilientTransport", client.HTTPClient().Transport)
+	}
+	base, ok := rt.base.(*http.Transport)
+	if !ok {
+		t.Fatalf("got base transport %T, want *http.Transport", rt.base)
+	}
+	// Without a Proxy func, HTTP(S)_PROXY / NO_PROXY are silently ignored.
+	if base.Proxy == nil {
+		t.Error("base transport Proxy is nil; want http.ProxyFromEnvironment")
+	}
+}
