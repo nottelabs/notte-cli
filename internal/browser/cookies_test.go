@@ -228,6 +228,50 @@ func TestCopyDBSnapshotWithWAL(t *testing.T) {
 	}
 }
 
+// TestSnapshotDBVacuumInto checks that the preferred VACUUM INTO path succeeds
+// (rather than silently falling back to a file copy), including when the
+// destination path contains a quote that would break a string-built statement.
+func TestSnapshotDBVacuumInto(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "Cookies")
+	db, err := sql.Open("sqlite", "file:"+dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{
+		`CREATE TABLE t (v TEXT)`,
+		`INSERT INTO t VALUES ('vacuumed')`,
+	} {
+		if _, err := db.Exec(s); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = db.Close()
+
+	tmpDir := filepath.Join(t.TempDir(), "it's")
+	if err := os.Mkdir(tmpDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := snapshotDB(dbPath, tmpDir)
+	if err != nil {
+		t.Fatalf("snapshotDB: %v", err)
+	}
+	if want := filepath.Join(tmpDir, "snapshot.db"); snap != want {
+		t.Fatalf("snapshotDB fell back to copying: got %q, want %q", snap, want)
+	}
+	sdb, err := sql.Open("sqlite", "file:"+snap+"?mode=ro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = sdb.Close() }()
+	var got string
+	if err := sdb.QueryRow(`SELECT v FROM t`).Scan(&got); err != nil {
+		t.Fatalf("reading snapshot: %v", err)
+	}
+	if got != "vacuumed" {
+		t.Errorf("snapshot content: got %q, want %q", got, "vacuumed")
+	}
+}
+
 func TestSameSiteString(t *testing.T) {
 	cases := map[int]string{-1: "", 0: "None", 1: "Lax", 2: "Strict", 99: ""}
 	for in, want := range cases {
