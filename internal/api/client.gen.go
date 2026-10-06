@@ -572,6 +572,26 @@ const (
 	Updated UpdateFunctionRunResponseStatus = "updated"
 )
 
+// Defines values for FunctionRunGetMetadataParamsPayloadMode.
+const (
+	Inline     FunctionRunGetMetadataParamsPayloadMode = "inline"
+	References FunctionRunGetMetadataParamsPayloadMode = "references"
+)
+
+// Defines values for DownloadRunPayloadParamsField.
+const (
+	DownloadRunPayloadParamsFieldLogs      DownloadRunPayloadParamsField = "logs"
+	DownloadRunPayloadParamsFieldResult    DownloadRunPayloadParamsField = "result"
+	DownloadRunPayloadParamsFieldVariables DownloadRunPayloadParamsField = "variables"
+)
+
+// Defines values for PrepareRunPayloadUploadParamsField.
+const (
+	PrepareRunPayloadUploadParamsFieldLogs      PrepareRunPayloadUploadParamsField = "logs"
+	PrepareRunPayloadUploadParamsFieldResult    PrepareRunPayloadUploadParamsField = "result"
+	PrepareRunPayloadUploadParamsFieldVariables PrepareRunPayloadUploadParamsField = "variables"
+)
+
 // Defines values for SessionStopParamsCloseReason.
 const (
 	SessionStopParamsCloseReasonError  SessionStopParamsCloseReason = "error"
@@ -783,6 +803,9 @@ type ApiSessionStartRequest struct {
 	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Initial verification runs before returning; when login is needed, the session returns as authenticating. Poll /sessions/{id}/auth for readiness.
 	AuthIds   *[]string `json:"auth_ids,omitempty"`
 	AuthRetry *int      `json:"auth_retry,omitempty"`
+
+	// BlockAds Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers.
+	BlockAds *bool `json:"block_ads,omitempty"`
 
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
@@ -1742,10 +1765,12 @@ type FunctionRunListItemResponseStatus string
 // FunctionRunUpdateRequest defines model for FunctionRunUpdateRequest.
 type FunctionRunUpdateRequest struct {
 	// Logs The logs of the workflow run
-	Logs *[]string `json:"logs,omitempty"`
+	Logs     *[]string                       `json:"logs,omitempty"`
+	Payloads *map[string]RunPayloadReference `json:"payloads,omitempty"`
 
 	// Result The result of the workflow run
-	Result interface{} `json:"result"`
+	Result        interface{} `json:"result"`
+	ResultPreview *string     `json:"result_preview,omitempty"`
 
 	// SessionId The ID of the session
 	SessionId *string `json:"session_id,omitempty"`
@@ -1898,13 +1923,16 @@ type GetFunctionRunResponse struct {
 	FunctionId string `json:"function_id"`
 
 	// FunctionRunId The ID of the function run
-	FunctionRunId string `json:"function_run_id"`
+	FunctionRunId   string  `json:"function_run_id"`
+	FunctionVersion *string `json:"function_version,omitempty"`
 
 	// Local Whether the workflow has been run locally or on the cloud
 	Local *bool `json:"local,omitempty"`
 
 	// Logs The logs of the workflow run
-	Logs *[]string `json:"logs,omitempty"`
+	Logs        *[]string                       `json:"logs,omitempty"`
+	PayloadUrls *map[string]string              `json:"payload_urls,omitempty"`
+	Payloads    *map[string]RunPayloadReference `json:"payloads,omitempty"`
 
 	// Result The result of the workflow run (if any)
 	Result *string `json:"result,omitempty"`
@@ -1912,6 +1940,7 @@ type GetFunctionRunResponse struct {
 	// SessionId The ID of the session
 	SessionId *string                      `json:"session_id,omitempty"`
 	Status    GetFunctionRunResponseStatus `json:"status"`
+	StoppedAt *string                      `json:"stopped_at,omitempty"`
 	UpdatedAt FlexibleTime                 `json:"updated_at"`
 
 	// Variables The variables of the workflow run
@@ -1934,6 +1963,9 @@ type GlobalScrapeRequest struct {
 	// AuthIds Managed Auth connection IDs to verify and, when necessary, authenticate inside this session before it is returned.
 	AuthIds   *[]string `json:"auth_ids,omitempty"`
 	AuthRetry *int      `json:"auth_retry,omitempty"`
+
+	// BlockAds Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers.
+	BlockAds *bool `json:"block_ads,omitempty"`
 
 	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	BrowserType *GlobalScrapeRequestBrowserType `json:"browser_type,omitempty"`
@@ -2728,6 +2760,26 @@ type RunFunctionRequest struct {
 
 	// WorkflowId The ID of the function to run
 	WorkflowId string `json:"workflow_id"`
+}
+
+// RunPayloadReference defines model for RunPayloadReference.
+type RunPayloadReference struct {
+	Sha256    string             `json:"sha256"`
+	SizeBytes int                `json:"size_bytes"`
+	UploadId  openapi_types.UUID `json:"upload_id"`
+}
+
+// RunPayloadUploadRequest defines model for RunPayloadUploadRequest.
+type RunPayloadUploadRequest struct {
+	Sha256    string `json:"sha256"`
+	SizeBytes int    `json:"size_bytes"`
+}
+
+// RunPayloadUploadResponse defines model for RunPayloadUploadResponse.
+type RunPayloadUploadResponse struct {
+	Headers   map[string]string   `json:"headers"`
+	Reference RunPayloadReference `json:"reference"`
+	Url       string              `json:"url"`
 }
 
 // RuntimePackage defines model for RuntimePackage.
@@ -3597,15 +3649,37 @@ type FunctionRunStopParams struct {
 
 // FunctionRunGetMetadataParams defines parameters for FunctionRunGetMetadata.
 type FunctionRunGetMetadataParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	PayloadMode         *FunctionRunGetMetadataParamsPayloadMode `form:"payload_mode,omitempty" json:"payload_mode,omitempty"`
+	XNotteRequestOrigin *string                                  `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string                                  `json:"x-notte-sdk-version,omitempty"`
 }
+
+// FunctionRunGetMetadataParamsPayloadMode defines parameters for FunctionRunGetMetadata.
+type FunctionRunGetMetadataParamsPayloadMode string
 
 // FunctionRunUpdateMetadataParams defines parameters for FunctionRunUpdateMetadata.
 type FunctionRunUpdateMetadataParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
+
+// DownloadRunPayloadParams defines parameters for DownloadRunPayload.
+type DownloadRunPayloadParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DownloadRunPayloadParamsField defines parameters for DownloadRunPayload.
+type DownloadRunPayloadParamsField string
+
+// PrepareRunPayloadUploadParams defines parameters for PrepareRunPayloadUpload.
+type PrepareRunPayloadUploadParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PrepareRunPayloadUploadParamsField defines parameters for PrepareRunPayloadUpload.
+type PrepareRunPayloadUploadParamsField string
 
 // FunctionScheduleDeleteParams defines parameters for FunctionScheduleDelete.
 type FunctionScheduleDeleteParams struct {
@@ -4177,6 +4251,9 @@ type FunctionRunStartJSONRequestBody = RunFunctionRequest
 
 // FunctionRunUpdateMetadataJSONRequestBody defines body for FunctionRunUpdateMetadata for application/json ContentType.
 type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
+
+// PrepareRunPayloadUploadJSONRequestBody defines body for PrepareRunPayloadUpload for application/json ContentType.
+type PrepareRunPayloadUploadJSONRequestBody = RunPayloadUploadRequest
 
 // FunctionScheduleSetJSONRequestBody defines body for FunctionScheduleSet for application/json ContentType.
 type FunctionScheduleSetJSONRequestBody = FunctionScheduleCreateRequest
@@ -10140,6 +10217,14 @@ type ClientInterface interface {
 
 	FunctionRunUpdateMetadata(ctx context.Context, functionId string, runId string, params *FunctionRunUpdateMetadataParams, body FunctionRunUpdateMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DownloadRunPayload request
+	DownloadRunPayload(ctx context.Context, functionId string, runId string, field DownloadRunPayloadParamsField, params *DownloadRunPayloadParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PrepareRunPayloadUploadWithBody request with any body
+	PrepareRunPayloadUploadWithBody(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PrepareRunPayloadUpload(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, body PrepareRunPayloadUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FunctionScheduleDelete request
 	FunctionScheduleDelete(ctx context.Context, functionId string, params *FunctionScheduleDeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10708,6 +10793,42 @@ func (c *Client) FunctionRunUpdateMetadataWithBody(ctx context.Context, function
 
 func (c *Client) FunctionRunUpdateMetadata(ctx context.Context, functionId string, runId string, params *FunctionRunUpdateMetadataParams, body FunctionRunUpdateMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFunctionRunUpdateMetadataRequest(c.Server, functionId, runId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DownloadRunPayload(ctx context.Context, functionId string, runId string, field DownloadRunPayloadParamsField, params *DownloadRunPayloadParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadRunPayloadRequest(c.Server, functionId, runId, field, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PrepareRunPayloadUploadWithBody(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPrepareRunPayloadUploadRequestWithBody(c.Server, functionId, runId, field, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PrepareRunPayloadUpload(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, body PrepareRunPayloadUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPrepareRunPayloadUploadRequest(c.Server, functionId, runId, field, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -13495,6 +13616,28 @@ func NewFunctionRunGetMetadataRequest(server string, functionId string, runId st
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.PayloadMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "payload_mode", runtime.ParamLocationQuery, *params.PayloadMode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -13574,6 +13717,167 @@ func NewFunctionRunUpdateMetadataRequestWithBody(server string, functionId strin
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDownloadRunPayloadRequest generates requests for DownloadRunPayload
+func NewDownloadRunPayloadRequest(server string, functionId string, runId string, field DownloadRunPayloadParamsField, params *DownloadRunPayloadParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "run_id", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "field", runtime.ParamLocationPath, field)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/runs/%s/payloads/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPrepareRunPayloadUploadRequest calls the generic PrepareRunPayloadUpload builder with application/json body
+func NewPrepareRunPayloadUploadRequest(server string, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, body PrepareRunPayloadUploadJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPrepareRunPayloadUploadRequestWithBody(server, functionId, runId, field, params, "application/json", bodyReader)
+}
+
+// NewPrepareRunPayloadUploadRequestWithBody generates requests for PrepareRunPayloadUpload with any type of body
+func NewPrepareRunPayloadUploadRequestWithBody(server string, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "run_id", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "field", runtime.ParamLocationPath, field)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/runs/%s/payloads/%s/upload", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -19090,6 +19394,14 @@ type ClientWithResponsesInterface interface {
 
 	FunctionRunUpdateMetadataWithResponse(ctx context.Context, functionId string, runId string, params *FunctionRunUpdateMetadataParams, body FunctionRunUpdateMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRunUpdateMetadataResult, error)
 
+	// DownloadRunPayloadWithResponse request
+	DownloadRunPayloadWithResponse(ctx context.Context, functionId string, runId string, field DownloadRunPayloadParamsField, params *DownloadRunPayloadParams, reqEditors ...RequestEditorFn) (*DownloadRunPayloadResult, error)
+
+	// PrepareRunPayloadUploadWithBodyWithResponse request with any body
+	PrepareRunPayloadUploadWithBodyWithResponse(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PrepareRunPayloadUploadResult, error)
+
+	PrepareRunPayloadUploadWithResponse(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, body PrepareRunPayloadUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*PrepareRunPayloadUploadResult, error)
+
 	// FunctionScheduleDeleteWithResponse request
 	FunctionScheduleDeleteWithResponse(ctx context.Context, functionId string, params *FunctionScheduleDeleteParams, reqEditors ...RequestEditorFn) (*FunctionScheduleDeleteResult, error)
 
@@ -19810,6 +20122,52 @@ func (r FunctionRunUpdateMetadataResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FunctionRunUpdateMetadataResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DownloadRunPayloadResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadRunPayloadResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadRunPayloadResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PrepareRunPayloadUploadResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RunPayloadUploadResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PrepareRunPayloadUploadResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PrepareRunPayloadUploadResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21677,6 +22035,32 @@ func (c *ClientWithResponses) FunctionRunUpdateMetadataWithResponse(ctx context.
 	return ParseFunctionRunUpdateMetadataResult(rsp)
 }
 
+// DownloadRunPayloadWithResponse request returning *DownloadRunPayloadResult
+func (c *ClientWithResponses) DownloadRunPayloadWithResponse(ctx context.Context, functionId string, runId string, field DownloadRunPayloadParamsField, params *DownloadRunPayloadParams, reqEditors ...RequestEditorFn) (*DownloadRunPayloadResult, error) {
+	rsp, err := c.DownloadRunPayload(ctx, functionId, runId, field, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadRunPayloadResult(rsp)
+}
+
+// PrepareRunPayloadUploadWithBodyWithResponse request with arbitrary body returning *PrepareRunPayloadUploadResult
+func (c *ClientWithResponses) PrepareRunPayloadUploadWithBodyWithResponse(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PrepareRunPayloadUploadResult, error) {
+	rsp, err := c.PrepareRunPayloadUploadWithBody(ctx, functionId, runId, field, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePrepareRunPayloadUploadResult(rsp)
+}
+
+func (c *ClientWithResponses) PrepareRunPayloadUploadWithResponse(ctx context.Context, functionId string, runId string, field PrepareRunPayloadUploadParamsField, params *PrepareRunPayloadUploadParams, body PrepareRunPayloadUploadJSONRequestBody, reqEditors ...RequestEditorFn) (*PrepareRunPayloadUploadResult, error) {
+	rsp, err := c.PrepareRunPayloadUpload(ctx, functionId, runId, field, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePrepareRunPayloadUploadResult(rsp)
+}
+
 // FunctionScheduleDeleteWithResponse request returning *FunctionScheduleDeleteResult
 func (c *ClientWithResponses) FunctionScheduleDeleteWithResponse(ctx context.Context, functionId string, params *FunctionScheduleDeleteParams, reqEditors ...RequestEditorFn) (*FunctionScheduleDeleteResult, error) {
 	rsp, err := c.FunctionScheduleDelete(ctx, functionId, params, reqEditors...)
@@ -23167,6 +23551,72 @@ func ParseFunctionRunUpdateMetadataResult(rsp *http.Response) (*FunctionRunUpdat
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest UpdateFunctionRunResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadRunPayloadResult parses an HTTP response from a DownloadRunPayloadWithResponse call
+func ParseDownloadRunPayloadResult(rsp *http.Response) (*DownloadRunPayloadResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadRunPayloadResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePrepareRunPayloadUploadResult parses an HTTP response from a PrepareRunPayloadUploadWithResponse call
+func ParsePrepareRunPayloadUploadResult(rsp *http.Response) (*PrepareRunPayloadUploadResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PrepareRunPayloadUploadResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RunPayloadUploadResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

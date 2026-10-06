@@ -114,3 +114,132 @@ func ValidateFormFillActionKeys(keys []string) error {
 	}
 	return nil
 }
+
+// FunctionRunUpdateRequestKey represents valid keys for FunctionRunUpdateRequest.payloads
+type FunctionRunUpdateRequestKey string
+
+// Valid FunctionRunUpdateRequestKey values
+const (
+	FunctionRunUpdateRequestPayloadsKeyResult    FunctionRunUpdateRequestKey = "result"
+	FunctionRunUpdateRequestPayloadsKeyLogs      FunctionRunUpdateRequestKey = "logs"
+	FunctionRunUpdateRequestPayloadsKeyVariables FunctionRunUpdateRequestKey = "variables"
+)
+
+// validFunctionRunUpdateRequestKeys is the set of all valid FunctionRunUpdateRequestKey values
+var validFunctionRunUpdateRequestKeys = map[FunctionRunUpdateRequestKey]bool{
+	FunctionRunUpdateRequestPayloadsKeyResult:    true,
+	FunctionRunUpdateRequestPayloadsKeyLogs:      true,
+	FunctionRunUpdateRequestPayloadsKeyVariables: true,
+}
+
+// AllFunctionRunUpdateRequestKeys returns all valid FunctionRunUpdateRequestKey values
+var AllFunctionRunUpdateRequestKeys = []FunctionRunUpdateRequestKey{
+	FunctionRunUpdateRequestPayloadsKeyResult,
+	FunctionRunUpdateRequestPayloadsKeyLogs,
+	FunctionRunUpdateRequestPayloadsKeyVariables,
+}
+
+// IsValidFunctionRunUpdateRequestKey checks if a string is a valid FunctionRunUpdateRequestKey
+func IsValidFunctionRunUpdateRequestKey(key string) bool {
+	return validFunctionRunUpdateRequestKeys[FunctionRunUpdateRequestKey(key)]
+}
+
+// ValidateFunctionRunUpdateRequestKeys checks that all keys in a map are valid FunctionRunUpdateRequestKey values
+func ValidateFunctionRunUpdateRequestKeys(keys []string) error {
+	var invalid []string
+	for _, k := range keys {
+		if !IsValidFunctionRunUpdateRequestKey(k) {
+			invalid = append(invalid, k)
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("invalid FunctionRunUpdateRequestKey(s): %v; valid keys: %v", invalid, AllFunctionRunUpdateRequestKeys)
+	}
+	return nil
+}
+
+// GetFunctionRunResponsePayloadsKey represents valid keys for GetFunctionRunResponse.payloads
+type GetFunctionRunResponsePayloadsKey string
+
+// Valid GetFunctionRunResponsePayloadsKey values
+const (
+	GetFunctionRunResponsePayloadsKeyResult    GetFunctionRunResponsePayloadsKey = "result"
+	GetFunctionRunResponsePayloadsKeyLogs      GetFunctionRunResponsePayloadsKey = "logs"
+	GetFunctionRunResponsePayloadsKeyVariables GetFunctionRunResponsePayloadsKey = "variables"
+)
+
+// validGetFunctionRunResponsePayloadsKeys is the set of all valid GetFunctionRunResponsePayloadsKey values
+var validGetFunctionRunResponsePayloadsKeys = map[GetFunctionRunResponsePayloadsKey]bool{
+	GetFunctionRunResponsePayloadsKeyResult:    true,
+	GetFunctionRunResponsePayloadsKeyLogs:      true,
+	GetFunctionRunResponsePayloadsKeyVariables: true,
+}
+
+// AllGetFunctionRunResponsePayloadsKeys returns all valid GetFunctionRunResponsePayloadsKey values
+var AllGetFunctionRunResponsePayloadsKeys = []GetFunctionRunResponsePayloadsKey{
+	GetFunctionRunResponsePayloadsKeyResult,
+	GetFunctionRunResponsePayloadsKeyLogs,
+	GetFunctionRunResponsePayloadsKeyVariables,
+}
+
+// IsValidGetFunctionRunResponsePayloadsKey checks if a string is a valid GetFunctionRunResponsePayloadsKey
+func IsValidGetFunctionRunResponsePayloadsKey(key string) bool {
+	return validGetFunctionRunResponsePayloadsKeys[GetFunctionRunResponsePayloadsKey(key)]
+}
+
+// ValidateGetFunctionRunResponsePayloadsKeys checks that all keys in a map are valid GetFunctionRunResponsePayloadsKey values
+func ValidateGetFunctionRunResponsePayloadsKeys(keys []string) error {
+	var invalid []string
+	for _, k := range keys {
+		if !IsValidGetFunctionRunResponsePayloadsKey(k) {
+			invalid = append(invalid, k)
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("invalid GetFunctionRunResponsePayloadsKey(s): %v; valid keys: %v", invalid, AllGetFunctionRunResponsePayloadsKeys)
+	}
+	return nil
+}
+
+// GetFunctionRunResponsePayloadUrlsKey represents valid keys for GetFunctionRunResponse.payload_urls
+type GetFunctionRunResponsePayloadUrlsKey string
+
+// Valid GetFunctionRunResponsePayloadUrlsKey values
+const (
+	GetFunctionRunResponsePayload_urlsKeyResult    GetFunctionRunResponsePayloadUrlsKey = "result"
+	GetFunctionRunResponsePayload_urlsKeyLogs      GetFunctionRunResponsePayloadUrlsKey = "logs"
+	GetFunctionRunResponsePayload_urlsKeyVariables GetFunctionRunResponsePayloadUrlsKey = "variables"
+)
+
+// validGetFunctionRunResponsePayloadUrlsKeys is the set of all valid GetFunctionRunResponsePayloadUrlsKey values
+var validGetFunctionRunResponsePayloadUrlsKeys = map[GetFunctionRunResponsePayloadUrlsKey]bool{
+	GetFunctionRunResponsePayload_urlsKeyResult:    true,
+	GetFunctionRunResponsePayload_urlsKeyLogs:      true,
+	GetFunctionRunResponsePayload_urlsKeyVariables: true,
+}
+
+// AllGetFunctionRunResponsePayloadUrlsKeys returns all valid GetFunctionRunResponsePayloadUrlsKey values
+var AllGetFunctionRunResponsePayloadUrlsKeys = []GetFunctionRunResponsePayloadUrlsKey{
+	GetFunctionRunResponsePayload_urlsKeyResult,
+	GetFunctionRunResponsePayload_urlsKeyLogs,
+	GetFunctionRunResponsePayload_urlsKeyVariables,
+}
+
+// IsValidGetFunctionRunResponsePayloadUrlsKey checks if a string is a valid GetFunctionRunResponsePayloadUrlsKey
+func IsValidGetFunctionRunResponsePayloadUrlsKey(key string) bool {
+	return validGetFunctionRunResponsePayloadUrlsKeys[GetFunctionRunResponsePayloadUrlsKey(key)]
+}
+
+// ValidateGetFunctionRunResponsePayloadUrlsKeys checks that all keys in a map are valid GetFunctionRunResponsePayloadUrlsKey values
+func ValidateGetFunctionRunResponsePayloadUrlsKeys(keys []string) error {
+	var invalid []string
+	for _, k := range keys {
+		if !IsValidGetFunctionRunResponsePayloadUrlsKey(k) {
+			invalid = append(invalid, k)
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("invalid GetFunctionRunResponsePayloadUrlsKey(s): %v; valid keys: %v", invalid, AllGetFunctionRunResponsePayloadUrlsKeys)
+	}
+	return nil
+}
