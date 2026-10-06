@@ -171,7 +171,7 @@ func snapshotDB(dbPath, tmpDir string) (string, error) {
 	dst := filepath.Join(tmpDir, "snapshot.db")
 	src, err := sql.Open("sqlite", "file:"+dbPath+"?mode=ro&_pragma=busy_timeout(3000)")
 	if err == nil {
-		_, execErr := src.Exec("VACUUM INTO '" + strings.ReplaceAll(dst, "'", "''") + "'")
+		_, execErr := src.Exec("VACUUM INTO ?", dst)
 		_ = src.Close()
 		if execErr == nil {
 			return dst, nil
