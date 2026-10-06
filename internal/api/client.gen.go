@@ -136,6 +136,13 @@ const (
 	FunctionRunListItemResponseStatusFailed FunctionRunListItemResponseStatus = "failed"
 )
 
+// Defines values for FunctionRunUpdateRequestStatus.
+const (
+	FunctionRunUpdateRequestStatusActive FunctionRunUpdateRequestStatus = "active"
+	FunctionRunUpdateRequestStatusClosed FunctionRunUpdateRequestStatus = "closed"
+	FunctionRunUpdateRequestStatusFailed FunctionRunUpdateRequestStatus = "failed"
+)
+
 // Defines values for FunctionRuntimeHealthResponseStatus.
 const (
 	Degraded    FunctionRuntimeHealthResponseStatus = "degraded"
@@ -157,6 +164,13 @@ const (
 const (
 	Extended FunctionWithLinkResponseDefaultRuntime = "extended"
 	Standard FunctionWithLinkResponseDefaultRuntime = "standard"
+)
+
+// Defines values for GetFunctionRunResponseStatus.
+const (
+	GetFunctionRunResponseStatusActive GetFunctionRunResponseStatus = "active"
+	GetFunctionRunResponseStatusClosed GetFunctionRunResponseStatus = "closed"
+	GetFunctionRunResponseStatusFailed GetFunctionRunResponseStatus = "failed"
 )
 
 // Defines values for GlobalScrapeRequestBrowserType.
@@ -499,20 +513,6 @@ const (
 	ReplayMissingResponseReplayStatusUnavailable       ReplayMissingResponseReplayStatus = "unavailable"
 	ReplayMissingResponseReplayStatusUnknown           ReplayMissingResponseReplayStatus = "unknown"
 	ReplayMissingResponseReplayStatusWaitingForSession ReplayMissingResponseReplayStatus = "waiting_for_session"
-)
-
-// Defines values for RunDetailResponseStatus.
-const (
-	RunDetailResponseStatusActive RunDetailResponseStatus = "active"
-	RunDetailResponseStatusClosed RunDetailResponseStatus = "closed"
-	RunDetailResponseStatusFailed RunDetailResponseStatus = "failed"
-)
-
-// Defines values for RunUpdateRequestStatus.
-const (
-	RunUpdateRequestStatusActive RunUpdateRequestStatus = "active"
-	RunUpdateRequestStatusClosed RunUpdateRequestStatus = "closed"
-	RunUpdateRequestStatusFailed RunUpdateRequestStatus = "failed"
 )
 
 // Defines values for SecretNamespace.
@@ -1762,6 +1762,29 @@ type FunctionRunListItemResponse struct {
 // FunctionRunListItemResponseStatus defines model for FunctionRunListItemResponse.Status.
 type FunctionRunListItemResponseStatus string
 
+// FunctionRunUpdateRequest defines model for FunctionRunUpdateRequest.
+type FunctionRunUpdateRequest struct {
+	// Logs The logs of the workflow run
+	Logs     *[]string                       `json:"logs,omitempty"`
+	Payloads *map[string]RunPayloadReference `json:"payloads,omitempty"`
+
+	// Result The result of the workflow run
+	Result        interface{} `json:"result"`
+	ResultPreview *string     `json:"result_preview,omitempty"`
+
+	// SessionId The ID of the session
+	SessionId *string `json:"session_id,omitempty"`
+
+	// Status The status of the workflow run
+	Status FunctionRunUpdateRequestStatus `json:"status"`
+
+	// Variables The variables of the workflow run
+	Variables *map[string]interface{} `json:"variables,omitempty"`
+}
+
+// FunctionRunUpdateRequestStatus The status of the workflow run
+type FunctionRunUpdateRequestStatus string
+
 // FunctionRuntimeHealthResponse defines model for FunctionRuntimeHealthResponse.
 type FunctionRuntimeHealthResponse struct {
 	// Error Why the probe failed, when it did.
@@ -1891,6 +1914,43 @@ type GetCredentialsResponse struct {
 type GetCreditCardResponse struct {
 	CreditCard CreditCardDictOutput `json:"credit_card"`
 }
+
+// GetFunctionRunResponse defines model for GetFunctionRunResponse.
+type GetFunctionRunResponse struct {
+	CreatedAt FlexibleTime `json:"created_at"`
+
+	// FunctionId The ID of the function
+	FunctionId string `json:"function_id"`
+
+	// FunctionRunId The ID of the function run
+	FunctionRunId   string  `json:"function_run_id"`
+	FunctionVersion *string `json:"function_version,omitempty"`
+
+	// Local Whether the workflow has been run locally or on the cloud
+	Local *bool `json:"local,omitempty"`
+
+	// Logs The logs of the workflow run
+	Logs        *[]string                       `json:"logs,omitempty"`
+	PayloadUrls *map[string]string              `json:"payload_urls,omitempty"`
+	Payloads    *map[string]RunPayloadReference `json:"payloads,omitempty"`
+
+	// Result The result of the workflow run (if any)
+	Result *string `json:"result,omitempty"`
+
+	// SessionId The ID of the session
+	SessionId *string                      `json:"session_id,omitempty"`
+	Status    GetFunctionRunResponseStatus `json:"status"`
+	StoppedAt *string                      `json:"stopped_at,omitempty"`
+	UpdatedAt FlexibleTime                 `json:"updated_at"`
+
+	// Variables The variables of the workflow run
+	Variables     *map[string]interface{} `json:"variables,omitempty"`
+	WorkflowId    *string                 `json:"workflow_id,omitempty"`
+	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
+}
+
+// GetFunctionRunResponseStatus defines model for GetFunctionRunResponse.Status.
+type GetFunctionRunResponseStatus string
 
 // GlobalScrapeRequest defines model for GlobalScrapeRequest.
 type GlobalScrapeRequest struct {
@@ -2687,43 +2747,6 @@ type ReplayResponse struct {
 // RootModelAny defines model for RootModel_Any_.
 type RootModelAny = interface{}
 
-// RunDetailResponse defines model for RunDetailResponse.
-type RunDetailResponse struct {
-	CreatedAt FlexibleTime `json:"created_at"`
-
-	// FunctionId The ID of the function
-	FunctionId string `json:"function_id"`
-
-	// FunctionRunId The ID of the function run
-	FunctionRunId   string  `json:"function_run_id"`
-	FunctionVersion *string `json:"function_version,omitempty"`
-
-	// Local Whether the workflow has been run locally or on the cloud
-	Local *bool `json:"local,omitempty"`
-
-	// Logs The logs of the workflow run
-	Logs        *[]string                       `json:"logs,omitempty"`
-	PayloadUrls *map[string]string              `json:"payload_urls,omitempty"`
-	Payloads    *map[string]RunPayloadReference `json:"payloads,omitempty"`
-
-	// Result The result of the workflow run (if any)
-	Result *string `json:"result,omitempty"`
-
-	// SessionId The ID of the session
-	SessionId *string                 `json:"session_id,omitempty"`
-	Status    RunDetailResponseStatus `json:"status"`
-	StoppedAt *string                 `json:"stopped_at,omitempty"`
-	UpdatedAt FlexibleTime            `json:"updated_at"`
-
-	// Variables The variables of the workflow run
-	Variables     *map[string]interface{} `json:"variables,omitempty"`
-	WorkflowId    *string                 `json:"workflow_id,omitempty"`
-	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
-}
-
-// RunDetailResponseStatus defines model for RunDetailResponse.Status.
-type RunDetailResponseStatus string
-
 // RunFunctionRequest defines model for RunFunctionRequest.
 type RunFunctionRequest struct {
 	// Runtime Override the saved function runtime; omit to inherit its default
@@ -2758,29 +2781,6 @@ type RunPayloadUploadResponse struct {
 	Reference RunPayloadReference `json:"reference"`
 	Url       string              `json:"url"`
 }
-
-// RunUpdateRequest defines model for RunUpdateRequest.
-type RunUpdateRequest struct {
-	// Logs The logs of the workflow run
-	Logs     *[]string                       `json:"logs,omitempty"`
-	Payloads *map[string]RunPayloadReference `json:"payloads,omitempty"`
-
-	// Result The result of the workflow run
-	Result        interface{} `json:"result"`
-	ResultPreview *string     `json:"result_preview,omitempty"`
-
-	// SessionId The ID of the session
-	SessionId *string `json:"session_id,omitempty"`
-
-	// Status The status of the workflow run
-	Status RunUpdateRequestStatus `json:"status"`
-
-	// Variables The variables of the workflow run
-	Variables *map[string]interface{} `json:"variables,omitempty"`
-}
-
-// RunUpdateRequestStatus The status of the workflow run
-type RunUpdateRequestStatus string
 
 // RuntimePackage defines model for RuntimePackage.
 type RuntimePackage struct {
@@ -4250,7 +4250,7 @@ type FunctionRollbackJSONRequestBody = FunctionRollbackRequest
 type FunctionRunStartJSONRequestBody = RunFunctionRequest
 
 // FunctionRunUpdateMetadataJSONRequestBody defines body for FunctionRunUpdateMetadata for application/json ContentType.
-type FunctionRunUpdateMetadataJSONRequestBody = RunUpdateRequest
+type FunctionRunUpdateMetadataJSONRequestBody = FunctionRunUpdateRequest
 
 // PrepareRunPayloadUploadJSONRequestBody defines body for PrepareRunPayloadUpload for application/json ContentType.
 type PrepareRunPayloadUploadJSONRequestBody = RunPayloadUploadRequest
@@ -20085,7 +20085,7 @@ func (r FunctionRunStopResult) StatusCode() int {
 type FunctionRunGetMetadataResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *RunDetailResponse
+	JSON200      *GetFunctionRunResponse
 	JSON422      *HTTPValidationError
 }
 
@@ -23517,7 +23517,7 @@ func ParseFunctionRunGetMetadataResult(rsp *http.Response) (*FunctionRunGetMetad
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RunDetailResponse
+		var dest GetFunctionRunResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

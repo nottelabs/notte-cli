@@ -9,6 +9,7 @@ from the spec and generates strongly-typed Go enums with validation functions.
 import json
 import sys
 import textwrap
+from collections import Counter
 
 
 def find_property_names(schemas: dict) -> list[tuple[str, str, list[str]]]:
@@ -33,9 +34,10 @@ def to_go_const_name(schema: str, prop: str, value: str) -> str:
     return f"{schema}{prop.capitalize()}Key{camel}"
 
 
-def to_go_type_name(schema: str, prop: str) -> str:
+def to_go_type_name(schema: str, prop: str, qualify: bool = False) -> str:
     """Generate the Go type name for a propertyNames enum."""
-    return f"{schema}Key"
+    suffix = "".join(part.capitalize() for part in prop.split("_")) if qualify else ""
+    return f"{schema}{suffix}Key"
 
 
 def generate_go(entries: list[tuple[str, str, list[str]]]) -> str:
@@ -47,8 +49,11 @@ def generate_go(entries: list[tuple[str, str, list[str]]]) -> str:
     lines.append('import "fmt"')
     lines.append("")
 
+    property_counts = Counter(schema for schema, _, _ in entries)
     for schema_name, prop_name, values in entries:
-        type_name = to_go_type_name(schema_name, prop_name)
+        # Keep existing names for single-property schemas, but distinguish
+        # validators when a schema has more than one constrained map.
+        type_name = to_go_type_name(schema_name, prop_name, property_counts[schema_name] > 1)
 
         # Type definition
         lines.append(f"// {type_name} represents valid keys for {schema_name}.{prop_name}")

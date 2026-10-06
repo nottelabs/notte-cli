@@ -1,10 +1,47 @@
 package cmd
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/spf13/cobra"
 )
+
+func TestBlockAdsMapping(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want any
+	}{
+		{name: "omitted preserves server default"},
+		{name: "enabled", args: []string{"--block-ads"}, want: true},
+		{name: "disabled", args: []string{"--block-ads=false"}, want: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newSessionStartFlagsCmd()
+			cmd.SetArgs(tc.args)
+			if err := cmd.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			body, err := BuildSessionStartRequest(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := json.Marshal(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]any
+			if err := json.Unmarshal(data, &payload); err != nil {
+				t.Fatal(err)
+			}
+			got, present := payload["block_ads"]
+			if got != tc.want || present != (tc.want != nil) {
+				t.Fatalf("block_ads = %v (present=%v), want %v", got, present, tc.want)
+			}
+		})
+	}
+}
 
 // newSessionStartFlagsCmd registers the real generated flag set, so these tests
 // exercise RegisterSessionStartFlags/BuildSessionStartRequest as a pair rather
