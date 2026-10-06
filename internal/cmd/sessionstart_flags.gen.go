@@ -22,6 +22,9 @@ var (
 
 	SessionStartAuthRetry int
 
+	// Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers.
+	SessionStartBlockAds bool
+
 	// The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 	SessionStartBrowserType string
 
@@ -75,6 +78,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartAspectRatio, "aspect-ratio", "", "Viewport shape preset. When set, the backend fits the largest rectangle of this aspect ratio inside the sampled available screen area. Cannot be combined with explicit viewport_width/viewport_height.")
 	cmd.Flags().StringSliceVar(&SessionStartAuthIds, "auth-ids", []string{}, "Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Initial verification runs before returning; when login is needed, the session returns as authenticating. Poll /sessions/{id}/auth for readiness. (repeatable)")
 	cmd.Flags().IntVar(&SessionStartAuthRetry, "auth-retry", 0, "auth-retry (API default: 0)")
+	cmd.Flags().BoolVar(&SessionStartBlockAds, "block-ads", false, "Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers. (API default: true)")
 	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome. (API default: chromium) (chromium, chrome, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
@@ -112,6 +116,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartAuthRetry > 0 {
 		body.AuthRetry = &SessionStartAuthRetry
+	}
+
+	if cmd.Flags().Changed("block-ads") {
+		body.BlockAds = &SessionStartBlockAds
 	}
 
 	if SessionStartBrowserType != "" {
