@@ -88,6 +88,8 @@ func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption
 			retryConfig:    nc.retryConfig,
 			circuitBreaker: nc.circuitBreaker,
 			base: &http.Transport{
+				// Honor HTTP(S)_PROXY / NO_PROXY like http.DefaultTransport does.
+				Proxy: http.ProxyFromEnvironment,
 				TLSClientConfig: &tls.Config{
 					MinVersion: tls.VersionTLS12,
 				},
