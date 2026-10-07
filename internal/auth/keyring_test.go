@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 	"testing"
+
+	"github.com/99designs/keyring"
 
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
@@ -210,5 +213,22 @@ func TestKeyring_GetWhenEmpty(t *testing.T) {
 	}
 	if key != "" {
 		t.Errorf("expected empty key, got %q", key)
+	}
+}
+
+// missingKeyring reports every key as missing, like the real keyring.
+type missingKeyring struct{}
+
+func (missingKeyring) Get(string) (string, error) { return "", keyring.ErrKeyNotFound }
+func (missingKeyring) Set(string, string) error   { return nil }
+func (missingKeyring) Delete(string) error {
+	return fmt.Errorf("failed to remove key from keyring: %w", keyring.ErrKeyNotFound)
+}
+
+func TestDeleteKeyringSecret_MissingSecretIsRemoved(t *testing.T) {
+	SetKeyring(missingKeyring{})
+	t.Cleanup(ResetKeyring)
+	if err := DeleteKeyringSecret("tunnel:gone:oauth_client_secret"); err != nil {
+		t.Errorf("DeleteKeyringSecret() on a missing key = %v, want nil", err)
 	}
 }
