@@ -171,3 +171,28 @@ func TestStore_WriteLeavesNoTempFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestStore_RemoveRestoresSecretWhenWriteFails(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	setupStore(t)
+	if err := Save(Tunnel{Name: "home-mac", ExitNode: "a.ts.net", OAuthClientID: "c"}, "s3cret"); err != nil {
+		t.Fatal(err)
+	}
+	dir, _ := config.Dir()
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+
+	if err := Remove("home-mac"); err == nil {
+		t.Fatal("Remove() in a read-only directory succeeded")
+	}
+	if _, err := Get("home-mac"); err != nil {
+		t.Errorf("tunnel no longer listed: %v", err)
+	}
+	if secret, err := Secret("home-mac"); err != nil || secret != "s3cret" {
+		t.Errorf("Secret() = %q, %v; want the original secret restored", secret, err)
+	}
+}

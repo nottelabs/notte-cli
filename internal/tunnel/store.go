@@ -121,11 +121,20 @@ func Remove(name string) error {
 	}
 	// Delete the secret before the record so a keyring failure leaves the
 	// tunnel listed and the removal retryable, rather than orphaning a secret.
+	// If the record then cannot be written, put the secret back so the tunnel
+	// that is still listed keeps working.
+	previous, getErr := auth.GetKeyringSecret(secretKey(name))
 	if err := auth.DeleteKeyringSecret(secretKey(name)); err != nil {
 		return fmt.Errorf("failed to delete OAuth client secret for tunnel %q: %w", name, err)
 	}
 	delete(byName, name)
-	return write(byName)
+	if err := write(byName); err != nil {
+		if getErr == nil {
+			_ = auth.SetKeyringSecret(secretKey(name), previous)
+		}
+		return err
+	}
+	return nil
 }
 
 // Secret returns the OAuth client secret stored for a tunnel.
