@@ -3308,6 +3308,7 @@ type TabsData struct {
 
 // TailnetProxy defines model for TailnetProxy.
 type TailnetProxy struct {
+	ExitNode          *string `json:"exit_node,omitempty"`
 	OauthClientId     string  `json:"oauth_client_id"`
 	OauthClientSecret *string `json:"oauth_client_secret,omitempty"`
 	Type              *string `json:"type,omitempty"`
