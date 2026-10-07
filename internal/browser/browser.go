@@ -45,6 +45,10 @@ type Browser struct {
 	// linuxKeyringApp is the value of the "application" attribute Chrome sets on
 	// its libsecret item; used to find the key in the Secret Service.
 	linuxKeyringApp string
+
+	// internalProfile is the name of a profile the browser keeps for its own
+	// use (Arc's "__ARC_SYSTEM_PROFILE"); it is never offered to the user.
+	internalProfile string
 }
 
 // SupportedBrowsers lists the browsers we know how to read, most common first.
@@ -53,6 +57,11 @@ var SupportedBrowsers = []Browser{
 	{ID: "brave", DisplayName: "Brave", macDir: "BraveSoftware/Brave-Browser", linuxDir: "BraveSoftware/Brave-Browser", safeStorageLabel: "Brave Safe Storage", linuxKeyringApp: "brave"},
 	{ID: "edge", DisplayName: "Microsoft Edge", macDir: "Microsoft Edge", linuxDir: "microsoft-edge", safeStorageLabel: "Microsoft Edge Safe Storage", linuxKeyringApp: "microsoft-edge"},
 	{ID: "chromium", DisplayName: "Chromium", macDir: "Chromium", linuxDir: "chromium", safeStorageLabel: "Chromium Safe Storage", linuxKeyringApp: "chromium"},
+	// Arc and Helium are macOS-only here: Arc has no Linux build, and Helium's
+	// Linux keyring entry has not been verified. Helium does not follow the
+	// "<Product> Safe Storage" Keychain convention.
+	{ID: "arc", DisplayName: "Arc", macDir: "Arc/User Data", safeStorageLabel: "Arc Safe Storage", internalProfile: "__ARC_SYSTEM_PROFILE"},
+	{ID: "helium", DisplayName: "Helium", macDir: "net.imput.helium", safeStorageLabel: "Helium Storage Key"},
 	{ID: "firefox", DisplayName: "Firefox", kind: firefoxKind, macDir: "Firefox", linuxDir: "firefox"},
 }
 
@@ -83,6 +92,9 @@ func (b Browser) userDataDir() (string, error) {
 	case "darwin":
 		return filepath.Join(home, "Library", "Application Support", filepath.FromSlash(b.macDir)), nil
 	case "linux":
+		if b.linuxDir == "" {
+			return "", fmt.Errorf("syncing from %s is supported on macOS only", b.DisplayName)
+		}
 		// Firefox lives under ~/.mozilla and does not honour XDG_CONFIG_HOME. It
 		// may also be packaged as a snap or flatpak, each with its own root.
 		if b.kind == firefoxKind {
@@ -96,6 +108,13 @@ func (b Browser) userDataDir() (string, error) {
 	default:
 		return "", fmt.Errorf("browser %s is not supported on %s", b.DisplayName, runtime.GOOS)
 	}
+}
+
+// CheckPlatform returns an error explaining why this browser cannot be read on
+// the current OS, or nil if it can.
+func (b Browser) CheckPlatform() error {
+	_, err := b.userDataDir()
+	return err
 }
 
 // Installed reports whether this browser's user-data directory exists.
@@ -166,7 +185,7 @@ func (b Browser) Profiles() ([]Profile, error) {
 		seen[profileDir] = true
 
 		info, ok := state.Profile.InfoCache[profileDir]
-		if !ok {
+		if !ok || (b.internalProfile != "" && info.Name == b.internalProfile) {
 			continue
 		}
 		path := filepath.Join(dir, profileDir)

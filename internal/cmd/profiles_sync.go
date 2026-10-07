@@ -28,9 +28,9 @@ var (
 var profilesSyncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Upload cookies from your local browser into a Notte profile",
-	Long: "Read the cookies from a local Firefox, Chrome, Brave, Edge or Chromium profile\n" +
-		"and upload them into a Notte cloud profile, so remote sessions and agents\n" +
-		"start already logged in.\n\n" +
+	Long: "Read the cookies from a local Firefox, Chrome, Brave, Edge, Chromium, Arc or\n" +
+		"Helium profile and upload them into a Notte cloud profile, so remote sessions\n" +
+		"and agents start already logged in. Arc and Helium are supported on macOS only.\n\n" +
 		"Cookies are read from a copy of the browser's own files on this machine and\n" +
 		"decrypted locally. Nothing leaves your computer until you confirm the upload,\n" +
 		"and with --domain you choose exactly which sites are included.\n\n" +
@@ -43,7 +43,7 @@ var profilesSyncCmd = &cobra.Command{
 func init() {
 	profilesCmd.AddCommand(profilesSyncCmd)
 	profilesSyncCmd.Flags().StringVar(&profileID, "profile-id", "", "Existing Notte profile to sync into (creates a new one if omitted)")
-	profilesSyncCmd.Flags().StringVar(&syncBrowser, "browser", "", "Browser to read from (firefox, chrome, brave, edge, chromium)")
+	profilesSyncCmd.Flags().StringVar(&syncBrowser, "browser", "", "Browser to read from (firefox, chrome, brave, edge, chromium, arc, helium)")
 	profilesSyncCmd.Flags().StringVar(&syncChromeProfile, "local-profile", "", "Local browser profile, by name or directory (prompts if there is more than one)")
 	profilesSyncCmd.Flags().StringSliceVar(&syncDomains, "domain", nil, "Only sync cookies for these domains and their subdomains (repeatable)")
 	profilesSyncCmd.Flags().StringVar(&syncMode, "mode", "replace", "How to apply the cookies: replace the profile's cookies, or append to them")
@@ -161,7 +161,12 @@ func resolveLocalProfile() (browser.Profile, error) {
 	if syncBrowser != "" {
 		b, ok := browser.BrowserByID(syncBrowser)
 		if !ok {
-			return browser.Profile{}, fmt.Errorf("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium", syncBrowser)
+			return browser.Profile{}, fmt.Errorf("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
+		}
+		// Check the platform first, so a macOS-only browser on Linux says so
+		// rather than claiming it is not installed.
+		if err := b.CheckPlatform(); err != nil {
+			return browser.Profile{}, err
 		}
 		if !b.Installed() {
 			return browser.Profile{}, fmt.Errorf("%s does not appear to be installed", b.DisplayName)
