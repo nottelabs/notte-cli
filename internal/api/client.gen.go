@@ -2966,7 +2966,10 @@ type ScrollDownAction struct {
 	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
-	Type        *string `json:"type,omitempty"`
+
+	// Selector Optional selector for the scroll container, including iframe paths.
+	Selector *string `json:"selector,omitempty"`
+	Type     *string `json:"type,omitempty"`
 }
 
 // ScrollUpAction defines model for ScrollUpAction.
@@ -2974,7 +2977,10 @@ type ScrollUpAction struct {
 	Amount      *int    `json:"amount,omitempty"`
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
-	Type        *string `json:"type,omitempty"`
+
+	// Selector Optional selector for the scroll container, including iframe paths.
+	Selector *string `json:"selector,omitempty"`
+	Type     *string `json:"type,omitempty"`
 }
 
 // SearchRequest defines model for SearchRequest.
