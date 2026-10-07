@@ -140,9 +140,10 @@ func TestErrorParsing_ValidationErrorContainsDetails(t *testing.T) {
 		t.Errorf("Validation error should mention valid browser types, got: %s", stderr)
 	}
 
-	// Check that error mentions the invalid input
-	if !containsString(stderr, "brave") {
-		t.Errorf("Validation error should mention the invalid input 'brave', got: %s", stderr)
+	// Check that error names the invalid field. The submitted value itself is
+	// not echoed back, since request inputs are redacted from validation errors.
+	if !containsString(stderr, "browser_type") {
+		t.Errorf("Validation error should mention the invalid field 'browser_type', got: %s", stderr)
 	}
 
 	t.Logf("Got properly formatted validation error: %s", stderr)
