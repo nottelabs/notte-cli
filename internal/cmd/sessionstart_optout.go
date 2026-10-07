@@ -92,7 +92,7 @@ func applySessionStartOptOuts(cmd *cobra.Command, body *api.ApiSessionStartReque
 // had already been stopped.
 func validateSessionStartProxyFlags(cmd *cobra.Command) error {
 	var set []string
-	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id"} {
+	for _, name := range []string{"proxy", "proxy-country", "proxy-external-server", "proxy-tailnet-client-id", "tunnel"} {
 		if cmd.Flags().Changed(name) {
 			set = append(set, "--"+name)
 		}

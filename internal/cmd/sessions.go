@@ -30,6 +30,7 @@ var (
 	sessionsStartProxyExtPassword      string
 	sessionsStartProxyTailClientID     string
 	sessionsStartProxyTailClientSecret string
+	sessionsStartTunnel                string
 	sessionsStartExtraHttpHeaders      string
 )
 
@@ -355,6 +356,7 @@ func init() {
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyExtPassword, "proxy-external-password", "", "External proxy password")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyTailClientID, "proxy-tailnet-client-id", "", "Tailnet OAuth client ID. Enables Tailscale proxy")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyTailClientSecret, "proxy-tailnet-client-secret", "", "Tailnet OAuth client secret")
+	sessionsStartCmd.Flags().StringVar(&sessionsStartTunnel, "tunnel", "", "Route public traffic through a saved tunnel (see `notte tunnel up`)")
 	// Manual flag for extra HTTP headers (map type not auto-generated)
 	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
 
@@ -562,6 +564,14 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		var item api.ApiSessionStartRequest_Proxies_0_Item
 		if err := item.FromTailnetProxy(tail); err != nil {
 			return fmt.Errorf("failed to create tailnet proxy: %w", err)
+		}
+		proxyItems = append(proxyItems, item)
+	}
+
+	if cmd.Flags().Changed("tunnel") {
+		item, err := tunnelProxyItem(sessionsStartTunnel)
+		if err != nil {
+			return err
 		}
 		proxyItems = append(proxyItems, item)
 	}

@@ -140,3 +140,20 @@ func DeleteKeyringAPIKey() error {
 	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
 	return defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
 }
+
+// GetKeyringSecret retrieves a named secret, such as a tunnel's OAuth client
+// secret, from the same store as the API key. Unlike the API key it is not
+// qualified by environment.
+func GetKeyringSecret(key string) (string, error) {
+	return defaultKeyring.Get(key)
+}
+
+// SetKeyringSecret stores a named secret alongside the API key.
+func SetKeyringSecret(key, value string) error {
+	return defaultKeyring.Set(key, value)
+}
+
+// DeleteKeyringSecret removes a named secret.
+func DeleteKeyringSecret(key string) error {
+	return defaultKeyring.Delete(key)
+}
