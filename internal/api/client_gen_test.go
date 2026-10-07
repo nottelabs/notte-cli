@@ -2,8 +2,87 @@ package api
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 )
+
+func TestTailnetProxyUnionRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	type tailnetProxyUnion interface {
+		json.Marshaler
+		json.Unmarshaler
+		FromTailnetProxy(TailnetProxy) error
+		AsTailnetProxy() (TailnetProxy, error)
+	}
+	unions := []struct {
+		name string
+		new  func() tailnetProxyUnion
+	}{
+		{"session start", func() tailnetProxyUnion { return &ApiSessionStartRequest_Proxies_0_Item{} }},
+		{"scrape", func() tailnetProxyUnion { return &GlobalScrapeRequest_Proxies_0_Item{} }},
+	}
+	exitNode := "100.64.0.10"
+	clientSecret := "test-client-secret"
+	cases := []struct {
+		name     string
+		exitNode *string
+	}{
+		{"supplied exit node", &exitNode},
+		{"omitted exit node", nil},
+	}
+
+	for _, union := range unions {
+		for _, tc := range cases {
+			t.Run(union.name+"/"+tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				want := TailnetProxy{
+					OauthClientId:     "test-client-id",
+					OauthClientSecret: &clientSecret,
+					ExitNode:          tc.exitNode,
+				}
+				input := union.new()
+				if err := input.FromTailnetProxy(want); err != nil {
+					t.Fatalf("create tailnet proxy union: %v", err)
+				}
+				encoded, err := json.Marshal(input)
+				if err != nil {
+					t.Fatalf("marshal tailnet proxy union: %v", err)
+				}
+
+				var object map[string]any
+				if err := json.Unmarshal(encoded, &object); err != nil {
+					t.Fatalf("unmarshal encoded proxy: %v", err)
+				}
+				if got := object["type"]; got != "tailnet" {
+					t.Errorf("type = %v, want tailnet", got)
+				}
+				if got, present := object["exit_node"]; tc.exitNode == nil {
+					if present {
+						t.Errorf("exit_node = %v, want field omitted", got)
+					}
+				} else if got != *tc.exitNode {
+					t.Errorf("exit_node = %v, want %q", got, *tc.exitNode)
+				}
+
+				decoded := union.new()
+				if err := json.Unmarshal(encoded, decoded); err != nil {
+					t.Fatalf("unmarshal tailnet proxy union: %v", err)
+				}
+				output, err := decoded.AsTailnetProxy()
+				if err != nil {
+					t.Fatalf("decode tailnet proxy: %v", err)
+				}
+				proxyType := "tailnet"
+				want.Type = &proxyType
+				if !reflect.DeepEqual(output, want) {
+					t.Errorf("round-tripped proxy = %+v, want %+v", output, want)
+				}
+			})
+		}
+	}
+}
 
 func TestScrollActionUnionRoundTrip(t *testing.T) {
 	t.Parallel()
