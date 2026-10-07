@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -64,6 +65,9 @@ func TestMacOnlyBrowsersNotInstalledOnLinux(t *testing.T) {
 		b, _ := BrowserByID(id)
 		if b.Installed() {
 			t.Errorf("%s reported installed on Linux", id)
+		}
+		if err := b.CheckPlatform(); err == nil || !strings.Contains(err.Error(), "macOS only") {
+			t.Errorf("%s: expected a macOS-only error, got %v", id, err)
 		}
 	}
 }

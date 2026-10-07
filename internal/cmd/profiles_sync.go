@@ -163,6 +163,11 @@ func resolveLocalProfile() (browser.Profile, error) {
 		if !ok {
 			return browser.Profile{}, fmt.Errorf("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
 		}
+		// Check the platform first, so a macOS-only browser on Linux says so
+		// rather than claiming it is not installed.
+		if err := b.CheckPlatform(); err != nil {
+			return browser.Profile{}, err
+		}
 		if !b.Installed() {
 			return browser.Profile{}, fmt.Errorf("%s does not appear to be installed", b.DisplayName)
 		}

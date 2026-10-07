@@ -93,7 +93,7 @@ func (b Browser) userDataDir() (string, error) {
 		return filepath.Join(home, "Library", "Application Support", filepath.FromSlash(b.macDir)), nil
 	case "linux":
 		if b.linuxDir == "" {
-			return "", fmt.Errorf("browser %s is not supported on %s", b.DisplayName, runtime.GOOS)
+			return "", fmt.Errorf("syncing from %s is supported on macOS only", b.DisplayName)
 		}
 		// Firefox lives under ~/.mozilla and does not honour XDG_CONFIG_HOME. It
 		// may also be packaged as a snap or flatpak, each with its own root.
@@ -108,6 +108,13 @@ func (b Browser) userDataDir() (string, error) {
 	default:
 		return "", fmt.Errorf("browser %s is not supported on %s", b.DisplayName, runtime.GOOS)
 	}
+}
+
+// CheckPlatform returns an error explaining why this browser cannot be read on
+// the current OS, or nil if it can.
+func (b Browser) CheckPlatform() error {
+	_, err := b.userDataDir()
+	return err
 }
 
 // Installed reports whether this browser's user-data directory exists.
