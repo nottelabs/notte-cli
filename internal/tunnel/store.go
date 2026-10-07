@@ -87,13 +87,27 @@ func Save(t Tunnel, oauthClientSecret string) error {
 	if err != nil {
 		return err
 	}
-	if oauthClientSecret != "" {
-		if err := auth.SetKeyringSecret(secretKey(t.Name), oauthClientSecret); err != nil {
-			return fmt.Errorf("failed to store OAuth client secret: %w", err)
-		}
-	}
 	byName[t.Name] = t
-	return write(byName)
+	if oauthClientSecret == "" {
+		return write(byName)
+	}
+
+	// The record and the secret live in two stores. Swap the secret first and
+	// put the old one back if the record cannot be written, so a failed save
+	// never pairs one OAuth client's ID with another client's secret.
+	previous, getErr := auth.GetKeyringSecret(secretKey(t.Name))
+	if err := auth.SetKeyringSecret(secretKey(t.Name), oauthClientSecret); err != nil {
+		return fmt.Errorf("failed to store OAuth client secret: %w", err)
+	}
+	if err := write(byName); err != nil {
+		if getErr == nil {
+			_ = auth.SetKeyringSecret(secretKey(t.Name), previous)
+		} else {
+			_ = auth.DeleteKeyringSecret(secretKey(t.Name))
+		}
+		return err
+	}
+	return nil
 }
 
 // Remove deletes a saved tunnel and its stored secret.
@@ -105,13 +119,13 @@ func Remove(name string) error {
 	if _, ok := byName[name]; !ok {
 		return fmt.Errorf("%w: %q", ErrNotFound, name)
 	}
-	delete(byName, name)
-	if err := write(byName); err != nil {
-		return err
+	// Delete the secret before the record so a keyring failure leaves the
+	// tunnel listed and the removal retryable, rather than orphaning a secret.
+	if err := auth.DeleteKeyringSecret(secretKey(name)); err != nil {
+		return fmt.Errorf("failed to delete OAuth client secret for tunnel %q: %w", name, err)
 	}
-	// The secret may already be gone (deleted keyring entry); that is the goal.
-	_ = auth.DeleteKeyringSecret(secretKey(name))
-	return nil
+	delete(byName, name)
+	return write(byName)
 }
 
 // Secret returns the OAuth client secret stored for a tunnel.
@@ -163,7 +177,21 @@ func write(byName map[string]Tunnel) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, append(data, '\n'), 0o600); err != nil {
+	// Write a sibling temp file and rename it into place, so an interrupted or
+	// failed write never leaves a truncated tunnels.json behind.
+	tmp, err := os.CreateTemp(filepath.Dir(path), FileName+".*.tmp")
+	if err != nil {
+		return fmt.Errorf("failed to write %s: %w", path, err)
+	}
+	defer func() { _ = os.Remove(tmp.Name()) }()
+	if _, err := tmp.Write(append(data, '\n')); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to write %s: %w", path, err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to write %s: %w", path, err)
+	}
+	if err := os.Rename(tmp.Name(), path); err != nil {
 		return fmt.Errorf("failed to write %s: %w", path, err)
 	}
 	return nil

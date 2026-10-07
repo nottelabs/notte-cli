@@ -248,3 +248,33 @@ func TestSessionsStart_TunnelErrors(t *testing.T) {
 		t.Errorf("--proxy with --tunnel: got %v", err)
 	}
 }
+
+func TestSessionsStart_UnknownTunnelDoesNotStopCurrentSession(t *testing.T) {
+	_, env := setupTunnelTest(t, true)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	if err := setCurrentSession("sess_existing"); err != nil {
+		t.Fatal(err)
+	}
+	origSkip := skipConfirmation
+	skipConfirmation = true
+	t.Cleanup(func() { skipConfirmation = origSkip })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().StringVar(&sessionsStartTunnel, "tunnel", "", "")
+	cmd.SetContext(context.Background())
+	_ = cmd.Flags().Parse([]string{"--tunnel", "typo"})
+
+	if _, err := runCaptured(t, func() error { return runSessionsStart(cmd, nil) }); err == nil {
+		t.Fatal("expected an error for an unknown tunnel")
+	}
+	for path := range server.AllRequests() {
+		t.Errorf("unexpected API call to %s before the tunnel was resolved", path)
+	}
+	if GetCurrentSessionID() != "sess_existing" {
+		t.Error("current session was cleared")
+	}
+}

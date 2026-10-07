@@ -458,6 +458,17 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionsStart(cmd *cobra.Command, args []string) error {
+	// Resolve --tunnel first: an unknown name or missing secret must fail
+	// before the current session is stopped below.
+	var tunnelItem *api.ApiSessionStartRequest_Proxies_0_Item
+	if cmd.Flags().Changed("tunnel") {
+		item, err := tunnelProxyItem(sessionsStartTunnel)
+		if err != nil {
+			return err
+		}
+		tunnelItem = &item
+	}
+
 	// Check if there's already a current session
 	existingSessionID := GetCurrentSessionID()
 	if existingSessionID != "" {
@@ -568,12 +579,8 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		proxyItems = append(proxyItems, item)
 	}
 
-	if cmd.Flags().Changed("tunnel") {
-		item, err := tunnelProxyItem(sessionsStartTunnel)
-		if err != nil {
-			return err
-		}
-		proxyItems = append(proxyItems, item)
+	if tunnelItem != nil {
+		proxyItems = append(proxyItems, *tunnelItem)
 	}
 
 	if len(proxyItems) > 0 {

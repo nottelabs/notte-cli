@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -260,18 +259,8 @@ func tunnelProxyItem(name string) (api.ApiSessionStartRequest_Proxies_0_Item, er
 	if err != nil {
 		return item, err
 	}
-	// Built from JSON rather than api.TailnetProxy: the generated type does not
-	// have exit_node yet, and the generated client must match the live schema.
-	raw, err := json.Marshal(map[string]string{
-		"type":                "tailnet",
-		"oauth_client_id":     t.OAuthClientID,
-		"oauth_client_secret": secret,
-		"exit_node":           t.ExitNode,
-	})
-	if err != nil {
-		return item, err
-	}
-	if err := item.UnmarshalJSON(raw); err != nil {
+	proxy := api.TailnetProxy{OauthClientId: t.OAuthClientID, OauthClientSecret: &secret, ExitNode: &t.ExitNode}
+	if err := item.FromTailnetProxy(proxy); err != nil {
 		return item, fmt.Errorf("failed to create tunnel proxy: %w", err)
 	}
 	return item, nil

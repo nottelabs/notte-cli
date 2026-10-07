@@ -110,3 +110,64 @@ func TestValidateName(t *testing.T) {
 		}
 	}
 }
+
+// failingDeleteKeyring refuses every delete, like a locked or unreachable keyring.
+type failingDeleteKeyring struct{ *testutil.MockKeyring }
+
+func (failingDeleteKeyring) Delete(string) error { return errors.New("keyring locked") }
+
+func TestStore_RemoveKeepsTunnelWhenSecretDeleteFails(t *testing.T) {
+	ring := setupStore(t)
+	if err := Save(Tunnel{Name: "home-mac", ExitNode: "a.ts.net", OAuthClientID: "c"}, "s"); err != nil {
+		t.Fatal(err)
+	}
+	auth.SetKeyring(failingDeleteKeyring{ring})
+
+	if err := Remove("home-mac"); err == nil || !strings.Contains(err.Error(), "keyring locked") {
+		t.Fatalf("Remove() = %v, want the keyring error", err)
+	}
+	if _, err := Get("home-mac"); err != nil {
+		t.Errorf("tunnel was dropped despite the failed secret delete: %v", err)
+	}
+}
+
+func TestStore_SaveRestoresPreviousSecretWhenWriteFails(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	setupStore(t)
+	if err := Save(Tunnel{Name: "home-mac", ExitNode: "a.ts.net", OAuthClientID: "old-client"}, "old-secret"); err != nil {
+		t.Fatal(err)
+	}
+	dir, _ := config.Dir()
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+
+	if err := Save(Tunnel{Name: "home-mac", ExitNode: "a.ts.net", OAuthClientID: "new-client"}, "new-secret"); err == nil {
+		t.Fatal("Save() into a read-only directory succeeded")
+	}
+	got, _ := Get("home-mac")
+	secret, _ := Secret("home-mac")
+	if got.OAuthClientID != "old-client" || secret != "old-secret" {
+		t.Errorf("after failed save: client %q with secret %q, want old-client with old-secret", got.OAuthClientID, secret)
+	}
+}
+
+func TestStore_WriteLeavesNoTempFiles(t *testing.T) {
+	setupStore(t)
+	if err := Save(Tunnel{Name: "home-mac", ExitNode: "a.ts.net", OAuthClientID: "c"}, "s"); err != nil {
+		t.Fatal(err)
+	}
+	dir, _ := config.Dir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %s", e.Name())
+		}
+	}
+}

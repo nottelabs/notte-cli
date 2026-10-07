@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -153,7 +154,12 @@ func SetKeyringSecret(key, value string) error {
 	return defaultKeyring.Set(key, value)
 }
 
-// DeleteKeyringSecret removes a named secret.
+// DeleteKeyringSecret removes a named secret. A secret that is already gone
+// counts as removed; any other failure is returned.
 func DeleteKeyringSecret(key string) error {
-	return defaultKeyring.Delete(key)
+	err := defaultKeyring.Delete(key)
+	if errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }
