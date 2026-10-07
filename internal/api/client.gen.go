@@ -2749,14 +2749,16 @@ type RootModelAny = interface{}
 
 // RunFunctionRequest defines model for RunFunctionRequest.
 type RunFunctionRequest struct {
+	CallbackUrl *string `json:"callback_url,omitempty"`
+
 	// Runtime Override the saved function runtime; omit to inherit its default
 	Runtime *string `json:"runtime,omitempty"`
 
 	// Stream Whether to stream logs, or only return final response
 	Stream *bool `json:"stream,omitempty"`
 
-	// Variables The variables to run the workflow with
-	Variables map[string]interface{} `json:"variables"`
+	// Variables The variables to run the function with
+	Variables *map[string]interface{} `json:"variables,omitempty"`
 
 	// WorkflowId The ID of the function to run
 	WorkflowId string `json:"workflow_id"`
@@ -4003,7 +4005,6 @@ type SessionCookiesSetParams struct {
 
 // SessionDebugInfoParams defines parameters for SessionDebugInfo.
 type SessionDebugInfoParams struct {
-	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -4064,7 +4065,6 @@ type PageExecuteParams struct {
 	CaptchaTimeoutSeconds *float32 `form:"captcha_timeout_seconds,omitempty" json:"captcha_timeout_seconds,omitempty"`
 	TargetPageId          *string  `form:"target_page_id,omitempty" json:"target_page_id,omitempty"`
 	TargetGeneration      *int     `form:"target_generation,omitempty" json:"target_generation,omitempty"`
-	UpdateMetadata        *bool    `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
 	XNotteRequestOrigin   *string  `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion      *string  `json:"x-notte-sdk-version,omitempty"`
 }
@@ -17046,28 +17046,6 @@ func NewSessionDebugInfoRequest(server string, sessionId string, params *Session
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.UpdateMetadata != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -17683,22 +17661,6 @@ func NewPageExecuteRequestWithBody(server string, sessionId string, params *Page
 		if params.TargetGeneration != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_generation", runtime.ParamLocationQuery, *params.TargetGeneration); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.UpdateMetadata != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
