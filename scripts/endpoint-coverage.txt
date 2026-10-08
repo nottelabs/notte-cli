@@ -68,6 +68,7 @@ skip POST /anything/start # anything.notte.cc entry point, not a CLI workflow
 # --- not exposed yet ---------------------------------------------------------
 # Each of these is a gap someone should close or rule out; listing them is the
 # point of this file, not an endorsement.
+skip GET /audit-events # audit-event listing is not yet exposed by the CLI
 skip POST /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53
 skip GET /functions/{function_id}/runs/{run_id}/payloads/{field} # downloading overflow run payloads is not yet exposed by the CLI
 skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # preparing run payload uploads is not exposed by the CLI
