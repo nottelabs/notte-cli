@@ -146,15 +146,19 @@ func runTunnelUp(cmd *cobra.Command, args []string) error {
 		"approved":    st.Self.ExitNodeOption,
 		"credentials": tunnelCredentialSource(t),
 	}
+	credentials := "OAuth credentials stored on this machine"
+	if t.OAuthClientID == "" {
+		credentials = "the workspace's Tailscale connection"
+	}
 	if !st.Self.ExitNodeOption {
-		return PrintResult(fmt.Sprintf(`Saved tunnel %q (%s), but this machine is not approved as an exit node yet.
+		return PrintResult(fmt.Sprintf(`Saved tunnel %q (%s, using %s), but this machine is not approved as an exit node yet.
 Approve it at https://login.tailscale.com/admin/machines (Edit route settings > Use as exit node),
 or add it to autoApprovers.exitNode in your tailnet policy. The policy must also let tag:notte
-reach autogroup:internet. Then run "notte tunnel up --name %s" again.`, t.Name, t.ExitNode, t.Name), data)
+reach autogroup:internet. Then run "notte tunnel up --name %s" again.`, t.Name, t.ExitNode, credentials, t.Name), data)
 	}
-	return PrintResult(fmt.Sprintf(`Tunnel %q is up: %s is offered as an exit node.
+	return PrintResult(fmt.Sprintf(`Tunnel %q is up: %s is offered as an exit node, using %s.
 Start a session through it with "notte sessions start --tunnel %s".
-Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, t.Name), data)
+Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, credentials, t.Name), data)
 }
 
 // tunnelCredentials resolves the OAuth client for a tunnel: flags and the

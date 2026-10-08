@@ -112,7 +112,7 @@ func TestTunnelUp_PendingApprovalExplainsNextStep(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runTunnelUp() error = %v", err)
 	}
-	for _, want := range []string{"not approved as an exit node", "autogroup:internet", `"lucas-mbp"`} {
+	for _, want := range []string{"not approved as an exit node", "autogroup:internet", `"lucas-mbp"`, "stored on this machine"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output missing %q:\n%s", want, out)
 		}
@@ -309,26 +309,38 @@ func TestSessionsStart_TunnelSendsTailnetProxyWithExitNode(t *testing.T) {
 }
 
 func TestSessionsStart_WorkspaceTunnelSendsNoCredentials(t *testing.T) {
-	setupTunnelTest(t, true)
+	_, env := setupTunnelTest(t, true)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_1","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
+
 	if err := tunnel.Save(tunnel.Tunnel{Name: "home-mac", ExitNode: "lucas-mbp.tail1234.ts.net"}, ""); err != nil {
 		t.Fatal(err)
 	}
 
-	item, err := tunnelProxyItem("home-mac")
-	if err != nil {
-		t.Fatalf("tunnelProxyItem() error = %v", err)
+	cmd := &cobra.Command{}
+	cmd.Flags().StringVar(&sessionsStartTunnel, "tunnel", "", "")
+	cmd.SetContext(context.Background())
+	_ = cmd.Flags().Parse([]string{"--tunnel", "home-mac"})
+
+	if _, err := runCaptured(t, func() error { return runSessionsStart(cmd, nil) }); err != nil {
+		t.Fatalf("runSessionsStart() error = %v", err)
 	}
-	encoded, err := json.Marshal(item)
-	if err != nil {
-		t.Fatal(err)
+	reqs := server.Requests("/sessions/start")
+	if len(reqs) != 1 {
+		t.Fatalf("got %d start requests", len(reqs))
 	}
-	var got map[string]string
-	if err := json.Unmarshal(encoded, &got); err != nil {
-		t.Fatalf("bad proxy %s: %v", encoded, err)
+	var body struct {
+		Proxies []map[string]string `json:"proxies"`
+	}
+	if err := json.Unmarshal([]byte(reqs[0].Body), &body); err != nil {
+		t.Fatalf("bad request body %q: %v", reqs[0].Body, err)
 	}
 	want := map[string]string{"type": "tailnet", "exit_node": "lucas-mbp.tail1234.ts.net"}
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Errorf("proxy = %v, want %v", got, want)
+	if len(body.Proxies) != 1 || fmt.Sprint(body.Proxies[0]) != fmt.Sprint(want) {
+		t.Errorf("proxies = %v, want [%v]", body.Proxies, want)
 	}
 }
 
