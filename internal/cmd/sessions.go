@@ -568,7 +568,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flags().Changed("proxy-tailnet-client-id") {
-		tail := api.TailnetProxy{OauthClientId: sessionsStartProxyTailClientID}
+		tail := api.TailnetProxy{OauthClientId: &sessionsStartProxyTailClientID}
 		if cmd.Flags().Changed("proxy-tailnet-client-secret") {
 			tail.OauthClientSecret = &sessionsStartProxyTailClientSecret
 		}

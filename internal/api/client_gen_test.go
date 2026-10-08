@@ -24,6 +24,7 @@ func TestTailnetProxyUnionRoundTrip(t *testing.T) {
 	}
 	exitNode := "100.64.0.10"
 	clientSecret := "test-client-secret"
+	clientID := "test-client-id"
 	cases := []struct {
 		name     string
 		exitNode *string
@@ -38,7 +39,7 @@ func TestTailnetProxyUnionRoundTrip(t *testing.T) {
 				t.Parallel()
 
 				want := TailnetProxy{
-					OauthClientId:     "test-client-id",
+					OauthClientId:     &clientID,
 					OauthClientSecret: &clientSecret,
 					ExitNode:          tc.exitNode,
 				}
