@@ -42,8 +42,9 @@ var tunnelCmd = &cobra.Command{
 	Short: "Route sessions through this machine's internet connection",
 	Long: `Route session traffic through this machine's internet connection using
 Tailscale. "notte tunnel up" offers this machine as a Tailscale exit node and
-saves it as a named tunnel; "notte sessions start --tunnel <name>" then sends
-the session's public traffic out through it.
+saves it as a named tunnel; "notte tunnel check" verifies it end to end; and
+"notte sessions start --tunnel <name>" then sends the session's public traffic
+out through it.
 
 Requires Tailscale running and signed in on this machine, and a Tailscale OAuth
 client (auth_keys write scope, tagged tag:notte only). Connect the client once
@@ -157,8 +158,9 @@ or add it to autoApprovers.exitNode in your tailnet policy. The policy must also
 reach autogroup:internet. Then run "notte tunnel up --name %s" again.`, t.Name, t.ExitNode, credentials, t.Name), data)
 	}
 	return PrintResult(fmt.Sprintf(`Tunnel %q is up: %s is offered as an exit node, using %s.
-Start a session through it with "notte sessions start --tunnel %s".
-Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, credentials, t.Name), data)
+Verify it end to end with "notte tunnel check --name %s", then start sessions
+through it with "notte sessions start --tunnel %s".
+Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, credentials, t.Name, t.Name), data)
 }
 
 // tunnelCredentials resolves the OAuth client for a tunnel: flags and the
