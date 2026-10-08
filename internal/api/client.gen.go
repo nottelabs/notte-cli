@@ -519,6 +519,7 @@ const (
 const (
 	FunctionEnv SecretNamespace = "function_env"
 	LlmProvider SecretNamespace = "llm_provider"
+	Tailscale   SecretNamespace = "tailscale"
 )
 
 // Defines values for SessionResponseBrowserType.
@@ -3309,7 +3310,7 @@ type TabsData struct {
 // TailnetProxy defines model for TailnetProxy.
 type TailnetProxy struct {
 	ExitNode          *string `json:"exit_node,omitempty"`
-	OauthClientId     string  `json:"oauth_client_id"`
+	OauthClientId     *string `json:"oauth_client_id,omitempty"`
 	OauthClientSecret *string `json:"oauth_client_secret,omitempty"`
 	Type              *string `json:"type,omitempty"`
 }

@@ -24,6 +24,13 @@ const tailscaleStatusTimeout = 5 * time.Second
 // findTailscale is swapped out in tests.
 var findTailscale = tunnel.Find
 
+// workspaceTailscaleConnected reports whether the Notte workspace has a
+// Tailscale OAuth client connected in the console. Swapped out in tests.
+var workspaceTailscaleConnected = checkWorkspaceTailscale
+
+// consoleIntegrationsHint points to where a workspace connects Tailscale.
+const consoleIntegrationsHint = "connect Tailscale in the Notte console (Settings > Integrations), or pass --oauth-client-id and --oauth-client-secret"
+
 var (
 	tunnelName              string
 	tunnelOAuthClientID     string
@@ -39,9 +46,10 @@ saves it as a named tunnel; "notte sessions start --tunnel <name>" then sends
 the session's public traffic out through it.
 
 Requires Tailscale running and signed in on this machine, and a Tailscale OAuth
-client (auth_keys write scope, tagged tag:notte). Your tailnet policy must let
-tag:notte reach autogroup:internet, and this machine must be approved as an
-exit node.`,
+client (auth_keys write scope, tagged tag:notte only). Connect the client once
+in the Notte console (Settings > Integrations), or pass it to "tunnel up" to
+keep it on this machine. Your tailnet policy must let tag:notte reach
+autogroup:internet, and this machine must be approved as an exit node.`,
 }
 
 var tunnelUpCmd = &cobra.Command{
@@ -49,10 +57,16 @@ var tunnelUpCmd = &cobra.Command{
 	Short: "Offer this machine as an exit node and save it as a tunnel",
 	Long: `Offer this machine as a Tailscale exit node and save it as a named tunnel.
 
-The OAuth client secret is stored in the keyring, never in the config file.
-It can also be passed through the ` + tailnetSecretEnv + ` environment
-variable. Re-running "up" for a saved tunnel reuses its stored credentials.`,
-	Example: `  notte tunnel up --name home-mac --oauth-client-id <id> --oauth-client-secret <secret>
+Without credentials, the tunnel uses the Tailscale OAuth client connected to
+your Notte workspace in the console (Settings > Integrations), and nothing
+secret is stored on this machine.
+
+To keep the client on this machine instead, pass --oauth-client-id and
+--oauth-client-secret (or ` + tailnetSecretEnv + `). The secret is stored in
+the keyring, never in the config file. Re-running "up" for a saved tunnel
+reuses its stored credentials.`,
+	Example: `  notte tunnel up --name home-mac
+  notte tunnel up --name home-mac --oauth-client-id <id> --oauth-client-secret <secret>
   notte sessions start --tunnel home-mac`,
 	RunE: runTunnelUp,
 }
@@ -82,7 +96,7 @@ func init() {
 	tunnelCmd.AddCommand(tunnelUpCmd, tunnelDownCmd, tunnelListCmd, tunnelRemoveCmd)
 
 	tunnelUpCmd.Flags().StringVar(&tunnelName, "name", "", "Tunnel name (default: this machine's MagicDNS host name)")
-	tunnelUpCmd.Flags().StringVar(&tunnelOAuthClientID, "oauth-client-id", "", "Tailscale OAuth client ID (required the first time a tunnel is saved)")
+	tunnelUpCmd.Flags().StringVar(&tunnelOAuthClientID, "oauth-client-id", "", "Tailscale OAuth client ID (default: the workspace's console connection)")
 	tunnelUpCmd.Flags().StringVar(&tunnelOAuthClientSecret, "oauth-client-secret", "", "Tailscale OAuth client secret (or set "+tailnetSecretEnv+")")
 }
 
@@ -107,7 +121,7 @@ func runTunnelUp(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	clientID, secret, err := tunnelCredentials(cmd, name)
+	clientID, secret, err := tunnelCredentials(ctx, cmd, name)
 	if err != nil {
 		return err
 	}
@@ -126,10 +140,11 @@ func runTunnelUp(cmd *cobra.Command, args []string) error {
 	}
 
 	data := map[string]any{
-		"name":      t.Name,
-		"exit_node": t.ExitNode,
-		"tailnet":   t.Tailnet,
-		"approved":  st.Self.ExitNodeOption,
+		"name":        t.Name,
+		"exit_node":   t.ExitNode,
+		"tailnet":     t.Tailnet,
+		"approved":    st.Self.ExitNodeOption,
+		"credentials": tunnelCredentialSource(t),
 	}
 	if !st.Self.ExitNodeOption {
 		return PrintResult(fmt.Sprintf(`Saved tunnel %q (%s), but this machine is not approved as an exit node yet.
@@ -143,9 +158,10 @@ Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, 
 }
 
 // tunnelCredentials resolves the OAuth client for a tunnel: flags and the
-// environment first, falling back to what was saved for the same name. An
-// empty secret means "keep the stored one".
-func tunnelCredentials(cmd *cobra.Command, name string) (clientID, secret string, err error) {
+// environment first, then what was saved for the same name, then the
+// workspace's console connection. An empty client ID means the workspace
+// connection; an empty secret means "keep the stored one".
+func tunnelCredentials(ctx context.Context, cmd *cobra.Command, name string) (clientID, secret string, err error) {
 	clientID = tunnelOAuthClientID
 	secret = tunnelOAuthClientSecret
 	if !cmd.Flags().Changed("oauth-client-secret") {
@@ -159,8 +175,18 @@ func tunnelCredentials(cmd *cobra.Command, name string) (clientID, secret string
 	if clientID == "" && saved != nil {
 		clientID = saved.OAuthClientID
 	}
+	if clientID == "" && secret == "" {
+		connected, err := workspaceTailscaleConnected(ctx)
+		if err != nil {
+			return "", "", fmt.Errorf("could not check the workspace's Tailscale connection: %w; %s", err, consoleIntegrationsHint)
+		}
+		if !connected {
+			return "", "", fmt.Errorf("this workspace has no Tailscale connection: %s", consoleIntegrationsHint)
+		}
+		return "", "", nil
+	}
 	if clientID == "" {
-		return "", "", fmt.Errorf("--oauth-client-id is required to save tunnel %q", name)
+		return "", "", fmt.Errorf("--oauth-client-id is required with --oauth-client-secret to save tunnel %q", name)
 	}
 	if secret != "" {
 		return clientID, secret, nil
@@ -172,6 +198,32 @@ func tunnelCredentials(cmd *cobra.Command, name string) (clientID, secret string
 		return "", "", err
 	}
 	return clientID, "", nil
+}
+
+// checkWorkspaceTailscale asks the API whether the workspace has a Tailscale
+// OAuth client connected.
+func checkWorkspaceTailscale(ctx context.Context) (bool, error) {
+	client, err := GetClient()
+	if err != nil {
+		return false, err
+	}
+	namespace := api.Tailscale
+	resp, err := client.Client().ListSecretsWithResponse(ctx, &api.ListSecretsParams{Namespace: &namespace})
+	if err != nil {
+		return false, fmt.Errorf("API request failed: %w", err)
+	}
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return false, err
+	}
+	return resp.JSON200 != nil && len(resp.JSON200.Items) > 0, nil
+}
+
+// tunnelCredentialSource says where a tunnel's OAuth client comes from.
+func tunnelCredentialSource(t tunnel.Tunnel) string {
+	if t.OAuthClientID == "" {
+		return "workspace"
+	}
+	return "local"
 }
 
 func runTunnelDown(cmd *cobra.Command, args []string) error {
@@ -218,7 +270,7 @@ func runTunnelList(cmd *cobra.Command, args []string) error {
 
 	rows := make([]tunnelRow, 0, len(tunnels))
 	for _, t := range tunnels {
-		row := tunnelRow{Name: t.Name, ExitNode: t.ExitNode, Tailnet: t.Tailnet, Approved: "-"}
+		row := tunnelRow{Name: t.Name, ExitNode: t.ExitNode, Tailnet: t.Tailnet, Credentials: tunnelCredentialSource(t), Approved: "-"}
 		if self != nil && self.MagicDNSName() == t.ExitNode {
 			row.Approved = fmt.Sprintf("%t", self.Self.ExitNodeOption)
 		}
@@ -230,10 +282,11 @@ func runTunnelList(cmd *cobra.Command, args []string) error {
 // tunnelRow is one line of `tunnel list`. Approved is "-" for tunnels on other
 // machines, whose approval can only be read from that machine.
 type tunnelRow struct {
-	Name     string `json:"name"`
-	ExitNode string `json:"exit_node"`
-	Tailnet  string `json:"tailnet"`
-	Approved string `json:"approved"`
+	Name        string `json:"name"`
+	ExitNode    string `json:"exit_node"`
+	Tailnet     string `json:"tailnet"`
+	Credentials string `json:"credentials"`
+	Approved    string `json:"approved"`
 }
 
 func runTunnelRemove(cmd *cobra.Command, args []string) error {
@@ -248,18 +301,23 @@ func runTunnelRemove(cmd *cobra.Command, args []string) error {
 }
 
 // tunnelProxyItem expands a saved tunnel into a tailnet proxy that exits
-// through the tunnel's machine.
+// through the tunnel's machine. A tunnel on the workspace connection sends no
+// credentials: the API reads them from the workspace.
 func tunnelProxyItem(name string) (api.ApiSessionStartRequest_Proxies_0_Item, error) {
 	var item api.ApiSessionStartRequest_Proxies_0_Item
 	t, err := tunnel.Get(name)
 	if err != nil {
 		return item, err
 	}
-	secret, err := tunnel.Secret(name)
-	if err != nil {
-		return item, err
+	proxy := api.TailnetProxy{ExitNode: &t.ExitNode}
+	if t.OAuthClientID != "" {
+		secret, err := tunnel.Secret(name)
+		if err != nil {
+			return item, err
+		}
+		proxy.OauthClientId = &t.OAuthClientID
+		proxy.OauthClientSecret = &secret
 	}
-	proxy := api.TailnetProxy{OauthClientId: t.OAuthClientID, OauthClientSecret: &secret, ExitNode: &t.ExitNode}
 	if err := item.FromTailnetProxy(proxy); err != nil {
 		return item, fmt.Errorf("failed to create tunnel proxy: %w", err)
 	}

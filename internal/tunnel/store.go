@@ -24,9 +24,12 @@ var ErrNotFound = errors.New("tunnel not found")
 
 // Tunnel is a saved exit node that sessions can route through.
 type Tunnel struct {
-	Name          string `json:"name"`
-	ExitNode      string `json:"exit_node"`
-	Tailnet       string `json:"tailnet,omitempty"`
+	Name     string `json:"name"`
+	ExitNode string `json:"exit_node"`
+	Tailnet  string `json:"tailnet,omitempty"`
+	// OAuthClientID is empty when the tunnel uses the Tailscale connection of
+	// the Notte workspace (Settings > Integrations in the console) instead of
+	// credentials stored on this machine.
 	OAuthClientID string `json:"oauth_client_id"`
 }
 

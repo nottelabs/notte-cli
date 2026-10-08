@@ -47,6 +47,11 @@ func setupTunnelTest(t *testing.T, approve bool) (*fakeTailnet, *testutil.TestEn
 	findTailscale = func() (*tunnel.Tailscale, error) { return &tunnel.Tailscale{Bin: "tailscale", Run: fake.run}, nil }
 	t.Cleanup(func() { findTailscale = orig })
 
+	// No workspace connection unless a test says otherwise.
+	origWorkspace := workspaceTailscaleConnected
+	workspaceTailscaleConnected = func(context.Context) (bool, error) { return false, nil }
+	t.Cleanup(func() { workspaceTailscaleConnected = origWorkspace })
+
 	origFormat := outputFormat
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
@@ -121,12 +126,16 @@ func TestTunnelUp_PendingApprovalExplainsNextStep(t *testing.T) {
 func TestTunnelUp_RequiresCredentialsFirstTime(t *testing.T) {
 	fake, _ := setupTunnelTest(t, true)
 
-	if _, err := runCaptured(t, func() error { return runTunnelUp(newTunnelUpCmd("--name", "home-mac"), nil) }); err == nil || !strings.Contains(err.Error(), "--oauth-client-id is required") {
-		t.Errorf("missing client id: got %v", err)
+	if _, err := runCaptured(t, func() error { return runTunnelUp(newTunnelUpCmd("--name", "home-mac"), nil) }); err == nil || !strings.Contains(err.Error(), "Settings > Integrations") {
+		t.Errorf("no credentials and no workspace connection: got %v", err)
 	}
 	cmd := newTunnelUpCmd("--name", "home-mac", "--oauth-client-id", "client-1")
 	if _, err := runCaptured(t, func() error { return runTunnelUp(cmd, nil) }); err == nil || !strings.Contains(err.Error(), "--oauth-client-secret") {
 		t.Errorf("missing secret: got %v", err)
+	}
+	cmd = newTunnelUpCmd("--name", "home-mac", "--oauth-client-secret", "s3cret")
+	if _, err := runCaptured(t, func() error { return runTunnelUp(cmd, nil) }); err == nil || !strings.Contains(err.Error(), "--oauth-client-id is required") {
+		t.Errorf("secret without client id: got %v", err)
 	}
 	for _, c := range fake.calls {
 		if strings.HasPrefix(c, "set") {
@@ -149,6 +158,71 @@ func TestTunnelUp_ReusesSavedCredentialsAndReadsSecretFromEnv(t *testing.T) {
 	}
 	if secret, _ := tunnel.Secret("home-mac"); secret != "from-env" {
 		t.Errorf("stored secret = %q, want from-env", secret)
+	}
+}
+
+func TestTunnelUp_UsesWorkspaceConnectionWithoutCredentials(t *testing.T) {
+	fake, _ := setupTunnelTest(t, true)
+	workspaceTailscaleConnected = func(context.Context) (bool, error) { return true, nil }
+
+	out, err := runCaptured(t, func() error { return runTunnelUp(newTunnelUpCmd("--name", "home-mac"), nil) })
+	if err != nil {
+		t.Fatalf("runTunnelUp() error = %v", err)
+	}
+	if !fake.advertising {
+		t.Error("exit node was not advertised")
+	}
+	var result map[string]any
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("output is not JSON: %q", out)
+	}
+	if result["credentials"] != "workspace" {
+		t.Errorf("credentials = %v, want workspace", result["credentials"])
+	}
+	saved, err := tunnel.Get("home-mac")
+	if err != nil || saved.OAuthClientID != "" || saved.ExitNode != "lucas-mbp.tail1234.ts.net" {
+		t.Errorf("saved tunnel = %+v, %v", saved, err)
+	}
+	if secret, err := tunnel.Secret("home-mac"); err == nil {
+		t.Errorf("stored a secret for a workspace tunnel: %q", secret)
+	}
+}
+
+func TestTunnelUp_WorkspaceCheckFailureExplainsAlternatives(t *testing.T) {
+	fake, _ := setupTunnelTest(t, true)
+	workspaceTailscaleConnected = func(context.Context) (bool, error) { return false, fmt.Errorf("not authenticated") }
+
+	_, err := runCaptured(t, func() error { return runTunnelUp(newTunnelUpCmd("--name", "home-mac"), nil) })
+	if err == nil || !strings.Contains(err.Error(), "not authenticated") || !strings.Contains(err.Error(), "--oauth-client-id") {
+		t.Errorf("got %v", err)
+	}
+	for _, c := range fake.calls {
+		if strings.HasPrefix(c, "set") {
+			t.Errorf("advertised an exit node without credentials: %v", fake.calls)
+		}
+	}
+}
+
+func TestCheckWorkspaceTailscale(t *testing.T) {
+	_, env := setupTunnelTest(t, true)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+
+	server.AddResponse("/secrets", 200, `{"items":[{"id":"s1","namespace":"tailscale","name":"client-1","key_hint":"","created_at":"2020-01-01T00:00:00Z"}]}`)
+	connected, err := checkWorkspaceTailscale(context.Background())
+	if err != nil || !connected {
+		t.Fatalf("connected = %v, err = %v", connected, err)
+	}
+	reqs := server.Requests("/secrets")
+	if len(reqs) != 1 || reqs[0].Query != "namespace=tailscale" {
+		t.Errorf("requests = %+v", reqs)
+	}
+
+	server.AddResponse("/secrets", 200, `{"items":[]}`)
+	if connected, err := checkWorkspaceTailscale(context.Background()); err != nil || connected {
+		t.Errorf("empty workspace: connected = %v, err = %v", connected, err)
 	}
 }
 
@@ -231,6 +305,30 @@ func TestSessionsStart_TunnelSendsTailnetProxyWithExitNode(t *testing.T) {
 	want := map[string]string{"type": "tailnet", "oauth_client_id": "client-1", "oauth_client_secret": "s3cret", "exit_node": "lucas-mbp.tail1234.ts.net"}
 	if len(body.Proxies) != 1 || fmt.Sprint(body.Proxies[0]) != fmt.Sprint(want) {
 		t.Errorf("proxies = %v, want [%v]", body.Proxies, want)
+	}
+}
+
+func TestSessionsStart_WorkspaceTunnelSendsNoCredentials(t *testing.T) {
+	setupTunnelTest(t, true)
+	if err := tunnel.Save(tunnel.Tunnel{Name: "home-mac", ExitNode: "lucas-mbp.tail1234.ts.net"}, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	item, err := tunnelProxyItem("home-mac")
+	if err != nil {
+		t.Fatalf("tunnelProxyItem() error = %v", err)
+	}
+	encoded, err := json.Marshal(item)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]string
+	if err := json.Unmarshal(encoded, &got); err != nil {
+		t.Fatalf("bad proxy %s: %v", encoded, err)
+	}
+	want := map[string]string{"type": "tailnet", "exit_node": "lucas-mbp.tail1234.ts.net"}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Errorf("proxy = %v, want %v", got, want)
 	}
 }
 
