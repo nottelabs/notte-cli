@@ -880,6 +880,37 @@ type ApiSessionStartRequest_Proxies struct {
 // ApiSessionStartRequestScreenshotType The type of screenshot to use for the session.
 type ApiSessionStartRequestScreenshotType string
 
+// AuditEvent defines model for AuditEvent.
+type AuditEvent struct {
+	Action string `json:"action"`
+
+	// ActorEmail Email of the actor when it is a workspace member the caller may see. Null for system actors.
+	ActorEmail *string                 `json:"actor_email,omitempty"`
+	ActorId    *string                 `json:"actor_id,omitempty"`
+	ActorName  *string                 `json:"actor_name,omitempty"`
+	ActorType  string                  `json:"actor_type"`
+	CreatedAt  FlexibleTime            `json:"created_at"`
+	EntityId   string                  `json:"entity_id"`
+	EntityType string                  `json:"entity_type"`
+	Id         int                     `json:"id"`
+	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
+	OrgId      *string                 `json:"org_id,omitempty"`
+
+	// ResourceName Human-readable name of the resource (an API key's label, a secret's name, a member's email) when one is known. Never a secret value.
+	ResourceName *string `json:"resource_name,omitempty"`
+	Source       string  `json:"source"`
+	UserId       *string `json:"user_id,omitempty"`
+}
+
+// AuditEventListResponse defines model for AuditEventListResponse.
+type AuditEventListResponse struct {
+	HasMore bool         `json:"has_more"`
+	Items   []AuditEvent `json:"items"`
+
+	// NextCursor Opaque cursor for the next (older) page. Null when there are no more events.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 // BaseModel defines model for BaseModel.
 type BaseModel = map[string]interface{}
 
@@ -3535,6 +3566,32 @@ type GetScriptParams struct {
 
 // AnythingStartParams defines parameters for AnythingStart.
 type AnythingStartParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ListAuditEventsParams defines parameters for ListAuditEvents.
+type ListAuditEventsParams struct {
+	// Limit Events per page
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor `next_cursor` from the previous page
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Since Only events at or after this time (ISO-8601)
+	Since *string `form:"since,omitempty" json:"since,omitempty"`
+
+	// Until Only events before this time (ISO-8601)
+	Until *string `form:"until,omitempty" json:"until,omitempty"`
+
+	// Action Only events with this action, e.g. `created`
+	Action *string `form:"action,omitempty" json:"action,omitempty"`
+
+	// EntityType Only events about this kind of resource, e.g. `api_key`
+	EntityType *string `form:"entity_type,omitempty" json:"entity_type,omitempty"`
+
+	// ActorId Only events performed by this user
+	ActorId             *string `form:"actor_id,omitempty" json:"actor_id,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -10176,6 +10233,9 @@ type ClientInterface interface {
 
 	AnythingStart(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListAuditEvents request
+	ListAuditEvents(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListFunctions request
 	ListFunctions(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -10586,6 +10646,18 @@ func (c *Client) AnythingStartWithBody(ctx context.Context, params *AnythingStar
 
 func (c *Client) AnythingStart(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAnythingStartRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAuditEvents(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAuditEventsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -12485,6 +12557,177 @@ func NewAnythingStartRequestWithBody(server string, params *AnythingStartParams,
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewListAuditEventsRequest generates requests for ListAuditEvents
+func NewListAuditEventsRequest(server string, params *ListAuditEventsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/audit-events")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Action != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "action", runtime.ParamLocationQuery, *params.Action); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.EntityType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "entity_type", runtime.ParamLocationQuery, *params.EntityType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ActorId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "actor_id", runtime.ParamLocationQuery, *params.ActorId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	if params != nil {
 
@@ -19337,6 +19580,9 @@ type ClientWithResponsesInterface interface {
 
 	AnythingStartWithResponse(ctx context.Context, params *AnythingStartParams, body AnythingStartJSONRequestBody, reqEditors ...RequestEditorFn) (*AnythingStartResult, error)
 
+	// ListAuditEventsWithResponse request
+	ListAuditEventsWithResponse(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*ListAuditEventsResult, error)
+
 	// ListFunctionsWithResponse request
 	ListFunctionsWithResponse(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResult, error)
 
@@ -19793,6 +20039,29 @@ func (r AnythingStartResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AnythingStartResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListAuditEventsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuditEventListResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAuditEventsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAuditEventsResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21870,6 +22139,15 @@ func (c *ClientWithResponses) AnythingStartWithResponse(ctx context.Context, par
 	return ParseAnythingStartResult(rsp)
 }
 
+// ListAuditEventsWithResponse request returning *ListAuditEventsResult
+func (c *ClientWithResponses) ListAuditEventsWithResponse(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*ListAuditEventsResult, error) {
+	rsp, err := c.ListAuditEvents(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAuditEventsResult(rsp)
+}
+
 // ListFunctionsWithResponse request returning *ListFunctionsResult
 func (c *ClientWithResponses) ListFunctionsWithResponse(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResult, error) {
 	rsp, err := c.ListFunctions(ctx, params, reqEditors...)
@@ -23082,6 +23360,39 @@ func ParseAnythingStartResult(rsp *http.Response) (*AnythingStartResult, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAuditEventsResult parses an HTTP response from a ListAuditEventsWithResponse call
+func ParseListAuditEventsResult(rsp *http.Response) (*ListAuditEventsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAuditEventsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuditEventListResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
