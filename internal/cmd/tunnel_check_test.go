@@ -79,6 +79,7 @@ func TestTunnelCheck_PassesWhenTheSessionLeavesFromThisMachine(t *testing.T) {
 	var body struct {
 		Proxies            []map[string]string `json:"proxies"`
 		MaxDurationMinutes int                 `json:"max_duration_minutes"`
+		IdleTimeoutMinutes int                 `json:"idle_timeout_minutes"`
 	}
 	if err := json.Unmarshal([]byte(starts[0].Body), &body); err != nil {
 		t.Fatalf("bad start body %q: %v", starts[0].Body, err)
@@ -87,8 +88,9 @@ func TestTunnelCheck_PassesWhenTheSessionLeavesFromThisMachine(t *testing.T) {
 	if len(body.Proxies) != 1 || fmt.Sprint(body.Proxies[0]) != fmt.Sprint(want) {
 		t.Errorf("proxies = %v, want [%v]", body.Proxies, want)
 	}
-	if body.MaxDurationMinutes != checkSessionMaxMinutes {
-		t.Errorf("max_duration_minutes = %d", body.MaxDurationMinutes)
+	// The API rejects an idle timeout above the maximum duration.
+	if body.MaxDurationMinutes != checkSessionMaxMinutes || body.IdleTimeoutMinutes != checkSessionIdleMinutes || body.IdleTimeoutMinutes > body.MaxDurationMinutes {
+		t.Errorf("max_duration_minutes = %d, idle_timeout_minutes = %d", body.MaxDurationMinutes, body.IdleTimeoutMinutes)
 	}
 	if !strings.Contains(server.Requests("/sessions/sess_1/page/execute")[0].Body, ipLookupURL) {
 		t.Error("the session did not open the IP lookup")

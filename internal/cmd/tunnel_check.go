@@ -26,7 +26,12 @@ import (
 const ipLookupURL = "https://api.ipify.org"
 
 // checkSessionMaxMinutes bounds the check session in case it is never stopped.
-const checkSessionMaxMinutes = 2
+// The idle timeout is set too: the API rejects an idle timeout above the
+// maximum duration, and its default idle timeout may exceed this cap.
+const (
+	checkSessionMaxMinutes  = 5
+	checkSessionIdleMinutes = 2
+)
 
 // stopTimeout bounds the cleanup call that closes the check session.
 const stopTimeout = 30 * time.Second
@@ -154,8 +159,8 @@ func tunnelSessionIP(parent context.Context, name string) (ip, sessionID string,
 	if err := proxies.FromApiSessionStartRequestProxies0([]api.ApiSessionStartRequest_Proxies_0_Item{proxy}); err != nil {
 		return "", "", fmt.Errorf("failed to set proxies: %w", err)
 	}
-	maxMinutes := checkSessionMaxMinutes
-	body := api.ApiSessionStartRequest{Proxies: &proxies, MaxDurationMinutes: &maxMinutes}
+	maxMinutes, idleMinutes := checkSessionMaxMinutes, checkSessionIdleMinutes
+	body := api.ApiSessionStartRequest{Proxies: &proxies, MaxDurationMinutes: &maxMinutes, IdleTimeoutMinutes: &idleMinutes}
 
 	client, err := GetClient()
 	if err != nil {
@@ -182,7 +187,7 @@ func tunnelSessionIP(parent context.Context, name string) (ip, sessionID string,
 		stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 		defer stopCancel()
 		if stopResp, stopErr := client.Client().SessionStopWithResponse(stopCtx, sessionID, &api.SessionStopParams{}); stopErr != nil || HandleAPIResponse(stopResp.HTTPResponse, stopResp.Body) != nil {
-			PrintInfo(fmt.Sprintf("Warning: could not stop check session %s; it closes on its own within %d minutes", sessionID, checkSessionMaxMinutes))
+			PrintInfo(fmt.Sprintf("Warning: could not stop check session %s; it closes on its own after %d idle minutes", sessionID, checkSessionIdleMinutes))
 		}
 	}()
 
