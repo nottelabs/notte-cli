@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -62,6 +65,10 @@ func runTunnelCheck(cmd *cobra.Command, args []string) error {
 	if parent == nil {
 		parent = context.Background()
 	}
+	// Ctrl-C cancels the check instead of killing the process, so the deferred
+	// stop in tunnelSessionIP still closes the billed session.
+	parent, stopSignals := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
+	defer stopSignals()
 
 	// This machine's state is read when Tailscale is available. It names the
 	// default tunnel and decides whether the session IP can be compared.
@@ -192,6 +199,9 @@ func tunnelSessionIP(parent context.Context, name string) (ip, sessionID string,
 	if err := HandleAPIResponse(execResp.HTTPResponse, execResp.Body); err != nil {
 		return "", sessionID, fmt.Errorf("the session started but could not open %s: %w", ipLookupURL, err)
 	}
+	if r := execResp.JSON200; r != nil && !r.Success {
+		return "", sessionID, fmt.Errorf("the session started but could not open %s: %w", ipLookupURL, executionFailureError(r.ExceptionDetail, r.Exception, r.Message))
+	}
 
 	ctx, cancel = GetContextWithTimeout(parent)
 	scrapeResp, err := client.Client().PageScrapeWithResponse(ctx, sessionID, &api.PageScrapeParams{}, api.PageScrapeJSONRequestBody{})
@@ -231,13 +241,22 @@ func integrationsURL() string {
 	return strings.TrimSuffix(auth.ConsoleURL(), "/") + "/settings/integrations"
 }
 
+// directHTTPClient ignores HTTP(S)_PROXY settings. The exit node sends traffic
+// over this machine's direct connection, so the lookup must not go through a
+// proxy that would report a different IP.
+func directHTTPClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.Proxy = nil
+	return &http.Client{Transport: transport}
+}
+
 // fetchPublicIP asks the IP lookup service for this machine's public IPv4.
 func fetchPublicIP(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ipLookupURL, nil)
 	if err != nil {
 		return "", err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := directHTTPClient().Do(req)
 	if err != nil {
 		return "", err
 	}

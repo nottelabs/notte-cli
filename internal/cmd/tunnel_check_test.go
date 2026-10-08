@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -183,5 +184,30 @@ func TestTunnelCheck_ReportsWithoutComparingForAnotherMachine(t *testing.T) {
 	}
 	if result["status"] != "unverified" || result["session_ip"] != "198.51.100.4" {
 		t.Errorf("unexpected result: %v", result)
+	}
+}
+
+func TestTunnelCheck_ReportsNavigationFailureAndStops(t *testing.T) {
+	_, server := setupTunnelCheck(t, "149.154.233.221")
+	serveCheckSession(server, "149.154.233.221")
+	server.AddResponse("/sessions/sess_1/page/execute", 200, `{"success":false,"message":"net::ERR_TUNNEL_CONNECTION_FAILED"}`)
+
+	_, err := runCaptured(t, func() error { return runTunnelCheck(newTunnelCheckCmd(), nil) })
+	if err == nil || !strings.Contains(err.Error(), "ERR_TUNNEL_CONNECTION_FAILED") {
+		t.Fatalf("got %v", err)
+	}
+	if len(server.Requests("/sessions/sess_1/page/scrape")) != 0 {
+		t.Error("scraped after the navigation failed")
+	}
+	if len(server.Requests("/sessions/sess_1/stop")) != 1 {
+		t.Error("the check session was not stopped")
+	}
+}
+
+func TestDirectHTTPClientIgnoresProxySettings(t *testing.T) {
+	t.Setenv("HTTPS_PROXY", "http://proxy.example:8080")
+	transport, ok := directHTTPClient().Transport.(*http.Transport)
+	if !ok || transport.Proxy != nil {
+		t.Error("the machine IP lookup would go through HTTP(S)_PROXY")
 	}
 }
