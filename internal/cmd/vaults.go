@@ -68,8 +68,9 @@ var vaultsCredentialsAddCmd = &cobra.Command{
 	Long: `Add credentials (password and optional MFA secret) to a vault.
 
 Security note: values passed via --password and --mfa-secret are read from argv,
-which makes them visible in 'ps' output, shell history, and process snapshots.
-For real credentials, prefer expanding from an environment variable, e.g.:
+which makes them visible in 'ps' output and process snapshots while the command
+runs. Expanding them from an environment variable keeps the literal value out of
+your shell history, but the shell still passes it to notte as an argument:
 
   notte vaults credentials add --vault-id <id> --url <url> \
     --email me@example.com --password "$MY_PASSWORD"
