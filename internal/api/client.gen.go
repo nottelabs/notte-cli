@@ -1191,9 +1191,14 @@ type ConnectLinkStatusResponse struct {
 	AttemptsRemaining  int                             `json:"attempts_remaining"`
 	ConnectionStatus   *string                         `json:"connection_status,omitempty"`
 	ErrorRedirectUri   *string                         `json:"error_redirect_uri,omitempty"`
+	ExpectedSeconds    *int                            `json:"expected_seconds,omitempty"`
 	FailureCode        *string                         `json:"failure_code,omitempty"`
+	LoginAttempt       *int                            `json:"login_attempt,omitempty"`
+	MaxLoginAttempts   *int                            `json:"max_login_attempts,omitempty"`
 	Message            *string                         `json:"message,omitempty"`
+	StartedAt          *string                         `json:"started_at,omitempty"`
 	Status             ConnectLinkStatusResponseStatus `json:"status"`
+	Step               *string                         `json:"step,omitempty"`
 	SuccessRedirectUri *string                         `json:"success_redirect_uri,omitempty"`
 }
 
