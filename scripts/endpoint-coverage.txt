@@ -36,8 +36,6 @@ skip DELETE /sessions/{session_id}/files/{file_id} # file deletion is not expose
 # --- superseded by a session-scoped equivalent -------------------------------
 skip POST /scrape # use notte page scrape, which runs in a session
 skip POST /scrape_from_html # use notte page scrape, which runs in a session
-skip POST /prompts/improve # console-only prompt tooling
-skip POST /prompts/nudge # console-only prompt tooling
 
 # --- browser-first flows the CLI has no shape for ----------------------------
 skip GET    /sessions/{session_id}/profile-preview # hidden session-viewer endpoint for the profile-save confirmation

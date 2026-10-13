@@ -2172,17 +2172,6 @@ type ImageData struct {
 	Url *string `json:"url,omitempty"`
 }
 
-// ImprovePromptRequest defines model for ImprovePromptRequest.
-type ImprovePromptRequest struct {
-	Prompt string `json:"prompt"`
-}
-
-// ImprovePromptResponse defines model for ImprovePromptResponse.
-type ImprovePromptResponse struct {
-	Prompt    string    `json:"prompt"`
-	Variables *[]string `json:"variables,omitempty"`
-}
-
 // LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
 type LegacyAgentStatusResponse struct {
 	// AgentId The ID of the agent
@@ -2421,17 +2410,6 @@ type NotteProxy struct {
 	Country *ProxyGeolocationCountry `json:"country,omitempty"`
 	Id      *string                  `json:"id,omitempty"`
 	Type    *string                  `json:"type,omitempty"`
-}
-
-// NudgePromptRequest defines model for NudgePromptRequest.
-type NudgePromptRequest struct {
-	AgentMessages []map[string]interface{} `json:"agent_messages"`
-	Task          string                   `json:"task"`
-}
-
-// NudgePromptResponse defines model for NudgePromptResponse.
-type NudgePromptResponse struct {
-	Prompt string `json:"prompt"`
 }
 
 // Observation defines model for Observation.
