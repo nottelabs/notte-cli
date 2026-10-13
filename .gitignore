@@ -8,3 +8,4 @@ notte
 coverage.out
 coverage.html
 .env
+cli-reference/
