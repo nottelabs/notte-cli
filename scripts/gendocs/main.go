@@ -151,17 +151,25 @@ func overviewPage(root *cobra.Command, groups, singles []*cobra.Command) string 
 
 ## Installation
 
-` + "```bash" + `
-# Install script (macOS and Linux)
-curl -fsSL https://notte.cc/install-cli.sh | sh
+Install with one of:
 
-# Homebrew
+<CodeGroup>
+
+` + "```bash Install script" + `
+# macOS and Linux
+curl -fsSL https://notte.cc/install-cli.sh | sh
+` + "```" + `
+
+` + "```bash Homebrew" + `
 brew tap nottelabs/notte-cli https://github.com/nottelabs/notte-cli.git
 brew install notte
+` + "```" + `
 
-# Go
+` + "```bash Go" + `
 go install github.com/nottelabs/notte-cli/cmd/notte@latest
 ` + "```" + `
+
+</CodeGroup>
 
 Verify the installation:
 
