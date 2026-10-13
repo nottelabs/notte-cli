@@ -63,28 +63,6 @@ func main() {
 }
 
 func run(root *cobra.Command, out string) error {
-	if err := os.MkdirAll(out, 0o755); err != nil {
-		return err
-	}
-	// Remove the pages a previous run wrote, so a removed group does not leave
-	// a stale page behind. Only generated pages: anything else in the
-	// directory was written by hand and is left alone.
-	existing, err := filepath.Glob(filepath.Join(out, "*.mdx"))
-	if err != nil {
-		return err
-	}
-	for _, f := range existing {
-		generated, err := isGenerated(f)
-		if err != nil {
-			return err
-		}
-		if generated {
-			if err := os.Remove(f); err != nil {
-				return err
-			}
-		}
-	}
-
 	var groups, singles []*cobra.Command
 	for _, c := range visibleChildren(root) {
 		if len(visibleChildren(c)) > 0 {
@@ -101,14 +79,40 @@ func run(root *cobra.Command, out string) error {
 	if len(singles) > 0 {
 		pages["other.mdx"] = otherPage(root, singles)
 	}
-	for name, body := range pages {
-		path := filepath.Join(out, name)
-		// Generated pages were removed above, so anything still here was
-		// written by hand.
-		if _, err := os.Stat(path); err == nil {
+
+	if err := os.MkdirAll(out, 0o755); err != nil {
+		return err
+	}
+	// Pages a previous run wrote are removed, so a removed group does not leave
+	// a stale page behind. Anything else in the directory was written by hand:
+	// it is left alone, and a run that would overwrite it changes nothing.
+	entries, err := os.ReadDir(out)
+	if err != nil {
+		return err
+	}
+	var stale []string
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".mdx" {
+			continue
+		}
+		path := filepath.Join(out, e.Name())
+		generated, err := isGenerated(path)
+		if err != nil {
+			return err
+		}
+		if generated {
+			stale = append(stale, path)
+		} else if _, ok := pages[e.Name()]; ok {
 			return fmt.Errorf("%s is not a generated page; refusing to overwrite it", path)
 		}
-		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+	}
+	for _, path := range stale {
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
+	for name, body := range pages {
+		if err := os.WriteFile(filepath.Join(out, name), []byte(body), 0o644); err != nil {
 			return err
 		}
 	}

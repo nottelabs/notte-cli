@@ -100,11 +100,26 @@ func TestHandWrittenPagesAreKept(t *testing.T) {
 		t.Fatalf("rerun: %v", err)
 	}
 
+	// A hand-written page with a generated page's name stops the run before
+	// anything changes, so the previous reference stays whole.
 	clash := filepath.Join(out, "auth.mdx")
 	if err := os.WriteFile(clash, []byte("hand-written"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := run(cmd.RootCommand(), out); err == nil {
 		t.Error("a hand-written page with a generated page's name was overwritten")
+	}
+	if _, err := os.Stat(filepath.Join(out, "sessions.mdx")); err != nil {
+		t.Errorf("a refused run removed generated pages: %v", err)
+	}
+}
+
+// The output directory is read as a path, not a glob pattern.
+func TestRerunInBracketedDirectory(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "[draft]")
+	for i := 0; i < 2; i++ {
+		if err := run(cmd.RootCommand(), out); err != nil {
+			t.Fatalf("run %d: %v", i+1, err)
+		}
 	}
 }
