@@ -615,7 +615,7 @@ By default, saves to a temporary directory. Optionally provide a path to save to
 Examples:
   notte page screenshot                    # saves to tmp directory
   notte page screenshot screenshot.jpg     # saves to specified path
-  notte page screenshot --output out.jpg   # saves to specified path (alt syntax)`,
+  notte page screenshot --path out.jpg     # saves to specified path (alt syntax)`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runPageScreenshot,
 }
