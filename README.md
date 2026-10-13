@@ -115,6 +115,7 @@ notte sessions status --auth          # Get managed authentication readiness and
 notte sessions stop                   # Stop current session
 notte sessions cookies                # Get all cookies from current session
 notte sessions cookies-set --file cookies.json  # Set cookies in current session
+notte sessions save-profile --name github  # Save current session's state into a new profile (or --profile-id <id>)
 notte sessions network                # View network activity logs
 notte sessions replay                 # Get session replay data
 notte sessions workflow-code          # Export session steps as Python code
