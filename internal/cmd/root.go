@@ -113,7 +113,7 @@ func IsVerbose() bool {
 
 // GetClient creates an authenticated API client
 func GetClient() (*api.NotteClient, error) {
-	apiKey, _, err := auth.GetAPIKey("")
+	apiKey, source, err := auth.GetAPIKey("")
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +129,11 @@ func GetClient() (*api.NotteClient, error) {
 
 	if baseURL == "" {
 		baseURL = api.DefaultBaseURL
+	}
+	if source != auth.SourceEnv {
+		if err := auth.CheckSavedKeyURL(baseURL); err != nil {
+			return nil, err
+		}
 	}
 
 	var opts []api.NotteClientOption

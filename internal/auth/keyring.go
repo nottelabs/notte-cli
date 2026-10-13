@@ -14,87 +14,192 @@ import (
 const (
 	KeyringService = "notte-cli"
 	KeyringKey     = "api_key"
-	KeychainName   = "notte-api-key"
+
+	// filePassword encrypts the file store. It is fixed and public, so the file
+	// store protects keys no better than a file only the current user can read.
+	filePassword = "notte-cli-keyring"
 )
+
+// systemBackends are the platform credential stores, in order of preference.
+// Only those available on the running platform are tried: the macOS Keychain
+// (when built with cgo), the Windows Credential Manager, or on Linux a Secret
+// Service, KWallet or pass.
+var systemBackends = []keyring.BackendType{
+	keyring.KeychainBackend,
+	keyring.WinCredBackend,
+	keyring.SecretServiceBackend,
+	keyring.KWalletBackend,
+	keyring.PassBackend,
+}
+
+// keyringConfig returns the configuration for both stores. Tests replace it to
+// use isolated stores.
+var keyringConfig = func(dir string) keyring.Config {
+	return keyring.Config{
+		ServiceName:      KeyringService,
+		FileDir:          dir,
+		FilePasswordFunc: keyring.FixedStringPrompt(filePassword),
+		// Lets this binary read the Keychain items it creates without a prompt.
+		KeychainTrustApplication: true,
+	}
+}
 
 var (
 	onceMkdir sync.Once
 	mkdirErr  error
 )
 
-// openKeyring initializes and returns a keyring instance
-func openKeyring() (keyring.Keyring, error) {
+func configDir() (string, error) {
 	dir, err := config.Dir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %w", err)
+		return "", fmt.Errorf("failed to get config directory: %w", err)
 	}
 
 	onceMkdir.Do(func() {
 		mkdirErr = os.MkdirAll(dir, 0o700)
 	})
 	if mkdirErr != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", mkdirErr)
+		return "", fmt.Errorf("failed to create config directory: %w", mkdirErr)
 	}
+	return dir, nil
+}
 
-	// Note: FixedStringPrompt is used for the file backend fallback (when no system keyring is available).
-	// The file backend provides basic protection for stored credentials on systems without keyring support.
-	ring, err := keyring.Open(keyring.Config{
-		ServiceName:              KeyringService,
-		KeychainName:             KeychainName,
-		FileDir:                  dir,
-		AllowedBackends:          []keyring.BackendType{keyring.SecretServiceBackend, keyring.KWalletBackend, keyring.PassBackend, keyring.FileBackend},
-		FilePasswordFunc:         keyring.FixedStringPrompt("notte-cli-keyring"),
-		KeychainTrustApplication: true,
-	})
+// openSystemKeyring opens the platform credential store. It returns nil, and
+// no error, when the platform has none (for example a headless Linux host).
+var openSystemKeyring = func() (keyring.Keyring, error) {
+	dir, err := configDir()
+	if err != nil {
+		return nil, err
+	}
+	cfg := keyringConfig(dir)
+	cfg.AllowedBackends = systemBackends
+	ring, err := keyring.Open(cfg)
+	if errors.Is(err, keyring.ErrNoAvailImpl) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to open system keyring: %w", err)
+	}
+	return ring, nil
+}
+
+// openFileKeyring opens the encrypted file store in the config directory. It
+// is used when no system store is available, and holds keys saved by older
+// versions, which only used a system store on Linux.
+var openFileKeyring = func() (keyring.Keyring, error) {
+	dir, err := configDir()
+	if err != nil {
+		return nil, err
+	}
+	cfg := keyringConfig(dir)
+	cfg.AllowedBackends = []keyring.BackendType{keyring.FileBackend}
+	ring, err := keyring.Open(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open keyring (dir=%s): %w", dir, err)
 	}
 	return ring, nil
 }
 
-// getFromSystemKeyring reads from the real OS keyring
+func isNotFound(err error) bool {
+	return errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist)
+}
+
+// getFromSystemKeyring reads a key from the system store, then from the file
+// store. A key found only in the file store is copied into the system store.
+// The file entry is kept for now, because older SDK versions only read the
+// file; the next login or logout removes it.
 func getFromSystemKeyring(key string) (string, error) {
-	ring, err := openKeyring()
+	system, err := openSystemKeyring()
 	if err != nil {
 		return "", err
 	}
 
-	item, err := ring.Get(key)
+	missingFromSystem := false
+	if system != nil {
+		item, err := system.Get(key)
+		if err == nil {
+			return string(item.Data), nil
+		}
+		// Any other error (a locked Keychain over SSH, say) falls through to the
+		// file store, but must not trigger a copy over an entry we could not read.
+		missingFromSystem = isNotFound(err)
+	}
+
+	file, err := openFileKeyring()
+	if err != nil {
+		return "", err
+	}
+	item, err := file.Get(key)
 	if err != nil {
 		return "", fmt.Errorf("failed to get key from keyring: %w", err)
 	}
 
+	if missingFromSystem {
+		_ = system.Set(keyring.Item{Key: key, Data: item.Data})
+	}
 	return string(item.Data), nil
 }
 
-// setInSystemKeyring writes to the real OS keyring
+// setInSystemKeyring stores a key in the system store, or in the file store
+// when there is no usable system store. Only one store keeps the key, so a
+// copy left in the other cannot be read in its place later.
 func setInSystemKeyring(key, value string) error {
-	ring, err := openKeyring()
+	system, err := openSystemKeyring()
 	if err != nil {
 		return err
 	}
+	file, err := openFileKeyring()
+	if err != nil {
+		return err
+	}
+	item := keyring.Item{Key: key, Data: []byte(value)}
 
-	if err := ring.Set(keyring.Item{
-		Key:  key,
-		Data: []byte(value),
-	}); err != nil {
-		return fmt.Errorf("failed to set key in keyring: %w", err)
+	if system != nil {
+		if err := system.Set(item); err == nil {
+			if err := file.Remove(key); err != nil && !isNotFound(err) {
+				return fmt.Errorf("stored key in system keyring but failed to remove the old copy from the file keyring: %w", err)
+			}
+			return nil
+		}
 	}
 
+	if err := file.Set(item); err != nil {
+		return fmt.Errorf("failed to set key in keyring: %w", err)
+	}
+	if system != nil {
+		_ = system.Remove(key)
+	}
 	return nil
 }
 
-// deleteFromSystemKeyring removes from the real OS keyring
+// deleteFromSystemKeyring removes a key from both stores. It reports a
+// keyring.ErrKeyNotFound error when neither store had it.
 func deleteFromSystemKeyring(key string) error {
-	ring, err := openKeyring()
+	system, err := openSystemKeyring()
+	if err != nil {
+		return err
+	}
+	file, err := openFileKeyring()
 	if err != nil {
 		return err
 	}
 
-	if err := ring.Remove(key); err != nil {
-		return fmt.Errorf("failed to remove key from keyring: %w", err)
+	removed := false
+	for _, ring := range []keyring.Keyring{system, file} {
+		if ring == nil {
+			continue
+		}
+		err := ring.Remove(key)
+		switch {
+		case err == nil:
+			removed = true
+		case !isNotFound(err):
+			return fmt.Errorf("failed to remove key from keyring: %w", err)
+		}
 	}
-
+	if !removed {
+		return fmt.Errorf("failed to remove key from keyring: %w", keyring.ErrKeyNotFound)
+	}
 	return nil
 }
 
@@ -158,7 +263,7 @@ func SetKeyringSecret(key, value string) error {
 // counts as removed; any other failure is returned.
 func DeleteKeyringSecret(key string) error {
 	err := defaultKeyring.Delete(key)
-	if errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist) {
+	if isNotFound(err) {
 		return nil
 	}
 	return err
