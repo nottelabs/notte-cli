@@ -5,6 +5,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -103,5 +105,75 @@ func TestFetchInstallScript_ErrorStatus(t *testing.T) {
 
 	if _, err := fetchInstallScript(context.Background(), server.Client()); err == nil {
 		t.Fatal("expected an error for a non-200 response")
+	}
+}
+
+func serveScript(t *testing.T, script string) *httptest.Server {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(script))
+	}))
+	t.Cleanup(server.Close)
+	setInstallScriptURL(t, server.URL)
+	return server
+}
+
+func TestInstallLatest_RunsTheScriptWithTheChosenDirectory(t *testing.T) {
+	// Settings left over from an earlier install must not pin the version or
+	// redirect the upgrade.
+	t.Setenv("NOTTE_VERSION", "0.0.1")
+	t.Setenv("NOTTE_INSTALL_DIR", "/elsewhere")
+	server := serveScript(t, `echo "dir=${NOTTE_INSTALL_DIR:-unset} version=${NOTTE_VERSION:-unset}"`)
+
+	var buf bytes.Buffer
+	if err := installLatest(server.Client(), &buf, "/target"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := strings.TrimSpace(buf.String()); got != "dir=/target version=unset" {
+		t.Errorf("installer saw %q", got)
+	}
+}
+
+func TestInstallLatest_DefaultDirectory(t *testing.T) {
+	t.Setenv("NOTTE_INSTALL_DIR", "/elsewhere")
+	server := serveScript(t, `echo "dir=${NOTTE_INSTALL_DIR:-unset}"`)
+
+	var buf bytes.Buffer
+	if err := installLatest(server.Client(), &buf, ""); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := strings.TrimSpace(buf.String()); got != "dir=unset" {
+		t.Errorf("installer saw %q", got)
+	}
+}
+
+func TestInstallLatest_ScriptFailure(t *testing.T) {
+	server := serveScript(t, `echo "notte install: download failed" >&2; exit 3`)
+
+	var buf bytes.Buffer
+	if err := installLatest(server.Client(), &buf, "/target"); err == nil {
+		t.Fatal("expected an error when the install script fails")
+	}
+	if !strings.Contains(buf.String(), "download failed") {
+		t.Errorf("expected the script's stderr to be forwarded, got %q", buf.String())
+	}
+}
+
+func writeFakeNotte(t *testing.T, printed string) string {
+	t.Helper()
+	exe := filepath.Join(t.TempDir(), "notte")
+	if err := os.WriteFile(exe, []byte("#!/bin/sh\necho '"+printed+"'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return exe
+}
+
+func TestVerifyVersion(t *testing.T) {
+	exe := writeFakeNotte(t, "notte version 0.0.55")
+	if err := verifyVersion(exe, "v0.0.55"); err != nil {
+		t.Errorf("expected 0.0.55 to verify, got %v", err)
+	}
+	if err := verifyVersion(exe, "0.0.56"); err == nil {
+		t.Error("expected an error when the binary still reports an older version")
 	}
 }

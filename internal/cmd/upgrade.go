@@ -53,12 +53,27 @@ func runUpgrade(cmd *cobra.Command, args []string) error {
 
 	method := update.DetectInstallMethod()
 	if method == update.UpgradeManual {
-		return update.RunUpgrade(os.Stdout, method)
+		if !IsJSONOutput() {
+			return update.RunUpgrade(os.Stdout, method)
+		}
+		if err := update.RunUpgrade(os.Stderr, method); err != nil {
+			return err
+		}
+		return PrintResult("", map[string]any{
+			"previous_version": Version,
+			"version":          latest,
+			"upgraded":         false,
+		})
 	}
 
 	// Installer output goes to stderr so stdout carries only the result.
 	if err := update.RunUpgrade(os.Stderr, method); err != nil {
 		return fmt.Errorf("upgrade failed: %w", err)
+	}
+	if method == update.UpgradeScript && latest != "" {
+		if err := update.VerifyUpgraded(latest); err != nil {
+			return fmt.Errorf("upgrade failed: %w", err)
+		}
 	}
 
 	message := "Upgraded notte"

@@ -186,7 +186,11 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 	method := DetectInstallMethod()
 	_, _ = fmt.Fprintln(out, colorize("> Upgrading Notte CLI...", termenv.ANSIGreen))
 
-	if err := RunUpgrade(out, method); err != nil {
+	err := RunUpgrade(out, method)
+	if err == nil && method == UpgradeScript {
+		err = VerifyUpgraded(result.LatestVersion)
+	}
+	if err != nil {
 		_, _ = fmt.Fprintln(out, colorize(fmt.Sprintf("> Upgrade failed: %s", err), termenv.ANSIRed))
 		return
 	}

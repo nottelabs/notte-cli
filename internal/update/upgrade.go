@@ -9,7 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
+
+	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 // UpgradeMethod represents how the CLI was installed.
@@ -85,9 +88,24 @@ func runHomebrewUpgrade(out io.Writer) error {
 // runScriptUpgrade downloads the install script and runs it, installing the
 // latest release over the running binary.
 func runScriptUpgrade(out io.Writer) error {
+	exe, err := runningBinary()
+	if err != nil {
+		return fmt.Errorf("locating the running binary: %w", err)
+	}
+	// The script always writes a file named notte, so a binary under another
+	// name (e.g. a link to notte-v0.0.54) would not be replaced.
+	if filepath.Base(exe) != "notte" {
+		return fmt.Errorf("%s is not named notte, so the install script cannot replace it; download the latest release from https://github.com/nottelabs/notte-cli/releases/latest", exe)
+	}
+	return installLatest(&http.Client{}, out, dirOverride(filepath.Dir(exe)))
+}
+
+// installLatest fetches the install script and runs it, installing into dir,
+// or into the script's default directory when dir is empty.
+func installLatest(httpClient *http.Client, out io.Writer, dir string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	script, err := fetchInstallScript(ctx, &http.Client{})
+	script, err := fetchInstallScript(ctx, httpClient)
 	if err != nil {
 		return err
 	}
@@ -98,11 +116,25 @@ func runScriptUpgrade(out io.Writer) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = out
 	cmd.Stderr = out
-	cmd.Env = os.Environ()
-	if dir := installDir(); dir != "" {
-		cmd.Env = append(cmd.Env, "NOTTE_INSTALL_DIR="+dir)
-	}
+	cmd.Env = installerEnv(os.Environ(), dir)
 	return cmd.Run()
+}
+
+// installerEnv drops NOTTE_VERSION and NOTTE_INSTALL_DIR left over from an
+// earlier install, so the upgrade installs the latest release and only sets
+// the directory the upgrade chose.
+func installerEnv(environ []string, dir string) []string {
+	env := make([]string, 0, len(environ)+1)
+	for _, kv := range environ {
+		if strings.HasPrefix(kv, "NOTTE_VERSION=") || strings.HasPrefix(kv, "NOTTE_INSTALL_DIR=") {
+			continue
+		}
+		env = append(env, kv)
+	}
+	if dir != "" {
+		env = append(env, "NOTTE_INSTALL_DIR="+dir)
+	}
+	return env
 }
 
 // fetchInstallScript downloads the whole script before anything runs, so a
@@ -127,26 +159,52 @@ func fetchInstallScript(ctx context.Context, httpClient *http.Client) (string, e
 	return string(body), nil
 }
 
-// installDir returns the directory of the running binary, so the upgrade
-// replaces it instead of installing a second copy elsewhere. It returns "" for
-// the script's own default, /usr/local/bin, so the script keeps its sudo
-// fallback there.
-func installDir() string {
+// runningBinary returns the path of the running binary with links resolved.
+func runningBinary() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
-		return ""
+		return "", err
 	}
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
-	return dirOverride(filepath.Dir(exe))
+	return exe, nil
 }
 
+// dirOverride returns the directory to pass to the install script, or "" for
+// the script's own default, /usr/local/bin, so the script keeps its sudo
+// fallback there.
 func dirOverride(dir string) string {
 	if dir == "/usr/local/bin" {
 		return ""
 	}
 	return dir
+}
+
+// VerifyUpgraded checks that the running binary's path now holds version.
+// The install script can succeed while installing somewhere else, e.g. into
+// ~/.local/bin when sudo is denied for /usr/local/bin.
+func VerifyUpgraded(version string) error {
+	exe, err := runningBinary()
+	if err != nil {
+		return fmt.Errorf("locating the running binary: %w", err)
+	}
+	return verifyVersion(exe, version)
+}
+
+func verifyVersion(exe, version string) error {
+	cmd := exec.Command(exe, "version")
+	cmd.Env = append(os.Environ(), config.EnvNoUpdateCheck+"=1")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("checking the version of %s: %w", exe, err)
+	}
+	version = strings.TrimPrefix(version, "v")
+	fields := strings.Fields(string(output))
+	if len(fields) == 0 || strings.TrimPrefix(fields[len(fields)-1], "v") != version {
+		return fmt.Errorf("%s is still not %s; the install script may have installed it somewhere else (see its output above)", exe, version)
+	}
+	return nil
 }
 
 func printManualUpgrade(out io.Writer) error {
