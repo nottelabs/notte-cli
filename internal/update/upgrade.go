@@ -181,7 +181,8 @@ func dirOverride(dir string) string {
 	return dir
 }
 
-// VerifyUpgraded checks that the running binary's path now holds version.
+// VerifyUpgraded checks that the running binary's path now holds version or a
+// newer release, since the script installs whatever is latest when it runs.
 // The install script can succeed while installing somewhere else, e.g. into
 // ~/.local/bin when sudo is denied for /usr/local/bin.
 func VerifyUpgraded(version string) error {
@@ -199,12 +200,13 @@ func verifyVersion(exe, version string) error {
 	if err != nil {
 		return fmt.Errorf("checking the version of %s: %w", exe, err)
 	}
-	version = strings.TrimPrefix(version, "v")
 	fields := strings.Fields(string(output))
-	if len(fields) == 0 || strings.TrimPrefix(fields[len(fields)-1], "v") != version {
-		return fmt.Errorf("%s is still not %s; the install script may have installed it somewhere else (see its output above)", exe, version)
+	if len(fields) > 0 {
+		if cmp, err := CompareVersions(fields[len(fields)-1], version); err == nil && cmp >= 0 {
+			return nil
+		}
 	}
-	return nil
+	return fmt.Errorf("%s is still older than %s; the install script may have installed it somewhere else (see its output above)", exe, strings.TrimPrefix(version, "v"))
 }
 
 func printManualUpgrade(out io.Writer) error {

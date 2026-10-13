@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -108,8 +109,18 @@ func TestFetchInstallScript_ErrorStatus(t *testing.T) {
 	}
 }
 
+// skipOnWindows skips tests whose fixtures are shell scripts; the install
+// script path only runs on macOS and Linux.
+func skipOnWindows(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("shell script fixtures need a Unix shell")
+	}
+}
+
 func serveScript(t *testing.T, script string) *httptest.Server {
 	t.Helper()
+	skipOnWindows(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(script))
 	}))
@@ -161,6 +172,7 @@ func TestInstallLatest_ScriptFailure(t *testing.T) {
 
 func writeFakeNotte(t *testing.T, printed string) string {
 	t.Helper()
+	skipOnWindows(t)
 	exe := filepath.Join(t.TempDir(), "notte")
 	if err := os.WriteFile(exe, []byte("#!/bin/sh\necho '"+printed+"'\n"), 0o755); err != nil {
 		t.Fatal(err)
@@ -172,6 +184,10 @@ func TestVerifyVersion(t *testing.T) {
 	exe := writeFakeNotte(t, "notte version 0.0.55")
 	if err := verifyVersion(exe, "v0.0.55"); err != nil {
 		t.Errorf("expected 0.0.55 to verify, got %v", err)
+	}
+	// The script installs whatever is latest, which can be newer than expected.
+	if err := verifyVersion(exe, "0.0.54"); err != nil {
+		t.Errorf("expected a newer installed version to verify, got %v", err)
 	}
 	if err := verifyVersion(exe, "0.0.56"); err == nil {
 		t.Error("expected an error when the binary still reports an older version")
