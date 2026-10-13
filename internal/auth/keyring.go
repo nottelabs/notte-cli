@@ -104,45 +104,51 @@ func isNotFound(err error) bool {
 	return errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist)
 }
 
-// getFromSystemKeyring reads a key from the system store, then from the file
-// store. A key found only in the file store is copied into the system store.
-// The file entry is kept for now, because older SDK versions only read the
-// file; the next login or logout removes it.
+// getFromSystemKeyring reads a key, preferring a file store entry when there
+// is one. Such an entry is either a key saved by an older version (system
+// store not used yet), an identical copy kept after migrating it, or a key
+// saved while the system store was unusable, which is newer than anything the
+// system store holds. It is copied into the system store, and kept for now
+// because older SDK versions only read the file; the next login or logout
+// removes it.
 func getFromSystemKeyring(key string) (string, error) {
 	system, err := openSystemKeyring()
 	if err != nil {
 		return "", err
 	}
+	file, err := openFileKeyring()
+	if err != nil {
+		return "", err
+	}
 
-	missingFromSystem := false
+	item, fileErr := file.Get(key)
+	if fileErr == nil {
+		if system != nil {
+			current, err := system.Get(key)
+			// Leave a store we could not read (a locked Keychain over SSH, say) alone.
+			if isNotFound(err) || (err == nil && string(current.Data) != string(item.Data)) {
+				_ = system.Set(keyring.Item{Key: key, Data: item.Data})
+			}
+		}
+		return string(item.Data), nil
+	}
+
 	if system != nil {
 		item, err := system.Get(key)
 		if err == nil {
 			return string(item.Data), nil
 		}
-		// Any other error (a locked Keychain over SSH, say) falls through to the
-		// file store, but must not trigger a copy over an entry we could not read.
-		missingFromSystem = isNotFound(err)
+		if !isNotFound(err) {
+			return "", fmt.Errorf("failed to get key from keyring: %w", err)
+		}
 	}
-
-	file, err := openFileKeyring()
-	if err != nil {
-		return "", err
-	}
-	item, err := file.Get(key)
-	if err != nil {
-		return "", fmt.Errorf("failed to get key from keyring: %w", err)
-	}
-
-	if missingFromSystem {
-		_ = system.Set(keyring.Item{Key: key, Data: item.Data})
-	}
-	return string(item.Data), nil
+	return "", fmt.Errorf("failed to get key from keyring: %w", fileErr)
 }
 
 // setInSystemKeyring stores a key in the system store, or in the file store
-// when there is no usable system store. Only one store keeps the key, so a
-// copy left in the other cannot be read in its place later.
+// when there is no usable system store. Only one store keeps the key; a file
+// entry takes precedence on read, so a key written to the file because the
+// system store failed wins over an older entry the system store still holds.
 func setInSystemKeyring(key, value string) error {
 	system, err := openSystemKeyring()
 	if err != nil {
@@ -172,8 +178,9 @@ func setInSystemKeyring(key, value string) error {
 	return nil
 }
 
-// deleteFromSystemKeyring removes a key from both stores. It reports a
-// keyring.ErrKeyNotFound error when neither store had it.
+// deleteFromSystemKeyring removes a key from both stores, attempting both even
+// when one fails. It reports a keyring.ErrKeyNotFound error when neither store
+// had it.
 func deleteFromSystemKeyring(key string) error {
 	system, err := openSystemKeyring()
 	if err != nil {
@@ -185,6 +192,7 @@ func deleteFromSystemKeyring(key string) error {
 	}
 
 	removed := false
+	var errs []error
 	for _, ring := range []keyring.Keyring{system, file} {
 		if ring == nil {
 			continue
@@ -194,8 +202,11 @@ func deleteFromSystemKeyring(key string) error {
 		case err == nil:
 			removed = true
 		case !isNotFound(err):
-			return fmt.Errorf("failed to remove key from keyring: %w", err)
+			errs = append(errs, err)
 		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to remove key from keyring: %w", errors.Join(errs...))
 	}
 	if !removed {
 		return fmt.Errorf("failed to remove key from keyring: %w", keyring.ErrKeyNotFound)

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"runtime"
 	"testing"
 
 	"github.com/99designs/keyring"
@@ -87,15 +88,28 @@ func fileStore(t *testing.T, kv ...string) keyring.Keyring {
 	return ring
 }
 
-func TestStores_GetPrefersSystemStore(t *testing.T) {
+func TestStores_GetReadsSystemStore(t *testing.T) {
 	system := systemStore("api_key:prod", "system-key")
-	file := fileStore(t, "api_key:prod", "file-key")
-	useStores(t, system, file)
+	useStores(t, system, fileStore(t))
 
 	got, err := getFromSystemKeyring("api_key:prod")
 	if err != nil || got != "system-key" {
 		t.Fatalf("got (%q, %v), want system-key", got, err)
 	}
+}
+
+func TestStores_GetPrefersFileEntryAndSyncsSystemStore(t *testing.T) {
+	// A key saved to the file while the system store was unusable is newer
+	// than the entry the system store kept.
+	system := systemStore("api_key:prod", "old-key")
+	file := fileStore(t, "api_key:prod", "new-key")
+	useStores(t, system, file)
+
+	got, err := getFromSystemKeyring("api_key:prod")
+	if err != nil || got != "new-key" {
+		t.Fatalf("got (%q, %v), want new-key", got, err)
+	}
+	storeHas(t, system, "api_key:prod", "new-key")
 }
 
 func TestStores_GetMigratesFileEntryAndKeepsIt(t *testing.T) {
@@ -151,6 +165,27 @@ func TestStores_SetUsesSystemStoreAndDropsFileCopy(t *testing.T) {
 	storeLacks(t, file, "api_key:prod")
 }
 
+// staleKeyring holds an old key it can still return, but cannot change: a
+// store that fails to write or remove.
+type staleKeyring struct{ memoryStore }
+
+func (staleKeyring) Set(keyring.Item) error { return errBroken }
+func (staleKeyring) Remove(string) error    { return errBroken }
+
+func TestStores_FallbackLoginIsNotShadowedByOldSystemKey(t *testing.T) {
+	system := staleKeyring{systemStore("api_key:prod", "old-account-key")}
+	file := fileStore(t)
+	useStores(t, system, file)
+
+	if err := setInSystemKeyring("api_key:prod", "new-account-key"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := getFromSystemKeyring("api_key:prod")
+	if err != nil || got != "new-account-key" {
+		t.Fatalf("got (%q, %v), want the key just saved", got, err)
+	}
+}
+
 func TestStores_SetFallsBackToFile(t *testing.T) {
 	system := &brokenKeyring{}
 	file := fileStore(t)
@@ -200,9 +235,15 @@ func TestStores_DeleteReportsSystemStoreFailure(t *testing.T) {
 	if err := deleteFromSystemKeyring("api_key:prod"); !errors.Is(err, errBroken) {
 		t.Fatalf("error = %v, want the system store failure", err)
 	}
+	// The file copy is still removed.
+	storeLacks(t, file, "api_key:prod")
 }
 
 func TestStores_TunnelSecretMigratesLikeAPIKey(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Windows file names cannot hold this key; the Credential Manager is used there.
+		t.Skip("the file store cannot hold tunnel secrets on Windows")
+	}
 	const key = "tunnel:home:oauth_client_secret"
 	system := systemStore()
 	file := fileStore(t, key, "tskey-client-secret")

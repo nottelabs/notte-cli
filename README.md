@@ -550,7 +550,7 @@ For comprehensive documentation including templates and reference guides, see th
 
 When no system store is usable (headless Linux, containers, a locked Keychain over SSH), the key is written to an encrypted file in `~/.notte/cli` (or `$NOTTE_CONFIG_DIR/.notte/cli`), readable only by your user. Its encryption password is fixed and public, so this file is protected no better than a plain text file with `0600` permissions: anything running as your user can read the key. The same holds for a key put in `~/.notte/cli/config.json`. On shared or untrusted machines, prefer a system store or `NOTTE_API_KEY` from a secret manager.
 
-Earlier versions used that file on macOS and Windows too. A key found there is copied into the system store the next time it is used, and the file copy is removed at the next `notte auth login` or `notte auth logout`.
+Earlier versions used that file on macOS and Windows too. A key found there is copied into the system store the next time it is used, and the file copy is removed at the next `notte auth login` or `notte auth logout`. While a file copy exists, it is the one used.
 
 A saved key (from the credential store or the config file) is only sent to an `https://` API URL, or over plain HTTP to `localhost`, `127.0.0.1` or `::1`. `NOTTE_API_KEY` is not restricted.
 
