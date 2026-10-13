@@ -930,6 +930,14 @@ func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
 	if sessionSaveProfileID != "" && sessionSaveProfileName != "" {
 		return errors.New("--profile-id and --name are mutually exclusive")
 	}
+	// An explicitly passed but empty target (e.g. an unset shell variable) must
+	// not silently fall back to overwriting the session's start profile.
+	if cmd.Flags().Changed("profile-id") && strings.TrimSpace(sessionSaveProfileID) == "" {
+		return errors.New("--profile-id must not be empty")
+	}
+	if cmd.Flags().Changed("name") && strings.TrimSpace(sessionSaveProfileName) == "" {
+		return errors.New("--name must not be empty")
+	}
 
 	client, err := GetClient()
 	if err != nil {

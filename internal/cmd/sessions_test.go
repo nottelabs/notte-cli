@@ -690,6 +690,33 @@ func TestRunSessionSaveProfileRejectsBothTargets(t *testing.T) {
 	}
 }
 
+func TestRunSessionSaveProfileRejectsEmptyTargets(t *testing.T) {
+	for _, flag := range []string{"profile-id", "name"} {
+		t.Run(flag, func(t *testing.T) {
+			server := setupSessionTest(t)
+			path := "/sessions/" + sessionIDTest + "/profile/save"
+
+			origID, origName := sessionSaveProfileID, sessionSaveProfileName
+			t.Cleanup(func() { sessionSaveProfileID, sessionSaveProfileName = origID, origName })
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+			cmd.Flags().StringVar(&sessionSaveProfileID, "profile-id", "", "")
+			cmd.Flags().StringVar(&sessionSaveProfileName, "name", "", "")
+			if err := cmd.Flags().Set(flag, " "); err != nil {
+				t.Fatalf("set flag: %v", err)
+			}
+
+			if err := runSessionSaveProfile(cmd, nil); err == nil {
+				t.Fatalf("expected an error for an empty --%s", flag)
+			}
+			if n := len(server.Requests(path)); n != 0 {
+				t.Errorf("expected no request, got %d", n)
+			}
+		})
+	}
+}
+
 func TestRunSessionCookiesSet(t *testing.T) {
 	server := setupSessionTest(t)
 	server.AddResponse("/sessions/"+sessionIDTest+"/cookies", 200, `{"message":"ok","success":true}`)
