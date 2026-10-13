@@ -59,6 +59,14 @@ cd notte-cli
 make build
 ```
 
+### Upgrade
+
+```bash
+notte upgrade
+```
+
+Upgrades with Homebrew when notte was installed with it, and otherwise re-runs the install script over the binary that is running.
+
 ## Quick Start
 
 ### 1. Authenticate

@@ -2,8 +2,6 @@
 # One endpoint path per line (supports regex patterns)
 # Lines starting with # are comments
 
-/prompts/improve
-/prompts/nudge
 
 # Global scrape endpoints (use session-based scrape instead)
 ^/scrape$

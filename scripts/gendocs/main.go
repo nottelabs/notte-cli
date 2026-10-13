@@ -177,6 +177,8 @@ Verify the installation:
 notte version
 ` + "```" + `
 
+Upgrade to the latest release with ` + "`notte upgrade`" + `. It uses Homebrew when notte was installed with it, and otherwise re-runs the install script.
+
 ## Authentication
 
 The CLI reads your API key from, in order: the ` + "`NOTTE_API_KEY`" + ` environment variable, the system keyring (set by ` + "`notte auth login`" + `), then ` + "`~/.notte/cli/config.json`" + `. See [Authentication](/api-reference/authentication) to get a key.

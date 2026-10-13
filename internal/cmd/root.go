@@ -56,7 +56,7 @@ func Execute() {
 	err := rootCmd.Execute()
 
 	// Show update notification after command output
-	if checker != nil {
+	if checker != nil && !upgradeRan {
 		if result := checker.GetResult(); result != nil {
 			update.PrintUpdateNotification(result, os.Stderr, os.Stdin, yesFlag, IsJSONOutput(), noColor)
 		}
