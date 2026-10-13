@@ -62,3 +62,49 @@ func TestEscapeLeavesInlineCodeAlone(t *testing.T) {
 		t.Errorf("escape = %q, want %q", got, want)
 	}
 }
+
+// A local flag that shares a global flag's name is a different flag and must
+// be documented on its command.
+func TestShadowedGlobalFlagIsDocumented(t *testing.T) {
+	root := cmd.RootCommand()
+	click, _, err := root.Find([]string{"page", "click"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if commandFlags(root, click).Lookup("timeout") == nil {
+		t.Error("page click --timeout is missing from its flags")
+	}
+	sessions, _, err := root.Find([]string{"sessions", "list"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if commandFlags(root, sessions).Lookup("timeout") != nil {
+		t.Error("the global --timeout is listed as a sessions list flag")
+	}
+}
+
+func TestHandWrittenPagesAreKept(t *testing.T) {
+	out := t.TempDir()
+	keep := filepath.Join(out, "notes.mdx")
+	if err := os.WriteFile(keep, []byte("hand-written"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(cmd.RootCommand(), out); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(keep); err != nil {
+		t.Errorf("hand-written page was removed: %v", err)
+	}
+	// A second run replaces its own pages.
+	if err := run(cmd.RootCommand(), out); err != nil {
+		t.Fatalf("rerun: %v", err)
+	}
+
+	clash := filepath.Join(out, "auth.mdx")
+	if err := os.WriteFile(clash, []byte("hand-written"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(cmd.RootCommand(), out); err == nil {
+		t.Error("a hand-written page with a generated page's name was overwritten")
+	}
+}

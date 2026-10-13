@@ -74,7 +74,7 @@ generate: ## Generate code (API client, etc.)
 	./scripts/generate.sh
 
 docs: ## Write the docs.notte.cc CLI reference to DOCS_OUT (default: ./cli-reference)
-	go run ./scripts/gendocs -out $(or $(DOCS_OUT),cli-reference)
+	go run ./scripts/gendocs -out "$(or $(DOCS_OUT),cli-reference)"
 
 check-endpoints: ## Fail if an API endpoint is neither reachable from a command nor recorded as skipped
 	@go run ./scripts/checkcoverage -check endpoints -strict

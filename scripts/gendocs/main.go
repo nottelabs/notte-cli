@@ -66,15 +66,22 @@ func run(root *cobra.Command, out string) error {
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
 	}
-	// Start from an empty directory so a removed group does not leave a stale
-	// page behind.
-	stale, err := filepath.Glob(filepath.Join(out, "*.mdx"))
+	// Remove the pages a previous run wrote, so a removed group does not leave
+	// a stale page behind. Only generated pages: anything else in the
+	// directory was written by hand and is left alone.
+	existing, err := filepath.Glob(filepath.Join(out, "*.mdx"))
 	if err != nil {
 		return err
 	}
-	for _, f := range stale {
-		if err := os.Remove(f); err != nil {
+	for _, f := range existing {
+		generated, err := isGenerated(f)
+		if err != nil {
 			return err
+		}
+		if generated {
+			if err := os.Remove(f); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -95,11 +102,25 @@ func run(root *cobra.Command, out string) error {
 		pages["other.mdx"] = otherPage(root, singles)
 	}
 	for name, body := range pages {
-		if err := os.WriteFile(filepath.Join(out, name), []byte(body), 0o644); err != nil {
+		path := filepath.Join(out, name)
+		// Generated pages were removed above, so anything still here was
+		// written by hand.
+		if _, err := os.Stat(path); err == nil {
+			return fmt.Errorf("%s is not a generated page; refusing to overwrite it", path)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func isGenerated(path string) (bool, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(string(b), generatedNotice), nil
 }
 
 // visibleChildren lists the commands a user can see, sorted by name. Hidden
@@ -173,7 +194,7 @@ notte auth login
 	b.WriteString(`
 ## JSON output
 
-Every command accepts ` + "`--output json`" + ` (or ` + "`-o json`" + `) for machine-readable output:
+Commands that return data accept ` + "`--output json`" + ` (or ` + "`-o json`" + `) for machine-readable output. Commands that wrap another tool, such as ` + "`skill add`" + `, print that tool's output as is:
 
 ` + "```bash" + `
 notte sessions start -o json
@@ -251,11 +272,13 @@ func usage(c *cobra.Command) string {
 
 // commandFlags is what a command accepts beyond the global flags: its own
 // flags plus persistent flags from a parent group, such as page --session-id.
+// A local flag that shadows a global one, such as page click --timeout in
+// milliseconds, is the command's own and is kept.
 func commandFlags(root, c *cobra.Command) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(c.Name(), pflag.ContinueOnError)
 	fs.SortFlags = true
 	add := func(f *pflag.Flag) {
-		if f.Name == "help" || f.Hidden || root.PersistentFlags().Lookup(f.Name) != nil {
+		if f.Name == "help" || f.Hidden || root.PersistentFlags().Lookup(f.Name) == f {
 			return
 		}
 		if fs.Lookup(f.Name) == nil {
