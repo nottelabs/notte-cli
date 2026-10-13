@@ -3186,6 +3186,15 @@ type SessionProfilePreviewResponse struct {
 	Profile       *SessionProfile `json:"profile,omitempty"`
 }
 
+// SessionProfileSaveRequest defines model for SessionProfileSaveRequest.
+type SessionProfileSaveRequest struct {
+	// Name Create a new profile with this name and save into it. Mutually exclusive with profile_id.
+	Name *string `json:"name,omitempty"`
+
+	// ProfileId Existing profile to overwrite with the session's current browser state. Omit it together with name to save into the profile the session was started with.
+	ProfileId *string `json:"profile_id,omitempty"`
+}
+
 // SessionResponse defines model for SessionResponse.
 type SessionResponse struct {
 	// AuthIds Managed Auth connection IDs attached to this session.
@@ -4170,6 +4179,12 @@ type SessionProfilePreviewParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// SessionProfileSaveParams defines parameters for SessionProfileSave.
+type SessionProfileSaveParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // SessionReplayParams defines parameters for SessionReplay.
 type SessionReplayParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -4392,6 +4407,9 @@ type PageScrapeJSONRequestBody = ScrapeRequest
 
 // CreatePaymentJSONRequestBody defines body for CreatePayment for application/json ContentType.
 type CreatePaymentJSONRequestBody = PaymentRequest
+
+// SessionProfileSaveJSONRequestBody defines body for SessionProfileSave for application/json ContentType.
+type SessionProfileSaveJSONRequestBody = SessionProfileSaveRequest
 
 // VaultCreateJSONRequestBody defines body for VaultCreate for application/json ContentType.
 type VaultCreateJSONRequestBody = VaultCreateRequest
@@ -10514,6 +10532,11 @@ type ClientInterface interface {
 	// SessionProfilePreview request
 	SessionProfilePreview(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionProfileSaveWithBody request with any body
+	SessionProfileSaveWithBody(ctx context.Context, sessionId string, params *SessionProfileSaveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SessionProfileSave(ctx context.Context, sessionId string, params *SessionProfileSaveParams, body SessionProfileSaveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionReplay request
 	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -11882,6 +11905,30 @@ func (c *Client) CreatePayment(ctx context.Context, sessionId string, params *Cr
 
 func (c *Client) SessionProfilePreview(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionProfilePreviewRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionProfileSaveWithBody(ctx context.Context, sessionId string, params *SessionProfileSaveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionProfileSaveRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionProfileSave(ctx context.Context, sessionId string, params *SessionProfileSaveParams, body SessionProfileSaveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionProfileSaveRequest(c.Server, sessionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -18422,6 +18469,79 @@ func NewSessionProfilePreviewRequest(server string, sessionId string, params *Se
 	return req, nil
 }
 
+// NewSessionProfileSaveRequest calls the generic SessionProfileSave builder with application/json body
+func NewSessionProfileSaveRequest(server string, sessionId string, params *SessionProfileSaveParams, body SessionProfileSaveJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSessionProfileSaveRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewSessionProfileSaveRequestWithBody generates requests for SessionProfileSave with any type of body
+func NewSessionProfileSaveRequestWithBody(server string, sessionId string, params *SessionProfileSaveParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/profile/save", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionReplayRequest generates requests for SessionReplay
 func NewSessionReplayRequest(server string, sessionId string, params *SessionReplayParams) (*http.Request, error) {
 	var err error
@@ -19860,6 +19980,11 @@ type ClientWithResponsesInterface interface {
 
 	// SessionProfilePreviewWithResponse request
 	SessionProfilePreviewWithResponse(ctx context.Context, sessionId string, params *SessionProfilePreviewParams, reqEditors ...RequestEditorFn) (*SessionProfilePreviewResult, error)
+
+	// SessionProfileSaveWithBodyWithResponse request with any body
+	SessionProfileSaveWithBodyWithResponse(ctx context.Context, sessionId string, params *SessionProfileSaveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SessionProfileSaveResult, error)
+
+	SessionProfileSaveWithResponse(ctx context.Context, sessionId string, params *SessionProfileSaveParams, body SessionProfileSaveJSONRequestBody, reqEditors ...RequestEditorFn) (*SessionProfileSaveResult, error)
 
 	// SessionReplayWithResponse request
 	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
@@ -21768,6 +21893,29 @@ func (r SessionProfilePreviewResult) StatusCode() int {
 	return 0
 }
 
+type SessionProfileSaveResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ProfileResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionProfileSaveResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionProfileSaveResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionReplayResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -23036,6 +23184,23 @@ func (c *ClientWithResponses) SessionProfilePreviewWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseSessionProfilePreviewResult(rsp)
+}
+
+// SessionProfileSaveWithBodyWithResponse request with arbitrary body returning *SessionProfileSaveResult
+func (c *ClientWithResponses) SessionProfileSaveWithBodyWithResponse(ctx context.Context, sessionId string, params *SessionProfileSaveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SessionProfileSaveResult, error) {
+	rsp, err := c.SessionProfileSaveWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionProfileSaveResult(rsp)
+}
+
+func (c *ClientWithResponses) SessionProfileSaveWithResponse(ctx context.Context, sessionId string, params *SessionProfileSaveParams, body SessionProfileSaveJSONRequestBody, reqEditors ...RequestEditorFn) (*SessionProfileSaveResult, error) {
+	rsp, err := c.SessionProfileSave(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionProfileSaveResult(rsp)
 }
 
 // SessionReplayWithResponse request returning *SessionReplayResult
@@ -25824,6 +25989,39 @@ func ParseSessionProfilePreviewResult(rsp *http.Response) (*SessionProfilePrevie
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionProfilePreviewResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionProfileSaveResult parses an HTTP response from a SessionProfileSaveWithResponse call
+func ParseSessionProfileSaveResult(rsp *http.Response) (*SessionProfileSaveResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionProfileSaveResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

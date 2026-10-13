@@ -620,6 +620,103 @@ func TestRunSessionCookies(t *testing.T) {
 	}
 }
 
+func TestRunSessionSaveProfile(t *testing.T) {
+	cases := []struct {
+		name     string
+		id       string
+		newName  string
+		wantBody string
+	}{
+		{name: "existing profile", id: "notte-profile-0123456789abcdef", wantBody: `{"profile_id":"notte-profile-0123456789abcdef"}`},
+		{name: "new profile", newName: "github-login", wantBody: `{"name":"github-login"}`},
+		{name: "start profile", wantBody: `{}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := setupSessionTest(t)
+			path := "/sessions/" + sessionIDTest + "/profile/save"
+			server.AddResponse(path, 200, `{"profile_id":"notte-profile-0123456789abcdef","name":"github-login","persisted_domains":["github.com"],"created_at":"2026-10-13T00:00:00Z","updated_at":"2026-10-13T00:00:00Z"}`)
+
+			origID, origName := sessionSaveProfileID, sessionSaveProfileName
+			sessionSaveProfileID, sessionSaveProfileName = tc.id, tc.newName
+			t.Cleanup(func() { sessionSaveProfileID, sessionSaveProfileName = origID, origName })
+
+			origFormat := outputFormat
+			outputFormat = "json"
+			t.Cleanup(func() { outputFormat = origFormat })
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+
+			stdout, _ := testutil.CaptureOutput(func() {
+				if err := runSessionSaveProfile(cmd, nil); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+
+			requests := server.Requests(path)
+			if len(requests) != 1 {
+				t.Fatalf("expected 1 request to %s, got %d", path, len(requests))
+			}
+			if requests[0].Method != "POST" {
+				t.Errorf("expected POST, got %s", requests[0].Method)
+			}
+			if got := strings.TrimSpace(requests[0].Body); got != tc.wantBody {
+				t.Errorf("request body = %s, want %s", got, tc.wantBody)
+			}
+			if !strings.Contains(stdout, "github.com") {
+				t.Errorf("expected persisted domains in output, got %q", stdout)
+			}
+		})
+	}
+}
+
+func TestRunSessionSaveProfileRejectsBothTargets(t *testing.T) {
+	server := setupSessionTest(t)
+	path := "/sessions/" + sessionIDTest + "/profile/save"
+
+	origID, origName := sessionSaveProfileID, sessionSaveProfileName
+	sessionSaveProfileID, sessionSaveProfileName = "notte-profile-0123456789abcdef", "github-login"
+	t.Cleanup(func() { sessionSaveProfileID, sessionSaveProfileName = origID, origName })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	if err := runSessionSaveProfile(cmd, nil); err == nil {
+		t.Fatal("expected an error when both --profile-id and --name are set")
+	}
+	if n := len(server.Requests(path)); n != 0 {
+		t.Errorf("expected no request, got %d", n)
+	}
+}
+
+func TestRunSessionSaveProfileRejectsEmptyTargets(t *testing.T) {
+	for _, flag := range []string{"profile-id", "name"} {
+		t.Run(flag, func(t *testing.T) {
+			server := setupSessionTest(t)
+			path := "/sessions/" + sessionIDTest + "/profile/save"
+
+			origID, origName := sessionSaveProfileID, sessionSaveProfileName
+			t.Cleanup(func() { sessionSaveProfileID, sessionSaveProfileName = origID, origName })
+
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+			cmd.Flags().StringVar(&sessionSaveProfileID, "profile-id", "", "")
+			cmd.Flags().StringVar(&sessionSaveProfileName, "name", "", "")
+			if err := cmd.Flags().Set(flag, " "); err != nil {
+				t.Fatalf("set flag: %v", err)
+			}
+
+			if err := runSessionSaveProfile(cmd, nil); err == nil {
+				t.Fatalf("expected an error for an empty --%s", flag)
+			}
+			if n := len(server.Requests(path)); n != 0 {
+				t.Errorf("expected no request, got %d", n)
+			}
+		})
+	}
+}
+
 func TestRunSessionCookiesSet(t *testing.T) {
 	server := setupSessionTest(t)
 	server.AddResponse("/sessions/"+sessionIDTest+"/cookies", 200, `{"message":"ok","success":true}`)

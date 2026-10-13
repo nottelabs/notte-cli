@@ -41,6 +41,8 @@ var (
 	sessionScrapeInstructions string
 	sessionScrapeOnlyMain     bool
 	sessionCookiesSetFile     string
+	sessionSaveProfileID      string
+	sessionSaveProfileName    string
 	sessionNetworkURLsOnly    bool
 	sessionNetworkPath        string
 	sessionReplayOutput       string
@@ -267,6 +269,17 @@ var sessionsCookiesSetCmd = &cobra.Command{
 	RunE:  runSessionCookiesSet,
 }
 
+var sessionsSaveProfileCmd = &cobra.Command{
+	Use:   "save-profile",
+	Short: "Save the running session's browser state into a profile",
+	Long: `Save the running session's browser state (cookies, localStorage, sessionStorage) into a browser profile.
+
+The session keeps running. Pass --profile-id to overwrite an existing profile, or --name to create a new one.
+With neither, the state is saved into the profile the session was started with.`,
+	Args: cobra.NoArgs,
+	RunE: runSessionSaveProfile,
+}
+
 var sessionsDebugCmd = &cobra.Command{
 	Use:    "debug",
 	Short:  "Get debug info for the session",
@@ -336,6 +349,7 @@ func init() {
 	sessionsCmd.AddCommand(sessionsScrapeCmd)
 	sessionsCmd.AddCommand(sessionsCookiesCmd)
 	sessionsCmd.AddCommand(sessionsCookiesSetCmd)
+	sessionsCmd.AddCommand(sessionsSaveProfileCmd)
 	sessionsCmd.AddCommand(sessionsDebugCmd)
 	sessionsCmd.AddCommand(sessionsNetworkCmd)
 	sessionsCmd.AddCommand(sessionsReplayCmd)
@@ -385,6 +399,12 @@ func init() {
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", "JSON file containing cookies array (required)")
 	_ = sessionsCookiesSetCmd.MarkFlagRequired("file")
+
+	// Save-profile command flags
+	sessionsSaveProfileCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsSaveProfileCmd.Flags().StringVar(&sessionSaveProfileID, "profile-id", "", "Existing profile to overwrite")
+	sessionsSaveProfileCmd.Flags().StringVar(&sessionSaveProfileName, "name", "", "Create a new profile with this name and save into it")
+	sessionsSaveProfileCmd.MarkFlagsMutuallyExclusive("profile-id", "name")
 
 	// Debug command flags
 	sessionsDebugCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -892,6 +912,51 @@ func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
 
 	params := &api.SessionCookiesSetParams{}
 	resp, err := client.Client().SessionCookiesSetWithResponse(ctx, sessionID, params, body)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	return GetFormatter().Print(resp.JSON200)
+}
+
+func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+	if sessionSaveProfileID != "" && sessionSaveProfileName != "" {
+		return errors.New("--profile-id and --name are mutually exclusive")
+	}
+	// An explicitly passed but empty target (e.g. an unset shell variable) must
+	// not silently fall back to overwriting the session's start profile.
+	if cmd.Flags().Changed("profile-id") && strings.TrimSpace(sessionSaveProfileID) == "" {
+		return errors.New("--profile-id must not be empty")
+	}
+	if cmd.Flags().Changed("name") && strings.TrimSpace(sessionSaveProfileName) == "" {
+		return errors.New("--name must not be empty")
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	body := api.SessionProfileSaveJSONRequestBody{}
+	if sessionSaveProfileID != "" {
+		body.ProfileId = &sessionSaveProfileID
+	}
+	if sessionSaveProfileName != "" {
+		body.Name = &sessionSaveProfileName
+	}
+
+	params := &api.SessionProfileSaveParams{}
+	resp, err := client.Client().SessionProfileSaveWithResponse(ctx, sessionID, params, body)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
