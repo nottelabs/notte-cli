@@ -97,6 +97,9 @@ func TestPrintUpdateNotification_NonInteractive(t *testing.T) {
 	if !strings.Contains(output, "Changelog:") {
 		t.Error("expected changelog link in output")
 	}
+	if !strings.Contains(output, "notte upgrade") {
+		t.Error("expected the notice to point at notte upgrade")
+	}
 	// Should NOT contain the prompt since stdin is not a terminal
 	if strings.Contains(output, "Would you like to upgrade now?") {
 		t.Error("should not prompt in non-interactive mode")

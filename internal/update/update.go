@@ -141,7 +141,7 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 	current := formatVersion(result.CurrentVersion)
 	latest := formatVersion(result.LatestVersion)
 	_, _ = fmt.Fprintln(out, colorize(
-		fmt.Sprintf("Update available for Notte CLI (%s \u2192 %s) The latest update may fix any errors that occurred.", current, latest),
+		fmt.Sprintf("Update available for Notte CLI (%s \u2192 %s). Run `notte upgrade` to install it.", current, latest),
 		termenv.ANSIYellow,
 	))
 
@@ -191,7 +191,7 @@ func PrintUpdateNotification(result *Result, out io.Writer, in io.Reader, skipCo
 		return
 	}
 
-	if method == UpgradeHomebrew {
+	if method != UpgradeManual {
 		_, _ = fmt.Fprintln(out, colorize("> Success! Notte CLI has been upgraded successfully!", termenv.ANSIGreen))
 	}
 }
