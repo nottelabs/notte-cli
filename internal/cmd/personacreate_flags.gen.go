@@ -24,7 +24,7 @@ var (
 func RegisterPersonaCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona (API default: false)")
 	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona (API default: false)")
-	cmd.Flags().StringVar(&PersonaCreateEmailProvider, "email-provider", "", "email-provider (API default: notte) (notte, agentmail)")
+	cmd.Flags().StringVar(&PersonaCreateEmailProvider, "email-provider", "", "email-provider (API default: notte) (notte, agentmail, resend)")
 	cmd.Flags().StringVar(&PersonaCreateName, "name", "", "name")
 }
 
