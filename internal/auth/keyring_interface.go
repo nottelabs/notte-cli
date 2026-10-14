@@ -25,13 +25,28 @@ func ResetKeyring() {
 type realKeyring struct{}
 
 func (r *realKeyring) Get(key string) (string, error) {
+	unlock, err := lockStores()
+	if err != nil {
+		return "", err
+	}
+	defer unlock()
 	return getFromSystemKeyring(key)
 }
 
 func (r *realKeyring) Set(key, value string) error {
+	unlock, err := lockStores()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	return setInSystemKeyring(key, value)
 }
 
 func (r *realKeyring) Delete(key string) error {
+	unlock, err := lockStores()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	return deleteFromSystemKeyring(key)
 }

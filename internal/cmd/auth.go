@@ -25,7 +25,11 @@ You can authenticate in two ways:
   1. Sign in with Notte Console (recommended) - automatically fetches your API key
   2. Enter API key manually - paste your key from console.notte.cc/apikeys
 
-The API key will be stored securely in your system keychain.`,
+The API key is stored in your system credential store: the macOS Keychain,
+the Windows Credential Manager, or a Secret Service, KWallet or pass on Linux.
+Without one (headless hosts, containers), it goes to an encrypted file in the
+config directory whose password is fixed, so it is protected no better than a
+file only your user can read.`,
 	RunE: runAuthLogin,
 }
 
@@ -49,6 +53,12 @@ func init() {
 }
 
 func runAuthLogin(cmd *cobra.Command, args []string) error {
+	// The key is checked against this API and then saved for it, so it would
+	// be sent in clear now and on every later command.
+	if apiURL := auth.GetCurrentAPIURL(); !auth.IsSecureAPIURL(apiURL) {
+		return fmt.Errorf("refusing to log in to %s: %w", apiURL, auth.ErrInsecureAPIURL)
+	}
+
 	PrintInfo("Opening browser for authentication...")
 
 	server := auth.NewSetupServer()
@@ -65,7 +75,7 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		return result.Error
 	}
 
-	return PrintResult("API key stored successfully in keychain.", map[string]any{
+	return PrintResult("API key stored successfully.", map[string]any{
 		"authenticated": true,
 		"source":        "keychain",
 	})
@@ -76,7 +86,7 @@ func runAuthLogout(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to remove API key: %w", err)
 	}
 
-	return PrintResult("API key removed from keychain.", map[string]any{
+	return PrintResult("API key removed.", map[string]any{
 		"authenticated": false,
 	})
 }

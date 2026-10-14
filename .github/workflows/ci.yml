@@ -119,6 +119,32 @@ jobs:
             exit 1
           fi
 
+  credential-stores:
+    # The API key lives in the macOS Keychain or the Windows Credential
+    # Manager on those platforms, which the Linux job cannot exercise. Runs the
+    # auth tests there, including the upgrade path against the real store
+    # (an isolated keychain file or service name, never the runner's own).
+    #
+    # Same `edited` guard as the other jobs.
+    if: github.event.action != 'edited' || github.event.changes.base != null
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        env:
+          NOTTE_KEYRING_TEST: "1"
+        run: go test -v -short ./internal/auth/...
+
   install-script:
     # End-to-end check that install.sh installs the latest release: resolves
     # the version, verifies the checksum and puts a working binary on PATH.

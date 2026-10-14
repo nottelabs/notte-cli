@@ -76,7 +76,7 @@ Specify the API key using one of three methods (checked in priority order):
 ```bash
 # 1. Via environment variable (recommended for CI/CD)
 export NOTTE_API_KEY="your-api-key"
-# 2. Via system keyring (recommended for local development)
+# 2. Via your system credential store (recommended for local development)
 notte auth login
 # 3. Via config file (~/.notte/cli/config.json)
 # create ~/.notte/cli/config.json and add your API key
@@ -96,8 +96,8 @@ Watch the session live through the `ViewerUrl` in the output.
 ### Authentication
 
 ```bash
-notte auth login                     # Store API key in system keychain
-notte auth logout                    # Remove API key from keychain
+notte auth login                     # Store API key in the system credential store
+notte auth logout                    # Remove the stored API key
 notte auth status                    # Show authentication status
 ```
 
@@ -542,10 +542,17 @@ For comprehensive documentation including templates and reference guides, see th
 
 ### Credential Storage
 
-API keys are stored securely in your system's keychain:
-- **macOS**: Keychain Access
-- **Linux**: Secret Service (GNOME Keyring, KWallet)
-- **Windows**: Credential Manager
+`notte auth login` stores the API key (and `notte tunnel up` stores a Tailscale OAuth client secret) in your system's credential store:
+
+- **macOS**: the login Keychain, service `notte-cli`. After upgrading `notte`, macOS may ask once to let the new binary read the item: choose **Always Allow**.
+- **Windows**: Credential Manager, generic credentials named `keyring:notte-cli:...`.
+- **Linux**: a Secret Service (such as GNOME Keyring), KWallet or `pass`, whichever is available.
+
+When no system store is usable (headless Linux, containers, a locked Keychain over SSH), the key is written to an encrypted file in `~/.notte/cli` (or `$NOTTE_CONFIG_DIR/.notte/cli`), readable only by your user. Its encryption password is fixed and public, so this file is protected no better than a plain text file with `0600` permissions: anything running as your user can read the key. The same holds for a key put in `~/.notte/cli/config.json`. On shared or untrusted machines, prefer a system store or `NOTTE_API_KEY` from a secret manager.
+
+Earlier versions used that file on macOS and Windows too. A key found there is copied into the system store the next time it is used, and the file copy is removed at the next `notte auth login` or `notte auth logout`. While a file copy exists, it is the one used.
+
+A saved key (from the credential store or the config file) is only sent to an `https://` API URL, or over plain HTTP to `localhost`, `127.0.0.1` or `::1`. `NOTTE_API_KEY` is not restricted.
 
 ### Best Practices
 
