@@ -202,6 +202,36 @@ func TestKeyring_LegacyMigration_NonProdEnv(t *testing.T) {
 	}
 }
 
+func TestKeyring_LegacyMigration_KeepsExistingProdKey(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+
+	// A stale legacy key next to a newer prod key, e.g. a macOS Keychain item
+	// from an old version alongside a key migrated from the file store.
+	_ = env.MockStore.Set("api_key", "legacy-key")
+	_ = env.MockStore.Set("api_key:prod", "prod-key")
+
+	// An environment without a key reaches the legacy fallback.
+	env.SetEnv("NOTTE_API_URL", "https://us-staging.notte.cc")
+	if _, err := GetKeyringAPIKey(); err == nil {
+		t.Fatal("expected error for staging without a key")
+	}
+
+	prod, err := env.MockStore.Get("api_key:prod")
+	if err != nil {
+		t.Fatalf("expected prod key to remain: %v", err)
+	}
+	if prod != "prod-key" {
+		t.Errorf("prod key = %q, want %q", prod, "prod-key")
+	}
+
+	// The superseded legacy key is dropped.
+	if _, err := env.MockStore.Get("api_key"); err == nil {
+		t.Error("expected legacy key to be deleted")
+	}
+}
+
 func TestKeyring_GetWhenEmpty(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	SetKeyring(env.MockStore)
