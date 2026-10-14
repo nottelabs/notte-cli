@@ -286,6 +286,7 @@ const (
 const (
 	Agentmail PersonaEmailProvider = "agentmail"
 	Notte     PersonaEmailProvider = "notte"
+	Resend    PersonaEmailProvider = "resend"
 )
 
 // Defines values for ProfileCookiesImportRequestMode.
