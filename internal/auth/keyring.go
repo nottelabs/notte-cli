@@ -231,7 +231,8 @@ func GetKeyringAPIKey() (string, error) {
 	envKey := KeyringKeyForEnv(envLabel)
 
 	// Try env-qualified key first
-	if val, err := defaultKeyring.Get(envKey); err == nil {
+	val, envErr := defaultKeyring.Get(envKey)
+	if envErr == nil {
 		return val, nil
 	}
 
@@ -243,7 +244,16 @@ func GetKeyringAPIKey() (string, error) {
 		return "", err
 	}
 
+	// The legacy entry predates env-qualified keys, so an existing prod key is
+	// newer. Drop the legacy entry rather than overwrite the prod key with it.
 	prodKey := KeyringKeyForEnv("prod")
+	if envLabel != "prod" {
+		if _, err := defaultKeyring.Get(prodKey); err == nil {
+			_ = defaultKeyring.Delete(KeyringKey)
+			return "", envErr
+		}
+	}
+
 	_ = defaultKeyring.Set(prodKey, val)
 	_ = defaultKeyring.Delete(KeyringKey)
 
