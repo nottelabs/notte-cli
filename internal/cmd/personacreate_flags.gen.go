@@ -41,7 +41,7 @@ func BuildPersonaCreateRequest(cmd *cobra.Command) (*api.PersonaCreateRequest, e
 	}
 
 	if PersonaCreateEmailProvider != "" {
-		val := api.PersonaCreateRequestEmailProvider(PersonaCreateEmailProvider)
+		val := api.PersonaEmailProvider(PersonaCreateEmailProvider)
 		body.EmailProvider = &val
 	}
 

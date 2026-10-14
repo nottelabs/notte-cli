@@ -493,8 +493,12 @@ func generateEnumFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *Comman
 		buf.WriteString("\t\t}\n")
 		fmt.Fprintf(buf, "\t\tbody.%s = &val\n", apiFieldName)
 	} else {
-		// Simple enum type - direct cast
+		// Simple enum type - direct cast. An inline enum gets a type named
+		// after the request and field; a $ref enum keeps its schema's name.
 		enumTypeName := fmt.Sprintf("%s%s", config.RequestBodyType, apiFieldName)
+		if fc.Field.Ref != "" {
+			enumTypeName = strings.ReplaceAll(fc.Field.Ref, "-", "")
+		}
 		fmt.Fprintf(buf, "\t\tval := api.%s(%s)\n", enumTypeName, fc.VarName)
 		fmt.Fprintf(buf, "\t\tbody.%s = &val\n", apiFieldName)
 	}
