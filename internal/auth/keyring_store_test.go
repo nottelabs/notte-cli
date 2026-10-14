@@ -98,18 +98,35 @@ func TestStores_GetReadsSystemStore(t *testing.T) {
 	}
 }
 
-func TestStores_GetPrefersFileEntryAndSyncsSystemStore(t *testing.T) {
+func TestStores_GetPrefersCurrentFileEntryAndSyncsSystemStore(t *testing.T) {
 	// A key saved to the file while the system store was unusable is newer
 	// than the entry the system store kept.
 	system := systemStore("api_key:prod", "old-key")
-	file := fileStore(t, "api_key:prod", "new-key")
+	file := fileStore(t)
 	useStores(t, system, file)
+	if err := file.Set(keyring.Item{Key: "api_key:prod", Data: []byte("new-key"), Description: fileCurrentMarker}); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := getFromSystemKeyring("api_key:prod")
 	if err != nil || got != "new-key" {
 		t.Fatalf("got (%q, %v), want new-key", got, err)
 	}
 	storeHas(t, system, "api_key:prod", "new-key")
+}
+
+func TestStores_GetPrefersSystemStoreOverOlderFileEntry(t *testing.T) {
+	// An older version saved A to the file on a headless login, then B to the
+	// system store on a desktop login, and never removed A.
+	system := systemStore("api_key:prod", "key-b")
+	file := fileStore(t, "api_key:prod", "key-a")
+	useStores(t, system, file)
+
+	got, err := getFromSystemKeyring("api_key:prod")
+	if err != nil || got != "key-b" {
+		t.Fatalf("got (%q, %v), want key-b", got, err)
+	}
+	storeHas(t, system, "api_key:prod", "key-b")
 }
 
 func TestStores_GetMigratesFileEntryAndKeepsIt(t *testing.T) {
@@ -122,8 +139,12 @@ func TestStores_GetMigratesFileEntryAndKeepsIt(t *testing.T) {
 		t.Fatalf("got (%q, %v), want file-key", got, err)
 	}
 	storeHas(t, system, "api_key:prod", "file-key")
-	// Older SDK versions only read the file: the entry stays until the next login or logout.
+	// Older SDK versions only read the file: the entry stays until the next
+	// login or logout, now marked as an identical copy.
 	storeHas(t, file, "api_key:prod", "file-key")
+	if item, _ := file.Get("api_key:prod"); item.Description != fileCurrentMarker {
+		t.Fatalf("migrated file entry description = %q, want %q", item.Description, fileCurrentMarker)
+	}
 }
 
 func TestStores_GetReadsFileWhenSystemStoreFails(t *testing.T) {

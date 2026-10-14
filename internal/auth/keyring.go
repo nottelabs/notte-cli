@@ -104,13 +104,18 @@ func isNotFound(err error) bool {
 	return errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist)
 }
 
-// getFromSystemKeyring reads a key, preferring a file store entry when there
-// is one. Such an entry is either a key saved by an older version (system
-// store not used yet), an identical copy kept after migrating it, or a key
-// saved while the system store was unusable, which is newer than anything the
-// system store holds. It is copied into the system store, and kept for now
-// because older SDK versions only read the file; the next login or logout
-// removes it.
+// fileCurrentMarker is the Description of file store entries written by this
+// version. Such an entry is known to be current: a key saved while the system
+// store was unusable, or an identical copy of a migrated key. An entry without
+// it was written by an older version and may be older than the system store's.
+const fileCurrentMarker = "notte-cli:current"
+
+// getFromSystemKeyring reads a key. A file entry marked current wins and the
+// system store is synced to it. Otherwise the system store wins, and an older
+// file entry is only used when the system store lacks the key (or cannot be
+// read): it is then copied into the system store and marked current. The file
+// entry is kept for now because older SDK versions only read the file; the
+// next login or logout removes it.
 func getFromSystemKeyring(key string) (string, error) {
 	system, err := openSystemKeyring()
 	if err != nil {
@@ -121,34 +126,46 @@ func getFromSystemKeyring(key string) (string, error) {
 		return "", err
 	}
 
-	item, fileErr := file.Get(key)
-	if fileErr == nil {
+	fileItem, fileErr := file.Get(key)
+	if fileErr == nil && fileItem.Description == fileCurrentMarker {
 		if system != nil {
 			current, err := system.Get(key)
 			// Leave a store we could not read (a locked Keychain over SSH, say) alone.
-			if isNotFound(err) || (err == nil && string(current.Data) != string(item.Data)) {
-				_ = system.Set(keyring.Item{Key: key, Data: item.Data})
+			if isNotFound(err) || (err == nil && string(current.Data) != string(fileItem.Data)) {
+				_ = system.Set(keyring.Item{Key: key, Data: fileItem.Data})
 			}
 		}
-		return string(item.Data), nil
+		return string(fileItem.Data), nil
 	}
 
+	systemMissing := system == nil
 	if system != nil {
 		item, err := system.Get(key)
 		if err == nil {
 			return string(item.Data), nil
 		}
-		if !isNotFound(err) {
+		systemMissing = isNotFound(err)
+		if fileErr != nil && !systemMissing {
 			return "", fmt.Errorf("failed to get key from keyring: %w", err)
 		}
 	}
-	return "", fmt.Errorf("failed to get key from keyring: %w", fileErr)
+	if fileErr != nil {
+		return "", fmt.Errorf("failed to get key from keyring: %w", fileErr)
+	}
+
+	// An entry from an older version, and the system store does not have the key.
+	if system != nil && systemMissing {
+		if err := system.Set(keyring.Item{Key: key, Data: fileItem.Data}); err == nil {
+			_ = file.Set(keyring.Item{Key: key, Data: fileItem.Data, Description: fileCurrentMarker})
+		}
+	}
+	return string(fileItem.Data), nil
 }
 
 // setInSystemKeyring stores a key in the system store, or in the file store
-// when there is no usable system store. Only one store keeps the key; a file
-// entry takes precedence on read, so a key written to the file because the
-// system store failed wins over an older entry the system store still holds.
+// when there is no usable system store. Only one store keeps the key; the file
+// entry is marked current, so on read it wins over an older entry the system
+// store may still hold.
 func setInSystemKeyring(key, value string) error {
 	system, err := openSystemKeyring()
 	if err != nil {
@@ -169,6 +186,7 @@ func setInSystemKeyring(key, value string) error {
 		}
 	}
 
+	item.Description = fileCurrentMarker
 	if err := file.Set(item); err != nil {
 		return fmt.Errorf("failed to set key in keyring: %w", err)
 	}
