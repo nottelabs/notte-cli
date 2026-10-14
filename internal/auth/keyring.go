@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/99designs/keyring"
 
@@ -44,22 +43,14 @@ var keyringConfig = func(dir string) keyring.Config {
 	}
 }
 
-var (
-	onceMkdir sync.Once
-	mkdirErr  error
-)
-
 func configDir() (string, error) {
 	dir, err := config.Dir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	onceMkdir.Do(func() {
-		mkdirErr = os.MkdirAll(dir, 0o700)
-	})
-	if mkdirErr != nil {
-		return "", fmt.Errorf("failed to create config directory: %w", mkdirErr)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("failed to create config directory: %w", err)
 	}
 	return dir, nil
 }

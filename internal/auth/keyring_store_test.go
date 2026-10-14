@@ -3,9 +3,13 @@ package auth
 import (
 	"errors"
 	"runtime"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/99designs/keyring"
+
+	"github.com/nottelabs/notte-cli/internal/config"
 )
 
 // brokenKeyring fails every operation, like a locked Keychain over SSH.
@@ -301,4 +305,44 @@ func TestStores_APIKeyLoginAfterUpgrade(t *testing.T) {
 	}
 	storeHas(t, system, "api_key:prod", "new-key")
 	storeLacks(t, file, "api_key:prod")
+}
+
+// pausingStore runs hook the first time a key is written, before writing it.
+type pausingStore struct {
+	memoryStore
+	once sync.Once
+	hook func()
+}
+
+func (p *pausingStore) Set(item keyring.Item) error {
+	p.once.Do(p.hook)
+	return p.memoryStore.Set(item)
+}
+
+func TestStores_LoginWaitsForMigration(t *testing.T) {
+	config.SetTestConfigDir(t.TempDir())
+	t.Cleanup(func() { config.SetTestConfigDir("") })
+	file := fileStore(t, "api_key:prod", "old-key")
+	login := make(chan error, 1)
+	system := &pausingStore{memoryStore: systemStore()}
+	system.hook = func() {
+		// A login starts while this read is migrating the old key.
+		go func() { login <- (&realKeyring{}).Set("api_key:prod", "new-key") }()
+		select {
+		case err := <-login:
+			t.Errorf("login finished during the migration (err=%v)", err)
+		case <-time.After(200 * time.Millisecond):
+		}
+	}
+	useStores(t, system, file)
+
+	if got, err := (&realKeyring{}).Get("api_key:prod"); err != nil || got != "old-key" {
+		t.Fatalf("Get = (%q, %v), want old-key", got, err)
+	}
+	if err := <-login; err != nil {
+		t.Fatal(err)
+	}
+	if got, err := (&realKeyring{}).Get("api_key:prod"); err != nil || got != "new-key" {
+		t.Fatalf("after login Get = (%q, %v), want new-key", got, err)
+	}
 }
