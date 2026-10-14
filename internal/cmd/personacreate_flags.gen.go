@@ -15,6 +15,8 @@ var (
 	// Whether to create a vault for the persona
 	PersonaCreateCreateVault bool
 
+	PersonaCreateEmailProvider string
+
 	PersonaCreateName string
 )
 
@@ -22,6 +24,7 @@ var (
 func RegisterPersonaCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona (API default: false)")
 	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona (API default: false)")
+	cmd.Flags().StringVar(&PersonaCreateEmailProvider, "email-provider", "", "email-provider (API default: notte) (notte, agentmail)")
 	cmd.Flags().StringVar(&PersonaCreateName, "name", "", "name")
 }
 
@@ -35,6 +38,11 @@ func BuildPersonaCreateRequest(cmd *cobra.Command) (*api.PersonaCreateRequest, e
 
 	if cmd.Flags().Changed("create-vault") {
 		body.CreateVault = &PersonaCreateCreateVault
+	}
+
+	if PersonaCreateEmailProvider != "" {
+		val := api.PersonaEmailProvider(PersonaCreateEmailProvider)
+		body.EmailProvider = &val
 	}
 
 	if PersonaCreateName != "" {

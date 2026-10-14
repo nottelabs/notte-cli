@@ -282,6 +282,12 @@ const (
 	Test PaymentRequestMode = "test"
 )
 
+// Defines values for PersonaEmailProvider.
+const (
+	Agentmail PersonaEmailProvider = "agentmail"
+	Notte     PersonaEmailProvider = "notte"
+)
+
 // Defines values for ProfileCookiesImportRequestMode.
 const (
 	ProfileCookiesImportRequestModeAppend  ProfileCookiesImportRequestMode = "append"
@@ -1191,9 +1197,14 @@ type ConnectLinkStatusResponse struct {
 	AttemptsRemaining  int                             `json:"attempts_remaining"`
 	ConnectionStatus   *string                         `json:"connection_status,omitempty"`
 	ErrorRedirectUri   *string                         `json:"error_redirect_uri,omitempty"`
+	ExpectedSeconds    *int                            `json:"expected_seconds,omitempty"`
 	FailureCode        *string                         `json:"failure_code,omitempty"`
+	LoginAttempt       *int                            `json:"login_attempt,omitempty"`
+	MaxLoginAttempts   *int                            `json:"max_login_attempts,omitempty"`
 	Message            *string                         `json:"message,omitempty"`
+	StartedAt          *string                         `json:"started_at,omitempty"`
 	Status             ConnectLinkStatusResponseStatus `json:"status"`
+	Step               *string                         `json:"step,omitempty"`
 	SuccessRedirectUri *string                         `json:"success_redirect_uri,omitempty"`
 }
 
@@ -2614,16 +2625,21 @@ type PersonaCreateRequest struct {
 	CreatePhoneNumber *bool `json:"create_phone_number,omitempty"`
 
 	// CreateVault Whether to create a vault for the persona
-	CreateVault *bool   `json:"create_vault,omitempty"`
-	Name        *string `json:"name,omitempty"`
+	CreateVault   *bool                 `json:"create_vault,omitempty"`
+	EmailProvider *PersonaEmailProvider `json:"email_provider,omitempty"`
+	Name          *string               `json:"name,omitempty"`
 }
+
+// PersonaEmailProvider defines model for PersonaEmailProvider.
+type PersonaEmailProvider string
 
 // PersonaResponse defines model for PersonaResponse.
 type PersonaResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Email Public, human-readable email address of the persona
-	Email string `json:"email"`
+	Email         string                `json:"email"`
+	EmailProvider *PersonaEmailProvider `json:"email_provider,omitempty"`
 
 	// FirstName First name of the persona
 	FirstName string `json:"first_name"`

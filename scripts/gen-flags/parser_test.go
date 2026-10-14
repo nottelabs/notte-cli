@@ -289,3 +289,68 @@ func TestFlagNameOverrideRenamesOnlyItsOwnCommand(t *testing.T) {
 		t.Errorf("FlagNameFor(FunctionConfigure, self_healing) = %q, want self-healing", got)
 	}
 }
+
+// oapi-codegen names an inline enum after its request and field, but a $ref
+// enum keeps its schema's name: email_provider on PersonaCreateRequest is a
+// PersonaEmailProvider, and casting to PersonaCreateRequestEmailProvider did
+// not compile.
+func TestRefEnumCastsToTheReferencedType(t *testing.T) {
+	spec := parse(t, `{
+  "openapi": "3.0.3",
+  "paths": {
+    "/personas/create": {
+      "post": {
+        "operationId": "persona_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PersonaCreateRequest"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PersonaCreateRequest": {
+        "type": "object",
+        "properties": {
+          "email_provider": {"$ref": "#/components/schemas/PersonaEmailProvider"},
+          "status": {"type": "string", "enum": ["active", "closed"]}
+        }
+      },
+      "PersonaEmailProvider": {"type": "string", "enum": ["notte", "agentmail"]}
+    }
+  }
+}`)
+	schemas := buildSchemaMap(spec)
+
+	config, err := extractCommandConfig(
+		"PersonaCreate",
+		"/personas/create",
+		"POST",
+		spec.Paths["/personas/create"].Post,
+		schemas,
+	)
+	if err != nil {
+		t.Fatalf("extracting config: %v", err)
+	}
+
+	code, errs, err := GenerateFlagsFile(config, schemas)
+	if err != nil {
+		t.Fatalf("generating: %v", err)
+	}
+	if len(errs) != 0 {
+		t.Fatalf("unexpected generation errors: %v", errs)
+	}
+
+	for _, want := range []string{
+		"val := api.PersonaEmailProvider(PersonaCreateEmailProvider)",
+		"val := api.PersonaCreateRequestStatus(PersonaCreateStatus)",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("generated code is missing %q\n%s", want, code)
+		}
+	}
+}
