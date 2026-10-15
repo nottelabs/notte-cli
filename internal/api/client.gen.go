@@ -2317,6 +2317,13 @@ type ManagedAuthReadiness struct {
 // ManagedAuthReadinessStatus defines model for ManagedAuthReadiness.Status.
 type ManagedAuthReadinessStatus string
 
+// MouseReplayPage defines model for MouseReplayPage.
+type MouseReplayPage struct {
+	MouseChunkUrls   *[]string `json:"mouse_chunk_urls,omitempty"`
+	MouseManifestUrl *string   `json:"mouse_manifest_url,omitempty"`
+	MouseNextOffset  *int      `json:"mouse_next_offset,omitempty"`
+}
+
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
 	Category        *string                              `json:"category,omitempty"`
@@ -2764,11 +2771,14 @@ type ReplayMissingResponseReplayStatus string
 
 // ReplayResponse defines model for ReplayResponse.
 type ReplayResponse struct {
-	ExpiresAt       string  `json:"expires_at"`
-	Mp4Url          *string `json:"mp4_url,omitempty"`
-	PlaylistContent *string `json:"playlist_content,omitempty"`
-	VideoDurationMs *int    `json:"video_duration_ms,omitempty"`
-	VideoStartMs    *int    `json:"video_start_ms,omitempty"`
+	ExpiresAt        string    `json:"expires_at"`
+	MouseChunkUrls   *[]string `json:"mouse_chunk_urls,omitempty"`
+	MouseManifestUrl *string   `json:"mouse_manifest_url,omitempty"`
+	MouseNextOffset  *int      `json:"mouse_next_offset,omitempty"`
+	Mp4Url           *string   `json:"mp4_url,omitempty"`
+	PlaylistContent  *string   `json:"playlist_content,omitempty"`
+	VideoDurationMs  *int      `json:"video_duration_ms,omitempty"`
+	VideoStartMs     *int      `json:"video_start_ms,omitempty"`
 }
 
 // RootModelAny defines model for RootModel_Any_.
@@ -4182,6 +4192,13 @@ type SessionProfileSaveParams struct {
 
 // SessionReplayParams defines parameters for SessionReplay.
 type SessionReplayParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SessionMouseReplayParams defines parameters for SessionMouseReplay.
+type SessionMouseReplayParams struct {
+	Offset              *int    `form:"offset,omitempty" json:"offset,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -10535,6 +10552,9 @@ type ClientInterface interface {
 	// SessionReplay request
 	SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionMouseReplay request
+	SessionMouseReplay(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionStop request
 	SessionStop(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -11936,6 +11956,18 @@ func (c *Client) SessionProfileSave(ctx context.Context, sessionId string, param
 
 func (c *Client) SessionReplay(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionReplayRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionMouseReplay(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionMouseReplayRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -18597,6 +18629,88 @@ func NewSessionReplayRequest(server string, sessionId string, params *SessionRep
 	return req, nil
 }
 
+// NewSessionMouseReplayRequest generates requests for SessionMouseReplay
+func NewSessionMouseReplayRequest(server string, sessionId string, params *SessionMouseReplayParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/replay/mouse", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionStopRequest generates requests for SessionStop
 func NewSessionStopRequest(server string, sessionId string, params *SessionStopParams) (*http.Request, error) {
 	var err error
@@ -19983,6 +20097,9 @@ type ClientWithResponsesInterface interface {
 
 	// SessionReplayWithResponse request
 	SessionReplayWithResponse(ctx context.Context, sessionId string, params *SessionReplayParams, reqEditors ...RequestEditorFn) (*SessionReplayResult, error)
+
+	// SessionMouseReplayWithResponse request
+	SessionMouseReplayWithResponse(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*SessionMouseReplayResult, error)
 
 	// SessionStopWithResponse request
 	SessionStopWithResponse(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*SessionStopResult, error)
@@ -21936,6 +22053,29 @@ func (r SessionReplayResult) StatusCode() int {
 	return 0
 }
 
+type SessionMouseReplayResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MouseReplayPage
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionMouseReplayResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionMouseReplayResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionStopResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -23205,6 +23345,15 @@ func (c *ClientWithResponses) SessionReplayWithResponse(ctx context.Context, ses
 		return nil, err
 	}
 	return ParseSessionReplayResult(rsp)
+}
+
+// SessionMouseReplayWithResponse request returning *SessionMouseReplayResult
+func (c *ClientWithResponses) SessionMouseReplayWithResponse(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*SessionMouseReplayResult, error) {
+	rsp, err := c.SessionMouseReplay(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionMouseReplayResult(rsp)
 }
 
 // SessionStopWithResponse request returning *SessionStopResult
@@ -26068,6 +26217,39 @@ func ParseSessionReplayResult(rsp *http.Response) (*SessionReplayResult, error) 
 			return nil, err
 		}
 		response.JSON410 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionMouseReplayResult parses an HTTP response from a SessionMouseReplayWithResponse call
+func ParseSessionMouseReplayResult(rsp *http.Response) (*SessionMouseReplayResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionMouseReplayResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MouseReplayPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
