@@ -39,6 +39,7 @@ skip POST /scrape_from_html # use notte page scrape, which runs in a session
 
 # --- browser-first flows the CLI has no shape for ----------------------------
 skip GET    /sessions/{session_id}/profile-preview # hidden session-viewer endpoint for the profile-save confirmation
+skip GET    /sessions/{session_id}/replay/mouse # mouse replay data is consumed by the session viewer, not the CLI
 skip POST   /managed-auth/connect-links # connect links are created and consumed in a browser
 skip POST   /managed-auth/connect-links/context # private endpoint serving the connect-link page
 skip POST   /managed-auth/connect-links/mailboxes # private endpoint serving the connect-link page
