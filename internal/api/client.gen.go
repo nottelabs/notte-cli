@@ -4121,7 +4121,7 @@ type ProfileResponse struct {
 	// PersistedDomains List of domains with persisted browser state (cookies, localStorage, sessionStorage)
 	PersistedDomains *[]string `json:"persisted_domains,omitempty"`
 
-	// ProfileId Profile ID (format: notte-profile-{16 hex chars})
+	// ProfileId Profile ID (format: `notte-profile-{16 hex chars}`)
 	ProfileId string `json:"profile_id"`
 
 	// UpdatedAt Profile last update timestamp
