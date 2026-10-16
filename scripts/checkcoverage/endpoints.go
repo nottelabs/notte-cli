@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -112,8 +113,7 @@ func readCommandSources(dir string) (string, error) {
 // through the WithBody variant.
 func callsGeneratedClient(source string, e Endpoint) bool {
 	name := operationGoName(e.OperationID)
-	return strings.Contains(source, name+"WithResponse(") ||
-		strings.Contains(source, name+"WithBodyWithResponse(")
+	return regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `With(?:BodyWith)?Response\(`).MatchString(source)
 }
 
 // Verdict is how an endpoint that no command calls is accounted for.

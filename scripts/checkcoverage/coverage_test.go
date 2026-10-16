@@ -208,3 +208,17 @@ func TestMentionDoesNotMatchALongerWord(t *testing.T) {
 		t.Error("a prefix of a longer word should not count as a mention")
 	}
 }
+
+func TestClientMethodDoesNotMatchLongerOperation(t *testing.T) {
+	source := `client.ProfileCreateWithResponse(ctx)
+ client.PersonaUpdateWithResponse(ctx)
+ client.VaultDeleteWithResponse(ctx)`
+	for _, operation := range []string{"create", "update", "delete"} {
+		if callsGeneratedClient(source, Endpoint{OperationID: operation}) {
+			t.Errorf("%s matched another operation's suffix", operation)
+		}
+	}
+	if !callsGeneratedClient(`client.CreateWithResponse(ctx)`, Endpoint{OperationID: "create"}) {
+		t.Error("exact client method was not recognized")
+	}
+}

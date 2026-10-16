@@ -43,6 +43,394 @@ const (
 	ApiSessionStartRequestScreenshotTypeRaw        ApiSessionStartRequestScreenshotType = "raw"
 )
 
+// Defines values for BrandByTickerTickerExchange.
+const (
+	AMEX   BrandByTickerTickerExchange = "AMEX"
+	AMS    BrandByTickerTickerExchange = "AMS"
+	AQS    BrandByTickerTickerExchange = "AQS"
+	ASX    BrandByTickerTickerExchange = "ASX"
+	ATH    BrandByTickerTickerExchange = "ATH"
+	BER    BrandByTickerTickerExchange = "BER"
+	BME    BrandByTickerTickerExchange = "BME"
+	BRU    BrandByTickerTickerExchange = "BRU"
+	BSE    BrandByTickerTickerExchange = "BSE"
+	BUD    BrandByTickerTickerExchange = "BUD"
+	BUE    BrandByTickerTickerExchange = "BUE"
+	BVC    BrandByTickerTickerExchange = "BVC"
+	CBOE   BrandByTickerTickerExchange = "CBOE"
+	CNQ    BrandByTickerTickerExchange = "CNQ"
+	CPH    BrandByTickerTickerExchange = "CPH"
+	DFM    BrandByTickerTickerExchange = "DFM"
+	DOH    BrandByTickerTickerExchange = "DOH"
+	DUB    BrandByTickerTickerExchange = "DUB"
+	DUS    BrandByTickerTickerExchange = "DUS"
+	DXE    BrandByTickerTickerExchange = "DXE"
+	EGX    BrandByTickerTickerExchange = "EGX"
+	FSX    BrandByTickerTickerExchange = "FSX"
+	HAM    BrandByTickerTickerExchange = "HAM"
+	HEL    BrandByTickerTickerExchange = "HEL"
+	HKSE   BrandByTickerTickerExchange = "HKSE"
+	HOSE   BrandByTickerTickerExchange = "HOSE"
+	ICE    BrandByTickerTickerExchange = "ICE"
+	IOB    BrandByTickerTickerExchange = "IOB"
+	IST    BrandByTickerTickerExchange = "IST"
+	JKT    BrandByTickerTickerExchange = "JKT"
+	JNB    BrandByTickerTickerExchange = "JNB"
+	JPX    BrandByTickerTickerExchange = "JPX"
+	KLS    BrandByTickerTickerExchange = "KLS"
+	KOE    BrandByTickerTickerExchange = "KOE"
+	KSC    BrandByTickerTickerExchange = "KSC"
+	KUW    BrandByTickerTickerExchange = "KUW"
+	LIS    BrandByTickerTickerExchange = "LIS"
+	LSE    BrandByTickerTickerExchange = "LSE"
+	MCX    BrandByTickerTickerExchange = "MCX"
+	MEX    BrandByTickerTickerExchange = "MEX"
+	MIL    BrandByTickerTickerExchange = "MIL"
+	MUN    BrandByTickerTickerExchange = "MUN"
+	NASDAQ BrandByTickerTickerExchange = "NASDAQ"
+	NEO    BrandByTickerTickerExchange = "NEO"
+	NSE    BrandByTickerTickerExchange = "NSE"
+	NYSE   BrandByTickerTickerExchange = "NYSE"
+	NZE    BrandByTickerTickerExchange = "NZE"
+	OSL    BrandByTickerTickerExchange = "OSL"
+	OTC    BrandByTickerTickerExchange = "OTC"
+	PAR    BrandByTickerTickerExchange = "PAR"
+	PNK    BrandByTickerTickerExchange = "PNK"
+	PRA    BrandByTickerTickerExchange = "PRA"
+	RIS    BrandByTickerTickerExchange = "RIS"
+	SAO    BrandByTickerTickerExchange = "SAO"
+	SAU    BrandByTickerTickerExchange = "SAU"
+	SES    BrandByTickerTickerExchange = "SES"
+	SET    BrandByTickerTickerExchange = "SET"
+	SGO    BrandByTickerTickerExchange = "SGO"
+	SHH    BrandByTickerTickerExchange = "SHH"
+	SHZ    BrandByTickerTickerExchange = "SHZ"
+	SIX    BrandByTickerTickerExchange = "SIX"
+	STO    BrandByTickerTickerExchange = "STO"
+	STU    BrandByTickerTickerExchange = "STU"
+	TAI    BrandByTickerTickerExchange = "TAI"
+	TAL    BrandByTickerTickerExchange = "TAL"
+	TLV    BrandByTickerTickerExchange = "TLV"
+	TSX    BrandByTickerTickerExchange = "TSX"
+	TSXV   BrandByTickerTickerExchange = "TSXV"
+	TWO    BrandByTickerTickerExchange = "TWO"
+	VIE    BrandByTickerTickerExchange = "VIE"
+	WSE    BrandByTickerTickerExchange = "WSE"
+	XETRA  BrandByTickerTickerExchange = "XETRA"
+)
+
+// Defines values for BrandCacheMetadataStatus.
+const (
+	Hit  BrandCacheMetadataStatus = "hit"
+	Miss BrandCacheMetadataStatus = "miss"
+	Zdr  BrandCacheMetadataStatus = "zdr"
+)
+
+// Defines values for BrandColorSource.
+const (
+	BrandColorSourceLogo BrandColorSource = "logo"
+	BrandColorSourceSite BrandColorSource = "site"
+)
+
+// Defines values for BrandIndustryIndustry.
+const (
+	AerospaceDefense             BrandIndustryIndustry = "Aerospace & Defense"
+	AgricultureFood              BrandIndustryIndustry = "Agriculture & Food"
+	AutomotiveTransportation     BrandIndustryIndustry = "Automotive & Transportation"
+	ChemicalsMaterials           BrandIndustryIndustry = "Chemicals & Materials"
+	ConstructionBuiltEnvironment BrandIndustryIndustry = "Construction & Built Environment"
+	ConsumerPackagedGoodsCPG     BrandIndustryIndustry = "Consumer Packaged Goods (CPG)"
+	Education                    BrandIndustryIndustry = "Education"
+	Entertainment                BrandIndustryIndustry = "Entertainment"
+	Finance                      BrandIndustryIndustry = "Finance"
+	GovernmentNonprofit          BrandIndustryIndustry = "Government & Nonprofit"
+	Healthcare                   BrandIndustryIndustry = "Healthcare"
+	HospitalityTourism           BrandIndustryIndustry = "Hospitality & Tourism"
+	IndustrialEnergy             BrandIndustryIndustry = "Industrial & Energy"
+	LegalCompliance              BrandIndustryIndustry = "Legal & Compliance"
+	LifestyleLeisure             BrandIndustryIndustry = "Lifestyle & Leisure"
+	LogisticsSupplyChain         BrandIndustryIndustry = "Logistics & Supply Chain"
+	LuxuryFashion                BrandIndustryIndustry = "Luxury & Fashion"
+	NewsMedia                    BrandIndustryIndustry = "News & Media"
+	ProfessionalServicesAgencies BrandIndustryIndustry = "Professional Services & Agencies"
+	RealEstatePropTech           BrandIndustryIndustry = "Real Estate & PropTech"
+	RetailECommerce              BrandIndustryIndustry = "Retail & E-commerce"
+	Sports                       BrandIndustryIndustry = "Sports"
+	Technology                   BrandIndustryIndustry = "Technology"
+	Telecommunications           BrandIndustryIndustry = "Telecommunications"
+)
+
+// Defines values for BrandIndustrySubindustry.
+const (
+	AccessoriesJewelryWatches                 BrandIndustrySubindustry = "Accessories, Jewelry & Watches"
+	AccountingTaxFinancialPlanningTools       BrandIndustrySubindustry = "Accounting, Tax & Financial Planning Tools"
+	AccountingTaxFirms                        BrandIndustrySubindustry = "Accounting & Tax Firms"
+	AdvancedMaterialsComposites               BrandIndustrySubindustry = "Advanced Materials & Composites"
+	AdvertisingAdtechMediaBuying              BrandIndustrySubindustry = "Advertising, Adtech & Media Buying"
+	AerospaceManufacturing                    BrandIndustrySubindustry = "Aerospace Manufacturing"
+	AftermarketPartsServices                  BrandIndustrySubindustry = "Aftermarket Parts & Services"
+	AgriculturalInputsEquipment               BrandIndustrySubindustry = "Agricultural Inputs & Equipment"
+	AgrochemicalsFertilizers                  BrandIndustrySubindustry = "Agrochemicals & Fertilizers"
+	ArtificialIntelligenceMachineLearning     BrandIndustrySubindustry = "Artificial Intelligence & Machine Learning"
+	AthleteManagementTalentAgencies           BrandIndustrySubindustry = "Athlete Management & Talent Agencies"
+	AutomotiveOEMsVehicleManufacturing        BrandIndustrySubindustry = "Automotive OEMs & Vehicle Manufacturing"
+	AutonomousVehiclesADAS                    BrandIndustrySubindustry = "Autonomous Vehicles & ADAS"
+	AviationAerospaceTransport                BrandIndustrySubindustry = "Aviation & Aerospace Transport"
+	AvionicsNavigationTechnology              BrandIndustrySubindustry = "Avionics & Navigation Technology"
+	BIMCADDesignTools                         BrandIndustrySubindustry = "BIM/CAD & Design Tools"
+	BNPLAlternativeFinancing                  BrandIndustrySubindustry = "BNPL & Alternative Financing"
+	BankingLending                            BrandIndustrySubindustry = "Banking & Lending"
+	BatteryMaterialsEnergyStorage             BrandIndustrySubindustry = "Battery Materials & Energy Storage"
+	BeautyCosmeticsCPG                        BrandIndustrySubindustry = "Beauty & Cosmetics CPG"
+	BeautyFragranceSkincare                   BrandIndustrySubindustry = "Beauty, Fragrance & Skincare"
+	BeautyPersonalCare                        BrandIndustrySubindustry = "Beauty & Personal Care"
+	BiotechnologyGenomics                     BrandIndustrySubindustry = "Biotechnology & Genomics"
+	BroadbandFiberInternet                    BrandIndustrySubindustry = "Broadband & Fiber Internet"
+	BroadcastingTVRadio                       BrandIndustrySubindustry = "Broadcasting (TV & Radio)"
+	BuildingMaterialsProcurement              BrandIndustrySubindustry = "Building Materials & Procurement"
+	BusinessProcessOutsourcingBPO             BrandIndustrySubindustry = "Business Process Outsourcing (BPO)"
+	CPGAnalyticsInsights                      BrandIndustrySubindustry = "CPG Analytics & Insights"
+	CPGRetailIntelligence                     BrandIndustrySubindustry = "CPG Retail Intelligence"
+	CPGSupplyChainDistribution                BrandIndustrySubindustry = "CPG Supply Chain & Distribution"
+	CapitalMarketsTradingPlatforms            BrandIndustrySubindustry = "Capital Markets & Trading Platforms"
+	CivicEngagementPolicyPlatforms            BrandIndustrySubindustry = "Civic Engagement & Policy Platforms"
+	ClinicalTrialsResearchPlatforms           BrandIndustrySubindustry = "Clinical Trials & Research Platforms"
+	CloudInfrastructureDevOps                 BrandIndustrySubindustry = "Cloud Infrastructure & DevOps"
+	CoatingsAdhesivesSealants                 BrandIndustrySubindustry = "Coatings, Adhesives & Sealants"
+	ColdChainLogistics                        BrandIndustrySubindustry = "Cold Chain Logistics"
+	CommodityPetrochemicals                   BrandIndustrySubindustry = "Commodity & Petrochemicals"
+	ComplianceTrainingCertification           BrandIndustrySubindustry = "Compliance Training & Certification"
+	ConstructionHeavyEquipment                BrandIndustrySubindustry = "Construction & Heavy Equipment"
+	ConstructionManagementSoftware            BrandIndustrySubindustry = "Construction Management Software"
+	ConstructionMarketplaces                  BrandIndustrySubindustry = "Construction Marketplaces"
+	ConstructionSafetyCompliance              BrandIndustrySubindustry = "Construction Safety & Compliance"
+	ConstructionWorkforceManagement           BrandIndustrySubindustry = "Construction Workforce Management"
+	ConsumerHealthWellnessProducts            BrandIndustrySubindustry = "Consumer Health & Wellness Products"
+	ContractManagement                        BrandIndustrySubindustry = "Contract Management"
+	CorporateTrainingUpskilling               BrandIndustrySubindustry = "Corporate Training & Upskilling"
+	CorporateTravelManagement                 BrandIndustrySubindustry = "Corporate Travel Management"
+	CoutureMadeToMeasure                      BrandIndustrySubindustry = "Couture & Made-to-Measure"
+	CreatorEconomyInfluencerPlatforms         BrandIndustrySubindustry = "Creator Economy & Influencer Platforms"
+	CreatorLedCohortBasedCourses              BrandIndustrySubindustry = "Creator-Led & Cohort-Based Courses"
+	CreditScoringRiskManagement               BrandIndustrySubindustry = "Credit Scoring & Risk Management"
+	CropLivestockProduction                   BrandIndustrySubindustry = "Crop & Livestock Production"
+	CrossBorderTradeTech                      BrandIndustrySubindustry = "Cross-Border Trade Tech"
+	CruiseLinesMarineTourism                  BrandIndustrySubindustry = "Cruise Lines & Marine Tourism"
+	CryptocurrencyDigitalAssets               BrandIndustrySubindustry = "Cryptocurrency & Digital Assets"
+	Cybersecurity                             BrandIndustrySubindustry = "Cybersecurity"
+	DataInfrastructureAnalytics               BrandIndustrySubindustry = "Data Infrastructure & Analytics"
+	DatingRelationships                       BrandIndustrySubindustry = "Dating & Relationships"
+	DefenseITSystemsIntegration               BrandIndustrySubindustry = "Defense IT & Systems Integration"
+	DefenseSystemsMilitaryHardware            BrandIndustrySubindustry = "Defense Systems & Military Hardware"
+	DesignBrandingCreativeStudios             BrandIndustrySubindustry = "Design, Branding & Creative Studios"
+	DesignerLuxuryApparel                     BrandIndustrySubindustry = "Designer & Luxury Apparel"
+	DeveloperToolsAPIs                        BrandIndustrySubindustry = "Developer Tools & APIs"
+	DigitalHealthTelemedicine                 BrandIndustrySubindustry = "Digital Health & Telemedicine"
+	DigitalMediaContentPlatforms              BrandIndustrySubindustry = "Digital Media & Content Platforms"
+	DirectToConsumerCPGBrands                 BrandIndustrySubindustry = "Direct-to-Consumer CPG Brands"
+	DirectToConsumerDTCBrands                 BrandIndustrySubindustry = "Direct-to-Consumer (DTC) Brands"
+	ECommerceEnablementInfrastructure         BrandIndustrySubindustry = "E-commerce Enablement & Infrastructure"
+	ECommerceMarketplacePlatforms             BrandIndustrySubindustry = "eCommerce & Marketplace Platforms"
+	EDiscoveryLitigationTools                 BrandIndustrySubindustry = "E-Discovery & Litigation Tools"
+	EdgeComputingNetworkVirtualization        BrandIndustrySubindustry = "Edge Computing & Network Virtualization"
+	EducationManagementSystemsLMSSIS          BrandIndustrySubindustry = "Education Management Systems (LMS/SIS)"
+	EducationYouthDevelopmentPrograms         BrandIndustrySubindustry = "Education & Youth Development Programs"
+	ElectricVehiclesEVsChargingInfrastructure BrandIndustrySubindustry = "Electric Vehicles (EVs) & Charging Infrastructure"
+	ElectronicMaterialsSemiconductorChemicals BrandIndustrySubindustry = "Electronic Materials & Semiconductor Chemicals"
+	EnergyProductionOilGasNuclear             BrandIndustrySubindustry = "Energy Production (Oil, Gas, Nuclear)"
+	EnergyStorageBatteryTechnology            BrandIndustrySubindustry = "Energy Storage & Battery Technology"
+	EnvironmentalClimateActionOrganizations   BrandIndustrySubindustry = "Environmental & Climate Action Organizations"
+	EnvironmentalEngineeringSustainability    BrandIndustrySubindustry = "Environmental Engineering & Sustainability"
+	EquipmentRentalManagement                 BrandIndustrySubindustry = "Equipment Rental & Management"
+	EsportsCompetitiveGaming                  BrandIndustrySubindustry = "Esports & Competitive Gaming"
+	EventVenueManagement                      BrandIndustrySubindustry = "Event & Venue Management"
+	EventsExperiencesTicketingPlatforms       BrandIndustrySubindustry = "Events, Experiences & Ticketing Platforms"
+	EventsVenuesLiveEntertainment             BrandIndustrySubindustry = "Events, Venues & Live Entertainment"
+	FashionApparelRetail                      BrandIndustrySubindustry = "Fashion & Apparel Retail"
+	FashionMarketplacesRetailPlatforms        BrandIndustrySubindustry = "Fashion Marketplaces & Retail Platforms"
+	FashionTechVirtualTryOns                  BrandIndustrySubindustry = "Fashion Tech & Virtual Try-Ons"
+	FilmTVProductionStudios                   BrandIndustrySubindustry = "Film, TV & Production Studios"
+	FinancialInfrastructureAPIs               BrandIndustrySubindustry = "Financial Infrastructure & APIs"
+	FintechInfrastructure                     BrandIndustrySubindustry = "Fintech Infrastructure"
+	FitnessAthleticTrainingPlatforms          BrandIndustrySubindustry = "Fitness & Athletic Training Platforms"
+	FitnessWellness                           BrandIndustrySubindustry = "Fitness & Wellness"
+	FleetManagement                           BrandIndustrySubindustry = "Fleet Management"
+	FoodBeverageCPG                           BrandIndustrySubindustry = "Food & Beverage CPG"
+	FoodBeverageGroceryECommerce              BrandIndustrySubindustry = "Food, Beverage & Grocery E-commerce"
+	FoodBeverageManufacturingProcessing       BrandIndustrySubindustry = "Food & Beverage Manufacturing & Processing"
+	FoodDistribution                          BrandIndustrySubindustry = "Food Distribution"
+	FootwearLeatherGoods                      BrandIndustrySubindustry = "Footwear & Leather Goods"
+	FreightTransportationTech                 BrandIndustrySubindustry = "Freight & Transportation Tech"
+	GamingInteractiveEntertainment            BrandIndustrySubindustry = "Gaming & Interactive Entertainment"
+	GovernanceRiskComplianceGRC               BrandIndustrySubindustry = "Governance, Risk & Compliance (GRC)"
+	GovernmentTechnologyDigitalServices       BrandIndustrySubindustry = "Government Technology & Digital Services"
+	HardwareSemiconductors                    BrandIndustrySubindustry = "Hardware & Semiconductors"
+	HealthInsuranceBenefitsTech               BrandIndustrySubindustry = "Health Insurance & Benefits Tech"
+	HealthWellnessCPG                         BrandIndustrySubindustry = "Health & Wellness CPG"
+	HealthcareITEHRSystems                    BrandIndustrySubindustry = "Healthcare IT & EHR Systems"
+	HealthcareProvidersServices               BrandIndustrySubindustry = "Healthcare Providers & Services"
+	HigherEducationUniversityTech             BrandIndustrySubindustry = "Higher Education & University Tech"
+	HobbiesCraftsDIY                          BrandIndustrySubindustry = "Hobbies, Crafts & DIY"
+	HomeLiving                                BrandIndustrySubindustry = "Home & Living"
+	HomePersonalCareCPG                       BrandIndustrySubindustry = "Home & Personal Care CPG"
+	HospitalityManagementSystems              BrandIndustrySubindustry = "Hospitality Management Systems"
+	HotelsAccommodation                       BrandIndustrySubindustry = "Hotels & Accommodation"
+	IPTrademarkManagement                     BrandIndustrySubindustry = "IP & Trademark Management"
+	ITServicesManagedServices                 BrandIndustrySubindustry = "IT Services & Managed Services"
+	IndependentCreatorLedMedia                BrandIndustrySubindustry = "Independent & Creator-Led Media"
+	IndustrialGases                           BrandIndustrySubindustry = "Industrial Gases"
+	IndustrialIoTMonitoringSystems            BrandIndustrySubindustry = "Industrial IoT & Monitoring Systems"
+	InsuranceInsurTech                        BrandIndustrySubindustry = "Insurance & InsurTech"
+	InternationalDevelopmentHumanitarianAid   BrandIndustrySubindustry = "International Development & Humanitarian Aid"
+	InternetServiceProvidersISPs              BrandIndustrySubindustry = "Internet Service Providers (ISPs)"
+	InvestmentManagementWealthTech            BrandIndustrySubindustry = "Investment Management & WealthTech"
+	IoTConnectivityPlatforms                  BrandIndustrySubindustry = "IoT Connectivity Platforms"
+	K12EducationPlatformsTools                BrandIndustrySubindustry = "K-12 Education Platforms & Tools"
+	LanguageLearning                          BrandIndustrySubindustry = "Language Learning"
+	LastMileDelivery                          BrandIndustrySubindustry = "Last-Mile Delivery"
+	LawFirmsLegalServices                     BrandIndustrySubindustry = "Law Firms & Legal Services"
+	LegalAidSocialJusticeAdvocacy             BrandIndustrySubindustry = "Legal Aid & Social Justice Advocacy"
+	LegalResearchIntelligence                 BrandIndustrySubindustry = "Legal Research & Intelligence"
+	LegalTechAutomation                       BrandIndustrySubindustry = "Legal Tech & Automation"
+	LogisticsMarketplaces                     BrandIndustrySubindustry = "Logistics Marketplaces"
+	ManagementConsulting                      BrandIndustrySubindustry = "Management Consulting"
+	ManufacturingIndustrialAutomation         BrandIndustrySubindustry = "Manufacturing & Industrial Automation"
+	MaritimeShipping                          BrandIndustrySubindustry = "Maritime Shipping"
+	MarketingAdvertisingAgencies              BrandIndustrySubindustry = "Marketing & Advertising Agencies"
+	MediaMonitoringAnalytics                  BrandIndustrySubindustry = "Media Monitoring & Analytics"
+	MedicalDevicesDiagnostics                 BrandIndustrySubindustry = "Medical Devices & Diagnostics"
+	MentalHealthWellness                      BrandIndustrySubindustry = "Mental Health & Wellness"
+	MiningNaturalResources                    BrandIndustrySubindustry = "Mining & Natural Resources"
+	MobileWirelessNetworks3G4G5G              BrandIndustrySubindustry = "Mobile & Wireless Networks (3G/4G/5G)"
+	MobilityAsAServiceMaaS                    BrandIndustrySubindustry = "Mobility-as-a-Service (MaaS)"
+	ModularPrefabConstruction                 BrandIndustrySubindustry = "Modular & Prefab Construction"
+	MortgageLendingTech                       BrandIndustrySubindustry = "Mortgage & Lending Tech"
+	MunicipalInfrastructureServices           BrandIndustrySubindustry = "Municipal & Infrastructure Services"
+	NetworkEquipmentInfrastructure            BrandIndustrySubindustry = "Network Equipment & Infrastructure"
+	NewsAggregatorsCurationTools              BrandIndustrySubindustry = "News Aggregators & Curation Tools"
+	NewsPublishingJournalism                  BrandIndustrySubindustry = "News Publishing & Journalism"
+	NewslettersSubstackStylePlatforms         BrandIndustrySubindustry = "Newsletters & Substack-Style Platforms"
+	NonprofitOperationsFundraisingTools       BrandIndustrySubindustry = "Nonprofit Operations & Fundraising Tools"
+	OmnichannelInStoreRetail                  BrandIndustrySubindustry = "Omnichannel & In-Store Retail"
+	OnlineLearningMOOCs                       BrandIndustrySubindustry = "Online Learning & MOOCs"
+	OnlineMarketplaces                        BrandIndustrySubindustry = "Online Marketplaces"
+	OutdoorRecreationalGear                   BrandIndustrySubindustry = "Outdoor & Recreational Gear"
+	PaymentsMoneyMovement                     BrandIndustrySubindustry = "Payments & Money Movement"
+	PharmaceuticalsDrugDevelopment            BrandIndustrySubindustry = "Pharmaceuticals & Drug Development"
+	PhilanthropyGrantmaking                   BrandIndustrySubindustry = "Philanthropy & Grantmaking"
+	PodcastingAudioMedia                      BrandIndustrySubindustry = "Podcasting & Audio Media"
+	PoliticalInvestigativeMedia               BrandIndustrySubindustry = "Political & Investigative Media"
+	PolymersPlasticsRubber                    BrandIndustrySubindustry = "Polymers, Plastics & Rubber"
+	PrecisionAgricultureAgTech                BrandIndustrySubindustry = "Precision Agriculture & AgTech"
+	PrivateLabelManufacturing                 BrandIndustrySubindustry = "Private Label Manufacturing"
+	ProfessionalTeamsLeagues                  BrandIndustrySubindustry = "Professional Teams & Leagues"
+	ProfessionalTrainingCoaching              BrandIndustrySubindustry = "Professional Training & Coaching"
+	ProjectEstimationBidding                  BrandIndustrySubindustry = "Project Estimation & Bidding"
+	PropertyManagementSoftware                BrandIndustrySubindustry = "Property Management Software"
+	PublicHealthSocialServices                BrandIndustrySubindustry = "Public Health & Social Services"
+	PublicRelationsCommunications             BrandIndustrySubindustry = "Public Relations & Communications"
+	PublicTransitUrbanMobility                BrandIndustrySubindustry = "Public Transit & Urban Mobility"
+	RealEstateInvestmentPlatforms             BrandIndustrySubindustry = "Real Estate Investment Platforms"
+	RealEstateMarketplaces                    BrandIndustrySubindustry = "Real Estate Marketplaces"
+	RegulatoryCompliance                      BrandIndustrySubindustry = "Regulatory Compliance"
+	RenewableEnergyCleantech                  BrandIndustrySubindustry = "Renewable Energy & Cleantech"
+	RentalPlatforms                           BrandIndustrySubindustry = "Rental Platforms"
+	ResaleVintageCircularFashion              BrandIndustrySubindustry = "Resale, Vintage & Circular Fashion"
+	RestaurantTechManagement                  BrandIndustrySubindustry = "Restaurant Tech & Management"
+	RestaurantsFoodService                    BrandIndustrySubindustry = "Restaurants & Food Service"
+	RetailTechPointOfSaleSystems              BrandIndustrySubindustry = "Retail Tech & Point-of-Sale Systems"
+	ReverseLogisticsReturns                   BrandIndustrySubindustry = "Reverse Logistics & Returns"
+	SatelliteSpaceBasedCommunications         BrandIndustrySubindustry = "Satellite & Space-Based Communications"
+	SeafoodAquaculture                        BrandIndustrySubindustry = "Seafood & Aquaculture"
+	ShippingFreightForwarding                 BrandIndustrySubindustry = "Shipping & Freight Forwarding"
+	SmartBuildingTechnology                   BrandIndustrySubindustry = "Smart Building Technology"
+	SocialCommerceInfluencerPlatforms         BrandIndustrySubindustry = "Social Commerce & Influencer Platforms"
+	SoftwareB2B                               BrandIndustrySubindustry = "Software (B2B)"
+	SoftwareB2C                               BrandIndustrySubindustry = "Software (B2C)"
+	SpaceSatelliteTechnology                  BrandIndustrySubindustry = "Space & Satellite Technology"
+	SpecialEducationAccessibilityTools        BrandIndustrySubindustry = "Special Education & Accessibility Tools"
+	SpecialtyChemicals                        BrandIndustrySubindustry = "Specialty Chemicals"
+	SportsBettingFantasySports                BrandIndustrySubindustry = "Sports Betting & Fantasy Sports"
+	SportsMediaBroadcasting                   BrandIndustrySubindustry = "Sports Media & Broadcasting"
+	SportsTechPerformanceAnalytics            BrandIndustrySubindustry = "Sports Tech & Performance Analytics"
+	SportsVenuesEventManagement               BrandIndustrySubindustry = "Sports Venues & Event Management"
+	SportswearEquipment                       BrandIndustrySubindustry = "Sportswear & Equipment"
+	StaffingRecruitingTalent                  BrandIndustrySubindustry = "Staffing, Recruiting & Talent"
+	StreamingPlatformsVideoMusicAudio         BrandIndustrySubindustry = "Streaming Platforms (Video, Music, Audio)"
+	StreetwearEmergingLuxury                  BrandIndustrySubindustry = "Streetwear & Emerging Luxury"
+	SubscriptionMembershipCommerce            BrandIndustrySubindustry = "Subscription & Membership Commerce"
+	SubseaNavalDefenseSystems                 BrandIndustrySubindustry = "Subsea & Naval Defense Systems"
+	SupplyChainVisibilityPlatforms            BrandIndustrySubindustry = "Supply Chain Visibility Platforms"
+	SustainableCPGPackaging                   BrandIndustrySubindustry = "Sustainable CPG & Packaging"
+	SustainableEthicalFashion                 BrandIndustrySubindustry = "Sustainable & Ethical Fashion"
+	SustainableRegenerativeAgriculture        BrandIndustrySubindustry = "Sustainable & Regenerative Agriculture"
+	TelecomBillingOSSBSSSystems               BrandIndustrySubindustry = "Telecom Billing & OSS/BSS Systems"
+	TelematicsVehicleConnectivity             BrandIndustrySubindustry = "Telematics & Vehicle Connectivity"
+	TestPrepCertification                     BrandIndustrySubindustry = "Test Prep & Certification"
+	TourismExperiencesActivities              BrandIndustrySubindustry = "Tourism Experiences & Activities"
+	TradeNichePublications                    BrandIndustrySubindustry = "Trade & Niche Publications"
+	TransportationManagementSystemsTMS        BrandIndustrySubindustry = "Transportation Management Systems (TMS)"
+	TravelBookingPlatforms                    BrandIndustrySubindustry = "Travel Booking Platforms"
+	TravelInsuranceProtection                 BrandIndustrySubindustry = "Travel Insurance & Protection"
+	TutoringSupplementalLearning              BrandIndustrySubindustry = "Tutoring & Supplemental Learning"
+	UtilitiesGridInfrastructure               BrandIndustrySubindustry = "Utilities & Grid Infrastructure"
+	VacationRentalsShortTermStays             BrandIndustrySubindustry = "Vacation Rentals & Short-Term Stays"
+	VirtualWorldsMetaverseExperiences         BrandIndustrySubindustry = "Virtual Worlds & Metaverse Experiences"
+	VoIPUnifiedCommunications                 BrandIndustrySubindustry = "VoIP & Unified Communications"
+	WarehouseAutomation                       BrandIndustrySubindustry = "Warehouse Automation"
+	Web3Blockchain                            BrandIndustrySubindustry = "Web3 & Blockchain"
+	WhistleblowerEthicsReporting              BrandIndustrySubindustry = "Whistleblower & Ethics Reporting"
+	XRSpatialComputing                        BrandIndustrySubindustry = "XR & Spatial Computing"
+	YouthAmateurCollegiateSports              BrandIndustrySubindustry = "Youth, Amateur & Collegiate Sports"
+)
+
+// Defines values for BrandLogoType.
+const (
+	BrandLogoTypeIcon BrandLogoType = "icon"
+	BrandLogoTypeLogo BrandLogoType = "logo"
+)
+
+// Defines values for BrandSocialType.
+const (
+	Appstore    BrandSocialType = "appstore"
+	Behance     BrandSocialType = "behance"
+	Crunchbase  BrandSocialType = "crunchbase"
+	Discord     BrandSocialType = "discord"
+	Dribbble    BrandSocialType = "dribbble"
+	Facebook    BrandSocialType = "facebook"
+	Flickr      BrandSocialType = "flickr"
+	Giphy       BrandSocialType = "giphy"
+	Github      BrandSocialType = "github"
+	Imdb        BrandSocialType = "imdb"
+	Instagram   BrandSocialType = "instagram"
+	Line        BrandSocialType = "line"
+	Linkedin    BrandSocialType = "linkedin"
+	Medium      BrandSocialType = "medium"
+	Pinterest   BrandSocialType = "pinterest"
+	Playstore   BrandSocialType = "playstore"
+	Producthunt BrandSocialType = "producthunt"
+	Reddit      BrandSocialType = "reddit"
+	Snapchat    BrandSocialType = "snapchat"
+	Soundcloud  BrandSocialType = "soundcloud"
+	Spotify     BrandSocialType = "spotify"
+	Telegram    BrandSocialType = "telegram"
+	Tiktok      BrandSocialType = "tiktok"
+	Tripadvisor BrandSocialType = "tripadvisor"
+	Tumblr      BrandSocialType = "tumblr"
+	Twitch      BrandSocialType = "twitch"
+	Vimeo       BrandSocialType = "vimeo"
+	Whatsapp    BrandSocialType = "whatsapp"
+	X           BrandSocialType = "x"
+	Yelp        BrandSocialType = "yelp"
+	Youtube     BrandSocialType = "youtube"
+)
+
+// Defines values for BrandTimeoutBehavior.
+const (
+	BrandTimeoutBehaviorFail          BrandTimeoutBehavior = "fail"
+	BrandTimeoutBehaviorReturnPartial BrandTimeoutBehavior = "return-partial"
+)
+
 // Defines values for CaptchaStatusState.
 const (
 	CaptchaStatusStateCancelled CaptchaStatusState = "cancelled"
@@ -81,6 +469,12 @@ const (
 	ConnectLinkStatusResponseStatusSubmitted ConnectLinkStatusResponseStatus = "submitted"
 )
 
+// Defines values for DataScrapeRequestZdr.
+const (
+	DataScrapeRequestZdrDisabled DataScrapeRequestZdr = "disabled"
+	DataScrapeRequestZdrEnabled  DataScrapeRequestZdr = "enabled"
+)
+
 // Defines values for DeleteCredentialsResponseStatus.
 const (
 	DeleteCredentialsResponseStatusFailure DeleteCredentialsResponseStatus = "failure"
@@ -115,6 +509,12 @@ const (
 const (
 	SessionDownload FileSource = "session_download"
 	UserUpload      FileSource = "user_upload"
+)
+
+// Defines values for FontLinkType.
+const (
+	Custom FontLinkType = "custom"
+	Google FontLinkType = "google"
 )
 
 // Defines values for FunctionListItemResponseDefaultRuntime.
@@ -198,6 +598,13 @@ const (
 	SvgIcon      ImageCategory = "svg_icon"
 )
 
+// Defines values for IntervalUnit.
+const (
+	Days    IntervalUnit = "days"
+	Hours   IntervalUnit = "hours"
+	Minutes IntervalUnit = "minutes"
+)
+
 // Defines values for LlmModel.
 const (
 	AnthropicclaudeSonnet4520250929       LlmModel = "anthropic/claude-sonnet-4-5-20250929"
@@ -244,6 +651,82 @@ const (
 	ManagedAuthReadinessStatusFailed         ManagedAuthReadinessStatus = "failed"
 )
 
+// Defines values for NewsArticleType.
+const (
+	NewsArticleTypeAdvisory         NewsArticleType = "advisory"
+	NewsArticleTypeEditorial        NewsArticleType = "editorial"
+	NewsArticleTypePressRelease     NewsArticleType = "press_release"
+	NewsArticleTypeRegulatoryFiling NewsArticleType = "regulatory_filing"
+)
+
+// Defines values for NewsFilterArticleLanguage.
+const (
+	NewsFilterArticleLanguageAr NewsFilterArticleLanguage = "ar"
+	NewsFilterArticleLanguageDe NewsFilterArticleLanguage = "de"
+	NewsFilterArticleLanguageEn NewsFilterArticleLanguage = "en"
+	NewsFilterArticleLanguageEs NewsFilterArticleLanguage = "es"
+	NewsFilterArticleLanguageFr NewsFilterArticleLanguage = "fr"
+	NewsFilterArticleLanguageHi NewsFilterArticleLanguage = "hi"
+	NewsFilterArticleLanguageIt NewsFilterArticleLanguage = "it"
+	NewsFilterArticleLanguageJa NewsFilterArticleLanguage = "ja"
+	NewsFilterArticleLanguageKo NewsFilterArticleLanguage = "ko"
+	NewsFilterArticleLanguageNl NewsFilterArticleLanguage = "nl"
+	NewsFilterArticleLanguagePt NewsFilterArticleLanguage = "pt"
+	NewsFilterArticleLanguageRu NewsFilterArticleLanguage = "ru"
+	NewsFilterArticleLanguageZh NewsFilterArticleLanguage = "zh"
+)
+
+// Defines values for NewsFilterArticleType.
+const (
+	NewsFilterArticleTypeAdvisory         NewsFilterArticleType = "advisory"
+	NewsFilterArticleTypeEditorial        NewsFilterArticleType = "editorial"
+	NewsFilterArticleTypePressRelease     NewsFilterArticleType = "press_release"
+	NewsFilterArticleTypeRegulatoryFiling NewsFilterArticleType = "regulatory_filing"
+)
+
+// Defines values for NewsFilterSourceCountry.
+const (
+	NewsFilterSourceCountryAe NewsFilterSourceCountry = "ae"
+	NewsFilterSourceCountryAr NewsFilterSourceCountry = "ar"
+	NewsFilterSourceCountryAu NewsFilterSourceCountry = "au"
+	NewsFilterSourceCountryCa NewsFilterSourceCountry = "ca"
+	NewsFilterSourceCountryCg NewsFilterSourceCountry = "cg"
+	NewsFilterSourceCountryCh NewsFilterSourceCountry = "ch"
+	NewsFilterSourceCountryCl NewsFilterSourceCountry = "cl"
+	NewsFilterSourceCountryCz NewsFilterSourceCountry = "cz"
+	NewsFilterSourceCountryDe NewsFilterSourceCountry = "de"
+	NewsFilterSourceCountryFi NewsFilterSourceCountry = "fi"
+	NewsFilterSourceCountryFr NewsFilterSourceCountry = "fr"
+	NewsFilterSourceCountryGb NewsFilterSourceCountry = "gb"
+	NewsFilterSourceCountryHk NewsFilterSourceCountry = "hk"
+	NewsFilterSourceCountryIl NewsFilterSourceCountry = "il"
+	NewsFilterSourceCountryIn NewsFilterSourceCountry = "in"
+	NewsFilterSourceCountryJp NewsFilterSourceCountry = "jp"
+	NewsFilterSourceCountryKr NewsFilterSourceCountry = "kr"
+	NewsFilterSourceCountryMx NewsFilterSourceCountry = "mx"
+	NewsFilterSourceCountryNg NewsFilterSourceCountry = "ng"
+	NewsFilterSourceCountryNl NewsFilterSourceCountry = "nl"
+	NewsFilterSourceCountryPk NewsFilterSourceCountry = "pk"
+	NewsFilterSourceCountryQa NewsFilterSourceCountry = "qa"
+	NewsFilterSourceCountrySa NewsFilterSourceCountry = "sa"
+	NewsFilterSourceCountrySe NewsFilterSourceCountry = "se"
+	NewsFilterSourceCountrySg NewsFilterSourceCountry = "sg"
+	NewsFilterSourceCountryUs NewsFilterSourceCountry = "us"
+	NewsFilterSourceCountryZa NewsFilterSourceCountry = "za"
+)
+
+// Defines values for NewsMatchLevel.
+const (
+	Primary   NewsMatchLevel = "primary"
+	Secondary NewsMatchLevel = "secondary"
+)
+
+// Defines values for NewsSortType.
+const (
+	Newest    NewsSortType = "newest"
+	Relevance NewsSortType = "relevance"
+)
+
 // Defines values for PaymentConnectRequestMode.
 const (
 	PaymentConnectRequestModeLive PaymentConnectRequestMode = "live"
@@ -280,6 +763,19 @@ const (
 const (
 	Live PaymentRequestMode = "live"
 	Test PaymentRequestMode = "test"
+)
+
+// Defines values for PeopleTimeoutBehavior.
+const (
+	PeopleTimeoutBehaviorFail          PeopleTimeoutBehavior = "fail"
+	PeopleTimeoutBehaviorReturnPartial PeopleTimeoutBehavior = "return-partial"
+)
+
+// Defines values for PersonCurrentRoleStatus.
+const (
+	None    PersonCurrentRoleStatus = "none"
+	Present PersonCurrentRoleStatus = "present"
+	Unknown PersonCurrentRoleStatus = "unknown"
 )
 
 // Defines values for PersonaEmailProvider.
@@ -522,6 +1018,20 @@ const (
 	ReplayMissingResponseReplayStatusWaitingForSession ReplayMissingResponseReplayStatus = "waiting_for_session"
 )
 
+// Defines values for ScrollActionAmount1.
+const (
+	Max      ScrollActionAmount1 = "max"
+	Viewport ScrollActionAmount1 = "viewport"
+)
+
+// Defines values for ScrollActionDirection.
+const (
+	Down  ScrollActionDirection = "down"
+	Left  ScrollActionDirection = "left"
+	Right ScrollActionDirection = "right"
+	Up    ScrollActionDirection = "up"
+)
+
 // Defines values for SecretNamespace.
 const (
 	FunctionEnv SecretNamespace = "function_env"
@@ -547,6 +1057,12 @@ const (
 	SessionResponseStatusTimedOut       SessionResponseStatus = "timed_out"
 )
 
+// Defines values for SharedParamsTheme.
+const (
+	SharedParamsThemeDark  SharedParamsTheme = "dark"
+	SharedParamsThemeLight SharedParamsTheme = "light"
+)
+
 // Defines values for SpaceCategory.
 const (
 	Auth          SpaceCategory = "auth"
@@ -560,6 +1076,24 @@ const (
 	Overlay       SpaceCategory = "overlay"
 	Payment       SpaceCategory = "payment"
 	SearchResults SpaceCategory = "search-results"
+)
+
+// Defines values for StyleguideMode.
+const (
+	StyleguideModeDark  StyleguideMode = "dark"
+	StyleguideModeLight StyleguideMode = "light"
+)
+
+// Defines values for StyleguideResponseFinalDOMState.
+const (
+	Loaded       StyleguideResponseFinalDOMState = "loaded"
+	StillLoading StyleguideResponseFinalDOMState = "still-loading"
+)
+
+// Defines values for StyleguideTimeoutBehavior.
+const (
+	Fail          StyleguideTimeoutBehavior = "fail"
+	ReturnPartial StyleguideTimeoutBehavior = "return-partial"
 )
 
 // Defines values for SubscriptionType.
@@ -578,6 +1112,26 @@ const (
 const (
 	Stopped UpdateFunctionRunResponseStatus = "stopped"
 	Updated UpdateFunctionRunResponseStatus = "updated"
+)
+
+// Defines values for WebhookEvents.
+const (
+	ChangeDetected WebhookEvents = "change.detected"
+	RunCompleted   WebhookEvents = "run.completed"
+)
+
+// Defines values for YouTubeMetadataKind.
+const (
+	Channel YouTubeMetadataKind = "channel"
+	Video   YouTubeMetadataKind = "video"
+)
+
+// Defines values for YouTubeResultCaptionsStatus.
+const (
+	YouTubeResultCaptionsStatusAvailable     YouTubeResultCaptionsStatus = "available"
+	YouTubeResultCaptionsStatusDisabled      YouTubeResultCaptionsStatus = "disabled"
+	YouTubeResultCaptionsStatusNotApplicable YouTubeResultCaptionsStatus = "not_applicable"
+	YouTubeResultCaptionsStatusUnavailable   YouTubeResultCaptionsStatus = "unavailable"
 )
 
 // Defines values for FunctionRunGetMetadataParamsPayloadMode.
@@ -965,6 +1519,293 @@ type BoundingBox struct {
 	Y              float32  `json:"y"`
 }
 
+// BrandAddress defines model for BrandAddress.
+type BrandAddress struct {
+	City          *string `json:"city,omitempty"`
+	Country       *string `json:"country,omitempty"`
+	CountryCode   *string `json:"country_code,omitempty"`
+	PostalCode    *string `json:"postal_code,omitempty"`
+	StateCode     *string `json:"state_code,omitempty"`
+	StateProvince *string `json:"state_province,omitempty"`
+	Street        *string `json:"street,omitempty"`
+}
+
+// BrandByDirectUrl defines model for BrandByDirectUrl.
+type BrandByDirectUrl struct {
+	DirectUrl   string        `json:"direct_url"`
+	Tags        *[]string     `json:"tags,omitempty"`
+	TimeoutOpts *BrandTimeout `json:"timeoutOpts,omitempty"`
+	Type        string        `json:"type"`
+}
+
+// BrandByDomain defines model for BrandByDomain.
+type BrandByDomain struct {
+	Domain        string        `json:"domain"`
+	ForceLanguage *string       `json:"force_language,omitempty"`
+	MaxAgeMs      *int          `json:"maxAgeMs,omitempty"`
+	MaxSpeed      *bool         `json:"maxSpeed,omitempty"`
+	Tags          *[]string     `json:"tags,omitempty"`
+	TimeoutOpts   *BrandTimeout `json:"timeoutOpts,omitempty"`
+	Type          string        `json:"type"`
+}
+
+// BrandByEmail defines model for BrandByEmail.
+type BrandByEmail struct {
+	Email         string        `json:"email"`
+	ForceLanguage *string       `json:"force_language,omitempty"`
+	MaxAgeMs      *int          `json:"maxAgeMs,omitempty"`
+	MaxSpeed      *bool         `json:"maxSpeed,omitempty"`
+	Tags          *[]string     `json:"tags,omitempty"`
+	TimeoutOpts   *BrandTimeout `json:"timeoutOpts,omitempty"`
+	Type          string        `json:"type"`
+}
+
+// BrandByName defines model for BrandByName.
+type BrandByName struct {
+	CountryGl     *string       `json:"country_gl,omitempty"`
+	ForceLanguage *string       `json:"force_language,omitempty"`
+	MaxAgeMs      *int          `json:"maxAgeMs,omitempty"`
+	MaxSpeed      *bool         `json:"maxSpeed,omitempty"`
+	Name          string        `json:"name"`
+	Tags          *[]string     `json:"tags,omitempty"`
+	TimeoutOpts   *BrandTimeout `json:"timeoutOpts,omitempty"`
+	Type          string        `json:"type"`
+}
+
+// BrandByTicker defines model for BrandByTicker.
+type BrandByTicker struct {
+	ForceLanguage  *string                      `json:"force_language,omitempty"`
+	MaxAgeMs       *int                         `json:"maxAgeMs,omitempty"`
+	MaxSpeed       *bool                        `json:"maxSpeed,omitempty"`
+	Tags           *[]string                    `json:"tags,omitempty"`
+	Ticker         string                       `json:"ticker"`
+	TickerExchange *BrandByTickerTickerExchange `json:"ticker_exchange,omitempty"`
+	TimeoutOpts    *BrandTimeout                `json:"timeoutOpts,omitempty"`
+	Type           string                       `json:"type"`
+}
+
+// BrandByTickerTickerExchange defines model for BrandByTicker.TickerExchange.
+type BrandByTickerTickerExchange string
+
+// BrandByTransaction defines model for BrandByTransaction.
+type BrandByTransaction struct {
+	City               *string                   `json:"city,omitempty"`
+	CountryGl          *string                   `json:"country_gl,omitempty"`
+	ForceLanguage      *string                   `json:"force_language,omitempty"`
+	HighConfidenceOnly *bool                     `json:"high_confidence_only,omitempty"`
+	MaxSpeed           *bool                     `json:"maxSpeed,omitempty"`
+	Mcc                *BrandByTransaction_Mcc   `json:"mcc,omitempty"`
+	Phone              *BrandByTransaction_Phone `json:"phone,omitempty"`
+	Tags               *[]string                 `json:"tags,omitempty"`
+	TimeoutOpts        *BrandTimeout             `json:"timeoutOpts,omitempty"`
+	TransactionInfo    string                    `json:"transaction_info"`
+	Type               string                    `json:"type"`
+}
+
+// BrandByTransactionMcc0 defines model for .
+type BrandByTransactionMcc0 = string
+
+// BrandByTransactionMcc1 defines model for .
+type BrandByTransactionMcc1 = int
+
+// BrandByTransactionMcc2 defines model for .
+type BrandByTransactionMcc2 = float32
+
+// BrandByTransaction_Mcc defines model for BrandByTransaction.Mcc.
+type BrandByTransaction_Mcc struct {
+	union json.RawMessage
+}
+
+// BrandByTransactionPhone0 defines model for .
+type BrandByTransactionPhone0 = string
+
+// BrandByTransactionPhone1 defines model for .
+type BrandByTransactionPhone1 = int
+
+// BrandByTransactionPhone2 defines model for .
+type BrandByTransactionPhone2 = float32
+
+// BrandByTransaction_Phone defines model for BrandByTransaction.Phone.
+type BrandByTransaction_Phone struct {
+	union json.RawMessage
+}
+
+// BrandCacheMetadata defines model for BrandCacheMetadata.
+type BrandCacheMetadata struct {
+	AgeMs  int                      `json:"age_ms"`
+	Status BrandCacheMetadataStatus `json:"status"`
+}
+
+// BrandCacheMetadataStatus defines model for BrandCacheMetadata.Status.
+type BrandCacheMetadataStatus string
+
+// BrandColor defines model for BrandColor.
+type BrandColor struct {
+	Hex    string           `json:"hex"`
+	Name   *string          `json:"name,omitempty"`
+	Source BrandColorSource `json:"source"`
+}
+
+// BrandColorSource defines model for BrandColor.Source.
+type BrandColorSource string
+
+// BrandEmployees defines model for BrandEmployees.
+type BrandEmployees struct {
+	Exact *int    `json:"exact,omitempty"`
+	Range *string `json:"range,omitempty"`
+}
+
+// BrandImage defines model for BrandImage.
+type BrandImage struct {
+	Colors     *[]Color         `json:"colors,omitempty"`
+	Resolution *ImageResolution `json:"resolution,omitempty"`
+	Url        string           `json:"url"`
+}
+
+// BrandIndustries defines model for BrandIndustries.
+type BrandIndustries struct {
+	Eic *[]BrandIndustry `json:"eic,omitempty"`
+}
+
+// BrandIndustry defines model for BrandIndustry.
+type BrandIndustry struct {
+	Industry    BrandIndustryIndustry    `json:"industry"`
+	Subindustry BrandIndustrySubindustry `json:"subindustry"`
+}
+
+// BrandIndustryIndustry defines model for BrandIndustry.Industry.
+type BrandIndustryIndustry string
+
+// BrandIndustrySubindustry defines model for BrandIndustry.Subindustry.
+type BrandIndustrySubindustry string
+
+// BrandKeyMetadata defines model for BrandKeyMetadata.
+type BrandKeyMetadata struct {
+	CreditsConsumed  int `json:"credits_consumed"`
+	CreditsRemaining int `json:"credits_remaining"`
+}
+
+// BrandLinks defines model for BrandLinks.
+type BrandLinks struct {
+	Blog    *string `json:"blog,omitempty"`
+	Careers *string `json:"careers,omitempty"`
+	Contact *string `json:"contact,omitempty"`
+	Pricing *string `json:"pricing,omitempty"`
+	Privacy *string `json:"privacy,omitempty"`
+	Terms   *string `json:"terms,omitempty"`
+}
+
+// BrandLogo defines model for BrandLogo.
+type BrandLogo struct {
+	Colors     *[]Color         `json:"colors,omitempty"`
+	Mode       *string          `json:"mode,omitempty"`
+	Resolution *ImageResolution `json:"resolution,omitempty"`
+	Type       BrandLogoType    `json:"type"`
+	Url        string           `json:"url"`
+}
+
+// BrandLogoType defines model for BrandLogo.Type.
+type BrandLogoType string
+
+// BrandProfile defines model for BrandProfile.
+type BrandProfile struct {
+	Address         *BrandAddress    `json:"address,omitempty"`
+	Backdrops       *[]BrandImage    `json:"backdrops,omitempty"`
+	Colors          *[]BrandColor    `json:"colors,omitempty"`
+	Description     *string          `json:"description,omitempty"`
+	Domain          *string          `json:"domain,omitempty"`
+	Email           *string          `json:"email,omitempty"`
+	Employees       *BrandEmployees  `json:"employees,omitempty"`
+	Industries      *BrandIndustries `json:"industries,omitempty"`
+	IsNsfw          *bool            `json:"is_nsfw,omitempty"`
+	Links           *BrandLinks      `json:"links,omitempty"`
+	Logos           *[]BrandLogo     `json:"logos,omitempty"`
+	Phone           *string          `json:"phone,omitempty"`
+	PrimaryLanguage *string          `json:"primary_language,omitempty"`
+	Slogan          *string          `json:"slogan,omitempty"`
+	Socials         *[]BrandSocial   `json:"socials,omitempty"`
+	Stock           *BrandStock      `json:"stock,omitempty"`
+	Title           *string          `json:"title,omitempty"`
+}
+
+// BrandResponse defines model for BrandResponse.
+type BrandResponse struct {
+	Brand         BrandProfile        `json:"brand"`
+	CacheMetadata *BrandCacheMetadata `json:"cache_metadata,omitempty"`
+	Code          *int                `json:"code,omitempty"`
+	KeyMetadata   *BrandKeyMetadata   `json:"key_metadata,omitempty"`
+	Partial       *bool               `json:"partial,omitempty"`
+	RequestId     *string             `json:"request_id,omitempty"`
+	Status        *string             `json:"status,omitempty"`
+}
+
+// BrandSocial defines model for BrandSocial.
+type BrandSocial struct {
+	Type BrandSocialType `json:"type"`
+	Url  string          `json:"url"`
+}
+
+// BrandSocialType defines model for BrandSocial.Type.
+type BrandSocialType string
+
+// BrandStock defines model for BrandStock.
+type BrandStock struct {
+	Exchange *string `json:"exchange,omitempty"`
+	Ticker   *string `json:"ticker,omitempty"`
+}
+
+// BrandTimeout defines model for BrandTimeout.
+type BrandTimeout struct {
+	Behavior     *BrandTimeoutBehavior `json:"behavior,omitempty"`
+	Milliseconds int                   `json:"milliseconds"`
+}
+
+// BrandTimeoutBehavior defines model for BrandTimeout.Behavior.
+type BrandTimeoutBehavior string
+
+// ButtonStyle defines model for ButtonStyle.
+type ButtonStyle struct {
+	BackgroundColor     string    `json:"backgroundColor"`
+	BorderColor         string    `json:"borderColor"`
+	BorderRadius        string    `json:"borderRadius"`
+	BorderStyle         string    `json:"borderStyle"`
+	BorderWidth         string    `json:"borderWidth"`
+	BoxShadow           string    `json:"boxShadow"`
+	Color               string    `json:"color"`
+	Css                 string    `json:"css"`
+	FontFallbacks       *[]string `json:"fontFallbacks,omitempty"`
+	FontFamily          *string   `json:"fontFamily,omitempty"`
+	FontSize            string    `json:"fontSize"`
+	FontWeight          float32   `json:"fontWeight"`
+	MinHeight           string    `json:"minHeight"`
+	MinWidth            string    `json:"minWidth"`
+	Padding             string    `json:"padding"`
+	TextDecoration      string    `json:"textDecoration"`
+	TextDecorationColor *string   `json:"textDecorationColor,omitempty"`
+}
+
+// ButtonStyles defines model for ButtonStyles.
+type ButtonStyles struct {
+	Link      *ButtonStyle `json:"link,omitempty"`
+	Primary   *ButtonStyle `json:"primary,omitempty"`
+	Secondary *ButtonStyle `json:"secondary,omitempty"`
+}
+
+// CandidateMatch defines model for CandidateMatch.
+type CandidateMatch struct {
+	Person Person `json:"person"`
+	Score  int    `json:"score"`
+	Status string `json:"status"`
+}
+
+// CapabilityEndpoint defines model for CapabilityEndpoint.
+type CapabilityEndpoint struct {
+	Id     string `json:"id"`
+	Method string `json:"method"`
+	Name   string `json:"name"`
+	Path   string `json:"path"`
+}
+
 // CaptchaSolveAction defines model for CaptchaSolveAction.
 type CaptchaSolveAction struct {
 	CaptchaType *string `json:"captcha_type,omitempty"`
@@ -986,6 +1827,19 @@ type CaptchaStatus struct {
 
 // CaptchaStatusState defines model for CaptchaStatus.State.
 type CaptchaStatusState string
+
+// CardStyle defines model for CardStyle.
+type CardStyle struct {
+	BackgroundColor string `json:"backgroundColor"`
+	BorderColor     string `json:"borderColor"`
+	BorderRadius    string `json:"borderRadius"`
+	BorderStyle     string `json:"borderStyle"`
+	BorderWidth     string `json:"borderWidth"`
+	BoxShadow       string `json:"boxShadow"`
+	Css             string `json:"css"`
+	Padding         string `json:"padding"`
+	TextColor       string `json:"textColor"`
+}
 
 // CheckActionInput defines model for CheckAction-Input.
 type CheckActionInput struct {
@@ -1086,6 +1940,19 @@ type CloseTabAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
+// Color defines model for Color.
+type Color struct {
+	Hex  string  `json:"hex"`
+	Name *string `json:"name,omitempty"`
+}
+
+// Colors defines model for Colors.
+type Colors struct {
+	Accent     string `json:"accent"`
+	Background string `json:"background"`
+	Text       string `json:"text"`
+}
+
 // CompletionAction defines model for CompletionAction.
 type CompletionAction struct {
 	Answer      string  `json:"answer"`
@@ -1093,6 +1960,12 @@ type CompletionAction struct {
 	Description *string `json:"description,omitempty"`
 	Success     bool    `json:"success"`
 	Type        *string `json:"type,omitempty"`
+}
+
+// Components defines model for Components.
+type Components struct {
+	Button ButtonStyles `json:"button"`
+	Card   *CardStyle   `json:"card,omitempty"`
 }
 
 // ConnectLinkContext defines model for ConnectLinkContext.
@@ -1237,6 +2110,22 @@ type Cookie struct {
 	Value          string   `json:"value"`
 }
 
+// CreateMonitor defines model for CreateMonitor.
+type CreateMonitor struct {
+	ChangeDetection interface{}          `json:"change_detection"`
+	Mode            *string              `json:"mode,omitempty"`
+	Name            string               `json:"name"`
+	Schedule        *Interval            `json:"schedule,omitempty"`
+	Tags            *[]string            `json:"tags,omitempty"`
+	Target          CreateMonitor_Target `json:"target"`
+	Webhook         *Webhook             `json:"webhook,omitempty"`
+}
+
+// CreateMonitor_Target defines model for CreateMonitor.Target.
+type CreateMonitor_Target struct {
+	union json.RawMessage
+}
+
 // Credential defines model for Credential.
 type Credential struct {
 	Email    *string `json:"email,omitempty"`
@@ -1275,6 +2164,23 @@ type CreditCardDictOutput struct {
 	CardHolderName     string `json:"card_holder_name"`
 	CardNumber         string `json:"card_number"`
 }
+
+// DataScrapeRequest defines model for DataScrapeRequest.
+type DataScrapeRequest struct {
+	Formats        ScrapeFormats         `json:"formats"`
+	MarkdownParams *MarkdownParams       `json:"markdownParams,omitempty"`
+	MaxAgeMs       *int                  `json:"maxAgeMs,omitempty"`
+	ParseParams    *MapsParseParams      `json:"parseParams,omitempty"`
+	ProductParams  *ProductParams        `json:"productParams,omitempty"`
+	SharedParams   *SharedParams         `json:"sharedParams,omitempty"`
+	Tags           *[]string             `json:"tags,omitempty"`
+	TimeoutOpts    *StyleguideTimeout    `json:"timeoutOpts,omitempty"`
+	Url            string                `json:"url"`
+	Zdr            *DataScrapeRequestZdr `json:"zdr,omitempty"`
+}
+
+// DataScrapeRequestZdr defines model for DataScrapeRequest.Zdr.
+type DataScrapeRequestZdr string
 
 // DataSpace defines model for DataSpace.
 type DataSpace struct {
@@ -1346,6 +2252,18 @@ type DeleteVaultResponse struct {
 // DeleteVaultResponseStatus Status of the deletion
 type DeleteVaultResponseStatus string
 
+// DeliveryList defines model for DeliveryList.
+type DeliveryList struct {
+	CreatedAfter *string   `json:"created_after,omitempty"`
+	Cursor       *string   `json:"cursor,omitempty"`
+	Limit        *int      `json:"limit,omitempty"`
+	MonitorId    *string   `json:"monitor_id,omitempty"`
+	RunId        *string   `json:"run_id,omitempty"`
+	Status       *string   `json:"status,omitempty"`
+	Tags         *[]string `json:"tags,omitempty"`
+	Type         string    `json:"type"`
+}
+
 // DownloadFileActionInput defines model for DownloadFileAction-Input.
 type DownloadFileActionInput struct {
 	Category    *string                           `json:"category,omitempty"`
@@ -1389,6 +2307,14 @@ type DownloadFileActionOutputSelector0 = string
 // DownloadFileActionOutput_Selector defines model for DownloadFileActionOutput.Selector.
 type DownloadFileActionOutput_Selector struct {
 	union json.RawMessage
+}
+
+// EducationClue defines model for EducationClue.
+type EducationClue struct {
+	Degree         *string           `json:"degree,omitempty"`
+	FieldOfStudy   *string           `json:"field_of_study,omitempty"`
+	GraduationYear *int              `json:"graduation_year,omitempty"`
+	Institution    *OrganizationClue `json:"institution,omitempty"`
 }
 
 // EmailReadAction defines model for EmailReadAction.
@@ -1457,6 +2383,11 @@ type EvaluateJsAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
+// ExactDetection defines model for ExactDetection.
+type ExactDetection struct {
+	Type string `json:"type"`
+}
+
 // ExecutionResponse defines model for ExecutionResponse.
 type ExecutionResponse struct {
 	// Message A message describing the operation
@@ -1473,6 +2404,17 @@ type ExternalProxy struct {
 	Server   string  `json:"server"`
 	Type     *string `json:"type,omitempty"`
 	Username *string `json:"username,omitempty"`
+}
+
+// ExtractTarget defines model for ExtractTarget.
+type ExtractTarget struct {
+	FollowSubdomains *bool                   `json:"follow_subdomains,omitempty"`
+	Instructions     string                  `json:"instructions"`
+	MaxDepth         *int                    `json:"max_depth,omitempty"`
+	MaxPages         *int                    `json:"max_pages,omitempty"`
+	Schema           *map[string]interface{} `json:"schema,omitempty"`
+	Type             string                  `json:"type"`
+	Url              string                  `json:"url"`
 }
 
 // FallbackFillActionInput defines model for FallbackFillAction-Input.
@@ -1619,6 +2561,17 @@ type FillActionOutputValue1 = string
 type FillActionOutput_Value struct {
 	union json.RawMessage
 }
+
+// FontLink defines model for FontLink.
+type FontLink struct {
+	Category    *string           `json:"category,omitempty"`
+	DisplayName *string           `json:"displayName,omitempty"`
+	Files       map[string]string `json:"files"`
+	Type        FontLinkType      `json:"type"`
+}
+
+// FontLinkType defines model for FontLink.Type.
+type FontLinkType string
 
 // FormFillAction defines model for FormFillAction.
 type FormFillAction struct {
@@ -2155,6 +3108,14 @@ type HTTPValidationError struct {
 	Detail *[]ValidationError `json:"detail,omitempty"`
 }
 
+// HeadingStyles defines model for HeadingStyles.
+type HeadingStyles struct {
+	H1 *TypographyStyle `json:"h1,omitempty"`
+	H2 *TypographyStyle `json:"h2,omitempty"`
+	H3 *TypographyStyle `json:"h3,omitempty"`
+	H4 *TypographyStyle `json:"h4,omitempty"`
+}
+
 // HealthResponse defines model for HealthResponse.
 type HealthResponse struct {
 	Description *string `json:"description,omitempty"`
@@ -2183,6 +3144,23 @@ type ImageData struct {
 	// Url URL of the image
 	Url *string `json:"url,omitempty"`
 }
+
+// ImageResolution defines model for ImageResolution.
+type ImageResolution struct {
+	AspectRatio float32 `json:"aspect_ratio"`
+	Height      int     `json:"height"`
+	Width       int     `json:"width"`
+}
+
+// Interval defines model for Interval.
+type Interval struct {
+	Frequency *int          `json:"frequency,omitempty"`
+	Type      *string       `json:"type,omitempty"`
+	Unit      *IntervalUnit `json:"unit,omitempty"`
+}
+
+// IntervalUnit defines model for Interval.Unit.
+type IntervalUnit string
 
 // LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
 type LegacyAgentStatusResponse struct {
@@ -2224,6 +3202,13 @@ type ListCredentialsResponse struct {
 
 // LlmModel defines model for LlmModel.
 type LlmModel string
+
+// LocationClue defines model for LocationClue.
+type LocationClue struct {
+	City    *string `json:"city,omitempty"`
+	Country *string `json:"country,omitempty"`
+	Region  *string `json:"region,omitempty"`
+}
 
 // MailboxConnectRequest defines model for MailboxConnectRequest.
 type MailboxConnectRequest struct {
@@ -2317,6 +3302,76 @@ type ManagedAuthReadiness struct {
 // ManagedAuthReadinessStatus defines model for ManagedAuthReadiness.Status.
 type ManagedAuthReadinessStatus string
 
+// MapsBusiness defines model for MapsBusiness.
+type MapsBusiness struct {
+	About                      *string          `json:"about,omitempty"`
+	Address                    *string          `json:"address,omitempty"`
+	Borough                    *string          `json:"borough,omitempty"`
+	Cid                        *string          `json:"cid,omitempty"`
+	City                       *string          `json:"city,omitempty"`
+	Claimed                    *bool            `json:"claimed,omitempty"`
+	Country                    *string          `json:"country,omitempty"`
+	GoogleCategory             *[]string        `json:"google_category,omitempty"`
+	GoogleDescription          *string          `json:"google_description,omitempty"`
+	GoogleHours                *[]MapsHours     `json:"google_hours,omitempty"`
+	GoogleImage                *string          `json:"google_image,omitempty"`
+	GoogleMapsUrl              string           `json:"google_maps_url"`
+	GoogleOrdersUrls           *[]MapsOrderLink `json:"google_orders_urls,omitempty"`
+	GooglePhone                *string          `json:"google_phone,omitempty"`
+	GooglePriceRangeDollarSign *string          `json:"google_price_range_dollar_sign,omitempty"`
+	GoogleReviewsUrl           *string          `json:"google_reviews_url,omitempty"`
+	Latitude                   *float32         `json:"latitude,omitempty"`
+	Longitude                  *float32         `json:"longitude,omitempty"`
+	Name                       *string          `json:"name,omitempty"`
+	NumberOfReviews            *int             `json:"number_of_reviews,omitempty"`
+	OpenStatus                 *string          `json:"open_status,omitempty"`
+	OrderOnlineUrl             *string          `json:"order_online_url,omitempty"`
+	PlaceId                    *string          `json:"place_id,omitempty"`
+	PostalCode                 *string          `json:"postal_code,omitempty"`
+	PrimaryTags                *[]string        `json:"primary_tags,omitempty"`
+	Rating                     *float32         `json:"rating,omitempty"`
+	State                      *string          `json:"state,omitempty"`
+	StreetAddr                 *string          `json:"street_addr,omitempty"`
+	StreetAddrSupplement       *string          `json:"street_addr_supplement,omitempty"`
+	Website                    *string          `json:"website,omitempty"`
+}
+
+// MapsHours defines model for MapsHours.
+type MapsHours struct {
+	Day   *string   `json:"day,omitempty"`
+	Times *[]string `json:"times,omitempty"`
+}
+
+// MapsOrderLink defines model for MapsOrderLink.
+type MapsOrderLink struct {
+	Link         string  `json:"link"`
+	PlatformName *string `json:"platform_name,omitempty"`
+}
+
+// MapsParseParams defines model for MapsParseParams.
+type MapsParseParams struct {
+	Parser string `json:"parser"`
+	Type   string `json:"type"`
+}
+
+// MapsResult defines model for MapsResult.
+type MapsResult struct {
+	Results *[]MapsBusiness `json:"results,omitempty"`
+}
+
+// MapsSearchRequest defines model for MapsSearchRequest.
+type MapsSearchRequest struct {
+	Search *string `json:"search,omitempty"`
+	Url    *string `json:"url,omitempty"`
+}
+
+// MarkdownParams defines model for MarkdownParams.
+type MarkdownParams struct {
+	IncludeImages *bool   `json:"includeImages,omitempty"`
+	IncludeLinks  *bool   `json:"includeLinks,omitempty"`
+	InlineImages  *string `json:"inlineImages,omitempty"`
+}
+
 // MouseReplayPage defines model for MouseReplayPage.
 type MouseReplayPage struct {
 	MouseChunkUrls   *[]string `json:"mouse_chunk_urls,omitempty"`
@@ -2395,6 +3450,12 @@ type MultiFactorFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
+// NameClue defines model for NameClue.
+type NameClue struct {
+	First *string `json:"first,omitempty"`
+	Last  *string `json:"last,omitempty"`
+}
+
 // NetworkBatchFile defines model for NetworkBatchFile.
 type NetworkBatchFile struct {
 	DownloadUrl                 *string `json:"download_url,omitempty"`
@@ -2411,6 +3472,133 @@ type NetworkLogsResponse struct {
 	TotalBatchCount int                `json:"total_batch_count"`
 }
 
+// NewsArticle defines model for NewsArticle.
+type NewsArticle struct {
+	Authors     *[]string        `json:"authors,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Id          string           `json:"id"`
+	ImageUrl    *string          `json:"image_url,omitempty"`
+	Language    *string          `json:"language,omitempty"`
+	Match       NewsMatch        `json:"match"`
+	PublishedAt *string          `json:"published_at,omitempty"`
+	Source      NewsSource       `json:"source"`
+	StoryId     string           `json:"story_id"`
+	Title       string           `json:"title"`
+	Type        *NewsArticleType `json:"type,omitempty"`
+	Url         string           `json:"url"`
+}
+
+// NewsArticleType defines model for NewsArticle.Type.
+type NewsArticleType string
+
+// NewsDateFilter defines model for NewsDateFilter.
+type NewsDateFilter struct {
+	From *int `json:"from,omitempty"`
+	To   *int `json:"to,omitempty"`
+}
+
+// NewsEntityDomain defines model for NewsEntityDomain.
+type NewsEntityDomain struct {
+	Domain string `json:"domain"`
+	Type   string `json:"type"`
+}
+
+// NewsEntityIsin defines model for NewsEntityIsin.
+type NewsEntityIsin struct {
+	Isin string `json:"isin"`
+	Type string `json:"type"`
+}
+
+// NewsEntityName defines model for NewsEntityName.
+type NewsEntityName struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// NewsEntityTicker defines model for NewsEntityTicker.
+type NewsEntityTicker struct {
+	Exchange *string `json:"exchange,omitempty"`
+	Ticker   string  `json:"ticker"`
+	Type     string  `json:"type"`
+}
+
+// NewsFilter defines model for NewsFilter.
+type NewsFilter struct {
+	ArticleLanguage *[]NewsFilterArticleLanguage `json:"articleLanguage,omitempty"`
+	ArticleType     *[]NewsFilterArticleType     `json:"articleType,omitempty"`
+	Date            *NewsDateFilter              `json:"date,omitempty"`
+	SourceCountry   *[]NewsFilterSourceCountry   `json:"sourceCountry,omitempty"`
+	SourceDomain    *[]string                    `json:"sourceDomain,omitempty"`
+}
+
+// NewsFilterArticleLanguage defines model for NewsFilter.ArticleLanguage.
+type NewsFilterArticleLanguage string
+
+// NewsFilterArticleType defines model for NewsFilter.ArticleType.
+type NewsFilterArticleType string
+
+// NewsFilterSourceCountry defines model for NewsFilter.SourceCountry.
+type NewsFilterSourceCountry string
+
+// NewsMatch defines model for NewsMatch.
+type NewsMatch struct {
+	Confidence *float32       `json:"confidence,omitempty"`
+	Level      NewsMatchLevel `json:"level"`
+}
+
+// NewsMatchLevel defines model for NewsMatch.Level.
+type NewsMatchLevel string
+
+// NewsMeta defines model for NewsMeta.
+type NewsMeta struct {
+	Count int `json:"count"`
+}
+
+// NewsSearchBy defines model for NewsSearchBy.
+type NewsSearchBy struct {
+	Entity NewsSearchBy_Entity `json:"entity"`
+	Type   string              `json:"type"`
+}
+
+// NewsSearchBy_Entity defines model for NewsSearchBy.Entity.
+type NewsSearchBy_Entity struct {
+	union json.RawMessage
+}
+
+// NewsSearchRequest defines model for NewsSearchRequest.
+type NewsSearchRequest struct {
+	Cursor   *string      `json:"cursor,omitempty"`
+	FilterBy *NewsFilter  `json:"filterBy,omitempty"`
+	Limit    *int         `json:"limit,omitempty"`
+	SearchBy NewsSearchBy `json:"searchBy"`
+	SortBy   *NewsSort    `json:"sortBy,omitempty"`
+	Tags     *[]string    `json:"tags,omitempty"`
+}
+
+// NewsSearchResponse defines model for NewsSearchResponse.
+type NewsSearchResponse struct {
+	Data       []NewsArticle `json:"data"`
+	HasMore    bool          `json:"has_more"`
+	Meta       NewsMeta      `json:"meta"`
+	NextCursor *string       `json:"next_cursor,omitempty"`
+	RequestId  string        `json:"request_id"`
+}
+
+// NewsSort defines model for NewsSort.
+type NewsSort struct {
+	Type *NewsSortType `json:"type,omitempty"`
+}
+
+// NewsSortType defines model for NewsSort.Type.
+type NewsSortType string
+
+// NewsSource defines model for NewsSource.
+type NewsSource struct {
+	Direct *bool  `json:"direct,omitempty"`
+	Domain string `json:"domain"`
+	Name   string `json:"name"`
+}
+
 // NodeSelectors defines model for NodeSelectors.
 type NodeSelectors struct {
 	CssSelector              string   `json:"css_selector"`
@@ -2421,6 +3609,13 @@ type NodeSelectors struct {
 	PlaywrightSelector       *string  `json:"playwright_selector,omitempty"`
 	PythonSelector           *string  `json:"python_selector,omitempty"`
 	XpathSelector            string   `json:"xpath_selector"`
+}
+
+// NotFoundMatch defines model for NotFoundMatch.
+type NotFoundMatch struct {
+	Person interface{} `json:"person"`
+	Score  interface{} `json:"score"`
+	Status string      `json:"status"`
 }
 
 // NotteProxy defines model for NotteProxy.
@@ -2453,6 +3648,28 @@ type ObserveRequest struct {
 
 	// PerceptionType Whether to run with fast or deep perception
 	PerceptionType *string `json:"perception_type,omitempty"`
+}
+
+// OrganizationClue defines model for OrganizationClue.
+type OrganizationClue struct {
+	Domain *string `json:"domain,omitempty"`
+	Name   *string `json:"name,omitempty"`
+}
+
+// PageTarget defines model for PageTarget.
+type PageTarget struct {
+	Actions             *[]PageTarget_Actions_Item `json:"actions,omitempty"`
+	ExcludeSelectors    *[]string                  `json:"exclude_selectors,omitempty"`
+	IncludeSelectors    *[]string                  `json:"include_selectors,omitempty"`
+	Instructions        *string                    `json:"instructions,omitempty"`
+	NormalizeWhitespace *bool                      `json:"normalize_whitespace,omitempty"`
+	Type                string                     `json:"type"`
+	Url                 string                     `json:"url"`
+}
+
+// PageTarget_Actions_Item defines model for PageTarget.actions.Item.
+type PageTarget_Actions_Item struct {
+	union json.RawMessage
 }
 
 // PaginatedResponseAgentResponse defines model for PaginatedResponse_AgentResponse_.
@@ -2533,6 +3750,9 @@ type ParameterInfo struct {
 	Name    string  `json:"name"`
 	Type    *string `json:"type,omitempty"`
 }
+
+// ParsedOutput defines model for ParsedOutput.
+type ParsedOutput map[string]interface{}
 
 // PaymentConnectRequest defines model for PaymentConnectRequest.
 type PaymentConnectRequest struct {
@@ -2627,6 +3847,117 @@ type PaymentResponse struct {
 	VaultId          *string            `json:"vault_id,omitempty"`
 }
 
+// PeopleEnrichRequest defines model for PeopleEnrichRequest.
+type PeopleEnrichRequest struct {
+	Company     *OrganizationClue    `json:"company,omitempty"`
+	Education   *[]EducationClue     `json:"education,omitempty"`
+	Email       *openapi_types.Email `json:"email,omitempty"`
+	Location    *LocationClue        `json:"location,omitempty"`
+	Name        *NameClue            `json:"name,omitempty"`
+	SocialUrls  *[]string            `json:"social_urls,omitempty"`
+	Tags        *[]string            `json:"tags,omitempty"`
+	TimeoutOpts *PeopleTimeout       `json:"timeoutOpts,omitempty"`
+	Zdr         *string              `json:"zdr,omitempty"`
+}
+
+// PeopleEnrichResponse defines model for PeopleEnrichResponse.
+type PeopleEnrichResponse struct {
+	Match     PeopleEnrichResponse_Match `json:"match"`
+	Partial   *bool                      `json:"partial,omitempty"`
+	RequestId openapi_types.UUID         `json:"request_id"`
+}
+
+// PeopleEnrichResponse_Match defines model for PeopleEnrichResponse.Match.
+type PeopleEnrichResponse_Match struct {
+	union json.RawMessage
+}
+
+// PeopleTimeout defines model for PeopleTimeout.
+type PeopleTimeout struct {
+	Behavior     *PeopleTimeoutBehavior `json:"behavior,omitempty"`
+	Milliseconds int                    `json:"milliseconds"`
+}
+
+// PeopleTimeoutBehavior defines model for PeopleTimeout.Behavior.
+type PeopleTimeoutBehavior string
+
+// PerformAction defines model for PerformAction.
+type PerformAction struct {
+	Action string `json:"action"`
+	Do     string `json:"do"`
+}
+
+// Person defines model for Person.
+type Person struct {
+	AvatarUrl         *string                 `json:"avatar_url,omitempty"`
+	Bio               *string                 `json:"bio,omitempty"`
+	CheckedAt         *string                 `json:"checked_at,omitempty"`
+	CurrentRole       *PersonRole             `json:"current_role,omitempty"`
+	CurrentRoleStatus PersonCurrentRoleStatus `json:"current_role_status"`
+	Education         []PersonEducation       `json:"education"`
+	Email             *openapi_types.Email    `json:"email,omitempty"`
+	Experience        []PersonRole            `json:"experience"`
+	LastUpdated       *string                 `json:"last_updated,omitempty"`
+	Location          *PersonLocation         `json:"location,omitempty"`
+	Name              *PersonName             `json:"name,omitempty"`
+	Skills            []string                `json:"skills"`
+	SocialUrls        []string                `json:"social_urls"`
+	WebsiteUrls       []string                `json:"website_urls"`
+}
+
+// PersonCurrentRoleStatus defines model for Person.CurrentRoleStatus.
+type PersonCurrentRoleStatus string
+
+// PersonDate defines model for PersonDate.
+type PersonDate struct {
+	Day   *int `json:"day,omitempty"`
+	Month *int `json:"month,omitempty"`
+	Year  int  `json:"year"`
+}
+
+// PersonEducation defines model for PersonEducation.
+type PersonEducation struct {
+	Degree       *string            `json:"degree,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	EndDate      *PersonDate        `json:"end_date,omitempty"`
+	FieldOfStudy *string            `json:"field_of_study,omitempty"`
+	Institution  PersonOrganization `json:"institution"`
+	StartDate    *PersonDate        `json:"start_date,omitempty"`
+}
+
+// PersonLocation defines model for PersonLocation.
+type PersonLocation struct {
+	City        *string `json:"city,omitempty"`
+	Country     *string `json:"country,omitempty"`
+	CountryCode *string `json:"country_code,omitempty"`
+	Display     *string `json:"display,omitempty"`
+	Region      *string `json:"region,omitempty"`
+}
+
+// PersonName defines model for PersonName.
+type PersonName struct {
+	First *string `json:"first,omitempty"`
+	Full  *string `json:"full,omitempty"`
+	Last  *string `json:"last,omitempty"`
+}
+
+// PersonOrganization defines model for PersonOrganization.
+type PersonOrganization struct {
+	Domain *string `json:"domain,omitempty"`
+	Name   string  `json:"name"`
+}
+
+// PersonRole defines model for PersonRole.
+type PersonRole struct {
+	Description  *string            `json:"description,omitempty"`
+	EndDate      *PersonDate        `json:"end_date,omitempty"`
+	IsCurrent    *bool              `json:"is_current,omitempty"`
+	Location     *string            `json:"location,omitempty"`
+	Organization PersonOrganization `json:"organization"`
+	StartDate    *PersonDate        `json:"start_date,omitempty"`
+	Title        string             `json:"title"`
+}
+
 // PersonaCreateRequest defines model for PersonaCreateRequest.
 type PersonaCreateRequest struct {
 	// CreatePhoneNumber Whether to create a phone number for the persona
@@ -2683,6 +4014,58 @@ type PressKeyAction struct {
 	Description *string `json:"description,omitempty"`
 	Key         string  `json:"key"`
 	Type        *string `json:"type,omitempty"`
+}
+
+// Product defines model for Product.
+type Product struct {
+	Availability   *string           `json:"availability,omitempty"`
+	Brand          *string           `json:"brand,omitempty"`
+	Category       *string           `json:"category,omitempty"`
+	Currency       *string           `json:"currency,omitempty"`
+	Description    *string           `json:"description,omitempty"`
+	Dimensions     *[]string         `json:"dimensions,omitempty"`
+	Features       *[]string         `json:"features,omitempty"`
+	ImageUrl       *string           `json:"imageUrl,omitempty"`
+	Images         *[]string         `json:"images,omitempty"`
+	Name           string            `json:"name"`
+	Price          *float32          `json:"price,omitempty"`
+	RegularPrice   *float32          `json:"regularPrice,omitempty"`
+	Sku            *string           `json:"sku,omitempty"`
+	Tags           *[]string         `json:"tags,omitempty"`
+	TargetAudience *[]string         `json:"targetAudience,omitempty"`
+	Variants       *[]ProductVariant `json:"variants,omitempty"`
+}
+
+// ProductExtractRequest defines model for ProductExtractRequest.
+type ProductExtractRequest struct {
+	ProductParams *ProductParams `json:"productParams,omitempty"`
+	Url           string         `json:"url"`
+}
+
+// ProductOutput defines model for ProductOutput.
+type ProductOutput struct {
+	Data      ProductResult `json:"data"`
+	Requested *bool         `json:"requested,omitempty"`
+	Success   *bool         `json:"success,omitempty"`
+}
+
+// ProductParams defines model for ProductParams.
+type ProductParams struct {
+	DedupeImages *bool `json:"dedupeImages,omitempty"`
+}
+
+// ProductResult defines model for ProductResult.
+type ProductResult struct {
+	IsProductPage *bool    `json:"isProductPage,omitempty"`
+	Product       *Product `json:"product,omitempty"`
+}
+
+// ProductVariant defines model for ProductVariant.
+type ProductVariant struct {
+	Attributes *map[string]string `json:"attributes,omitempty"`
+	Images     *[]string          `json:"images,omitempty"`
+	Sku        *string            `json:"sku,omitempty"`
+	Url        *string            `json:"url,omitempty"`
 }
 
 // ProfileCookiesImportRequest defines model for ProfileCookiesImportRequest.
@@ -2779,6 +4162,17 @@ type ReplayResponse struct {
 	PlaylistContent  *string   `json:"playlist_content,omitempty"`
 	VideoDurationMs  *int      `json:"video_duration_ms,omitempty"`
 	VideoStartMs     *int      `json:"video_start_ms,omitempty"`
+}
+
+// Retry defines model for Retry.
+type Retry struct {
+	DelaysSeconds *[]int `json:"delays_seconds,omitempty"`
+}
+
+// RetryDelivery defines model for RetryDelivery.
+type RetryDelivery struct {
+	Force *bool     `json:"force,omitempty"`
+	Tags  *[]string `json:"tags,omitempty"`
 }
 
 // RootModelAny defines model for RootModel_Any_.
@@ -2900,6 +4294,14 @@ type ScrapeAction struct {
 	Type     *string `json:"type,omitempty"`
 }
 
+// ScrapeFormats defines model for ScrapeFormats.
+type ScrapeFormats struct {
+	Html     *bool `json:"html,omitempty"`
+	Markdown *bool `json:"markdown,omitempty"`
+	Parse    *bool `json:"parse,omitempty"`
+	Product  *bool `json:"product,omitempty"`
+}
+
 // ScrapeFromHtmlRequest defines model for ScrapeFromHtmlRequest.
 type ScrapeFromHtmlRequest struct {
 	// Frames Frame data for all frames found in the page. The main frame has to be the first one
@@ -2944,6 +4346,9 @@ type ScrapeFromHtmlRequest_Model struct {
 	union json.RawMessage
 }
 
+// ScrapeOutput defines model for ScrapeOutput.
+type ScrapeOutput map[string]interface{}
+
 // ScrapeRequest defines model for ScrapeRequest.
 type ScrapeRequest struct {
 	// IgnoredTags HTML tags to ignore from the page
@@ -2985,6 +4390,25 @@ type ScrapeRequest_Model struct {
 	union json.RawMessage
 }
 
+// ScrapeResponse defines model for ScrapeResponse.
+type ScrapeResponse struct {
+	Bytes         *ScrapeOutput           `json:"bytes,omitempty"`
+	CacheMetadata *map[string]interface{} `json:"cache_metadata,omitempty"`
+	Highlights    *ScrapeOutput           `json:"highlights,omitempty"`
+	Html          *ScrapeOutput           `json:"html,omitempty"`
+	Images        *ScrapeOutput           `json:"images,omitempty"`
+	IsPartial     *bool                   `json:"isPartial,omitempty"`
+	Json          *ScrapeOutput           `json:"json,omitempty"`
+	Markdown      *ScrapeOutput           `json:"markdown,omitempty"`
+	Metadata      *map[string]interface{} `json:"metadata,omitempty"`
+	Parsed        *ParsedOutput           `json:"parsed,omitempty"`
+	Product       *ScrapeOutput           `json:"product,omitempty"`
+	Profile       interface{}             `json:"profile"`
+	RequestId     string                  `json:"request_id"`
+	Screenshot    *ScrapeOutput           `json:"screenshot,omitempty"`
+	Url           string                  `json:"url"`
+}
+
 // ScrapeSchemaResponse defines model for ScrapeSchemaResponse.
 type ScrapeSchemaResponse struct {
 	ModelSchema SchemaGenerationResponse `json:"model_schema"`
@@ -2997,6 +4421,29 @@ type Screenshot struct {
 	LastActionId *string        `json:"last_action_id,omitempty"`
 	Raw          string         `json:"raw"`
 }
+
+// ScrollAction defines model for ScrollAction.
+type ScrollAction struct {
+	Amount     *ScrollAction_Amount   `json:"amount,omitempty"`
+	Container  *string                `json:"container,omitempty"`
+	Direction  *ScrollActionDirection `json:"direction,omitempty"`
+	Do         string                 `json:"do"`
+	MaxScrolls *int                   `json:"maxScrolls,omitempty"`
+}
+
+// ScrollActionAmount0 defines model for .
+type ScrollActionAmount0 = int
+
+// ScrollActionAmount1 defines model for ScrollAction.Amount.1.
+type ScrollActionAmount1 string
+
+// ScrollAction_Amount defines model for ScrollAction.Amount.
+type ScrollAction_Amount struct {
+	union json.RawMessage
+}
+
+// ScrollActionDirection defines model for ScrollAction.Direction.
+type ScrollActionDirection string
 
 // ScrollDownAction defines model for ScrollDownAction.
 type ScrollDownAction struct {
@@ -3130,6 +4577,12 @@ type SelectDropdownOptionActionOutputValue1 = string
 // SelectDropdownOptionActionOutput_Value defines model for SelectDropdownOptionActionOutput.Value.
 type SelectDropdownOptionActionOutput_Value struct {
 	union json.RawMessage
+}
+
+// SemanticDetection defines model for SemanticDetection.
+type SemanticDetection struct {
+	ConfidenceThreshold *float32 `json:"confidence_threshold,omitempty"`
+	Type                string   `json:"type"`
 }
 
 // SerializedError defines model for SerializedError.
@@ -3280,6 +4733,53 @@ type SessionResponseBrowserType string
 // SessionResponseStatus defines model for SessionResponse.Status.
 type SessionResponseStatus string
 
+// Shadows defines model for Shadows.
+type Shadows struct {
+	Inner string `json:"inner"`
+	Lg    string `json:"lg"`
+	Md    string `json:"md"`
+	Sm    string `json:"sm"`
+	Xl    string `json:"xl"`
+}
+
+// SharedParams defines model for SharedParams.
+type SharedParams struct {
+	Actions          *[]SharedParams_Actions_Item `json:"actions,omitempty"`
+	ExcludeSelectors *[]string                    `json:"excludeSelectors,omitempty"`
+	IncludeSelectors *[]string                    `json:"includeSelectors,omitempty"`
+	MainContentOnly  *bool                        `json:"mainContentOnly,omitempty"`
+	Theme            *SharedParamsTheme           `json:"theme,omitempty"`
+	WaitFor          *SharedParams_WaitFor        `json:"waitFor,omitempty"`
+}
+
+// SharedParams_Actions_Item defines model for SharedParams.actions.Item.
+type SharedParams_Actions_Item struct {
+	union json.RawMessage
+}
+
+// SharedParamsTheme defines model for SharedParams.Theme.
+type SharedParamsTheme string
+
+// SharedParamsWaitFor0 defines model for .
+type SharedParamsWaitFor0 = int
+
+// SharedParamsWaitFor1 defines model for .
+type SharedParamsWaitFor1 = string
+
+// SharedParams_WaitFor defines model for SharedParams.WaitFor.
+type SharedParams_WaitFor struct {
+	union json.RawMessage
+}
+
+// SitemapTarget defines model for SitemapTarget.
+type SitemapTarget struct {
+	Exclude *[]string `json:"exclude,omitempty"`
+	Include *[]string `json:"include,omitempty"`
+	MaxUrls *int      `json:"max_urls,omitempty"`
+	Type    string    `json:"type"`
+	Url     string    `json:"url"`
+}
+
 // SmsReadAction defines model for SmsReadAction.
 type SmsReadAction struct {
 	Category    *string `json:"category,omitempty"`
@@ -3310,6 +4810,15 @@ type SnapshotMetadata struct {
 // SpaceCategory defines model for SpaceCategory.
 type SpaceCategory string
 
+// Spacing defines model for Spacing.
+type Spacing struct {
+	Lg string `json:"lg"`
+	Md string `json:"md"`
+	Sm string `json:"sm"`
+	Xl string `json:"xl"`
+	Xs string `json:"xs"`
+}
+
 // StructuredDataBaseModel defines model for StructuredData_BaseModel_.
 type StructuredDataBaseModel struct {
 	// Data Structured data extracted from the page in JSON format
@@ -3326,6 +4835,49 @@ type StructuredDataBaseModel struct {
 type StructuredDataBaseModel_Data struct {
 	union json.RawMessage
 }
+
+// Styleguide defines model for Styleguide.
+type Styleguide struct {
+	Colors         Colors              `json:"colors"`
+	Components     Components          `json:"components"`
+	ElementSpacing Spacing             `json:"elementSpacing"`
+	FontLinks      map[string]FontLink `json:"fontLinks"`
+	Mode           StyleguideMode      `json:"mode"`
+	Shadows        Shadows             `json:"shadows"`
+	Typography     Typography          `json:"typography"`
+}
+
+// StyleguideMode defines model for Styleguide.Mode.
+type StyleguideMode string
+
+// StyleguideCacheMetadata defines model for StyleguideCacheMetadata.
+type StyleguideCacheMetadata struct {
+	AgeMs  *int    `json:"age_ms,omitempty"`
+	Status *string `json:"status,omitempty"`
+}
+
+// StyleguideResponse defines model for StyleguideResponse.
+type StyleguideResponse struct {
+	CacheMetadata StyleguideCacheMetadata         `json:"cache_metadata"`
+	Code          int                             `json:"code"`
+	Domain        string                          `json:"domain"`
+	FinalDOMState StyleguideResponseFinalDOMState `json:"finalDOMState"`
+	RequestId     string                          `json:"request_id"`
+	Status        string                          `json:"status"`
+	Styleguide    Styleguide                      `json:"styleguide"`
+}
+
+// StyleguideResponseFinalDOMState defines model for StyleguideResponse.FinalDOMState.
+type StyleguideResponseFinalDOMState string
+
+// StyleguideTimeout defines model for StyleguideTimeout.
+type StyleguideTimeout struct {
+	Behavior     *StyleguideTimeoutBehavior `json:"behavior,omitempty"`
+	Milliseconds int                        `json:"milliseconds"`
+}
+
+// StyleguideTimeoutBehavior defines model for StyleguideTimeout.Behavior.
+type StyleguideTimeoutBehavior string
 
 // SubscriptionType defines model for SubscriptionType.
 type SubscriptionType string
@@ -3360,6 +4912,22 @@ type TailnetProxy struct {
 	Type              *string `json:"type,omitempty"`
 }
 
+// Typography defines model for Typography.
+type Typography struct {
+	Headings HeadingStyles    `json:"headings"`
+	P        *TypographyStyle `json:"p,omitempty"`
+}
+
+// TypographyStyle defines model for TypographyStyle.
+type TypographyStyle struct {
+	FontFallbacks []string `json:"fontFallbacks"`
+	FontFamily    string   `json:"fontFamily"`
+	FontSize      string   `json:"fontSize"`
+	FontWeight    float32  `json:"fontWeight"`
+	LetterSpacing string   `json:"letterSpacing"`
+	LineHeight    string   `json:"lineHeight"`
+}
+
 // UpdateFunctionRunResponse defines model for UpdateFunctionRunResponse.
 type UpdateFunctionRunResponse struct {
 	// FunctionId The ID of the function
@@ -3375,6 +4943,17 @@ type UpdateFunctionRunResponse struct {
 
 // UpdateFunctionRunResponseStatus defines model for UpdateFunctionRunResponse.Status.
 type UpdateFunctionRunResponseStatus string
+
+// UpdateMonitor defines model for UpdateMonitor.
+type UpdateMonitor struct {
+	ChangeDetection interface{} `json:"change_detection"`
+	Name            *string     `json:"name,omitempty"`
+	Schedule        *Interval   `json:"schedule,omitempty"`
+	Status          *string     `json:"status,omitempty"`
+	Tags            *[]string   `json:"tags,omitempty"`
+	Target          interface{} `json:"target"`
+	Webhook         *Webhook    `json:"webhook,omitempty"`
+}
 
 // UploadFileActionInput defines model for UploadFileAction-Input.
 type UploadFileActionInput struct {
@@ -3506,8 +5085,8 @@ type ViewportData struct {
 	ViewportWidth  int `json:"viewport_width"`
 }
 
-// WaitAction defines model for WaitAction.
-type WaitAction struct {
+// WaitActionOutput defines model for WaitAction-Output.
+type WaitActionOutput struct {
 	Category    *string `json:"category,omitempty"`
 	Description *string `json:"description,omitempty"`
 
@@ -3526,6 +5105,99 @@ type WebSocketUrls struct {
 
 	// Recording WebSocket URL for live session recording (screenshot stream)
 	Recording string `json:"recording"`
+}
+
+// Webhook defines model for Webhook.
+type Webhook struct {
+	Events *[]WebhookEvents `json:"events,omitempty"`
+	Retry  *Retry           `json:"retry,omitempty"`
+	Url    string           `json:"url"`
+}
+
+// WebhookEvents defines model for Webhook.Events.
+type WebhookEvents string
+
+// YouTubeCaption defines model for YouTubeCaption.
+type YouTubeCaption struct {
+	Duration *float32 `json:"duration,omitempty"`
+	Start    float32  `json:"start"`
+	Text     string   `json:"text"`
+}
+
+// YouTubeExtractRequest defines model for YouTubeExtractRequest.
+type YouTubeExtractRequest struct {
+	IncludeImages *bool  `json:"includeImages,omitempty"`
+	Url           string `json:"url"`
+}
+
+// YouTubeMetadata defines model for YouTubeMetadata.
+type YouTubeMetadata struct {
+	Channel         *string             `json:"channel,omitempty"`
+	ChannelUrl      *string             `json:"channel_url,omitempty"`
+	Description     *string             `json:"description,omitempty"`
+	DurationSeconds *int                `json:"duration_seconds,omitempty"`
+	ImageUrl        *string             `json:"image_url,omitempty"`
+	Kind            YouTubeMetadataKind `json:"kind"`
+	Published       *string             `json:"published,omitempty"`
+	Subscribers     *string             `json:"subscribers,omitempty"`
+	Title           string              `json:"title"`
+	Url             string              `json:"url"`
+	VideoCount      *string             `json:"video_count,omitempty"`
+	VideoId         *string             `json:"video_id,omitempty"`
+	Views           *string             `json:"views,omitempty"`
+}
+
+// YouTubeMetadataKind defines model for YouTubeMetadata.Kind.
+type YouTubeMetadataKind string
+
+// YouTubeResult defines model for YouTubeResult.
+type YouTubeResult struct {
+	Captions          *[]YouTubeCaption           `json:"captions,omitempty"`
+	CaptionsAutomatic *bool                       `json:"captions_automatic,omitempty"`
+	CaptionsLanguage  *string                     `json:"captions_language,omitempty"`
+	CaptionsStatus    YouTubeResultCaptionsStatus `json:"captions_status"`
+	Markdown          string                      `json:"markdown"`
+	Metadata          YouTubeMetadata             `json:"metadata"`
+	Videos            *[]YouTubeVideo             `json:"videos,omitempty"`
+}
+
+// YouTubeResultCaptionsStatus defines model for YouTubeResult.CaptionsStatus.
+type YouTubeResultCaptionsStatus string
+
+// YouTubeVideo defines model for YouTubeVideo.
+type YouTubeVideo struct {
+	Duration  *string `json:"duration,omitempty"`
+	Id        string  `json:"id"`
+	Published *string `json:"published,omitempty"`
+	Title     string  `json:"title"`
+	Url       string  `json:"url"`
+	Views     *string `json:"views,omitempty"`
+}
+
+// BrandRetrieveRequestBody defines model for brand_retrieveRequestBody.
+type BrandRetrieveRequestBody struct {
+	union json.RawMessage
+}
+
+// NotteApiDataApisMonitorsModelsWaitAction defines model for notte_api__data_apis__monitors__models__WaitAction.
+type NotteApiDataApisMonitorsModelsWaitAction struct {
+	Do     string `json:"do"`
+	TimeMs int    `json:"timeMs"`
+}
+
+// NotteCoreActionsActionsWaitAction defines model for notte_core__actions__actions__WaitAction.
+type NotteCoreActionsActionsWaitAction struct {
+	Category    *string `json:"category,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// TimeMs The amount of time to wait in milliseconds (max 30 seconds)
+	TimeMs int     `json:"time_ms"`
+	Type   *string `json:"type,omitempty"`
+}
+
+// PageExecuteRequestBody defines model for page_executeRequestBody.
+type PageExecuteRequestBody struct {
+	union json.RawMessage
 }
 
 // ListAgentsParams defines parameters for ListAgents.
@@ -3606,6 +5278,216 @@ type ListAuditEventsParams struct {
 
 	// ActorId Only events performed by this user
 	ActorId             *string `form:"actor_id,omitempty" json:"actor_id,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ListDataApisParams defines parameters for ListDataApis.
+type ListDataApisParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// BrandRetrieveParams defines parameters for BrandRetrieve.
+type BrandRetrieveParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// MapsSearchParams defines parameters for MapsSearch.
+type MapsSearchParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ListMonitorsParams defines parameters for ListMonitors.
+type ListMonitorsParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Q                   *string `form:"q,omitempty" json:"q,omitempty"`
+	SearchBy            *string `form:"search_by,omitempty" json:"search_by,omitempty"`
+	SearchType          *string `form:"search_type,omitempty" json:"search_type,omitempty"`
+	Status              *string `form:"status,omitempty" json:"status,omitempty"`
+	TargetType          *string `form:"target_type,omitempty" json:"target_type,omitempty"`
+	ChangeDetectionType *string `form:"change_detection_type,omitempty" json:"change_detection_type,omitempty"`
+	Tags                *string `form:"tags,omitempty" json:"tags,omitempty"`
+	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// CreateParams defines parameters for Create.
+type CreateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// AccountChangesParams defines parameters for AccountChanges.
+type AccountChangesParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	MonitorId           *string `form:"monitor_id,omitempty" json:"monitor_id,omitempty"`
+	TargetType          *string `form:"target_type,omitempty" json:"target_type,omitempty"`
+	ChangeDetectionType *string `form:"change_detection_type,omitempty" json:"change_detection_type,omitempty"`
+	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
+	Since               *string `form:"since,omitempty" json:"since,omitempty"`
+	Until               *string `form:"until,omitempty" json:"until,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// CreditUsageParams defines parameters for CreditUsage.
+type CreditUsageParams struct {
+	Since               *string `form:"since,omitempty" json:"since,omitempty"`
+	Until               *string `form:"until,omitempty" json:"until,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// LimitsParams defines parameters for Limits.
+type LimitsParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// AccountRunsParams defines parameters for AccountRuns.
+type AccountRunsParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Status              *string `form:"status,omitempty" json:"status,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DeleteParams defines parameters for Delete.
+type DeleteParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RetrieveParams defines parameters for Retrieve.
+type RetrieveParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// UpdateParams defines parameters for Update.
+type UpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ChangesParams defines parameters for Changes.
+type ChangesParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
+	Since               *string `form:"since,omitempty" json:"since,omitempty"`
+	Until               *string `form:"until,omitempty" json:"until,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RetrieveChangeParams defines parameters for RetrieveChange.
+type RetrieveChangeParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RunNowParams defines parameters for RunNow.
+type RunNowParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RunsParams defines parameters for Runs.
+type RunsParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Status              *string `form:"status,omitempty" json:"status,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RetrieveRunParams defines parameters for RetrieveRun.
+type RetrieveRunParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RotateSecretParams defines parameters for RotateSecret.
+type RotateSecretParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// NewsSearchParams defines parameters for NewsSearch.
+type NewsSearchParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PeopleEnrichParams defines parameters for PeopleEnrich.
+type PeopleEnrichParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ExtractProductEndpointParams defines parameters for ExtractProductEndpoint.
+type ExtractProductEndpointParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ScrapeSpecializedDataParams defines parameters for ScrapeSpecializedData.
+type ScrapeSpecializedDataParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// StyleguideEndpointParams defines parameters for StyleguideEndpoint.
+type StyleguideEndpointParams struct {
+	Domain                  *string `form:"domain,omitempty" json:"domain,omitempty"`
+	DirectUrl               *string `form:"directUrl,omitempty" json:"directUrl,omitempty"`
+	MaxAgeMs                *int    `form:"maxAgeMs,omitempty" json:"maxAgeMs,omitempty"`
+	ColorScheme             *string `form:"colorScheme,omitempty" json:"colorScheme,omitempty"`
+	TimeoutOptsMilliseconds *int    `form:"timeoutOpts[milliseconds],omitempty" json:"timeoutOpts[milliseconds],omitempty"`
+	TimeoutOptsBehavior     *string `form:"timeoutOpts[behavior],omitempty" json:"timeoutOpts[behavior],omitempty"`
+	Zdr                     *string `form:"zdr,omitempty" json:"zdr,omitempty"`
+	Tags                    *string `form:"tags,omitempty" json:"tags,omitempty"`
+	XNotteRequestOrigin     *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion        *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DeliveriesParams defines parameters for Deliveries.
+type DeliveriesParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RetrieveDeliveryParams defines parameters for RetrieveDelivery.
+type RetrieveDeliveryParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// AttemptsParams defines parameters for Attempts.
+type AttemptsParams struct {
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// RetryParams defines parameters for Retry.
+type RetryParams struct {
+	IdempotencyKey      *string `json:"Idempotency-Key,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// YoutubeEndpointParams defines parameters for YoutubeEndpoint.
+type YoutubeEndpointParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -4133,11 +6015,6 @@ type SessionOffsetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// PageExecuteJSONBody defines parameters for PageExecute.
-type PageExecuteJSONBody struct {
-	union json.RawMessage
-}
-
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
 	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
@@ -4327,6 +6204,39 @@ type AgentStartJSONRequestBody = ApiAgentStartRequest
 // AnythingStartJSONRequestBody defines body for AnythingStart for application/json ContentType.
 type AnythingStartJSONRequestBody = AnythingStartRequest
 
+// BrandRetrieveJSONRequestBody defines body for BrandRetrieve for application/json ContentType.
+type BrandRetrieveJSONRequestBody = BrandRetrieveRequestBody
+
+// MapsSearchJSONRequestBody defines body for MapsSearch for application/json ContentType.
+type MapsSearchJSONRequestBody = MapsSearchRequest
+
+// CreateJSONRequestBody defines body for Create for application/json ContentType.
+type CreateJSONRequestBody = CreateMonitor
+
+// UpdateJSONRequestBody defines body for Update for application/json ContentType.
+type UpdateJSONRequestBody = UpdateMonitor
+
+// NewsSearchJSONRequestBody defines body for NewsSearch for application/json ContentType.
+type NewsSearchJSONRequestBody = NewsSearchRequest
+
+// PeopleEnrichJSONRequestBody defines body for PeopleEnrich for application/json ContentType.
+type PeopleEnrichJSONRequestBody = PeopleEnrichRequest
+
+// ExtractProductEndpointJSONRequestBody defines body for ExtractProductEndpoint for application/json ContentType.
+type ExtractProductEndpointJSONRequestBody = ProductExtractRequest
+
+// ScrapeSpecializedDataJSONRequestBody defines body for ScrapeSpecializedData for application/json ContentType.
+type ScrapeSpecializedDataJSONRequestBody = DataScrapeRequest
+
+// DeliveriesJSONRequestBody defines body for Deliveries for application/json ContentType.
+type DeliveriesJSONRequestBody = DeliveryList
+
+// RetryJSONRequestBody defines body for Retry for application/json ContentType.
+type RetryJSONRequestBody = RetryDelivery
+
+// YoutubeEndpointJSONRequestBody defines body for YoutubeEndpoint for application/json ContentType.
+type YoutubeEndpointJSONRequestBody = YouTubeExtractRequest
+
 // FunctionCreateMultipartRequestBody defines body for FunctionCreate for multipart/form-data ContentType.
 type FunctionCreateMultipartRequestBody = BodyFunctionCreateFunctionsPost
 
@@ -4409,7 +6319,7 @@ type SessionCookiesSetJSONRequestBody = BodySessionCookiesSetSessionsSessionIdCo
 type UploadSessionFileMultipartRequestBody = BodyUploadSessionFileSessionsSessionIdFilesPost
 
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
-type PageExecuteJSONRequestBody PageExecuteJSONBody
+type PageExecuteJSONRequestBody = PageExecuteRequestBody
 
 // PageObserveJSONRequestBody defines body for PageObserve for application/json ContentType.
 type PageObserveJSONRequestBody = ObserveRequest
@@ -5184,15 +7094,15 @@ func (t *ActionSpace_Actions_Item) MergeReloadAction(v ReloadAction) error {
 	return err
 }
 
-// AsWaitAction returns the union data inside the ActionSpace_Actions_Item as a WaitAction
-func (t ActionSpace_Actions_Item) AsWaitAction() (WaitAction, error) {
-	var body WaitAction
+// AsWaitActionOutput returns the union data inside the ActionSpace_Actions_Item as a WaitActionOutput
+func (t ActionSpace_Actions_Item) AsWaitActionOutput() (WaitActionOutput, error) {
+	var body WaitActionOutput
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromWaitAction overwrites any union data inside the ActionSpace_Actions_Item as the provided WaitAction
-func (t *ActionSpace_Actions_Item) FromWaitAction(v WaitAction) error {
+// FromWaitActionOutput overwrites any union data inside the ActionSpace_Actions_Item as the provided WaitActionOutput
+func (t *ActionSpace_Actions_Item) FromWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -5200,8 +7110,8 @@ func (t *ActionSpace_Actions_Item) FromWaitAction(v WaitAction) error {
 	return err
 }
 
-// MergeWaitAction performs a merge with any union data inside the ActionSpace_Actions_Item, using the provided WaitAction
-func (t *ActionSpace_Actions_Item) MergeWaitAction(v WaitAction) error {
+// MergeWaitActionOutput performs a merge with any union data inside the ActionSpace_Actions_Item, using the provided WaitActionOutput
+func (t *ActionSpace_Actions_Item) MergeWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -5853,7 +7763,7 @@ func (t ActionSpace_Actions_Item) ValueByDiscriminator() (interface{}, error) {
 	case "upload_file":
 		return t.AsUploadFileActionOutput()
 	case "wait":
-		return t.AsWaitAction()
+		return t.AsWaitActionOutput()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -6109,15 +8019,15 @@ func (t *ActionSpace_BrowserActions_Item) MergeReloadAction(v ReloadAction) erro
 	return err
 }
 
-// AsWaitAction returns the union data inside the ActionSpace_BrowserActions_Item as a WaitAction
-func (t ActionSpace_BrowserActions_Item) AsWaitAction() (WaitAction, error) {
-	var body WaitAction
+// AsWaitActionOutput returns the union data inside the ActionSpace_BrowserActions_Item as a WaitActionOutput
+func (t ActionSpace_BrowserActions_Item) AsWaitActionOutput() (WaitActionOutput, error) {
+	var body WaitActionOutput
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromWaitAction overwrites any union data inside the ActionSpace_BrowserActions_Item as the provided WaitAction
-func (t *ActionSpace_BrowserActions_Item) FromWaitAction(v WaitAction) error {
+// FromWaitActionOutput overwrites any union data inside the ActionSpace_BrowserActions_Item as the provided WaitActionOutput
+func (t *ActionSpace_BrowserActions_Item) FromWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -6125,8 +8035,8 @@ func (t *ActionSpace_BrowserActions_Item) FromWaitAction(v WaitAction) error {
 	return err
 }
 
-// MergeWaitAction performs a merge with any union data inside the ActionSpace_BrowserActions_Item, using the provided WaitAction
-func (t *ActionSpace_BrowserActions_Item) MergeWaitAction(v WaitAction) error {
+// MergeWaitActionOutput performs a merge with any union data inside the ActionSpace_BrowserActions_Item, using the provided WaitActionOutput
+func (t *ActionSpace_BrowserActions_Item) MergeWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -6522,7 +8432,7 @@ func (t ActionSpace_BrowserActions_Item) ValueByDiscriminator() (interface{}, er
 	case "switch_tab":
 		return t.AsSwitchTabAction()
 	case "wait":
-		return t.AsWaitAction()
+		return t.AsWaitActionOutput()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -7125,15 +9035,15 @@ func (t *ApiExecutionResponse_Action) MergeReloadAction(v ReloadAction) error {
 	return err
 }
 
-// AsWaitAction returns the union data inside the ApiExecutionResponse_Action as a WaitAction
-func (t ApiExecutionResponse_Action) AsWaitAction() (WaitAction, error) {
-	var body WaitAction
+// AsWaitActionOutput returns the union data inside the ApiExecutionResponse_Action as a WaitActionOutput
+func (t ApiExecutionResponse_Action) AsWaitActionOutput() (WaitActionOutput, error) {
+	var body WaitActionOutput
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromWaitAction overwrites any union data inside the ApiExecutionResponse_Action as the provided WaitAction
-func (t *ApiExecutionResponse_Action) FromWaitAction(v WaitAction) error {
+// FromWaitActionOutput overwrites any union data inside the ApiExecutionResponse_Action as the provided WaitActionOutput
+func (t *ApiExecutionResponse_Action) FromWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -7141,8 +9051,8 @@ func (t *ApiExecutionResponse_Action) FromWaitAction(v WaitAction) error {
 	return err
 }
 
-// MergeWaitAction performs a merge with any union data inside the ApiExecutionResponse_Action, using the provided WaitAction
-func (t *ApiExecutionResponse_Action) MergeWaitAction(v WaitAction) error {
+// MergeWaitActionOutput performs a merge with any union data inside the ApiExecutionResponse_Action, using the provided WaitActionOutput
+func (t *ApiExecutionResponse_Action) MergeWaitActionOutput(v WaitActionOutput) error {
 	tmp := "wait"
 	v.Type = &tmp
 	b, err := json.Marshal(v)
@@ -7794,7 +9704,7 @@ func (t ApiExecutionResponse_Action) ValueByDiscriminator() (interface{}, error)
 	case "upload_file":
 		return t.AsUploadFileActionOutput()
 	case "wait":
-		return t.AsWaitAction()
+		return t.AsWaitActionOutput()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -7993,6 +9903,182 @@ func (t ApiSessionStartRequest_Proxies) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ApiSessionStartRequest_Proxies) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsBrandByTransactionMcc0 returns the union data inside the BrandByTransaction_Mcc as a BrandByTransactionMcc0
+func (t BrandByTransaction_Mcc) AsBrandByTransactionMcc0() (BrandByTransactionMcc0, error) {
+	var body BrandByTransactionMcc0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionMcc0 overwrites any union data inside the BrandByTransaction_Mcc as the provided BrandByTransactionMcc0
+func (t *BrandByTransaction_Mcc) FromBrandByTransactionMcc0(v BrandByTransactionMcc0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionMcc0 performs a merge with any union data inside the BrandByTransaction_Mcc, using the provided BrandByTransactionMcc0
+func (t *BrandByTransaction_Mcc) MergeBrandByTransactionMcc0(v BrandByTransactionMcc0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransactionMcc1 returns the union data inside the BrandByTransaction_Mcc as a BrandByTransactionMcc1
+func (t BrandByTransaction_Mcc) AsBrandByTransactionMcc1() (BrandByTransactionMcc1, error) {
+	var body BrandByTransactionMcc1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionMcc1 overwrites any union data inside the BrandByTransaction_Mcc as the provided BrandByTransactionMcc1
+func (t *BrandByTransaction_Mcc) FromBrandByTransactionMcc1(v BrandByTransactionMcc1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionMcc1 performs a merge with any union data inside the BrandByTransaction_Mcc, using the provided BrandByTransactionMcc1
+func (t *BrandByTransaction_Mcc) MergeBrandByTransactionMcc1(v BrandByTransactionMcc1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransactionMcc2 returns the union data inside the BrandByTransaction_Mcc as a BrandByTransactionMcc2
+func (t BrandByTransaction_Mcc) AsBrandByTransactionMcc2() (BrandByTransactionMcc2, error) {
+	var body BrandByTransactionMcc2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionMcc2 overwrites any union data inside the BrandByTransaction_Mcc as the provided BrandByTransactionMcc2
+func (t *BrandByTransaction_Mcc) FromBrandByTransactionMcc2(v BrandByTransactionMcc2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionMcc2 performs a merge with any union data inside the BrandByTransaction_Mcc, using the provided BrandByTransactionMcc2
+func (t *BrandByTransaction_Mcc) MergeBrandByTransactionMcc2(v BrandByTransactionMcc2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BrandByTransaction_Mcc) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BrandByTransaction_Mcc) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsBrandByTransactionPhone0 returns the union data inside the BrandByTransaction_Phone as a BrandByTransactionPhone0
+func (t BrandByTransaction_Phone) AsBrandByTransactionPhone0() (BrandByTransactionPhone0, error) {
+	var body BrandByTransactionPhone0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionPhone0 overwrites any union data inside the BrandByTransaction_Phone as the provided BrandByTransactionPhone0
+func (t *BrandByTransaction_Phone) FromBrandByTransactionPhone0(v BrandByTransactionPhone0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionPhone0 performs a merge with any union data inside the BrandByTransaction_Phone, using the provided BrandByTransactionPhone0
+func (t *BrandByTransaction_Phone) MergeBrandByTransactionPhone0(v BrandByTransactionPhone0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransactionPhone1 returns the union data inside the BrandByTransaction_Phone as a BrandByTransactionPhone1
+func (t BrandByTransaction_Phone) AsBrandByTransactionPhone1() (BrandByTransactionPhone1, error) {
+	var body BrandByTransactionPhone1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionPhone1 overwrites any union data inside the BrandByTransaction_Phone as the provided BrandByTransactionPhone1
+func (t *BrandByTransaction_Phone) FromBrandByTransactionPhone1(v BrandByTransactionPhone1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionPhone1 performs a merge with any union data inside the BrandByTransaction_Phone, using the provided BrandByTransactionPhone1
+func (t *BrandByTransaction_Phone) MergeBrandByTransactionPhone1(v BrandByTransactionPhone1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransactionPhone2 returns the union data inside the BrandByTransaction_Phone as a BrandByTransactionPhone2
+func (t BrandByTransaction_Phone) AsBrandByTransactionPhone2() (BrandByTransactionPhone2, error) {
+	var body BrandByTransactionPhone2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransactionPhone2 overwrites any union data inside the BrandByTransaction_Phone as the provided BrandByTransactionPhone2
+func (t *BrandByTransaction_Phone) FromBrandByTransactionPhone2(v BrandByTransactionPhone2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransactionPhone2 performs a merge with any union data inside the BrandByTransaction_Phone, using the provided BrandByTransactionPhone2
+func (t *BrandByTransaction_Phone) MergeBrandByTransactionPhone2(v BrandByTransactionPhone2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BrandByTransaction_Phone) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BrandByTransaction_Phone) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -8241,6 +10327,125 @@ func (t ClickActionOutput_Selector) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ClickActionOutput_Selector) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPageTarget returns the union data inside the CreateMonitor_Target as a PageTarget
+func (t CreateMonitor_Target) AsPageTarget() (PageTarget, error) {
+	var body PageTarget
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPageTarget overwrites any union data inside the CreateMonitor_Target as the provided PageTarget
+func (t *CreateMonitor_Target) FromPageTarget(v PageTarget) error {
+	v.Type = "page"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePageTarget performs a merge with any union data inside the CreateMonitor_Target, using the provided PageTarget
+func (t *CreateMonitor_Target) MergePageTarget(v PageTarget) error {
+	v.Type = "page"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSitemapTarget returns the union data inside the CreateMonitor_Target as a SitemapTarget
+func (t CreateMonitor_Target) AsSitemapTarget() (SitemapTarget, error) {
+	var body SitemapTarget
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSitemapTarget overwrites any union data inside the CreateMonitor_Target as the provided SitemapTarget
+func (t *CreateMonitor_Target) FromSitemapTarget(v SitemapTarget) error {
+	v.Type = "sitemap"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSitemapTarget performs a merge with any union data inside the CreateMonitor_Target, using the provided SitemapTarget
+func (t *CreateMonitor_Target) MergeSitemapTarget(v SitemapTarget) error {
+	v.Type = "sitemap"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsExtractTarget returns the union data inside the CreateMonitor_Target as a ExtractTarget
+func (t CreateMonitor_Target) AsExtractTarget() (ExtractTarget, error) {
+	var body ExtractTarget
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromExtractTarget overwrites any union data inside the CreateMonitor_Target as the provided ExtractTarget
+func (t *CreateMonitor_Target) FromExtractTarget(v ExtractTarget) error {
+	v.Type = "extract"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeExtractTarget performs a merge with any union data inside the CreateMonitor_Target, using the provided ExtractTarget
+func (t *CreateMonitor_Target) MergeExtractTarget(v ExtractTarget) error {
+	v.Type = "extract"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreateMonitor_Target) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t CreateMonitor_Target) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "extract":
+		return t.AsExtractTarget()
+	case "page":
+		return t.AsPageTarget()
+	case "sitemap":
+		return t.AsSitemapTarget()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t CreateMonitor_Target) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreateMonitor_Target) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -9424,6 +11629,274 @@ func (t *MultiFactorFillActionOutput_Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsNewsEntityName returns the union data inside the NewsSearchBy_Entity as a NewsEntityName
+func (t NewsSearchBy_Entity) AsNewsEntityName() (NewsEntityName, error) {
+	var body NewsEntityName
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNewsEntityName overwrites any union data inside the NewsSearchBy_Entity as the provided NewsEntityName
+func (t *NewsSearchBy_Entity) FromNewsEntityName(v NewsEntityName) error {
+	v.Type = "name"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNewsEntityName performs a merge with any union data inside the NewsSearchBy_Entity, using the provided NewsEntityName
+func (t *NewsSearchBy_Entity) MergeNewsEntityName(v NewsEntityName) error {
+	v.Type = "name"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNewsEntityDomain returns the union data inside the NewsSearchBy_Entity as a NewsEntityDomain
+func (t NewsSearchBy_Entity) AsNewsEntityDomain() (NewsEntityDomain, error) {
+	var body NewsEntityDomain
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNewsEntityDomain overwrites any union data inside the NewsSearchBy_Entity as the provided NewsEntityDomain
+func (t *NewsSearchBy_Entity) FromNewsEntityDomain(v NewsEntityDomain) error {
+	v.Type = "domain"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNewsEntityDomain performs a merge with any union data inside the NewsSearchBy_Entity, using the provided NewsEntityDomain
+func (t *NewsSearchBy_Entity) MergeNewsEntityDomain(v NewsEntityDomain) error {
+	v.Type = "domain"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNewsEntityTicker returns the union data inside the NewsSearchBy_Entity as a NewsEntityTicker
+func (t NewsSearchBy_Entity) AsNewsEntityTicker() (NewsEntityTicker, error) {
+	var body NewsEntityTicker
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNewsEntityTicker overwrites any union data inside the NewsSearchBy_Entity as the provided NewsEntityTicker
+func (t *NewsSearchBy_Entity) FromNewsEntityTicker(v NewsEntityTicker) error {
+	v.Type = "ticker"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNewsEntityTicker performs a merge with any union data inside the NewsSearchBy_Entity, using the provided NewsEntityTicker
+func (t *NewsSearchBy_Entity) MergeNewsEntityTicker(v NewsEntityTicker) error {
+	v.Type = "ticker"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNewsEntityIsin returns the union data inside the NewsSearchBy_Entity as a NewsEntityIsin
+func (t NewsSearchBy_Entity) AsNewsEntityIsin() (NewsEntityIsin, error) {
+	var body NewsEntityIsin
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNewsEntityIsin overwrites any union data inside the NewsSearchBy_Entity as the provided NewsEntityIsin
+func (t *NewsSearchBy_Entity) FromNewsEntityIsin(v NewsEntityIsin) error {
+	v.Type = "isin"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNewsEntityIsin performs a merge with any union data inside the NewsSearchBy_Entity, using the provided NewsEntityIsin
+func (t *NewsSearchBy_Entity) MergeNewsEntityIsin(v NewsEntityIsin) error {
+	v.Type = "isin"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t NewsSearchBy_Entity) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t NewsSearchBy_Entity) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "domain":
+		return t.AsNewsEntityDomain()
+	case "isin":
+		return t.AsNewsEntityIsin()
+	case "name":
+		return t.AsNewsEntityName()
+	case "ticker":
+		return t.AsNewsEntityTicker()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t NewsSearchBy_Entity) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *NewsSearchBy_Entity) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsNotteApiDataApisMonitorsModelsWaitAction returns the union data inside the PageTarget_Actions_Item as a NotteApiDataApisMonitorsModelsWaitAction
+func (t PageTarget_Actions_Item) AsNotteApiDataApisMonitorsModelsWaitAction() (NotteApiDataApisMonitorsModelsWaitAction, error) {
+	var body NotteApiDataApisMonitorsModelsWaitAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotteApiDataApisMonitorsModelsWaitAction overwrites any union data inside the PageTarget_Actions_Item as the provided NotteApiDataApisMonitorsModelsWaitAction
+func (t *PageTarget_Actions_Item) FromNotteApiDataApisMonitorsModelsWaitAction(v NotteApiDataApisMonitorsModelsWaitAction) error {
+	v.Do = "wait"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotteApiDataApisMonitorsModelsWaitAction performs a merge with any union data inside the PageTarget_Actions_Item, using the provided NotteApiDataApisMonitorsModelsWaitAction
+func (t *PageTarget_Actions_Item) MergeNotteApiDataApisMonitorsModelsWaitAction(v NotteApiDataApisMonitorsModelsWaitAction) error {
+	v.Do = "wait"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPerformAction returns the union data inside the PageTarget_Actions_Item as a PerformAction
+func (t PageTarget_Actions_Item) AsPerformAction() (PerformAction, error) {
+	var body PerformAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPerformAction overwrites any union data inside the PageTarget_Actions_Item as the provided PerformAction
+func (t *PageTarget_Actions_Item) FromPerformAction(v PerformAction) error {
+	v.Do = "perform"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePerformAction performs a merge with any union data inside the PageTarget_Actions_Item, using the provided PerformAction
+func (t *PageTarget_Actions_Item) MergePerformAction(v PerformAction) error {
+	v.Do = "perform"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollAction returns the union data inside the PageTarget_Actions_Item as a ScrollAction
+func (t PageTarget_Actions_Item) AsScrollAction() (ScrollAction, error) {
+	var body ScrollAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollAction overwrites any union data inside the PageTarget_Actions_Item as the provided ScrollAction
+func (t *PageTarget_Actions_Item) FromScrollAction(v ScrollAction) error {
+	v.Do = "scroll"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollAction performs a merge with any union data inside the PageTarget_Actions_Item, using the provided ScrollAction
+func (t *PageTarget_Actions_Item) MergeScrollAction(v ScrollAction) error {
+	v.Do = "scroll"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PageTarget_Actions_Item) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"do"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t PageTarget_Actions_Item) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "perform":
+		return t.AsPerformAction()
+	case "scroll":
+		return t.AsScrollAction()
+	case "wait":
+		return t.AsNotteApiDataApisMonitorsModelsWaitAction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t PageTarget_Actions_Item) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PageTarget_Actions_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsPaymentRequestAmount0 returns the union data inside the PaymentRequest_Amount as a PaymentRequestAmount0
 func (t PaymentRequest_Amount) AsPaymentRequestAmount0() (PaymentRequestAmount0, error) {
 	var body PaymentRequestAmount0
@@ -9482,6 +11955,95 @@ func (t PaymentRequest_Amount) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PaymentRequest_Amount) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCandidateMatch returns the union data inside the PeopleEnrichResponse_Match as a CandidateMatch
+func (t PeopleEnrichResponse_Match) AsCandidateMatch() (CandidateMatch, error) {
+	var body CandidateMatch
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCandidateMatch overwrites any union data inside the PeopleEnrichResponse_Match as the provided CandidateMatch
+func (t *PeopleEnrichResponse_Match) FromCandidateMatch(v CandidateMatch) error {
+	v.Status = "candidate"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCandidateMatch performs a merge with any union data inside the PeopleEnrichResponse_Match, using the provided CandidateMatch
+func (t *PeopleEnrichResponse_Match) MergeCandidateMatch(v CandidateMatch) error {
+	v.Status = "candidate"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNotFoundMatch returns the union data inside the PeopleEnrichResponse_Match as a NotFoundMatch
+func (t PeopleEnrichResponse_Match) AsNotFoundMatch() (NotFoundMatch, error) {
+	var body NotFoundMatch
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotFoundMatch overwrites any union data inside the PeopleEnrichResponse_Match as the provided NotFoundMatch
+func (t *PeopleEnrichResponse_Match) FromNotFoundMatch(v NotFoundMatch) error {
+	v.Status = "not_found"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotFoundMatch performs a merge with any union data inside the PeopleEnrichResponse_Match, using the provided NotFoundMatch
+func (t *PeopleEnrichResponse_Match) MergeNotFoundMatch(v NotFoundMatch) error {
+	v.Status = "not_found"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PeopleEnrichResponse_Match) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"status"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t PeopleEnrichResponse_Match) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "candidate":
+		return t.AsCandidateMatch()
+	case "not_found":
+		return t.AsNotFoundMatch()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t PeopleEnrichResponse_Match) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PeopleEnrichResponse_Match) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -9606,6 +12168,68 @@ func (t ScrapeRequest_Model) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ScrapeRequest_Model) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsScrollActionAmount0 returns the union data inside the ScrollAction_Amount as a ScrollActionAmount0
+func (t ScrollAction_Amount) AsScrollActionAmount0() (ScrollActionAmount0, error) {
+	var body ScrollActionAmount0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollActionAmount0 overwrites any union data inside the ScrollAction_Amount as the provided ScrollActionAmount0
+func (t *ScrollAction_Amount) FromScrollActionAmount0(v ScrollActionAmount0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollActionAmount0 performs a merge with any union data inside the ScrollAction_Amount, using the provided ScrollActionAmount0
+func (t *ScrollAction_Amount) MergeScrollActionAmount0(v ScrollActionAmount0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollActionAmount1 returns the union data inside the ScrollAction_Amount as a ScrollActionAmount1
+func (t ScrollAction_Amount) AsScrollActionAmount1() (ScrollActionAmount1, error) {
+	var body ScrollActionAmount1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollActionAmount1 overwrites any union data inside the ScrollAction_Amount as the provided ScrollActionAmount1
+func (t *ScrollAction_Amount) FromScrollActionAmount1(v ScrollActionAmount1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollActionAmount1 performs a merge with any union data inside the ScrollAction_Amount, using the provided ScrollActionAmount1
+func (t *ScrollAction_Amount) MergeScrollActionAmount1(v ScrollActionAmount1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ScrollAction_Amount) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ScrollAction_Amount) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -9854,6 +12478,187 @@ func (t SelectDropdownOptionActionOutput_Value) MarshalJSON() ([]byte, error) {
 }
 
 func (t *SelectDropdownOptionActionOutput_Value) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsNotteApiDataApisMonitorsModelsWaitAction returns the union data inside the SharedParams_Actions_Item as a NotteApiDataApisMonitorsModelsWaitAction
+func (t SharedParams_Actions_Item) AsNotteApiDataApisMonitorsModelsWaitAction() (NotteApiDataApisMonitorsModelsWaitAction, error) {
+	var body NotteApiDataApisMonitorsModelsWaitAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotteApiDataApisMonitorsModelsWaitAction overwrites any union data inside the SharedParams_Actions_Item as the provided NotteApiDataApisMonitorsModelsWaitAction
+func (t *SharedParams_Actions_Item) FromNotteApiDataApisMonitorsModelsWaitAction(v NotteApiDataApisMonitorsModelsWaitAction) error {
+	v.Do = "wait"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotteApiDataApisMonitorsModelsWaitAction performs a merge with any union data inside the SharedParams_Actions_Item, using the provided NotteApiDataApisMonitorsModelsWaitAction
+func (t *SharedParams_Actions_Item) MergeNotteApiDataApisMonitorsModelsWaitAction(v NotteApiDataApisMonitorsModelsWaitAction) error {
+	v.Do = "wait"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPerformAction returns the union data inside the SharedParams_Actions_Item as a PerformAction
+func (t SharedParams_Actions_Item) AsPerformAction() (PerformAction, error) {
+	var body PerformAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPerformAction overwrites any union data inside the SharedParams_Actions_Item as the provided PerformAction
+func (t *SharedParams_Actions_Item) FromPerformAction(v PerformAction) error {
+	v.Do = "perform"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePerformAction performs a merge with any union data inside the SharedParams_Actions_Item, using the provided PerformAction
+func (t *SharedParams_Actions_Item) MergePerformAction(v PerformAction) error {
+	v.Do = "perform"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollAction returns the union data inside the SharedParams_Actions_Item as a ScrollAction
+func (t SharedParams_Actions_Item) AsScrollAction() (ScrollAction, error) {
+	var body ScrollAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollAction overwrites any union data inside the SharedParams_Actions_Item as the provided ScrollAction
+func (t *SharedParams_Actions_Item) FromScrollAction(v ScrollAction) error {
+	v.Do = "scroll"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollAction performs a merge with any union data inside the SharedParams_Actions_Item, using the provided ScrollAction
+func (t *SharedParams_Actions_Item) MergeScrollAction(v ScrollAction) error {
+	v.Do = "scroll"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SharedParams_Actions_Item) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"do"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t SharedParams_Actions_Item) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "perform":
+		return t.AsPerformAction()
+	case "scroll":
+		return t.AsScrollAction()
+	case "wait":
+		return t.AsNotteApiDataApisMonitorsModelsWaitAction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t SharedParams_Actions_Item) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SharedParams_Actions_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSharedParamsWaitFor0 returns the union data inside the SharedParams_WaitFor as a SharedParamsWaitFor0
+func (t SharedParams_WaitFor) AsSharedParamsWaitFor0() (SharedParamsWaitFor0, error) {
+	var body SharedParamsWaitFor0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSharedParamsWaitFor0 overwrites any union data inside the SharedParams_WaitFor as the provided SharedParamsWaitFor0
+func (t *SharedParams_WaitFor) FromSharedParamsWaitFor0(v SharedParamsWaitFor0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSharedParamsWaitFor0 performs a merge with any union data inside the SharedParams_WaitFor, using the provided SharedParamsWaitFor0
+func (t *SharedParams_WaitFor) MergeSharedParamsWaitFor0(v SharedParamsWaitFor0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSharedParamsWaitFor1 returns the union data inside the SharedParams_WaitFor as a SharedParamsWaitFor1
+func (t SharedParams_WaitFor) AsSharedParamsWaitFor1() (SharedParamsWaitFor1, error) {
+	var body SharedParamsWaitFor1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSharedParamsWaitFor1 overwrites any union data inside the SharedParams_WaitFor as the provided SharedParamsWaitFor1
+func (t *SharedParams_WaitFor) FromSharedParamsWaitFor1(v SharedParamsWaitFor1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSharedParamsWaitFor1 performs a merge with any union data inside the SharedParams_WaitFor, using the provided SharedParamsWaitFor1
+func (t *SharedParams_WaitFor) MergeSharedParamsWaitFor1(v SharedParamsWaitFor1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SharedParams_WaitFor) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SharedParams_WaitFor) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -10168,6 +12973,1140 @@ func (t *ValidationError_Loc_Item) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsBrandByDomain returns the union data inside the BrandRetrieveRequestBody as a BrandByDomain
+func (t BrandRetrieveRequestBody) AsBrandByDomain() (BrandByDomain, error) {
+	var body BrandByDomain
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByDomain overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByDomain
+func (t *BrandRetrieveRequestBody) FromBrandByDomain(v BrandByDomain) error {
+	v.Type = "by_domain"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByDomain performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByDomain
+func (t *BrandRetrieveRequestBody) MergeBrandByDomain(v BrandByDomain) error {
+	v.Type = "by_domain"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByName returns the union data inside the BrandRetrieveRequestBody as a BrandByName
+func (t BrandRetrieveRequestBody) AsBrandByName() (BrandByName, error) {
+	var body BrandByName
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByName overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByName
+func (t *BrandRetrieveRequestBody) FromBrandByName(v BrandByName) error {
+	v.Type = "by_name"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByName performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByName
+func (t *BrandRetrieveRequestBody) MergeBrandByName(v BrandByName) error {
+	v.Type = "by_name"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByEmail returns the union data inside the BrandRetrieveRequestBody as a BrandByEmail
+func (t BrandRetrieveRequestBody) AsBrandByEmail() (BrandByEmail, error) {
+	var body BrandByEmail
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByEmail overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByEmail
+func (t *BrandRetrieveRequestBody) FromBrandByEmail(v BrandByEmail) error {
+	v.Type = "by_email"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByEmail performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByEmail
+func (t *BrandRetrieveRequestBody) MergeBrandByEmail(v BrandByEmail) error {
+	v.Type = "by_email"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTicker returns the union data inside the BrandRetrieveRequestBody as a BrandByTicker
+func (t BrandRetrieveRequestBody) AsBrandByTicker() (BrandByTicker, error) {
+	var body BrandByTicker
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTicker overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByTicker
+func (t *BrandRetrieveRequestBody) FromBrandByTicker(v BrandByTicker) error {
+	v.Type = "by_ticker"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTicker performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByTicker
+func (t *BrandRetrieveRequestBody) MergeBrandByTicker(v BrandByTicker) error {
+	v.Type = "by_ticker"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByDirectUrl returns the union data inside the BrandRetrieveRequestBody as a BrandByDirectUrl
+func (t BrandRetrieveRequestBody) AsBrandByDirectUrl() (BrandByDirectUrl, error) {
+	var body BrandByDirectUrl
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByDirectUrl overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByDirectUrl
+func (t *BrandRetrieveRequestBody) FromBrandByDirectUrl(v BrandByDirectUrl) error {
+	v.Type = "by_direct_url"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByDirectUrl performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByDirectUrl
+func (t *BrandRetrieveRequestBody) MergeBrandByDirectUrl(v BrandByDirectUrl) error {
+	v.Type = "by_direct_url"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransaction returns the union data inside the BrandRetrieveRequestBody as a BrandByTransaction
+func (t BrandRetrieveRequestBody) AsBrandByTransaction() (BrandByTransaction, error) {
+	var body BrandByTransaction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransaction overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByTransaction
+func (t *BrandRetrieveRequestBody) FromBrandByTransaction(v BrandByTransaction) error {
+	v.Type = "by_transaction"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransaction performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByTransaction
+func (t *BrandRetrieveRequestBody) MergeBrandByTransaction(v BrandByTransaction) error {
+	v.Type = "by_transaction"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BrandRetrieveRequestBody) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t BrandRetrieveRequestBody) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "by_direct_url":
+		return t.AsBrandByDirectUrl()
+	case "by_domain":
+		return t.AsBrandByDomain()
+	case "by_email":
+		return t.AsBrandByEmail()
+	case "by_name":
+		return t.AsBrandByName()
+	case "by_ticker":
+		return t.AsBrandByTicker()
+	case "by_transaction":
+		return t.AsBrandByTransaction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t BrandRetrieveRequestBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BrandRetrieveRequestBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFormFillAction returns the union data inside the PageExecuteRequestBody as a FormFillAction
+func (t PageExecuteRequestBody) AsFormFillAction() (FormFillAction, error) {
+	var body FormFillAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFormFillAction overwrites any union data inside the PageExecuteRequestBody as the provided FormFillAction
+func (t *PageExecuteRequestBody) FromFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFormFillAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided FormFillAction
+func (t *PageExecuteRequestBody) MergeFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoAction returns the union data inside the PageExecuteRequestBody as a GotoAction
+func (t PageExecuteRequestBody) AsGotoAction() (GotoAction, error) {
+	var body GotoAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoAction overwrites any union data inside the PageExecuteRequestBody as the provided GotoAction
+func (t *PageExecuteRequestBody) FromGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GotoAction
+func (t *PageExecuteRequestBody) MergeGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoNewTabAction returns the union data inside the PageExecuteRequestBody as a GotoNewTabAction
+func (t PageExecuteRequestBody) AsGotoNewTabAction() (GotoNewTabAction, error) {
+	var body GotoNewTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoNewTabAction overwrites any union data inside the PageExecuteRequestBody as the provided GotoNewTabAction
+func (t *PageExecuteRequestBody) FromGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoNewTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GotoNewTabAction
+func (t *PageExecuteRequestBody) MergeGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCloseTabAction returns the union data inside the PageExecuteRequestBody as a CloseTabAction
+func (t PageExecuteRequestBody) AsCloseTabAction() (CloseTabAction, error) {
+	var body CloseTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCloseTabAction overwrites any union data inside the PageExecuteRequestBody as the provided CloseTabAction
+func (t *PageExecuteRequestBody) FromCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCloseTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CloseTabAction
+func (t *PageExecuteRequestBody) MergeCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchTabAction returns the union data inside the PageExecuteRequestBody as a SwitchTabAction
+func (t PageExecuteRequestBody) AsSwitchTabAction() (SwitchTabAction, error) {
+	var body SwitchTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchTabAction overwrites any union data inside the PageExecuteRequestBody as the provided SwitchTabAction
+func (t *PageExecuteRequestBody) FromSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided SwitchTabAction
+func (t *PageExecuteRequestBody) MergeSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoBackAction returns the union data inside the PageExecuteRequestBody as a GoBackAction
+func (t PageExecuteRequestBody) AsGoBackAction() (GoBackAction, error) {
+	var body GoBackAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoBackAction overwrites any union data inside the PageExecuteRequestBody as the provided GoBackAction
+func (t *PageExecuteRequestBody) FromGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoBackAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GoBackAction
+func (t *PageExecuteRequestBody) MergeGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoForwardAction returns the union data inside the PageExecuteRequestBody as a GoForwardAction
+func (t PageExecuteRequestBody) AsGoForwardAction() (GoForwardAction, error) {
+	var body GoForwardAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoForwardAction overwrites any union data inside the PageExecuteRequestBody as the provided GoForwardAction
+func (t *PageExecuteRequestBody) FromGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoForwardAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GoForwardAction
+func (t *PageExecuteRequestBody) MergeGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsReloadAction returns the union data inside the PageExecuteRequestBody as a ReloadAction
+func (t PageExecuteRequestBody) AsReloadAction() (ReloadAction, error) {
+	var body ReloadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromReloadAction overwrites any union data inside the PageExecuteRequestBody as the provided ReloadAction
+func (t *PageExecuteRequestBody) FromReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeReloadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ReloadAction
+func (t *PageExecuteRequestBody) MergeReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNotteCoreActionsActionsWaitAction returns the union data inside the PageExecuteRequestBody as a NotteCoreActionsActionsWaitAction
+func (t PageExecuteRequestBody) AsNotteCoreActionsActionsWaitAction() (NotteCoreActionsActionsWaitAction, error) {
+	var body NotteCoreActionsActionsWaitAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotteCoreActionsActionsWaitAction overwrites any union data inside the PageExecuteRequestBody as the provided NotteCoreActionsActionsWaitAction
+func (t *PageExecuteRequestBody) FromNotteCoreActionsActionsWaitAction(v NotteCoreActionsActionsWaitAction) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotteCoreActionsActionsWaitAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided NotteCoreActionsActionsWaitAction
+func (t *PageExecuteRequestBody) MergeNotteCoreActionsActionsWaitAction(v NotteCoreActionsActionsWaitAction) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPressKeyAction returns the union data inside the PageExecuteRequestBody as a PressKeyAction
+func (t PageExecuteRequestBody) AsPressKeyAction() (PressKeyAction, error) {
+	var body PressKeyAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPressKeyAction overwrites any union data inside the PageExecuteRequestBody as the provided PressKeyAction
+func (t *PageExecuteRequestBody) FromPressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePressKeyAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided PressKeyAction
+func (t *PageExecuteRequestBody) MergePressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollUpAction returns the union data inside the PageExecuteRequestBody as a ScrollUpAction
+func (t PageExecuteRequestBody) AsScrollUpAction() (ScrollUpAction, error) {
+	var body ScrollUpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollUpAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrollUpAction
+func (t *PageExecuteRequestBody) FromScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollUpAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrollUpAction
+func (t *PageExecuteRequestBody) MergeScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollDownAction returns the union data inside the PageExecuteRequestBody as a ScrollDownAction
+func (t PageExecuteRequestBody) AsScrollDownAction() (ScrollDownAction, error) {
+	var body ScrollDownAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollDownAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrollDownAction
+func (t *PageExecuteRequestBody) FromScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollDownAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrollDownAction
+func (t *PageExecuteRequestBody) MergeScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCaptchaSolveAction returns the union data inside the PageExecuteRequestBody as a CaptchaSolveAction
+func (t PageExecuteRequestBody) AsCaptchaSolveAction() (CaptchaSolveAction, error) {
+	var body CaptchaSolveAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCaptchaSolveAction overwrites any union data inside the PageExecuteRequestBody as the provided CaptchaSolveAction
+func (t *PageExecuteRequestBody) FromCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCaptchaSolveAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CaptchaSolveAction
+func (t *PageExecuteRequestBody) MergeCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsHelpAction returns the union data inside the PageExecuteRequestBody as a HelpAction
+func (t PageExecuteRequestBody) AsHelpAction() (HelpAction, error) {
+	var body HelpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHelpAction overwrites any union data inside the PageExecuteRequestBody as the provided HelpAction
+func (t *PageExecuteRequestBody) FromHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHelpAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided HelpAction
+func (t *PageExecuteRequestBody) MergeHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCompletionAction returns the union data inside the PageExecuteRequestBody as a CompletionAction
+func (t PageExecuteRequestBody) AsCompletionAction() (CompletionAction, error) {
+	var body CompletionAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCompletionAction overwrites any union data inside the PageExecuteRequestBody as the provided CompletionAction
+func (t *PageExecuteRequestBody) FromCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCompletionAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CompletionAction
+func (t *PageExecuteRequestBody) MergeCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrapeAction returns the union data inside the PageExecuteRequestBody as a ScrapeAction
+func (t PageExecuteRequestBody) AsScrapeAction() (ScrapeAction, error) {
+	var body ScrapeAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrapeAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrapeAction
+func (t *PageExecuteRequestBody) FromScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrapeAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrapeAction
+func (t *PageExecuteRequestBody) MergeScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailReadAction returns the union data inside the PageExecuteRequestBody as a EmailReadAction
+func (t PageExecuteRequestBody) AsEmailReadAction() (EmailReadAction, error) {
+	var body EmailReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailReadAction overwrites any union data inside the PageExecuteRequestBody as the provided EmailReadAction
+func (t *PageExecuteRequestBody) FromEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EmailReadAction
+func (t *PageExecuteRequestBody) MergeEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailVerificationReadAction returns the union data inside the PageExecuteRequestBody as a EmailVerificationReadAction
+func (t PageExecuteRequestBody) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the PageExecuteRequestBody as the provided EmailVerificationReadAction
+func (t *PageExecuteRequestBody) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EmailVerificationReadAction
+func (t *PageExecuteRequestBody) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSmsReadAction returns the union data inside the PageExecuteRequestBody as a SmsReadAction
+func (t PageExecuteRequestBody) AsSmsReadAction() (SmsReadAction, error) {
+	var body SmsReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSmsReadAction overwrites any union data inside the PageExecuteRequestBody as the provided SmsReadAction
+func (t *PageExecuteRequestBody) FromSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSmsReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided SmsReadAction
+func (t *PageExecuteRequestBody) MergeSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEvaluateJsAction returns the union data inside the PageExecuteRequestBody as a EvaluateJsAction
+func (t PageExecuteRequestBody) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the PageExecuteRequestBody as the provided EvaluateJsAction
+func (t *PageExecuteRequestBody) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EvaluateJsAction
+func (t *PageExecuteRequestBody) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClickActionInput returns the union data inside the PageExecuteRequestBody as a ClickActionInput
+func (t PageExecuteRequestBody) AsClickActionInput() (ClickActionInput, error) {
+	var body ClickActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClickActionInput overwrites any union data inside the PageExecuteRequestBody as the provided ClickActionInput
+func (t *PageExecuteRequestBody) FromClickActionInput(v ClickActionInput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClickActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided ClickActionInput
+func (t *PageExecuteRequestBody) MergeClickActionInput(v ClickActionInput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFillActionInput returns the union data inside the PageExecuteRequestBody as a FillActionInput
+func (t PageExecuteRequestBody) AsFillActionInput() (FillActionInput, error) {
+	var body FillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided FillActionInput
+func (t *PageExecuteRequestBody) FromFillActionInput(v FillActionInput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided FillActionInput
+func (t *PageExecuteRequestBody) MergeFillActionInput(v FillActionInput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMultiFactorFillActionInput returns the union data inside the PageExecuteRequestBody as a MultiFactorFillActionInput
+func (t PageExecuteRequestBody) AsMultiFactorFillActionInput() (MultiFactorFillActionInput, error) {
+	var body MultiFactorFillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMultiFactorFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided MultiFactorFillActionInput
+func (t *PageExecuteRequestBody) FromMultiFactorFillActionInput(v MultiFactorFillActionInput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMultiFactorFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided MultiFactorFillActionInput
+func (t *PageExecuteRequestBody) MergeMultiFactorFillActionInput(v MultiFactorFillActionInput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFallbackFillActionInput returns the union data inside the PageExecuteRequestBody as a FallbackFillActionInput
+func (t PageExecuteRequestBody) AsFallbackFillActionInput() (FallbackFillActionInput, error) {
+	var body FallbackFillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFallbackFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided FallbackFillActionInput
+func (t *PageExecuteRequestBody) FromFallbackFillActionInput(v FallbackFillActionInput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFallbackFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided FallbackFillActionInput
+func (t *PageExecuteRequestBody) MergeFallbackFillActionInput(v FallbackFillActionInput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckActionInput returns the union data inside the PageExecuteRequestBody as a CheckActionInput
+func (t PageExecuteRequestBody) AsCheckActionInput() (CheckActionInput, error) {
+	var body CheckActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckActionInput overwrites any union data inside the PageExecuteRequestBody as the provided CheckActionInput
+func (t *PageExecuteRequestBody) FromCheckActionInput(v CheckActionInput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided CheckActionInput
+func (t *PageExecuteRequestBody) MergeCheckActionInput(v CheckActionInput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSelectDropdownOptionActionInput returns the union data inside the PageExecuteRequestBody as a SelectDropdownOptionActionInput
+func (t PageExecuteRequestBody) AsSelectDropdownOptionActionInput() (SelectDropdownOptionActionInput, error) {
+	var body SelectDropdownOptionActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSelectDropdownOptionActionInput overwrites any union data inside the PageExecuteRequestBody as the provided SelectDropdownOptionActionInput
+func (t *PageExecuteRequestBody) FromSelectDropdownOptionActionInput(v SelectDropdownOptionActionInput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSelectDropdownOptionActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided SelectDropdownOptionActionInput
+func (t *PageExecuteRequestBody) MergeSelectDropdownOptionActionInput(v SelectDropdownOptionActionInput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUploadFileActionInput returns the union data inside the PageExecuteRequestBody as a UploadFileActionInput
+func (t PageExecuteRequestBody) AsUploadFileActionInput() (UploadFileActionInput, error) {
+	var body UploadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUploadFileActionInput overwrites any union data inside the PageExecuteRequestBody as the provided UploadFileActionInput
+func (t *PageExecuteRequestBody) FromUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUploadFileActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided UploadFileActionInput
+func (t *PageExecuteRequestBody) MergeUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDownloadFileActionInput returns the union data inside the PageExecuteRequestBody as a DownloadFileActionInput
+func (t PageExecuteRequestBody) AsDownloadFileActionInput() (DownloadFileActionInput, error) {
+	var body DownloadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDownloadFileActionInput overwrites any union data inside the PageExecuteRequestBody as the provided DownloadFileActionInput
+func (t *PageExecuteRequestBody) FromDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDownloadFileActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided DownloadFileActionInput
+func (t *PageExecuteRequestBody) MergeDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PageExecuteRequestBody) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t PageExecuteRequestBody) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "captcha_solve":
+		return t.AsCaptchaSolveAction()
+	case "check":
+		return t.AsCheckActionInput()
+	case "click":
+		return t.AsClickActionInput()
+	case "close_tab":
+		return t.AsCloseTabAction()
+	case "completion":
+		return t.AsCompletionAction()
+	case "download_file":
+		return t.AsDownloadFileActionInput()
+	case "email_read":
+		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
+	case "fallback_fill":
+		return t.AsFallbackFillActionInput()
+	case "fill":
+		return t.AsFillActionInput()
+	case "form_fill":
+		return t.AsFormFillAction()
+	case "go_back":
+		return t.AsGoBackAction()
+	case "go_forward":
+		return t.AsGoForwardAction()
+	case "goto":
+		return t.AsGotoAction()
+	case "goto_new_tab":
+		return t.AsGotoNewTabAction()
+	case "help":
+		return t.AsHelpAction()
+	case "multi_factor_fill":
+		return t.AsMultiFactorFillActionInput()
+	case "press_key":
+		return t.AsPressKeyAction()
+	case "reload":
+		return t.AsReloadAction()
+	case "scrape":
+		return t.AsScrapeAction()
+	case "scroll_down":
+		return t.AsScrollDownAction()
+	case "scroll_up":
+		return t.AsScrollUpAction()
+	case "select_dropdown_option":
+		return t.AsSelectDropdownOptionActionInput()
+	case "sms_read":
+		return t.AsSmsReadAction()
+	case "switch_tab":
+		return t.AsSwitchTabAction()
+	case "upload_file":
+		return t.AsUploadFileActionInput()
+	case "wait":
+		return t.AsNotteCoreActionsActionsWaitAction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t PageExecuteRequestBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PageExecuteRequestBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -10265,6 +14204,112 @@ type ClientInterface interface {
 
 	// ListAuditEvents request
 	ListAuditEvents(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListDataApis request
+	ListDataApis(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BrandRetrieveWithBody request with any body
+	BrandRetrieveWithBody(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BrandRetrieve(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MapsSearchWithBody request with any body
+	MapsSearchWithBody(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MapsSearch(ctx context.Context, params *MapsSearchParams, body MapsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListMonitors request
+	ListMonitors(ctx context.Context, params *ListMonitorsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWithBody request with any body
+	CreateWithBody(ctx context.Context, params *CreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Create(ctx context.Context, params *CreateParams, body CreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AccountChanges request
+	AccountChanges(ctx context.Context, params *AccountChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreditUsage request
+	CreditUsage(ctx context.Context, params *CreditUsageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Limits request
+	Limits(ctx context.Context, params *LimitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AccountRuns request
+	AccountRuns(ctx context.Context, params *AccountRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Delete request
+	Delete(ctx context.Context, monitorId string, params *DeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Retrieve request
+	Retrieve(ctx context.Context, monitorId string, params *RetrieveParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateWithBody request with any body
+	UpdateWithBody(ctx context.Context, monitorId string, params *UpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Update(ctx context.Context, monitorId string, params *UpdateParams, body UpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Changes request
+	Changes(ctx context.Context, monitorId string, params *ChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetrieveChange request
+	RetrieveChange(ctx context.Context, monitorId string, changeId string, params *RetrieveChangeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RunNow request
+	RunNow(ctx context.Context, monitorId string, params *RunNowParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Runs request
+	Runs(ctx context.Context, monitorId string, params *RunsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetrieveRun request
+	RetrieveRun(ctx context.Context, monitorId string, runId string, params *RetrieveRunParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RotateSecret request
+	RotateSecret(ctx context.Context, monitorId string, params *RotateSecretParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// NewsSearchWithBody request with any body
+	NewsSearchWithBody(ctx context.Context, params *NewsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	NewsSearch(ctx context.Context, params *NewsSearchParams, body NewsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PeopleEnrichWithBody request with any body
+	PeopleEnrichWithBody(ctx context.Context, params *PeopleEnrichParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PeopleEnrich(ctx context.Context, params *PeopleEnrichParams, body PeopleEnrichJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ExtractProductEndpointWithBody request with any body
+	ExtractProductEndpointWithBody(ctx context.Context, params *ExtractProductEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ExtractProductEndpoint(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ScrapeSpecializedDataWithBody request with any body
+	ScrapeSpecializedDataWithBody(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ScrapeSpecializedData(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// StyleguideEndpoint request
+	StyleguideEndpoint(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeliveriesWithBody request with any body
+	DeliveriesWithBody(ctx context.Context, params *DeliveriesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Deliveries(ctx context.Context, params *DeliveriesParams, body DeliveriesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetrieveDelivery request
+	RetrieveDelivery(ctx context.Context, deliveryId string, params *RetrieveDeliveryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Attempts request
+	Attempts(ctx context.Context, deliveryId string, params *AttemptsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetryWithBody request with any body
+	RetryWithBody(ctx context.Context, deliveryId string, params *RetryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Retry(ctx context.Context, deliveryId string, params *RetryParams, body RetryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// YoutubeEndpointWithBody request with any body
+	YoutubeEndpointWithBody(ctx context.Context, params *YoutubeEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	YoutubeEndpoint(ctx context.Context, params *YoutubeEndpointParams, body YoutubeEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFunctions request
 	ListFunctions(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -10696,6 +14741,474 @@ func (c *Client) AnythingStart(ctx context.Context, params *AnythingStartParams,
 
 func (c *Client) ListAuditEvents(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAuditEventsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListDataApis(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDataApisRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BrandRetrieveWithBody(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBrandRetrieveRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BrandRetrieve(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBrandRetrieveRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MapsSearchWithBody(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMapsSearchRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MapsSearch(ctx context.Context, params *MapsSearchParams, body MapsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMapsSearchRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMonitors(ctx context.Context, params *ListMonitorsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMonitorsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateWithBody(ctx context.Context, params *CreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Create(ctx context.Context, params *CreateParams, body CreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AccountChanges(ctx context.Context, params *AccountChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAccountChangesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreditUsage(ctx context.Context, params *CreditUsageParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreditUsageRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Limits(ctx context.Context, params *LimitsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLimitsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AccountRuns(ctx context.Context, params *AccountRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAccountRunsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Delete(ctx context.Context, monitorId string, params *DeleteParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Retrieve(ctx context.Context, monitorId string, params *RetrieveParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetrieveRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateWithBody(ctx context.Context, monitorId string, params *UpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRequestWithBody(c.Server, monitorId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Update(ctx context.Context, monitorId string, params *UpdateParams, body UpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRequest(c.Server, monitorId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Changes(ctx context.Context, monitorId string, params *ChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangesRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RetrieveChange(ctx context.Context, monitorId string, changeId string, params *RetrieveChangeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetrieveChangeRequest(c.Server, monitorId, changeId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RunNow(ctx context.Context, monitorId string, params *RunNowParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRunNowRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Runs(ctx context.Context, monitorId string, params *RunsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRunsRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RetrieveRun(ctx context.Context, monitorId string, runId string, params *RetrieveRunParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetrieveRunRequest(c.Server, monitorId, runId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RotateSecret(ctx context.Context, monitorId string, params *RotateSecretParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateSecretRequest(c.Server, monitorId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) NewsSearchWithBody(ctx context.Context, params *NewsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewNewsSearchRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) NewsSearch(ctx context.Context, params *NewsSearchParams, body NewsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewNewsSearchRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PeopleEnrichWithBody(ctx context.Context, params *PeopleEnrichParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPeopleEnrichRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PeopleEnrich(ctx context.Context, params *PeopleEnrichParams, body PeopleEnrichJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPeopleEnrichRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExtractProductEndpointWithBody(ctx context.Context, params *ExtractProductEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExtractProductEndpointRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExtractProductEndpoint(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExtractProductEndpointRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ScrapeSpecializedDataWithBody(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewScrapeSpecializedDataRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ScrapeSpecializedData(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewScrapeSpecializedDataRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StyleguideEndpoint(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStyleguideEndpointRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeliveriesWithBody(ctx context.Context, params *DeliveriesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeliveriesRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Deliveries(ctx context.Context, params *DeliveriesParams, body DeliveriesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeliveriesRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RetrieveDelivery(ctx context.Context, deliveryId string, params *RetrieveDeliveryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetrieveDeliveryRequest(c.Server, deliveryId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Attempts(ctx context.Context, deliveryId string, params *AttemptsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAttemptsRequest(c.Server, deliveryId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RetryWithBody(ctx context.Context, deliveryId string, params *RetryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetryRequestWithBody(c.Server, deliveryId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Retry(ctx context.Context, deliveryId string, params *RetryParams, body RetryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetryRequest(c.Server, deliveryId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) YoutubeEndpointWithBody(ctx context.Context, params *YoutubeEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewYoutubeEndpointRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) YoutubeEndpoint(ctx context.Context, params *YoutubeEndpointParams, body YoutubeEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewYoutubeEndpointRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -12802,6 +17315,2446 @@ func NewListAuditEventsRequest(server string, params *ListAuditEventsParams) (*h
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewListDataApisRequest generates requests for ListDataApis
+func NewListDataApisRequest(server string, params *ListDataApisParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewBrandRetrieveRequest calls the generic BrandRetrieve builder with application/json body
+func NewBrandRetrieveRequest(server string, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBrandRetrieveRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBrandRetrieveRequestWithBody generates requests for BrandRetrieve with any type of body
+func NewBrandRetrieveRequestWithBody(server string, params *BrandRetrieveParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/brand/retrieve")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewMapsSearchRequest calls the generic MapsSearch builder with application/json body
+func NewMapsSearchRequest(server string, params *MapsSearchParams, body MapsSearchJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMapsSearchRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewMapsSearchRequestWithBody generates requests for MapsSearch with any type of body
+func NewMapsSearchRequestWithBody(server string, params *MapsSearchParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/maps/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewListMonitorsRequest generates requests for ListMonitors
+func NewListMonitorsRequest(server string, params *ListMonitorsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Q != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "q", runtime.ParamLocationQuery, *params.Q); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SearchBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "search_by", runtime.ParamLocationQuery, *params.SearchBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SearchType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "search_type", runtime.ParamLocationQuery, *params.SearchType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_type", runtime.ParamLocationQuery, *params.TargetType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeDetectionType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_detection_type", runtime.ParamLocationQuery, *params.ChangeDetectionType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tags", runtime.ParamLocationQuery, *params.Tags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewCreateRequest calls the generic Create builder with application/json body
+func NewCreateRequest(server string, params *CreateParams, body CreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewCreateRequestWithBody generates requests for Create with any type of body
+func NewCreateRequestWithBody(server string, params *CreateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewAccountChangesRequest generates requests for AccountChanges
+func NewAccountChangesRequest(server string, params *AccountChangesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/changes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MonitorId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "monitor_id", runtime.ParamLocationQuery, *params.MonitorId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TargetType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target_type", runtime.ParamLocationQuery, *params.TargetType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeDetectionType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_detection_type", runtime.ParamLocationQuery, *params.ChangeDetectionType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewCreditUsageRequest generates requests for CreditUsage
+func NewCreditUsageRequest(server string, params *CreditUsageParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/credit-usage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewLimitsRequest generates requests for Limits
+func NewLimitsRequest(server string, params *LimitsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/limits")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewAccountRunsRequest generates requests for AccountRuns
+func NewAccountRunsRequest(server string, params *AccountRunsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/runs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteRequest generates requests for Delete
+func NewDeleteRequest(server string, monitorId string, params *DeleteParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRetrieveRequest generates requests for Retrieve
+func NewRetrieveRequest(server string, monitorId string, params *RetrieveParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateRequest calls the generic Update builder with application/json body
+func NewUpdateRequest(server string, monitorId string, params *UpdateParams, body UpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRequestWithBody(server, monitorId, params, "application/json", bodyReader)
+}
+
+// NewUpdateRequestWithBody generates requests for Update with any type of body
+func NewUpdateRequestWithBody(server string, monitorId string, params *UpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewChangesRequest generates requests for Changes
+func NewChangesRequest(server string, monitorId string, params *ChangesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/changes", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRetrieveChangeRequest generates requests for RetrieveChange
+func NewRetrieveChangeRequest(server string, monitorId string, changeId string, params *RetrieveChangeParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_id", runtime.ParamLocationPath, changeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/changes/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRunNowRequest generates requests for RunNow
+func NewRunNowRequest(server string, monitorId string, params *RunNowParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/run", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRunsRequest generates requests for Runs
+func NewRunsRequest(server string, monitorId string, params *RunsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/runs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRetrieveRunRequest generates requests for RetrieveRun
+func NewRetrieveRunRequest(server string, monitorId string, runId string, params *RetrieveRunParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "run_id", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/runs/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRotateSecretRequest generates requests for RotateSecret
+func NewRotateSecretRequest(server string, monitorId string, params *RotateSecretParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "monitor_id", runtime.ParamLocationPath, monitorId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/monitors/%s/webhook/rotate-secret", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewNewsSearchRequest calls the generic NewsSearch builder with application/json body
+func NewNewsSearchRequest(server string, params *NewsSearchParams, body NewsSearchJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewNewsSearchRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewNewsSearchRequestWithBody generates requests for NewsSearch with any type of body
+func NewNewsSearchRequestWithBody(server string, params *NewsSearchParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/news/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPeopleEnrichRequest calls the generic PeopleEnrich builder with application/json body
+func NewPeopleEnrichRequest(server string, params *PeopleEnrichParams, body PeopleEnrichJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPeopleEnrichRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewPeopleEnrichRequestWithBody generates requests for PeopleEnrich with any type of body
+func NewPeopleEnrichRequestWithBody(server string, params *PeopleEnrichParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/people/enrich")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewExtractProductEndpointRequest calls the generic ExtractProductEndpoint builder with application/json body
+func NewExtractProductEndpointRequest(server string, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewExtractProductEndpointRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewExtractProductEndpointRequestWithBody generates requests for ExtractProductEndpoint with any type of body
+func NewExtractProductEndpointRequestWithBody(server string, params *ExtractProductEndpointParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/products/extract")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewScrapeSpecializedDataRequest calls the generic ScrapeSpecializedData builder with application/json body
+func NewScrapeSpecializedDataRequest(server string, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewScrapeSpecializedDataRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewScrapeSpecializedDataRequestWithBody generates requests for ScrapeSpecializedData with any type of body
+func NewScrapeSpecializedDataRequestWithBody(server string, params *ScrapeSpecializedDataParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/web/scrape")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewStyleguideEndpointRequest generates requests for StyleguideEndpoint
+func NewStyleguideEndpointRequest(server string, params *StyleguideEndpointParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/web/styleguide")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Domain != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "domain", runtime.ParamLocationQuery, *params.Domain); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DirectUrl != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "directUrl", runtime.ParamLocationQuery, *params.DirectUrl); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MaxAgeMs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "maxAgeMs", runtime.ParamLocationQuery, *params.MaxAgeMs); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ColorScheme != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "colorScheme", runtime.ParamLocationQuery, *params.ColorScheme); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeoutOptsMilliseconds != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeoutOpts[milliseconds]", runtime.ParamLocationQuery, *params.TimeoutOptsMilliseconds); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TimeoutOptsBehavior != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeoutOpts[behavior]", runtime.ParamLocationQuery, *params.TimeoutOptsBehavior); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Zdr != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "zdr", runtime.ParamLocationQuery, *params.Zdr); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tags", runtime.ParamLocationQuery, *params.Tags); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeliveriesRequest calls the generic Deliveries builder with application/json body
+func NewDeliveriesRequest(server string, params *DeliveriesParams, body DeliveriesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeliveriesRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewDeliveriesRequestWithBody generates requests for Deliveries with any type of body
+func NewDeliveriesRequestWithBody(server string, params *DeliveriesParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/webhooks/deliveries")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRetrieveDeliveryRequest generates requests for RetrieveDelivery
+func NewRetrieveDeliveryRequest(server string, deliveryId string, params *RetrieveDeliveryParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "delivery_id", runtime.ParamLocationPath, deliveryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/webhooks/deliveries/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewAttemptsRequest generates requests for Attempts
+func NewAttemptsRequest(server string, deliveryId string, params *AttemptsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "delivery_id", runtime.ParamLocationPath, deliveryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/webhooks/deliveries/%s/attempts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewRetryRequest calls the generic Retry builder with application/json body
+func NewRetryRequest(server string, deliveryId string, params *RetryParams, body RetryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRetryRequestWithBody(server, deliveryId, params, "application/json", bodyReader)
+}
+
+// NewRetryRequestWithBody generates requests for Retry with any type of body
+func NewRetryRequestWithBody(server string, deliveryId string, params *RetryParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "delivery_id", runtime.ParamLocationPath, deliveryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/webhooks/deliveries/%s/retry", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IdempotencyKey != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Idempotency-Key", runtime.ParamLocationHeader, *params.IdempotencyKey)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Idempotency-Key", headerParam0)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam1)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam2)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewYoutubeEndpointRequest calls the generic YoutubeEndpoint builder with application/json body
+func NewYoutubeEndpointRequest(server string, params *YoutubeEndpointParams, body YoutubeEndpointJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewYoutubeEndpointRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewYoutubeEndpointRequestWithBody generates requests for YoutubeEndpoint with any type of body
+func NewYoutubeEndpointRequestWithBody(server string, params *YoutubeEndpointParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/youtube/extract")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -19812,6 +26765,112 @@ type ClientWithResponsesInterface interface {
 	// ListAuditEventsWithResponse request
 	ListAuditEventsWithResponse(ctx context.Context, params *ListAuditEventsParams, reqEditors ...RequestEditorFn) (*ListAuditEventsResult, error)
 
+	// ListDataApisWithResponse request
+	ListDataApisWithResponse(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*ListDataApisResult, error)
+
+	// BrandRetrieveWithBodyWithResponse request with any body
+	BrandRetrieveWithBodyWithResponse(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error)
+
+	BrandRetrieveWithResponse(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error)
+
+	// MapsSearchWithBodyWithResponse request with any body
+	MapsSearchWithBodyWithResponse(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MapsSearchResult, error)
+
+	MapsSearchWithResponse(ctx context.Context, params *MapsSearchParams, body MapsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*MapsSearchResult, error)
+
+	// ListMonitorsWithResponse request
+	ListMonitorsWithResponse(ctx context.Context, params *ListMonitorsParams, reqEditors ...RequestEditorFn) (*ListMonitorsResult, error)
+
+	// CreateWithBodyWithResponse request with any body
+	CreateWithBodyWithResponse(ctx context.Context, params *CreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateResult, error)
+
+	CreateWithResponse(ctx context.Context, params *CreateParams, body CreateJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateResult, error)
+
+	// AccountChangesWithResponse request
+	AccountChangesWithResponse(ctx context.Context, params *AccountChangesParams, reqEditors ...RequestEditorFn) (*AccountChangesResult, error)
+
+	// CreditUsageWithResponse request
+	CreditUsageWithResponse(ctx context.Context, params *CreditUsageParams, reqEditors ...RequestEditorFn) (*CreditUsageResult, error)
+
+	// LimitsWithResponse request
+	LimitsWithResponse(ctx context.Context, params *LimitsParams, reqEditors ...RequestEditorFn) (*LimitsResult, error)
+
+	// AccountRunsWithResponse request
+	AccountRunsWithResponse(ctx context.Context, params *AccountRunsParams, reqEditors ...RequestEditorFn) (*AccountRunsResult, error)
+
+	// DeleteWithResponse request
+	DeleteWithResponse(ctx context.Context, monitorId string, params *DeleteParams, reqEditors ...RequestEditorFn) (*DeleteResult, error)
+
+	// RetrieveWithResponse request
+	RetrieveWithResponse(ctx context.Context, monitorId string, params *RetrieveParams, reqEditors ...RequestEditorFn) (*RetrieveResult, error)
+
+	// UpdateWithBodyWithResponse request with any body
+	UpdateWithBodyWithResponse(ctx context.Context, monitorId string, params *UpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateResult, error)
+
+	UpdateWithResponse(ctx context.Context, monitorId string, params *UpdateParams, body UpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateResult, error)
+
+	// ChangesWithResponse request
+	ChangesWithResponse(ctx context.Context, monitorId string, params *ChangesParams, reqEditors ...RequestEditorFn) (*ChangesResult, error)
+
+	// RetrieveChangeWithResponse request
+	RetrieveChangeWithResponse(ctx context.Context, monitorId string, changeId string, params *RetrieveChangeParams, reqEditors ...RequestEditorFn) (*RetrieveChangeResult, error)
+
+	// RunNowWithResponse request
+	RunNowWithResponse(ctx context.Context, monitorId string, params *RunNowParams, reqEditors ...RequestEditorFn) (*RunNowResult, error)
+
+	// RunsWithResponse request
+	RunsWithResponse(ctx context.Context, monitorId string, params *RunsParams, reqEditors ...RequestEditorFn) (*RunsResult, error)
+
+	// RetrieveRunWithResponse request
+	RetrieveRunWithResponse(ctx context.Context, monitorId string, runId string, params *RetrieveRunParams, reqEditors ...RequestEditorFn) (*RetrieveRunResult, error)
+
+	// RotateSecretWithResponse request
+	RotateSecretWithResponse(ctx context.Context, monitorId string, params *RotateSecretParams, reqEditors ...RequestEditorFn) (*RotateSecretResult, error)
+
+	// NewsSearchWithBodyWithResponse request with any body
+	NewsSearchWithBodyWithResponse(ctx context.Context, params *NewsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*NewsSearchResult, error)
+
+	NewsSearchWithResponse(ctx context.Context, params *NewsSearchParams, body NewsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*NewsSearchResult, error)
+
+	// PeopleEnrichWithBodyWithResponse request with any body
+	PeopleEnrichWithBodyWithResponse(ctx context.Context, params *PeopleEnrichParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PeopleEnrichResult, error)
+
+	PeopleEnrichWithResponse(ctx context.Context, params *PeopleEnrichParams, body PeopleEnrichJSONRequestBody, reqEditors ...RequestEditorFn) (*PeopleEnrichResult, error)
+
+	// ExtractProductEndpointWithBodyWithResponse request with any body
+	ExtractProductEndpointWithBodyWithResponse(ctx context.Context, params *ExtractProductEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExtractProductEndpointResult, error)
+
+	ExtractProductEndpointWithResponse(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*ExtractProductEndpointResult, error)
+
+	// ScrapeSpecializedDataWithBodyWithResponse request with any body
+	ScrapeSpecializedDataWithBodyWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error)
+
+	ScrapeSpecializedDataWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error)
+
+	// StyleguideEndpointWithResponse request
+	StyleguideEndpointWithResponse(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*StyleguideEndpointResult, error)
+
+	// DeliveriesWithBodyWithResponse request with any body
+	DeliveriesWithBodyWithResponse(ctx context.Context, params *DeliveriesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeliveriesResult, error)
+
+	DeliveriesWithResponse(ctx context.Context, params *DeliveriesParams, body DeliveriesJSONRequestBody, reqEditors ...RequestEditorFn) (*DeliveriesResult, error)
+
+	// RetrieveDeliveryWithResponse request
+	RetrieveDeliveryWithResponse(ctx context.Context, deliveryId string, params *RetrieveDeliveryParams, reqEditors ...RequestEditorFn) (*RetrieveDeliveryResult, error)
+
+	// AttemptsWithResponse request
+	AttemptsWithResponse(ctx context.Context, deliveryId string, params *AttemptsParams, reqEditors ...RequestEditorFn) (*AttemptsResult, error)
+
+	// RetryWithBodyWithResponse request with any body
+	RetryWithBodyWithResponse(ctx context.Context, deliveryId string, params *RetryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RetryResult, error)
+
+	RetryWithResponse(ctx context.Context, deliveryId string, params *RetryParams, body RetryJSONRequestBody, reqEditors ...RequestEditorFn) (*RetryResult, error)
+
+	// YoutubeEndpointWithBodyWithResponse request with any body
+	YoutubeEndpointWithBodyWithResponse(ctx context.Context, params *YoutubeEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*YoutubeEndpointResult, error)
+
+	YoutubeEndpointWithResponse(ctx context.Context, params *YoutubeEndpointParams, body YoutubeEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*YoutubeEndpointResult, error)
+
 	// ListFunctionsWithResponse request
 	ListFunctionsWithResponse(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResult, error)
 
@@ -20299,6 +27358,649 @@ func (r ListAuditEventsResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListAuditEventsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListDataApisResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]CapabilityEndpoint
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDataApisResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDataApisResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BrandRetrieveResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BrandResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r BrandRetrieveResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BrandRetrieveResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MapsSearchResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MapsResult
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r MapsSearchResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MapsSearchResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListMonitorsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMonitorsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMonitorsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AccountChangesResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r AccountChangesResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AccountChangesResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreditUsageResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r CreditUsageResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreditUsageResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type LimitsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r LimitsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LimitsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AccountRunsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r AccountRunsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AccountRunsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetrieveResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RetrieveResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetrieveResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ChangesResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ChangesResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ChangesResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetrieveChangeResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RetrieveChangeResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetrieveChangeResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RunNowResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RunNowResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RunNowResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RunsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RunsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RunsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetrieveRunResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RetrieveRunResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetrieveRunResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RotateSecretResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RotateSecretResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RotateSecretResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type NewsSearchResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *NewsSearchResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r NewsSearchResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r NewsSearchResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PeopleEnrichResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PeopleEnrichResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PeopleEnrichResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PeopleEnrichResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ExtractProductEndpointResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ProductOutput
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ExtractProductEndpointResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ExtractProductEndpointResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ScrapeSpecializedDataResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ScrapeResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ScrapeSpecializedDataResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ScrapeSpecializedDataResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type StyleguideEndpointResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *StyleguideResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r StyleguideEndpointResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StyleguideEndpointResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeliveriesResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeliveriesResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeliveriesResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetrieveDeliveryResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RetrieveDeliveryResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetrieveDeliveryResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AttemptsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r AttemptsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AttemptsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetryResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RetryResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetryResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type YoutubeEndpointResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *YouTubeResult
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r YoutubeEndpointResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r YoutubeEndpointResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -22431,6 +30133,346 @@ func (c *ClientWithResponses) ListAuditEventsWithResponse(ctx context.Context, p
 	return ParseListAuditEventsResult(rsp)
 }
 
+// ListDataApisWithResponse request returning *ListDataApisResult
+func (c *ClientWithResponses) ListDataApisWithResponse(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*ListDataApisResult, error) {
+	rsp, err := c.ListDataApis(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDataApisResult(rsp)
+}
+
+// BrandRetrieveWithBodyWithResponse request with arbitrary body returning *BrandRetrieveResult
+func (c *ClientWithResponses) BrandRetrieveWithBodyWithResponse(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error) {
+	rsp, err := c.BrandRetrieveWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBrandRetrieveResult(rsp)
+}
+
+func (c *ClientWithResponses) BrandRetrieveWithResponse(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error) {
+	rsp, err := c.BrandRetrieve(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBrandRetrieveResult(rsp)
+}
+
+// MapsSearchWithBodyWithResponse request with arbitrary body returning *MapsSearchResult
+func (c *ClientWithResponses) MapsSearchWithBodyWithResponse(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MapsSearchResult, error) {
+	rsp, err := c.MapsSearchWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMapsSearchResult(rsp)
+}
+
+func (c *ClientWithResponses) MapsSearchWithResponse(ctx context.Context, params *MapsSearchParams, body MapsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*MapsSearchResult, error) {
+	rsp, err := c.MapsSearch(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMapsSearchResult(rsp)
+}
+
+// ListMonitorsWithResponse request returning *ListMonitorsResult
+func (c *ClientWithResponses) ListMonitorsWithResponse(ctx context.Context, params *ListMonitorsParams, reqEditors ...RequestEditorFn) (*ListMonitorsResult, error) {
+	rsp, err := c.ListMonitors(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMonitorsResult(rsp)
+}
+
+// CreateWithBodyWithResponse request with arbitrary body returning *CreateResult
+func (c *ClientWithResponses) CreateWithBodyWithResponse(ctx context.Context, params *CreateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateResult, error) {
+	rsp, err := c.CreateWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateResult(rsp)
+}
+
+func (c *ClientWithResponses) CreateWithResponse(ctx context.Context, params *CreateParams, body CreateJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateResult, error) {
+	rsp, err := c.Create(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateResult(rsp)
+}
+
+// AccountChangesWithResponse request returning *AccountChangesResult
+func (c *ClientWithResponses) AccountChangesWithResponse(ctx context.Context, params *AccountChangesParams, reqEditors ...RequestEditorFn) (*AccountChangesResult, error) {
+	rsp, err := c.AccountChanges(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAccountChangesResult(rsp)
+}
+
+// CreditUsageWithResponse request returning *CreditUsageResult
+func (c *ClientWithResponses) CreditUsageWithResponse(ctx context.Context, params *CreditUsageParams, reqEditors ...RequestEditorFn) (*CreditUsageResult, error) {
+	rsp, err := c.CreditUsage(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreditUsageResult(rsp)
+}
+
+// LimitsWithResponse request returning *LimitsResult
+func (c *ClientWithResponses) LimitsWithResponse(ctx context.Context, params *LimitsParams, reqEditors ...RequestEditorFn) (*LimitsResult, error) {
+	rsp, err := c.Limits(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLimitsResult(rsp)
+}
+
+// AccountRunsWithResponse request returning *AccountRunsResult
+func (c *ClientWithResponses) AccountRunsWithResponse(ctx context.Context, params *AccountRunsParams, reqEditors ...RequestEditorFn) (*AccountRunsResult, error) {
+	rsp, err := c.AccountRuns(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAccountRunsResult(rsp)
+}
+
+// DeleteWithResponse request returning *DeleteResult
+func (c *ClientWithResponses) DeleteWithResponse(ctx context.Context, monitorId string, params *DeleteParams, reqEditors ...RequestEditorFn) (*DeleteResult, error) {
+	rsp, err := c.Delete(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteResult(rsp)
+}
+
+// RetrieveWithResponse request returning *RetrieveResult
+func (c *ClientWithResponses) RetrieveWithResponse(ctx context.Context, monitorId string, params *RetrieveParams, reqEditors ...RequestEditorFn) (*RetrieveResult, error) {
+	rsp, err := c.Retrieve(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetrieveResult(rsp)
+}
+
+// UpdateWithBodyWithResponse request with arbitrary body returning *UpdateResult
+func (c *ClientWithResponses) UpdateWithBodyWithResponse(ctx context.Context, monitorId string, params *UpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateResult, error) {
+	rsp, err := c.UpdateWithBody(ctx, monitorId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) UpdateWithResponse(ctx context.Context, monitorId string, params *UpdateParams, body UpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateResult, error) {
+	rsp, err := c.Update(ctx, monitorId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateResult(rsp)
+}
+
+// ChangesWithResponse request returning *ChangesResult
+func (c *ClientWithResponses) ChangesWithResponse(ctx context.Context, monitorId string, params *ChangesParams, reqEditors ...RequestEditorFn) (*ChangesResult, error) {
+	rsp, err := c.Changes(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangesResult(rsp)
+}
+
+// RetrieveChangeWithResponse request returning *RetrieveChangeResult
+func (c *ClientWithResponses) RetrieveChangeWithResponse(ctx context.Context, monitorId string, changeId string, params *RetrieveChangeParams, reqEditors ...RequestEditorFn) (*RetrieveChangeResult, error) {
+	rsp, err := c.RetrieveChange(ctx, monitorId, changeId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetrieveChangeResult(rsp)
+}
+
+// RunNowWithResponse request returning *RunNowResult
+func (c *ClientWithResponses) RunNowWithResponse(ctx context.Context, monitorId string, params *RunNowParams, reqEditors ...RequestEditorFn) (*RunNowResult, error) {
+	rsp, err := c.RunNow(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRunNowResult(rsp)
+}
+
+// RunsWithResponse request returning *RunsResult
+func (c *ClientWithResponses) RunsWithResponse(ctx context.Context, monitorId string, params *RunsParams, reqEditors ...RequestEditorFn) (*RunsResult, error) {
+	rsp, err := c.Runs(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRunsResult(rsp)
+}
+
+// RetrieveRunWithResponse request returning *RetrieveRunResult
+func (c *ClientWithResponses) RetrieveRunWithResponse(ctx context.Context, monitorId string, runId string, params *RetrieveRunParams, reqEditors ...RequestEditorFn) (*RetrieveRunResult, error) {
+	rsp, err := c.RetrieveRun(ctx, monitorId, runId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetrieveRunResult(rsp)
+}
+
+// RotateSecretWithResponse request returning *RotateSecretResult
+func (c *ClientWithResponses) RotateSecretWithResponse(ctx context.Context, monitorId string, params *RotateSecretParams, reqEditors ...RequestEditorFn) (*RotateSecretResult, error) {
+	rsp, err := c.RotateSecret(ctx, monitorId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRotateSecretResult(rsp)
+}
+
+// NewsSearchWithBodyWithResponse request with arbitrary body returning *NewsSearchResult
+func (c *ClientWithResponses) NewsSearchWithBodyWithResponse(ctx context.Context, params *NewsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*NewsSearchResult, error) {
+	rsp, err := c.NewsSearchWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNewsSearchResult(rsp)
+}
+
+func (c *ClientWithResponses) NewsSearchWithResponse(ctx context.Context, params *NewsSearchParams, body NewsSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*NewsSearchResult, error) {
+	rsp, err := c.NewsSearch(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNewsSearchResult(rsp)
+}
+
+// PeopleEnrichWithBodyWithResponse request with arbitrary body returning *PeopleEnrichResult
+func (c *ClientWithResponses) PeopleEnrichWithBodyWithResponse(ctx context.Context, params *PeopleEnrichParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PeopleEnrichResult, error) {
+	rsp, err := c.PeopleEnrichWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePeopleEnrichResult(rsp)
+}
+
+func (c *ClientWithResponses) PeopleEnrichWithResponse(ctx context.Context, params *PeopleEnrichParams, body PeopleEnrichJSONRequestBody, reqEditors ...RequestEditorFn) (*PeopleEnrichResult, error) {
+	rsp, err := c.PeopleEnrich(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePeopleEnrichResult(rsp)
+}
+
+// ExtractProductEndpointWithBodyWithResponse request with arbitrary body returning *ExtractProductEndpointResult
+func (c *ClientWithResponses) ExtractProductEndpointWithBodyWithResponse(ctx context.Context, params *ExtractProductEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExtractProductEndpointResult, error) {
+	rsp, err := c.ExtractProductEndpointWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExtractProductEndpointResult(rsp)
+}
+
+func (c *ClientWithResponses) ExtractProductEndpointWithResponse(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*ExtractProductEndpointResult, error) {
+	rsp, err := c.ExtractProductEndpoint(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExtractProductEndpointResult(rsp)
+}
+
+// ScrapeSpecializedDataWithBodyWithResponse request with arbitrary body returning *ScrapeSpecializedDataResult
+func (c *ClientWithResponses) ScrapeSpecializedDataWithBodyWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error) {
+	rsp, err := c.ScrapeSpecializedDataWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseScrapeSpecializedDataResult(rsp)
+}
+
+func (c *ClientWithResponses) ScrapeSpecializedDataWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error) {
+	rsp, err := c.ScrapeSpecializedData(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseScrapeSpecializedDataResult(rsp)
+}
+
+// StyleguideEndpointWithResponse request returning *StyleguideEndpointResult
+func (c *ClientWithResponses) StyleguideEndpointWithResponse(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*StyleguideEndpointResult, error) {
+	rsp, err := c.StyleguideEndpoint(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStyleguideEndpointResult(rsp)
+}
+
+// DeliveriesWithBodyWithResponse request with arbitrary body returning *DeliveriesResult
+func (c *ClientWithResponses) DeliveriesWithBodyWithResponse(ctx context.Context, params *DeliveriesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeliveriesResult, error) {
+	rsp, err := c.DeliveriesWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeliveriesResult(rsp)
+}
+
+func (c *ClientWithResponses) DeliveriesWithResponse(ctx context.Context, params *DeliveriesParams, body DeliveriesJSONRequestBody, reqEditors ...RequestEditorFn) (*DeliveriesResult, error) {
+	rsp, err := c.Deliveries(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeliveriesResult(rsp)
+}
+
+// RetrieveDeliveryWithResponse request returning *RetrieveDeliveryResult
+func (c *ClientWithResponses) RetrieveDeliveryWithResponse(ctx context.Context, deliveryId string, params *RetrieveDeliveryParams, reqEditors ...RequestEditorFn) (*RetrieveDeliveryResult, error) {
+	rsp, err := c.RetrieveDelivery(ctx, deliveryId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetrieveDeliveryResult(rsp)
+}
+
+// AttemptsWithResponse request returning *AttemptsResult
+func (c *ClientWithResponses) AttemptsWithResponse(ctx context.Context, deliveryId string, params *AttemptsParams, reqEditors ...RequestEditorFn) (*AttemptsResult, error) {
+	rsp, err := c.Attempts(ctx, deliveryId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAttemptsResult(rsp)
+}
+
+// RetryWithBodyWithResponse request with arbitrary body returning *RetryResult
+func (c *ClientWithResponses) RetryWithBodyWithResponse(ctx context.Context, deliveryId string, params *RetryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RetryResult, error) {
+	rsp, err := c.RetryWithBody(ctx, deliveryId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetryResult(rsp)
+}
+
+func (c *ClientWithResponses) RetryWithResponse(ctx context.Context, deliveryId string, params *RetryParams, body RetryJSONRequestBody, reqEditors ...RequestEditorFn) (*RetryResult, error) {
+	rsp, err := c.Retry(ctx, deliveryId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetryResult(rsp)
+}
+
+// YoutubeEndpointWithBodyWithResponse request with arbitrary body returning *YoutubeEndpointResult
+func (c *ClientWithResponses) YoutubeEndpointWithBodyWithResponse(ctx context.Context, params *YoutubeEndpointParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*YoutubeEndpointResult, error) {
+	rsp, err := c.YoutubeEndpointWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseYoutubeEndpointResult(rsp)
+}
+
+func (c *ClientWithResponses) YoutubeEndpointWithResponse(ctx context.Context, params *YoutubeEndpointParams, body YoutubeEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*YoutubeEndpointResult, error) {
+	rsp, err := c.YoutubeEndpoint(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseYoutubeEndpointResult(rsp)
+}
+
 // ListFunctionsWithResponse request returning *ListFunctionsResult
 func (c *ClientWithResponses) ListFunctionsWithResponse(ctx context.Context, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResult, error) {
 	rsp, err := c.ListFunctions(ctx, params, reqEditors...)
@@ -23702,6 +31744,923 @@ func ParseListAuditEventsResult(rsp *http.Response) (*ListAuditEventsResult, err
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest AuditEventListResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListDataApisResult parses an HTTP response from a ListDataApisWithResponse call
+func ParseListDataApisResult(rsp *http.Response) (*ListDataApisResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDataApisResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []CapabilityEndpoint
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBrandRetrieveResult parses an HTTP response from a BrandRetrieveWithResponse call
+func ParseBrandRetrieveResult(rsp *http.Response) (*BrandRetrieveResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BrandRetrieveResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BrandResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMapsSearchResult parses an HTTP response from a MapsSearchWithResponse call
+func ParseMapsSearchResult(rsp *http.Response) (*MapsSearchResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MapsSearchResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MapsResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListMonitorsResult parses an HTTP response from a ListMonitorsWithResponse call
+func ParseListMonitorsResult(rsp *http.Response) (*ListMonitorsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMonitorsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateResult parses an HTTP response from a CreateWithResponse call
+func ParseCreateResult(rsp *http.Response) (*CreateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAccountChangesResult parses an HTTP response from a AccountChangesWithResponse call
+func ParseAccountChangesResult(rsp *http.Response) (*AccountChangesResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AccountChangesResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreditUsageResult parses an HTTP response from a CreditUsageWithResponse call
+func ParseCreditUsageResult(rsp *http.Response) (*CreditUsageResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreditUsageResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseLimitsResult parses an HTTP response from a LimitsWithResponse call
+func ParseLimitsResult(rsp *http.Response) (*LimitsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LimitsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAccountRunsResult parses an HTTP response from a AccountRunsWithResponse call
+func ParseAccountRunsResult(rsp *http.Response) (*AccountRunsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AccountRunsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteResult parses an HTTP response from a DeleteWithResponse call
+func ParseDeleteResult(rsp *http.Response) (*DeleteResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetrieveResult parses an HTTP response from a RetrieveWithResponse call
+func ParseRetrieveResult(rsp *http.Response) (*RetrieveResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetrieveResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateResult parses an HTTP response from a UpdateWithResponse call
+func ParseUpdateResult(rsp *http.Response) (*UpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseChangesResult parses an HTTP response from a ChangesWithResponse call
+func ParseChangesResult(rsp *http.Response) (*ChangesResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ChangesResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetrieveChangeResult parses an HTTP response from a RetrieveChangeWithResponse call
+func ParseRetrieveChangeResult(rsp *http.Response) (*RetrieveChangeResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetrieveChangeResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRunNowResult parses an HTTP response from a RunNowWithResponse call
+func ParseRunNowResult(rsp *http.Response) (*RunNowResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RunNowResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRunsResult parses an HTTP response from a RunsWithResponse call
+func ParseRunsResult(rsp *http.Response) (*RunsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RunsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetrieveRunResult parses an HTTP response from a RetrieveRunWithResponse call
+func ParseRetrieveRunResult(rsp *http.Response) (*RetrieveRunResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetrieveRunResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRotateSecretResult parses an HTTP response from a RotateSecretWithResponse call
+func ParseRotateSecretResult(rsp *http.Response) (*RotateSecretResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RotateSecretResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseNewsSearchResult parses an HTTP response from a NewsSearchWithResponse call
+func ParseNewsSearchResult(rsp *http.Response) (*NewsSearchResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &NewsSearchResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NewsSearchResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePeopleEnrichResult parses an HTTP response from a PeopleEnrichWithResponse call
+func ParsePeopleEnrichResult(rsp *http.Response) (*PeopleEnrichResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PeopleEnrichResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PeopleEnrichResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseExtractProductEndpointResult parses an HTTP response from a ExtractProductEndpointWithResponse call
+func ParseExtractProductEndpointResult(rsp *http.Response) (*ExtractProductEndpointResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ExtractProductEndpointResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProductOutput
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseScrapeSpecializedDataResult parses an HTTP response from a ScrapeSpecializedDataWithResponse call
+func ParseScrapeSpecializedDataResult(rsp *http.Response) (*ScrapeSpecializedDataResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ScrapeSpecializedDataResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ScrapeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseStyleguideEndpointResult parses an HTTP response from a StyleguideEndpointWithResponse call
+func ParseStyleguideEndpointResult(rsp *http.Response) (*StyleguideEndpointResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StyleguideEndpointResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StyleguideResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeliveriesResult parses an HTTP response from a DeliveriesWithResponse call
+func ParseDeliveriesResult(rsp *http.Response) (*DeliveriesResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeliveriesResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetrieveDeliveryResult parses an HTTP response from a RetrieveDeliveryWithResponse call
+func ParseRetrieveDeliveryResult(rsp *http.Response) (*RetrieveDeliveryResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetrieveDeliveryResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAttemptsResult parses an HTTP response from a AttemptsWithResponse call
+func ParseAttemptsResult(rsp *http.Response) (*AttemptsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AttemptsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetryResult parses an HTTP response from a RetryWithResponse call
+func ParseRetryResult(rsp *http.Response) (*RetryResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetryResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseYoutubeEndpointResult parses an HTTP response from a YoutubeEndpointWithResponse call
+func ParseYoutubeEndpointResult(rsp *http.Response) (*YoutubeEndpointResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &YoutubeEndpointResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest YouTubeResult
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

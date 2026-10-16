@@ -30,7 +30,8 @@ echo "Converting OpenAPI 3.1 to 3.0 format..."
 # 2. exclusiveMinimum from number to boolean
 # 3. anyOf with null to nullable type
 # 4. Remove null from type arrays
-# 5. Add missing path parameters
+# 5. Represent standalone null schemas as nullable values
+# 6. Add missing path parameters
 jq --arg excluded "$EXCLUDED_PATHS" '
   # Filter out excluded paths
   (if $excluded != "" then .paths |= with_entries(select(.key | test($excluded) | not)) else . end) |
@@ -59,6 +60,19 @@ jq --arg excluded "$EXCLUDED_PATHS" '
       else . end
     else . end
   ) |
+  # Convert standalone nulls after nullable unions are flattened above.
+  # OpenAPI 3.0 has no null type; a nullable value maps to interface{} in Go.
+  walk(if type == "object" and .type? == "null" then del(.type) | .nullable = true else . end) |
+  # Named union schemas receive JSON methods; inline request unions do not.
+  reduce ([.paths | to_entries[] | .key as $path | .value | to_entries[] |
+    select(.value.requestBody.content["application/json"].schema | .oneOf? // .anyOf?) |
+    {path: $path, method: .key, name: (.value.operationId + "RequestBody"),
+     schema: .value.requestBody.content["application/json"].schema}][]) as $body
+    (. ;
+      if .components.schemas[$body.name] != null then error("request union schema name collision") else . end |
+      .components.schemas[$body.name] = $body.schema |
+      .paths[$body.path][$body.method].requestBody.content["application/json"].schema =
+        {"$ref": ("#/components/schemas/" + $body.name)}) |
   # Second pass: add missing path parameters
   .paths |= with_entries(
     .key as $path |
@@ -109,9 +123,8 @@ oapi-codegen \
   /tmp/notte-openapi-3.0.json
 
 echo "Fixing generated code..."
-# Fix string literal assignments to *string fields
-# Convert: v.Type = "value" to: tmp := "value"; v.Type = &tmp
-perl -i -pe 's/(\s+)(\w+)\.Type = "([^"]+)"/\1tmp := "\3"; \2.Type = &tmp/' "$OUTPUT_DIR/client.gen.go"
+# Fix oapi-codegen discriminator assignments only when the target is *string.
+python3 "$SCRIPT_DIR/fix-type-discriminators.py" "$OUTPUT_DIR/client.gen.go"
 
 # Rename NewClient to newGeneratedClient to avoid collision with wrapper
 # Only rename the base NewClient, not NewClientWithResponses
