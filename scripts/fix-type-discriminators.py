@@ -21,4 +21,16 @@ def fix(match):
 
 
 source = re.sub(r"^func [^\n]*\(v (\w+)\) error \{.*?^\}", fix, source, flags=re.M | re.S)
+# Request wrappers must retain a union model's generated JSON methods.
+union_types = {
+    name
+    for name, fields in re.findall(r"^type (\w+) struct \{(.*?)^\}", source, re.M | re.S)
+    if re.search(r"^\s+union\s+json\.RawMessage\b", fields, re.M)
+}
+source = re.sub(
+    r"^type (\w+JSONRequestBody) (\w+)$",
+    lambda match: f"type {match[1]} = {match[2]}" if match[2] in union_types else match[0],
+    source,
+    flags=re.M,
+)
 path.write_text(source)

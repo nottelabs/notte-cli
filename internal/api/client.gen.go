@@ -5174,6 +5174,11 @@ type YouTubeVideo struct {
 	Views     *string `json:"views,omitempty"`
 }
 
+// BrandRetrieveRequestBody defines model for brand_retrieveRequestBody.
+type BrandRetrieveRequestBody struct {
+	union json.RawMessage
+}
+
 // NotteApiDataApisMonitorsModelsWaitAction defines model for notte_api__data_apis__monitors__models__WaitAction.
 type NotteApiDataApisMonitorsModelsWaitAction struct {
 	Do     string `json:"do"`
@@ -5188,6 +5193,11 @@ type NotteCoreActionsActionsWaitAction struct {
 	// TimeMs The amount of time to wait in milliseconds (max 30 seconds)
 	TimeMs int     `json:"time_ms"`
 	Type   *string `json:"type,omitempty"`
+}
+
+// PageExecuteRequestBody defines model for page_executeRequestBody.
+type PageExecuteRequestBody struct {
+	union json.RawMessage
 }
 
 // ListAgentsParams defines parameters for ListAgents.
@@ -5276,11 +5286,6 @@ type ListAuditEventsParams struct {
 type ListDataApisParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
-}
-
-// BrandRetrieveJSONBody defines parameters for BrandRetrieve.
-type BrandRetrieveJSONBody struct {
-	union json.RawMessage
 }
 
 // BrandRetrieveParams defines parameters for BrandRetrieve.
@@ -6010,11 +6015,6 @@ type SessionOffsetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// PageExecuteJSONBody defines parameters for PageExecute.
-type PageExecuteJSONBody struct {
-	union json.RawMessage
-}
-
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
 	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
@@ -6205,7 +6205,7 @@ type AgentStartJSONRequestBody = ApiAgentStartRequest
 type AnythingStartJSONRequestBody = AnythingStartRequest
 
 // BrandRetrieveJSONRequestBody defines body for BrandRetrieve for application/json ContentType.
-type BrandRetrieveJSONRequestBody BrandRetrieveJSONBody
+type BrandRetrieveJSONRequestBody = BrandRetrieveRequestBody
 
 // MapsSearchJSONRequestBody defines body for MapsSearch for application/json ContentType.
 type MapsSearchJSONRequestBody = MapsSearchRequest
@@ -6319,7 +6319,7 @@ type SessionCookiesSetJSONRequestBody = BodySessionCookiesSetSessionsSessionIdCo
 type UploadSessionFileMultipartRequestBody = BodyUploadSessionFileSessionsSessionIdFilesPost
 
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
-type PageExecuteJSONRequestBody PageExecuteJSONBody
+type PageExecuteJSONRequestBody = PageExecuteRequestBody
 
 // PageObserveJSONRequestBody defines body for PageObserve for application/json ContentType.
 type PageObserveJSONRequestBody = ObserveRequest
@@ -12969,6 +12969,1140 @@ func (t ValidationError_Loc_Item) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ValidationError_Loc_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsBrandByDomain returns the union data inside the BrandRetrieveRequestBody as a BrandByDomain
+func (t BrandRetrieveRequestBody) AsBrandByDomain() (BrandByDomain, error) {
+	var body BrandByDomain
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByDomain overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByDomain
+func (t *BrandRetrieveRequestBody) FromBrandByDomain(v BrandByDomain) error {
+	v.Type = "by_domain"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByDomain performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByDomain
+func (t *BrandRetrieveRequestBody) MergeBrandByDomain(v BrandByDomain) error {
+	v.Type = "by_domain"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByName returns the union data inside the BrandRetrieveRequestBody as a BrandByName
+func (t BrandRetrieveRequestBody) AsBrandByName() (BrandByName, error) {
+	var body BrandByName
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByName overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByName
+func (t *BrandRetrieveRequestBody) FromBrandByName(v BrandByName) error {
+	v.Type = "by_name"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByName performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByName
+func (t *BrandRetrieveRequestBody) MergeBrandByName(v BrandByName) error {
+	v.Type = "by_name"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByEmail returns the union data inside the BrandRetrieveRequestBody as a BrandByEmail
+func (t BrandRetrieveRequestBody) AsBrandByEmail() (BrandByEmail, error) {
+	var body BrandByEmail
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByEmail overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByEmail
+func (t *BrandRetrieveRequestBody) FromBrandByEmail(v BrandByEmail) error {
+	v.Type = "by_email"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByEmail performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByEmail
+func (t *BrandRetrieveRequestBody) MergeBrandByEmail(v BrandByEmail) error {
+	v.Type = "by_email"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTicker returns the union data inside the BrandRetrieveRequestBody as a BrandByTicker
+func (t BrandRetrieveRequestBody) AsBrandByTicker() (BrandByTicker, error) {
+	var body BrandByTicker
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTicker overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByTicker
+func (t *BrandRetrieveRequestBody) FromBrandByTicker(v BrandByTicker) error {
+	v.Type = "by_ticker"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTicker performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByTicker
+func (t *BrandRetrieveRequestBody) MergeBrandByTicker(v BrandByTicker) error {
+	v.Type = "by_ticker"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByDirectUrl returns the union data inside the BrandRetrieveRequestBody as a BrandByDirectUrl
+func (t BrandRetrieveRequestBody) AsBrandByDirectUrl() (BrandByDirectUrl, error) {
+	var body BrandByDirectUrl
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByDirectUrl overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByDirectUrl
+func (t *BrandRetrieveRequestBody) FromBrandByDirectUrl(v BrandByDirectUrl) error {
+	v.Type = "by_direct_url"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByDirectUrl performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByDirectUrl
+func (t *BrandRetrieveRequestBody) MergeBrandByDirectUrl(v BrandByDirectUrl) error {
+	v.Type = "by_direct_url"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBrandByTransaction returns the union data inside the BrandRetrieveRequestBody as a BrandByTransaction
+func (t BrandRetrieveRequestBody) AsBrandByTransaction() (BrandByTransaction, error) {
+	var body BrandByTransaction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBrandByTransaction overwrites any union data inside the BrandRetrieveRequestBody as the provided BrandByTransaction
+func (t *BrandRetrieveRequestBody) FromBrandByTransaction(v BrandByTransaction) error {
+	v.Type = "by_transaction"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBrandByTransaction performs a merge with any union data inside the BrandRetrieveRequestBody, using the provided BrandByTransaction
+func (t *BrandRetrieveRequestBody) MergeBrandByTransaction(v BrandByTransaction) error {
+	v.Type = "by_transaction"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t BrandRetrieveRequestBody) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t BrandRetrieveRequestBody) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "by_direct_url":
+		return t.AsBrandByDirectUrl()
+	case "by_domain":
+		return t.AsBrandByDomain()
+	case "by_email":
+		return t.AsBrandByEmail()
+	case "by_name":
+		return t.AsBrandByName()
+	case "by_ticker":
+		return t.AsBrandByTicker()
+	case "by_transaction":
+		return t.AsBrandByTransaction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t BrandRetrieveRequestBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *BrandRetrieveRequestBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFormFillAction returns the union data inside the PageExecuteRequestBody as a FormFillAction
+func (t PageExecuteRequestBody) AsFormFillAction() (FormFillAction, error) {
+	var body FormFillAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFormFillAction overwrites any union data inside the PageExecuteRequestBody as the provided FormFillAction
+func (t *PageExecuteRequestBody) FromFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFormFillAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided FormFillAction
+func (t *PageExecuteRequestBody) MergeFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoAction returns the union data inside the PageExecuteRequestBody as a GotoAction
+func (t PageExecuteRequestBody) AsGotoAction() (GotoAction, error) {
+	var body GotoAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoAction overwrites any union data inside the PageExecuteRequestBody as the provided GotoAction
+func (t *PageExecuteRequestBody) FromGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GotoAction
+func (t *PageExecuteRequestBody) MergeGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoNewTabAction returns the union data inside the PageExecuteRequestBody as a GotoNewTabAction
+func (t PageExecuteRequestBody) AsGotoNewTabAction() (GotoNewTabAction, error) {
+	var body GotoNewTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoNewTabAction overwrites any union data inside the PageExecuteRequestBody as the provided GotoNewTabAction
+func (t *PageExecuteRequestBody) FromGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoNewTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GotoNewTabAction
+func (t *PageExecuteRequestBody) MergeGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCloseTabAction returns the union data inside the PageExecuteRequestBody as a CloseTabAction
+func (t PageExecuteRequestBody) AsCloseTabAction() (CloseTabAction, error) {
+	var body CloseTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCloseTabAction overwrites any union data inside the PageExecuteRequestBody as the provided CloseTabAction
+func (t *PageExecuteRequestBody) FromCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCloseTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CloseTabAction
+func (t *PageExecuteRequestBody) MergeCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchTabAction returns the union data inside the PageExecuteRequestBody as a SwitchTabAction
+func (t PageExecuteRequestBody) AsSwitchTabAction() (SwitchTabAction, error) {
+	var body SwitchTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchTabAction overwrites any union data inside the PageExecuteRequestBody as the provided SwitchTabAction
+func (t *PageExecuteRequestBody) FromSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchTabAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided SwitchTabAction
+func (t *PageExecuteRequestBody) MergeSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoBackAction returns the union data inside the PageExecuteRequestBody as a GoBackAction
+func (t PageExecuteRequestBody) AsGoBackAction() (GoBackAction, error) {
+	var body GoBackAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoBackAction overwrites any union data inside the PageExecuteRequestBody as the provided GoBackAction
+func (t *PageExecuteRequestBody) FromGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoBackAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GoBackAction
+func (t *PageExecuteRequestBody) MergeGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoForwardAction returns the union data inside the PageExecuteRequestBody as a GoForwardAction
+func (t PageExecuteRequestBody) AsGoForwardAction() (GoForwardAction, error) {
+	var body GoForwardAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoForwardAction overwrites any union data inside the PageExecuteRequestBody as the provided GoForwardAction
+func (t *PageExecuteRequestBody) FromGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoForwardAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided GoForwardAction
+func (t *PageExecuteRequestBody) MergeGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsReloadAction returns the union data inside the PageExecuteRequestBody as a ReloadAction
+func (t PageExecuteRequestBody) AsReloadAction() (ReloadAction, error) {
+	var body ReloadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromReloadAction overwrites any union data inside the PageExecuteRequestBody as the provided ReloadAction
+func (t *PageExecuteRequestBody) FromReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeReloadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ReloadAction
+func (t *PageExecuteRequestBody) MergeReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNotteCoreActionsActionsWaitAction returns the union data inside the PageExecuteRequestBody as a NotteCoreActionsActionsWaitAction
+func (t PageExecuteRequestBody) AsNotteCoreActionsActionsWaitAction() (NotteCoreActionsActionsWaitAction, error) {
+	var body NotteCoreActionsActionsWaitAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotteCoreActionsActionsWaitAction overwrites any union data inside the PageExecuteRequestBody as the provided NotteCoreActionsActionsWaitAction
+func (t *PageExecuteRequestBody) FromNotteCoreActionsActionsWaitAction(v NotteCoreActionsActionsWaitAction) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotteCoreActionsActionsWaitAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided NotteCoreActionsActionsWaitAction
+func (t *PageExecuteRequestBody) MergeNotteCoreActionsActionsWaitAction(v NotteCoreActionsActionsWaitAction) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPressKeyAction returns the union data inside the PageExecuteRequestBody as a PressKeyAction
+func (t PageExecuteRequestBody) AsPressKeyAction() (PressKeyAction, error) {
+	var body PressKeyAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPressKeyAction overwrites any union data inside the PageExecuteRequestBody as the provided PressKeyAction
+func (t *PageExecuteRequestBody) FromPressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePressKeyAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided PressKeyAction
+func (t *PageExecuteRequestBody) MergePressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollUpAction returns the union data inside the PageExecuteRequestBody as a ScrollUpAction
+func (t PageExecuteRequestBody) AsScrollUpAction() (ScrollUpAction, error) {
+	var body ScrollUpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollUpAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrollUpAction
+func (t *PageExecuteRequestBody) FromScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollUpAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrollUpAction
+func (t *PageExecuteRequestBody) MergeScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollDownAction returns the union data inside the PageExecuteRequestBody as a ScrollDownAction
+func (t PageExecuteRequestBody) AsScrollDownAction() (ScrollDownAction, error) {
+	var body ScrollDownAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollDownAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrollDownAction
+func (t *PageExecuteRequestBody) FromScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollDownAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrollDownAction
+func (t *PageExecuteRequestBody) MergeScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCaptchaSolveAction returns the union data inside the PageExecuteRequestBody as a CaptchaSolveAction
+func (t PageExecuteRequestBody) AsCaptchaSolveAction() (CaptchaSolveAction, error) {
+	var body CaptchaSolveAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCaptchaSolveAction overwrites any union data inside the PageExecuteRequestBody as the provided CaptchaSolveAction
+func (t *PageExecuteRequestBody) FromCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCaptchaSolveAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CaptchaSolveAction
+func (t *PageExecuteRequestBody) MergeCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsHelpAction returns the union data inside the PageExecuteRequestBody as a HelpAction
+func (t PageExecuteRequestBody) AsHelpAction() (HelpAction, error) {
+	var body HelpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHelpAction overwrites any union data inside the PageExecuteRequestBody as the provided HelpAction
+func (t *PageExecuteRequestBody) FromHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHelpAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided HelpAction
+func (t *PageExecuteRequestBody) MergeHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCompletionAction returns the union data inside the PageExecuteRequestBody as a CompletionAction
+func (t PageExecuteRequestBody) AsCompletionAction() (CompletionAction, error) {
+	var body CompletionAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCompletionAction overwrites any union data inside the PageExecuteRequestBody as the provided CompletionAction
+func (t *PageExecuteRequestBody) FromCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCompletionAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided CompletionAction
+func (t *PageExecuteRequestBody) MergeCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrapeAction returns the union data inside the PageExecuteRequestBody as a ScrapeAction
+func (t PageExecuteRequestBody) AsScrapeAction() (ScrapeAction, error) {
+	var body ScrapeAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrapeAction overwrites any union data inside the PageExecuteRequestBody as the provided ScrapeAction
+func (t *PageExecuteRequestBody) FromScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrapeAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided ScrapeAction
+func (t *PageExecuteRequestBody) MergeScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailReadAction returns the union data inside the PageExecuteRequestBody as a EmailReadAction
+func (t PageExecuteRequestBody) AsEmailReadAction() (EmailReadAction, error) {
+	var body EmailReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailReadAction overwrites any union data inside the PageExecuteRequestBody as the provided EmailReadAction
+func (t *PageExecuteRequestBody) FromEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EmailReadAction
+func (t *PageExecuteRequestBody) MergeEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailVerificationReadAction returns the union data inside the PageExecuteRequestBody as a EmailVerificationReadAction
+func (t PageExecuteRequestBody) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the PageExecuteRequestBody as the provided EmailVerificationReadAction
+func (t *PageExecuteRequestBody) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EmailVerificationReadAction
+func (t *PageExecuteRequestBody) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSmsReadAction returns the union data inside the PageExecuteRequestBody as a SmsReadAction
+func (t PageExecuteRequestBody) AsSmsReadAction() (SmsReadAction, error) {
+	var body SmsReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSmsReadAction overwrites any union data inside the PageExecuteRequestBody as the provided SmsReadAction
+func (t *PageExecuteRequestBody) FromSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSmsReadAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided SmsReadAction
+func (t *PageExecuteRequestBody) MergeSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEvaluateJsAction returns the union data inside the PageExecuteRequestBody as a EvaluateJsAction
+func (t PageExecuteRequestBody) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the PageExecuteRequestBody as the provided EvaluateJsAction
+func (t *PageExecuteRequestBody) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the PageExecuteRequestBody, using the provided EvaluateJsAction
+func (t *PageExecuteRequestBody) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClickActionInput returns the union data inside the PageExecuteRequestBody as a ClickActionInput
+func (t PageExecuteRequestBody) AsClickActionInput() (ClickActionInput, error) {
+	var body ClickActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClickActionInput overwrites any union data inside the PageExecuteRequestBody as the provided ClickActionInput
+func (t *PageExecuteRequestBody) FromClickActionInput(v ClickActionInput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClickActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided ClickActionInput
+func (t *PageExecuteRequestBody) MergeClickActionInput(v ClickActionInput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFillActionInput returns the union data inside the PageExecuteRequestBody as a FillActionInput
+func (t PageExecuteRequestBody) AsFillActionInput() (FillActionInput, error) {
+	var body FillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided FillActionInput
+func (t *PageExecuteRequestBody) FromFillActionInput(v FillActionInput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided FillActionInput
+func (t *PageExecuteRequestBody) MergeFillActionInput(v FillActionInput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMultiFactorFillActionInput returns the union data inside the PageExecuteRequestBody as a MultiFactorFillActionInput
+func (t PageExecuteRequestBody) AsMultiFactorFillActionInput() (MultiFactorFillActionInput, error) {
+	var body MultiFactorFillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMultiFactorFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided MultiFactorFillActionInput
+func (t *PageExecuteRequestBody) FromMultiFactorFillActionInput(v MultiFactorFillActionInput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMultiFactorFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided MultiFactorFillActionInput
+func (t *PageExecuteRequestBody) MergeMultiFactorFillActionInput(v MultiFactorFillActionInput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFallbackFillActionInput returns the union data inside the PageExecuteRequestBody as a FallbackFillActionInput
+func (t PageExecuteRequestBody) AsFallbackFillActionInput() (FallbackFillActionInput, error) {
+	var body FallbackFillActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFallbackFillActionInput overwrites any union data inside the PageExecuteRequestBody as the provided FallbackFillActionInput
+func (t *PageExecuteRequestBody) FromFallbackFillActionInput(v FallbackFillActionInput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFallbackFillActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided FallbackFillActionInput
+func (t *PageExecuteRequestBody) MergeFallbackFillActionInput(v FallbackFillActionInput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckActionInput returns the union data inside the PageExecuteRequestBody as a CheckActionInput
+func (t PageExecuteRequestBody) AsCheckActionInput() (CheckActionInput, error) {
+	var body CheckActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckActionInput overwrites any union data inside the PageExecuteRequestBody as the provided CheckActionInput
+func (t *PageExecuteRequestBody) FromCheckActionInput(v CheckActionInput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided CheckActionInput
+func (t *PageExecuteRequestBody) MergeCheckActionInput(v CheckActionInput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSelectDropdownOptionActionInput returns the union data inside the PageExecuteRequestBody as a SelectDropdownOptionActionInput
+func (t PageExecuteRequestBody) AsSelectDropdownOptionActionInput() (SelectDropdownOptionActionInput, error) {
+	var body SelectDropdownOptionActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSelectDropdownOptionActionInput overwrites any union data inside the PageExecuteRequestBody as the provided SelectDropdownOptionActionInput
+func (t *PageExecuteRequestBody) FromSelectDropdownOptionActionInput(v SelectDropdownOptionActionInput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSelectDropdownOptionActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided SelectDropdownOptionActionInput
+func (t *PageExecuteRequestBody) MergeSelectDropdownOptionActionInput(v SelectDropdownOptionActionInput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUploadFileActionInput returns the union data inside the PageExecuteRequestBody as a UploadFileActionInput
+func (t PageExecuteRequestBody) AsUploadFileActionInput() (UploadFileActionInput, error) {
+	var body UploadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUploadFileActionInput overwrites any union data inside the PageExecuteRequestBody as the provided UploadFileActionInput
+func (t *PageExecuteRequestBody) FromUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUploadFileActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided UploadFileActionInput
+func (t *PageExecuteRequestBody) MergeUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDownloadFileActionInput returns the union data inside the PageExecuteRequestBody as a DownloadFileActionInput
+func (t PageExecuteRequestBody) AsDownloadFileActionInput() (DownloadFileActionInput, error) {
+	var body DownloadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDownloadFileActionInput overwrites any union data inside the PageExecuteRequestBody as the provided DownloadFileActionInput
+func (t *PageExecuteRequestBody) FromDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDownloadFileActionInput performs a merge with any union data inside the PageExecuteRequestBody, using the provided DownloadFileActionInput
+func (t *PageExecuteRequestBody) MergeDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PageExecuteRequestBody) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t PageExecuteRequestBody) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "captcha_solve":
+		return t.AsCaptchaSolveAction()
+	case "check":
+		return t.AsCheckActionInput()
+	case "click":
+		return t.AsClickActionInput()
+	case "close_tab":
+		return t.AsCloseTabAction()
+	case "completion":
+		return t.AsCompletionAction()
+	case "download_file":
+		return t.AsDownloadFileActionInput()
+	case "email_read":
+		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
+	case "fallback_fill":
+		return t.AsFallbackFillActionInput()
+	case "fill":
+		return t.AsFillActionInput()
+	case "form_fill":
+		return t.AsFormFillAction()
+	case "go_back":
+		return t.AsGoBackAction()
+	case "go_forward":
+		return t.AsGoForwardAction()
+	case "goto":
+		return t.AsGotoAction()
+	case "goto_new_tab":
+		return t.AsGotoNewTabAction()
+	case "help":
+		return t.AsHelpAction()
+	case "multi_factor_fill":
+		return t.AsMultiFactorFillActionInput()
+	case "press_key":
+		return t.AsPressKeyAction()
+	case "reload":
+		return t.AsReloadAction()
+	case "scrape":
+		return t.AsScrapeAction()
+	case "scroll_down":
+		return t.AsScrollDownAction()
+	case "scroll_up":
+		return t.AsScrollUpAction()
+	case "select_dropdown_option":
+		return t.AsSelectDropdownOptionActionInput()
+	case "sms_read":
+		return t.AsSmsReadAction()
+	case "switch_tab":
+		return t.AsSwitchTabAction()
+	case "upload_file":
+		return t.AsUploadFileActionInput()
+	case "wait":
+		return t.AsNotteCoreActionsActionsWaitAction()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t PageExecuteRequestBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PageExecuteRequestBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

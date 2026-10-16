@@ -63,6 +63,16 @@ jq --arg excluded "$EXCLUDED_PATHS" '
   # Convert standalone nulls after nullable unions are flattened above.
   # OpenAPI 3.0 has no null type; a nullable value maps to interface{} in Go.
   walk(if type == "object" and .type? == "null" then del(.type) | .nullable = true else . end) |
+  # Named union schemas receive JSON methods; inline request unions do not.
+  reduce ([.paths | to_entries[] | .key as $path | .value | to_entries[] |
+    select(.value.requestBody.content["application/json"].schema | .oneOf? // .anyOf?) |
+    {path: $path, method: .key, name: (.value.operationId + "RequestBody"),
+     schema: .value.requestBody.content["application/json"].schema}][]) as $body
+    (. ;
+      if .components.schemas[$body.name] != null then error("request union schema name collision") else . end |
+      .components.schemas[$body.name] = $body.schema |
+      .paths[$body.path][$body.method].requestBody.content["application/json"].schema =
+        {"$ref": ("#/components/schemas/" + $body.name)}) |
   # Second pass: add missing path parameters
   .paths |= with_entries(
     .key as $path |
