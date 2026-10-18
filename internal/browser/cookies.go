@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver, no cgo
 )
@@ -53,16 +54,16 @@ func (p Profile) ReadCookies(domains []string) (ReadResult, error) {
 	if p.Browser.kind == firefoxKind {
 		return p.readFirefoxCookies(domains)
 	}
-	keys, err := p.Browser.keys()
-	if err != nil {
-		return ReadResult{}, err
-	}
-	return p.readCookies(keys, domains)
+	return p.readCookiesWithKeys(p.Browser.keys, domains)
 }
 
 // readCookies is the key-independent core, split out so it can be exercised in
 // tests with a supplied keyset instead of the OS keystore.
 func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) {
+	return p.readCookiesWithKeys(func() (keyset, error) { return keys, nil }, domains)
+}
+
+func (p Profile) readCookiesWithKeys(loadKeys func() (keyset, error), domains []string) (ReadResult, error) {
 	dbPath := p.cookieDBPath()
 	if dbPath == "" {
 		return ReadResult{}, fmt.Errorf("no cookie database found for profile %q", p.Name)
@@ -97,6 +98,8 @@ func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) 
 	defer func() { _ = rows.Close() }()
 
 	result := ReadResult{DBVersion: version}
+	var keys keyset
+	keysLoaded := false
 	for rows.Next() {
 		var (
 			host, name, plainValue, path string
@@ -120,6 +123,17 @@ func (p Profile) readCookies(keys keyset, domains []string) (ReadResult, error) 
 		}
 		if !domainMatches(host, filters) {
 			continue
+		}
+		if hasExpires != 0 && expiresUTC != 0 && float64(expiresUTC)/1_000_000-chromeEpochOffset <= float64(time.Now().Unix()) {
+			continue
+		}
+		if len(encrypted) > 0 && !keysLoaded {
+			var err error
+			keys, err = loadKeys()
+			if err != nil {
+				return ReadResult{}, err
+			}
+			keysLoaded = true
 		}
 
 		value, err := decryptValue(keys, encrypted, plainValue, version)
@@ -251,8 +265,7 @@ func decryptValue(keys keyset, encrypted []byte, plain string, version int) (str
 	case "v11":
 		key = keys.v11
 	default:
-		// No known version tag: an unencrypted legacy value.
-		return plain, nil
+		return "", fmt.Errorf("unsupported encrypted cookie version")
 	}
 	if len(key) == 0 {
 		return "", fmt.Errorf("no decryption key available for %s cookies", prefix)
@@ -280,7 +293,10 @@ func decryptValue(keys keyset, encrypted []byte, plain string, version int) (str
 	}
 	// Chrome >= 130 (schema version 24+) prepends the SHA-256 of the cookie's
 	// eTLD+1 to the plaintext. Drop it to recover the real value.
-	if version >= 24 && len(decrypted) >= 32 {
+	if version >= 24 {
+		if len(decrypted) < 32 {
+			return "", fmt.Errorf("encrypted cookie is missing its domain binding")
+		}
 		decrypted = decrypted[32:]
 	}
 	return string(decrypted), nil
@@ -293,6 +309,11 @@ func stripPKCS7(b []byte) ([]byte, error) {
 	pad := int(b[len(b)-1])
 	if pad == 0 || pad > aes.BlockSize || pad > len(b) {
 		return nil, fmt.Errorf("invalid padding")
+	}
+	for _, value := range b[len(b)-pad:] {
+		if int(value) != pad {
+			return nil, fmt.Errorf("invalid padding")
+		}
 	}
 	return b[:len(b)-pad], nil
 }

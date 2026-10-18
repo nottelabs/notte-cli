@@ -4,10 +4,14 @@ go 1.25.5
 
 require (
 	github.com/99designs/keyring v1.2.2
+	github.com/golang/snappy v0.0.4
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/muesli/termenv v0.16.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
+	github.com/syndtr/goleveldb v1.0.0
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.3.0
 	modernc.org/sqlite v1.59.0
@@ -21,7 +25,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.7.0 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect

@@ -138,6 +138,48 @@ func TestReadCookiesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestUnselectedEncryptedCookiesNeverReadKeychain(t *testing.T) {
+	p := buildCookieDB(t, deriveTestKey(), 24)
+	called := false
+	state, err := p.readCookiesWithKeys(func() (keyset, error) {
+		called = true
+		return keyset{}, fmt.Errorf("keychain must not be accessed")
+	}, []string{"plain.com"})
+	if err != nil || called || len(state.Cookies) != 1 {
+		t.Fatal("unselected encrypted cookies triggered keychain access", err)
+	}
+}
+
+func TestExpiredCookiesAreSkippedBeforeDecryption(t *testing.T) {
+	p := buildCookieDB(t, deriveTestKey(), 24)
+	db, err := sql.Open("sqlite", p.cookieDBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	if _, err := db.Exec(`UPDATE cookies SET has_expires=1, expires_utc=?`, int64((chromeEpochOffset+1)*1_000_000)); err != nil {
+		t.Fatal(err)
+	}
+	result, err := p.readCookiesWithKeys(func() (keyset, error) { t.Error("expired cookie read the keychain"); return keyset{}, nil }, nil)
+	if err != nil || len(result.Cookies) != 0 {
+		t.Fatal("expired cookies were imported", err)
+	}
+}
+
+func TestUnsupportedCookieEncryptionAndInvalidPaddingFail(t *testing.T) {
+	if _, err := decryptValue(keyset{}, []byte("v20unsupported-device-bound"), "", 24); err == nil {
+		t.Fatal("unsupported encryption accepted")
+	}
+	for _, raw := range [][]byte{{1, 2}, {0}, {17}, nil} {
+		if _, err := stripPKCS7(raw); err == nil {
+			t.Fatal("invalid padding accepted")
+		}
+	}
+	if _, err := decryptValue(keyset{v10: deriveTestKey()}, encryptV10(t, deriveTestKey(), "short", 0), "", 24); err == nil {
+		t.Fatal("missing domain binding accepted")
+	}
+}
+
 func TestReadCookiesDomainFilter(t *testing.T) {
 	key := deriveTestKey()
 	profile := buildCookieDB(t, key, 24)

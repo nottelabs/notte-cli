@@ -23,18 +23,21 @@ var (
 	syncDomains       []string
 	syncMode          string
 	syncProfileName   string
+	syncCDPURL        string
 )
 
 var profilesSyncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Upload cookies from your local browser into a Notte profile",
-	Long: "Read the cookies from a local Firefox, Chrome, Brave, Edge, Chromium, Arc or\n" +
+	Short: "Sync local browser cookies and web storage into a Notte profile",
+	Long: "Read cookies and localStorage from a local Firefox, Chrome, Brave, Edge, Chromium, Arc or\n" +
 		"Helium profile and upload them into a Notte cloud profile, so remote sessions\n" +
 		"and agents start already logged in. Arc and Helium are supported on macOS only.\n\n" +
-		"Cookies are read from a copy of the browser's own files on this machine and\n" +
+		"Browser state is read from a private copy of the browser's files on this machine; cookies are\n" +
 		"decrypted locally. Nothing leaves your computer until you confirm the upload,\n" +
 		"and with --domain you choose exactly which sites are included.\n\n" +
-		"With --profile-id the cookies go into an existing profile; without it a new\n" +
+		"With --cdp-url, read a running Chromium browser, including sessionStorage.\n\n" +
+		"IndexedDB, partitioned storage and device-bound credentials are not transferred.\n\n" +
+		"With --profile-id, state goes into an existing profile; without it a new\n" +
 		"profile is created and its id is printed for you to reuse next time.",
 	Args: cobra.NoArgs,
 	RunE: runProfilesSync,
@@ -45,13 +48,16 @@ func init() {
 	profilesSyncCmd.Flags().StringVar(&profileID, "profile-id", "", "Existing Notte profile to sync into (creates a new one if omitted)")
 	profilesSyncCmd.Flags().StringVar(&syncBrowser, "browser", "", "Browser to read from (firefox, chrome, brave, edge, chromium, arc, helium)")
 	profilesSyncCmd.Flags().StringVar(&syncChromeProfile, "local-profile", "", "Local browser profile, by name or directory (prompts if there is more than one)")
-	profilesSyncCmd.Flags().StringSliceVar(&syncDomains, "domain", nil, "Only sync cookies for these domains and their subdomains (repeatable)")
-	profilesSyncCmd.Flags().StringVar(&syncMode, "mode", "replace", "How to apply the cookies: replace the profile's cookies, or append to them")
+	profilesSyncCmd.Flags().StringSliceVar(&syncDomains, "domain", nil, "Only sync state for these domains and their subdomains (repeatable)")
+	profilesSyncCmd.Flags().StringVar(&syncMode, "mode", "replace", "Replace captured state or append/update its keys")
 	profilesSyncCmd.Flags().StringVar(&syncProfileName, "name", "", "Name for the new profile when --profile-id is omitted")
+	profilesSyncCmd.Flags().StringVar(&syncCDPURL, "cdp-url", "", "Read live Chromium cookies, localStorage and sessionStorage from a debugger HTTP origin or page WebSocket URL")
+	profilesSyncCmd.MarkFlagsMutuallyExclusive("cdp-url", "browser")
+	profilesSyncCmd.MarkFlagsMutuallyExclusive("cdp-url", "local-profile")
 }
 
 func runProfilesSync(cmd *cobra.Command, args []string) error {
-	if !browser.SupportedPlatform() {
+	if syncCDPURL == "" && !browser.SupportedPlatform() {
 		return fmt.Errorf("syncing cookies from a local browser is supported on macOS and Linux only")
 	}
 	if syncMode != "replace" && syncMode != "append" {
@@ -60,29 +66,39 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 	// An explicit --domain that normalizes to nothing (e.g. \".\" or a blank)
 	// must be rejected rather than silently treated as "all domains", which
 	// would upload every cookie under --yes.
-	if len(syncDomains) > 0 && !hasValidDomain(syncDomains) {
-		return fmt.Errorf("--domain was given but contains no valid domain")
-	}
-
-	profile, err := resolveLocalProfile()
-	if err != nil {
+	if err := browser.ValidateDomains(syncDomains); err != nil {
 		return err
 	}
 
-	PrintInfo(fmt.Sprintf("Reading cookies from %s profile %q ...", profile.Browser.DisplayName, profile.Name))
-	result, err := profile.ReadCookies(syncDomains)
-	if err != nil {
-		return err
-	}
-	if len(result.Cookies) == 0 {
-		if len(syncDomains) > 0 {
-			return fmt.Errorf("no cookies found for %s in that profile", strings.Join(syncDomains, ", "))
+	readCtx, readCancel := GetContextWithTimeout(cmd.Context())
+	defer readCancel()
+	var result browser.State
+	var err error
+	label := "Live browser"
+	if syncCDPURL != "" {
+		result, err = browser.ReadCDPState(readCtx, syncCDPURL, syncDomains)
+	} else {
+		profile, resolveErr := resolveLocalProfile()
+		if resolveErr != nil {
+			return resolveErr
 		}
-		return fmt.Errorf("no cookies found in that profile")
+		label = fmt.Sprintf("%s - %s", profile.Browser.DisplayName, profile.Name)
+		PrintInfo(fmt.Sprintf("Reading browser state from %s ...", label))
+		result, err = profile.ReadState(syncDomains)
 	}
-
+	if err != nil {
+		return err
+	}
+	if len(result.Cookies) == 0 && storageItems(result.LocalStorage) == 0 && storageItems(result.SessionStorage) == 0 {
+		return fmt.Errorf("no cookies or web storage found for the selected sites")
+	}
 	cookies := toAPICookies(result.Cookies)
-	printCookieSummary(result, cookies)
+	printCookieSummary(browser.ReadResult{Cookies: result.Cookies}, cookies)
+	PrintInfo(fmt.Sprintf("Web storage: %d localStorage origins, %d sessionStorage origins.", len(result.LocalStorage), len(result.SessionStorage)))
+	if syncCDPURL == "" {
+		PrintInfo("Disk sync does not include in-memory sessionStorage; use --cdp-url for live tab state.")
+	}
+	PrintInfo("IndexedDB, partitioned storage and device-bound credentials are not transferred.")
 
 	// Decide where the cookies will go and confirm before touching the network,
 	// so a decline (or a dry run) never creates anything.
@@ -91,20 +107,21 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 	if target == "" {
 		newName = syncProfileName
 		if newName == "" {
-			newName = fmt.Sprintf("%s - %s", profile.Browser.DisplayName, profile.Name)
+			newName = label
 		}
 		target = fmt.Sprintf("a new profile named %q", newName)
 	}
-	if !confirmSync(len(cookies), target) {
+	if !confirmStateSync(len(cookies), len(result.LocalStorage), len(result.SessionStorage), target) {
 		return PrintResult("Cancelled.", map[string]any{"cancelled": true})
 	}
+	readCancel()
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
 
 	client, err := GetClient()
 	if err != nil {
 		return err
 	}
-	ctx, cancel := GetContextWithTimeout(cmd.Context())
-	defer cancel()
 
 	targetID := profileID
 	created := false
@@ -117,6 +134,23 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		created = true
 	}
 
+	if len(result.LocalStorage) > 0 || len(result.SessionStorage) > 0 {
+		if cookies == nil {
+			cookies = []api.Cookie{}
+		}
+		var sessions *map[string]map[string]string
+		if syncCDPURL != "" {
+			sessions = &result.SessionStorage
+		}
+		response, status, importErr := client.ImportProfileState(ctx, targetID, api.BrowserStateUploadRequest{Cookies: cookies, LocalStorage: result.LocalStorage, SessionStorage: sessions, Domains: syncDomains, Mode: syncMode})
+		if importErr != nil {
+			if created && status >= 400 && status < 500 {
+				_, _ = client.Client().ProfileDeleteWithResponse(ctx, targetID, &api.ProfileDeleteParams{})
+			}
+			return fmt.Errorf("profile %s: %w", targetID, importErr)
+		}
+		return PrintResult(fmt.Sprintf("Synced browser state into profile %s (%d cookies, %d localStorage origins, %d sessionStorage origins).", targetID, response.CookiesCount, response.LocalStorageOrigins, response.SessionStorageOrigins), map[string]any{"profile_id": targetID, "created": created, "synced": len(cookies), "cookies_count": response.CookiesCount, "local_storage_origins": response.LocalStorageOrigins, "session_storage_origins": response.SessionStorageOrigins, "mode": syncMode})
+	}
 	mode := api.ProfileCookiesImportRequestMode(syncMode)
 	// The cookies are already normalized to the Playwright shape (string
 	// sameSite, Unix-seconds expiry) in toAPICookies, so we declare that shape
@@ -152,6 +186,24 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 
 	printSyncSuccess(targetID, len(cookies), resp.JSON200)
 	return nil
+}
+
+func storageItems(storage map[string]map[string]string) int {
+	count := 0
+	for _, values := range storage {
+		count += len(values)
+	}
+	return count
+}
+
+func confirmStateSync(cookies, local, session int, target string) bool {
+	if skipConfirmation {
+		return true
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "Upload %d cookies, %d localStorage origins and %d sessionStorage origins into %s in mode %q? [y/N]: ", cookies, local, session, target, syncMode)
+	reader := bufio.NewReader(os.Stdin)
+	answer, err := reader.ReadString('\n')
+	return (err == nil || err == io.EOF) && (strings.EqualFold(strings.TrimSpace(answer), "y") || strings.EqualFold(strings.TrimSpace(answer), "yes"))
 }
 
 // resolveLocalProfile picks which local browser profile to read, from flags or
@@ -200,17 +252,6 @@ func resolveLocalProfile() (browser.Profile, error) {
 		return candidates[0], nil
 	}
 	return pickProfile(candidates)
-}
-
-// hasValidDomain reports whether at least one --domain argument survives the
-// same normalization the reader applies (trim, drop a leading dot).
-func hasValidDomain(domains []string) bool {
-	for _, d := range domains {
-		if strings.TrimPrefix(strings.TrimSpace(d), ".") != "" {
-			return true
-		}
-	}
-	return false
 }
 
 func filterByProfileName(profiles []browser.Profile, query string) []browser.Profile {
@@ -351,13 +392,6 @@ func createProfile(ctx context.Context, client *api.NotteClient, name string) (s
 		return "", fmt.Errorf("profile creation returned no profile")
 	}
 	return resp.JSON200.ProfileId, nil
-}
-
-func confirmSync(cookieCount int, target string) bool {
-	if skipConfirmation {
-		return true
-	}
-	return confirmSyncWithIO(os.Stdin, os.Stderr, cookieCount, target)
 }
 
 func confirmSyncWithIO(in io.Reader, out io.Writer, cookieCount int, target string) bool {
