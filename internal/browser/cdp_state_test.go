@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func cdpFixture(t *testing.T, sessions []string, fail bool) *httptest.Server {
+func cdpFixture(t *testing.T, sessions []string, fail bool, rawSnapshots ...string) *httptest.Server {
 	t.Helper()
 	var server *httptest.Server
 	upgrader := websocket.Upgrader{CheckOrigin: func(_ *http.Request) bool { return true }}
@@ -63,6 +63,9 @@ func cdpFixture(t *testing.T, sessions []string, fail bool) *httptest.Server {
 					t.Error("snapshot must only read storage")
 				}
 				snapshot, _ := json.Marshal(map[string]any{"origin": "https://bsky.app", "local": map[string]string{"BSKY_STORAGE": "synthetic-local-login"}, "session": map[string]string{"tab": sessions[index]}})
+				if len(rawSnapshots) > 0 {
+					snapshot = []byte(rawSnapshots[0])
+				}
 				result = map[string]any{"result": map[string]any{"type": "string", "value": string(snapshot)}}
 			default:
 				t.Error("unexpected mutating CDP command", req.Method)
@@ -166,4 +169,40 @@ func TestConcurrentLiveSnapshotsRemainIndependent(t *testing.T) {
 		})
 	}
 	wait.Wait()
+}
+
+func TestLiveStorageUnicodeValidation(t *testing.T) {
+	for _, raw := range []string{
+		`{"local":{"\ud800":"value"}}`,
+		`{"session":{"key":"\udfff"}}`,
+		`{"local":{"key":"\ud800x"}}`,
+		`{"local":{"key":"\ud800\u0041"}}`,
+		"{\"key\":\"\xff\"}",
+	} {
+		if validJSONUnicode(raw) {
+			t.Error("unsupported live storage string was accepted")
+		}
+	}
+	for _, raw := range []string{
+		`{"key":"\ud83d\udd10"}`,
+		`{"key":"\\ud800"}`,
+		`{"key":"日本語🔐\u0000\""}`,
+	} {
+		if !validJSONUnicode(raw) {
+			t.Error("valid browser string was rejected")
+		}
+	}
+}
+
+func TestLiveStateRefusesUnsupportedUnicodeBeforeUpload(t *testing.T) {
+	for _, snapshot := range []string{
+		`{"origin":"https://bsky.app","local":{"\ud800":"value"},"session":{}}`,
+		`{"origin":"https://bsky.app","local":{},"session":{"key":"\udfff"}}`,
+	} {
+		s := cdpFixture(t, []string{"state"}, false, snapshot)
+		state, err := ReadCDPState(context.Background(), s.URL, []string{"bsky.app"})
+		if err == nil || !strings.Contains(err.Error(), "Unicode") || len(state.Cookies) > 0 || len(state.LocalStorage) > 0 {
+			t.Fatal("unsupported live strings must abort the entire snapshot", err)
+		}
+	}
 }

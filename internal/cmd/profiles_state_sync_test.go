@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -184,5 +188,92 @@ func TestEmptyLiveSyncNeverCreatesProfile(t *testing.T) {
 	cmd.SetContext(context.Background())
 	if err := runProfilesSync(cmd, nil); err == nil || !strings.Contains(err.Error(), "no cookies or web storage") {
 		t.Fatal("empty snapshot must fail before accessing the API")
+	}
+}
+
+func TestCookieOnlyEndpointCompatibilityAndScope(t *testing.T) {
+	state := browser.State{LocalStorage: map[string]map[string]string{"https://bsky.app": {}}}
+	if needsStateImport(state, nil, false) {
+		t.Fatal("empty storage tables must not require a new server for unscoped disk cookie sync")
+	}
+	if !needsStateImport(state, []string{"bsky.app"}, false) {
+		t.Fatal("scoped cookies require the state API to preserve other sites")
+	}
+	if !needsStateImport(state, nil, true) {
+		t.Fatal("live snapshots must replace captured origins without clearing closed ones")
+	}
+	state.LocalStorage["https://bsky.app"]["token"] = "synthetic"
+	if !needsStateImport(state, nil, false) {
+		t.Fatal("storage values must never be silently dropped for cookie API compatibility")
+	}
+}
+
+func TestLegacyCookieSyncRefusesRedirectsAndRedactsErrors(t *testing.T) {
+	if !browser.SupportedPlatform() {
+		t.Skip("disk browser sync is not supported on this OS")
+	}
+	for _, status := range []int{200, 307, 308, 422} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			env := testutil.SetupTestEnv(t)
+			env.SetEnv("HOME", env.TempDir)
+			env.SetEnv("NOTTE_API_KEY", "test-key")
+			configureLiveSyncTest(t, "")
+			profileID, syncDomains, syncBrowser, syncChromeProfile = profileIDTest, nil, "firefox", "Synthetic"
+			root := filepath.Join(env.TempDir, ".mozilla", "firefox")
+			if runtime.GOOS == "darwin" {
+				root = filepath.Join(env.TempDir, "Library", "Application Support", "Firefox")
+			}
+			dir := filepath.Join(root, "synthetic")
+			if err := os.MkdirAll(dir, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(root, "profiles.ini"), []byte("[Profile0]\nName=Synthetic\nIsRelative=1\nPath=synthetic\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			db, err := sql.Open("sqlite", filepath.Join(dir, "cookies.sqlite"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, statement := range []string{
+				`CREATE TABLE moz_cookies(host TEXT, name TEXT, value TEXT, path TEXT, expiry INTEGER, isSecure INTEGER, isHttpOnly INTEGER, sameSite INTEGER, originAttributes TEXT)`,
+				`INSERT INTO moz_cookies VALUES('bsky.app','login','synthetic-private-token','/',1893456000,1,1,1,'')`,
+			} {
+				if _, err := db.Exec(statement); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := db.Close(); err != nil {
+				t.Fatal(err)
+			}
+			target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Error("browser credentials were forwarded on redirect")
+			}))
+			defer target.Close()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if !strings.HasSuffix(r.URL.Path, "/cookies") {
+					t.Error("unscoped cookie-only sync did not use the compatible endpoint", r.URL.Path)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Location", target.URL)
+				w.WriteHeader(status)
+				if status == 200 {
+					_, _ = w.Write([]byte(`{"success":true,"cookies_count":1,"mode":"replace","message":"imported"}`))
+				} else {
+					_, _ = w.Write([]byte(`{"detail":"synthetic-private-token"}`))
+				}
+			}))
+			defer server.Close()
+			env.SetEnv("NOTTE_API_URL", server.URL)
+			cmd := &cobra.Command{}
+			cmd.SetContext(context.Background())
+			var runErr error
+			stdout, stderr := testutil.CaptureOutput(func() { runErr = runProfilesSync(cmd, nil) })
+			if (runErr == nil) != (status == 200) {
+				t.Fatal("cookie import reported an incorrect result", runErr)
+			}
+			if strings.Contains(stdout+stderr+fmt.Sprint(runErr), "synthetic-private-token") {
+				t.Fatal("cookie values leaked into output")
+			}
+		})
 	}
 }

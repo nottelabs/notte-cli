@@ -5,12 +5,16 @@ import (
 	"encoding/binary"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf16"
 
 	"github.com/golang/snappy"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func encodedUTF16(value string) []byte {
@@ -229,5 +233,64 @@ func TestFirefoxScopedSyncSkipsUnrelatedCorruptDatabase(t *testing.T) {
 	}
 	if _, err := p.ReadState([]string{"unrelated.test"}); err == nil {
 		t.Fatal("selected corrupt storage must fail")
+	}
+}
+
+func TestChromiumSnapshotDuringWritesAndCompaction(t *testing.T) {
+	p, db := localStorageProfile(t)
+	stop, started := make(chan struct{}), make(chan struct{})
+	done := make(chan error, 1)
+	go func() {
+		for version := 0; ; version++ {
+			select {
+			case <-stop:
+				done <- nil
+				return
+			default:
+			}
+			batch := new(leveldb.Batch)
+			for _, key := range []string{"first", "second"} {
+				rawKey := append([]byte("_https://bsky.app\x00"), chromeText(key)...)
+				batch.Put(rawKey, chromeText(strconv.Itoa(version)+strings.Repeat("x", 4096)))
+			}
+			if err := db.Write(batch, &opt.WriteOptions{Sync: true}); err != nil {
+				done <- err
+				return
+			}
+			if version == 0 {
+				close(started)
+			}
+			if version%4 == 0 {
+				if err := db.CompactRange(util.Range{}); err != nil {
+					done <- err
+					return
+				}
+			}
+			time.Sleep(time.Millisecond)
+		}
+	}()
+	defer func() {
+		close(stop)
+		if err := <-done; err != nil {
+			t.Error("fixture writer failed", err)
+		}
+	}()
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("fixture writer did not start")
+	}
+	for range 30 {
+		state, err := p.ReadState([]string{"bsky.app"})
+		if err != nil {
+			if !strings.Contains(err.Error(), "local storage") {
+				t.Fatal("unexpected snapshot error", err)
+			}
+			continue
+		}
+		values := state.LocalStorage["https://bsky.app"]
+		if values["first"] == "" || values["first"] != values["second"] {
+			t.Fatal("concurrent database copy returned an incomplete atomic write")
+		}
 	}
 }

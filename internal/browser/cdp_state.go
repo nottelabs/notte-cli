@@ -7,8 +7,10 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gorilla/websocket"
 )
@@ -198,6 +200,9 @@ func readTarget(ctx context.Context, endpoint string, domains []string, state *S
 		Local   map[string]string `json:"local"`
 		Session map[string]string `json:"session"`
 	}
+	if !validJSONUnicode(evaluated.Result.Value) {
+		return fmt.Errorf("live storage contains unsupported Unicode; nothing was uploaded")
+	}
 	if err := json.Unmarshal([]byte(evaluated.Result.Value), &snapshot); err != nil {
 		return fmt.Errorf("invalid browser storage snapshot")
 	}
@@ -215,4 +220,45 @@ func readTarget(ctx context.Context, endpoint string, domains []string, state *S
 		item.target[origin] = item.source
 	}
 	return nil
+}
+
+// encoding/json replaces unpaired UTF-16 surrogates instead of returning an
+// error. Reject them in the original JSON strings before that loses information.
+func validJSONUnicode(raw string) bool {
+	if !utf8.ValidString(raw) {
+		return false
+	}
+	inString := false
+	for i := 0; i < len(raw); i++ {
+		if raw[i] == '"' {
+			inString = !inString
+		} else if inString && raw[i] == '\\' {
+			if i+1 >= len(raw) {
+				return false
+			}
+			if raw[i+1] != 'u' {
+				i++
+				continue
+			}
+			if i+6 > len(raw) {
+				return false
+			}
+			unit, err := strconv.ParseUint(raw[i+2:i+6], 16, 16)
+			if err != nil || unit >= 0xdc00 && unit <= 0xdfff {
+				return false
+			}
+			if unit >= 0xd800 && unit <= 0xdbff {
+				if i+12 > len(raw) || raw[i+6:i+8] != `\u` {
+					return false
+				}
+				low, err := strconv.ParseUint(raw[i+8:i+12], 16, 16)
+				if err != nil || low < 0xdc00 || low > 0xdfff {
+					return false
+				}
+				i += 6
+			}
+			i += 5
+		}
+	}
+	return true
 }

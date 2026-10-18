@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -93,7 +94,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no cookies or web storage found for the selected sites")
 	}
 	cookies := toAPICookies(result.Cookies)
-	useStateImport := len(result.LocalStorage) > 0 || len(result.SessionStorage) > 0 || len(syncDomains) > 0 || syncCDPURL != ""
+	useStateImport := needsStateImport(result, syncDomains, syncCDPURL != "")
 	stateRequest := buildStateUpload(result, cookies, syncDomains, syncMode, syncCDPURL != "")
 	if useStateImport {
 		if err := stateRequest.Validate(); err != nil {
@@ -129,6 +130,8 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Cookie-only uploads also contain credentials and must refuse redirects.
+	client.HTTPClient().CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
 
 	targetID := profileID
 	created := false
@@ -165,10 +168,16 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 
 	resp, err := client.Client().ProfileCookiesSetWithResponse(ctx, targetID, &api.ProfileCookiesSetParams{}, body)
 	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
+		return fmt.Errorf("cookie import could not be confirmed; inspect profile %s before retrying", targetID)
 	}
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
-		return err
+	if resp.StatusCode() != http.StatusOK {
+		if created && resp.StatusCode() >= 400 && resp.StatusCode() < 500 {
+			_, _ = client.Client().ProfileDeleteWithResponse(ctx, targetID, &api.ProfileDeleteParams{})
+		}
+		return fmt.Errorf("cookie import failed (HTTP %d); browser values were not printed", resp.StatusCode())
+	}
+	if resp.JSON200 == nil || !resp.JSON200.Success {
+		return fmt.Errorf("cookie import returned an invalid confirmation for profile %s", targetID)
 	}
 
 	if IsJSONOutput() {
@@ -186,6 +195,10 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 
 	printSyncSuccess(targetID, len(cookies), resp.JSON200)
 	return nil
+}
+
+func needsStateImport(state browser.State, domains []string, live bool) bool {
+	return storageItems(state.LocalStorage) > 0 || storageItems(state.SessionStorage) > 0 || len(domains) > 0 || live
 }
 
 func buildStateUpload(state browser.State, cookies []api.Cookie, domains []string, mode string, live bool) api.BrowserStateUploadRequest {

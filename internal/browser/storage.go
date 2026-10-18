@@ -135,6 +135,11 @@ func (p Profile) readChromiumStorage(domains []string) (map[string]map[string]st
 		return nil, fmt.Errorf("could not read local storage directory")
 	}
 	var copied int64
+	type fileVersion struct {
+		size     int64
+		modified int64
+	}
+	versions := map[string]fileVersion{}
 	for _, entry := range entries {
 		name := entry.Name()
 		if entry.IsDir() || name == "LOCK" || (name != "CURRENT" && !strings.HasPrefix(name, "MANIFEST-") && !strings.HasSuffix(name, ".log") && !strings.HasSuffix(name, ".ldb") && !strings.HasSuffix(name, ".sst")) {
@@ -148,12 +153,35 @@ func (p Profile) readChromiumStorage(domains []string) (map[string]map[string]st
 			return nil, fmt.Errorf("local storage contains an unexpected file")
 		}
 		copied += info.Size()
+		versions[name] = fileVersion{info.Size(), info.ModTime().UnixNano()}
 		if copied > 512*1024*1024 {
 			return nil, fmt.Errorf("local storage database is too large; use --cdp-url with --domain")
 		}
 		if err := copyFile(filepath.Join(source, name), filepath.Join(tmp, name)); err != nil {
 			return nil, fmt.Errorf("local storage changed while being copied; close the browser and retry")
 		}
+	}
+	// A multi-file copy is valid only while the source stays unchanged. A WAL
+	// append, compaction or manifest rotation must fail rather than import a
+	// potentially incomplete mix of database versions.
+	after, err := os.ReadDir(source)
+	if err != nil {
+		return nil, fmt.Errorf("local storage changed while being copied; close the browser and retry")
+	}
+	for _, entry := range after {
+		name := entry.Name()
+		if entry.IsDir() || name == "LOCK" || (name != "CURRENT" && !strings.HasPrefix(name, "MANIFEST-") && !strings.HasSuffix(name, ".log") && !strings.HasSuffix(name, ".ldb") && !strings.HasSuffix(name, ".sst")) {
+			continue
+		}
+		info, err := entry.Info()
+		version, existed := versions[name]
+		if err != nil || !existed || !info.Mode().IsRegular() || version != (fileVersion{info.Size(), info.ModTime().UnixNano()}) {
+			return nil, fmt.Errorf("local storage changed while being copied; close the browser and retry")
+		}
+		delete(versions, name)
+	}
+	if len(versions) != 0 {
+		return nil, fmt.Errorf("local storage changed while being copied; close the browser and retry")
 	}
 	db, err := leveldb.OpenFile(tmp, &opt.Options{ReadOnly: true, ErrorIfMissing: true, Strict: opt.StrictAll})
 	if err != nil {
