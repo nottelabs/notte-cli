@@ -227,6 +227,8 @@ notte functions create --file workflow.py --response-format @schema.json  # ... 
 notte functions update --file workflow.py  # Update current function code
 notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
 notte functions configure --run-instructions "..." --self-healing  # Set usage notes and self-healing
+notte functions configure --shared  # Enable the public code/fork link
+notte functions configure --shared=false  # Disable new forks
 notte functions configure --response-format @schema.json  # Document run()'s return schema without re-upload
 notte functions rollback --version <version>  # Restore an earlier version (see `versions` in show)
 notte functions health                # Runtime health: Python version, installed packages, reachability

@@ -25,6 +25,7 @@ func configureCmd(t *testing.T) *cobra.Command {
 		FunctionConfigureResponseFormat = ""
 		FunctionConfigureDefaultRuntime = ""
 		FunctionConfigureSelfHealing = false
+		FunctionConfigureShared = false
 	})
 	return cmd
 }
@@ -74,6 +75,35 @@ func TestFunctionConfigure_SendsOnlyTheFlagsPassed(t *testing.T) {
 	}
 	if _, present := body["self_healing"]; present {
 		t.Error("self_healing was sent for a call that did not pass --self-healing")
+	}
+	if _, present := body["shared"]; present {
+		t.Error("shared was sent for a call that did not pass --shared")
+	}
+}
+
+func TestFunctionConfigure_SendsExplicitSharing(t *testing.T) {
+	for _, value := range []string{"true", "false"} {
+		t.Run(value, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+			cmd := configureCmd(t)
+			if err := cmd.Flags().Set("shared", value); err != nil {
+				t.Fatal(err)
+			}
+			testutil.CaptureOutput(func() {
+				if err := runFunctionConfigure(cmd, nil); err != nil {
+					t.Fatal(err)
+				}
+			})
+			requests := server.Requests("/functions/" + functionIDTest)
+			if len(requests) != 1 || requests[0].Method != "PATCH" {
+				t.Fatalf("unexpected requests: %+v", requests)
+			}
+			body := requestBody(t, requests[0])
+			if len(body) != 1 || body["shared"] != (value == "true") {
+				t.Fatalf("unexpected sharing body: %+v", body)
+			}
+		})
 	}
 }
 
