@@ -94,10 +94,12 @@ skip POST /data/monitors/{monitor_id}/webhook/rotate-secret # Data API commands 
 skip POST /data/news/search # Data API commands are not yet exposed by the CLI
 skip POST /data/people/enrich # Data API commands are not yet exposed by the CLI
 skip POST /data/products/extract # Data API commands are not yet exposed by the CLI
-skip POST /data/web/scrape # Data API commands are not yet exposed by the CLI
+skip POST /data/web/fetch # Data API commands are not yet exposed by the CLI
 skip GET /data/web/styleguide # Data API commands are not yet exposed by the CLI
 skip POST /data/webhooks/deliveries # Data API commands are not yet exposed by the CLI
 skip GET /data/webhooks/deliveries/{delivery_id} # Data API commands are not yet exposed by the CLI
 skip GET /data/webhooks/deliveries/{delivery_id}/attempts # Data API commands are not yet exposed by the CLI
 skip POST /data/webhooks/deliveries/{delivery_id}/retry # Data API commands are not yet exposed by the CLI
 skip POST /data/youtube/extract # Data API commands are not yet exposed by the CLI
+skip GET /data/cache # Data API commands are not yet exposed by the CLI
+skip DELETE /data/cache # Data API commands are not yet exposed by the CLI

@@ -121,9 +121,9 @@ const (
 
 // Defines values for BrandCacheMetadataStatus.
 const (
-	Hit  BrandCacheMetadataStatus = "hit"
-	Miss BrandCacheMetadataStatus = "miss"
-	Zdr  BrandCacheMetadataStatus = "zdr"
+	BrandCacheMetadataStatusHit  BrandCacheMetadataStatus = "hit"
+	BrandCacheMetadataStatusMiss BrandCacheMetadataStatus = "miss"
+	BrandCacheMetadataStatusZdr  BrandCacheMetadataStatus = "zdr"
 )
 
 // Defines values for BrandColorSource.
@@ -1082,6 +1082,12 @@ const (
 const (
 	StyleguideModeDark  StyleguideMode = "dark"
 	StyleguideModeLight StyleguideMode = "light"
+)
+
+// Defines values for StyleguideCacheMetadataStatus.
+const (
+	StyleguideCacheMetadataStatusHit  StyleguideCacheMetadataStatus = "hit"
+	StyleguideCacheMetadataStatusMiss StyleguideCacheMetadataStatus = "miss"
 )
 
 // Defines values for StyleguideResponseFinalDOMState.
@@ -2167,16 +2173,18 @@ type CreditCardDictOutput struct {
 
 // DataScrapeRequest defines model for DataScrapeRequest.
 type DataScrapeRequest struct {
-	Formats        ScrapeFormats         `json:"formats"`
-	MarkdownParams *MarkdownParams       `json:"markdownParams,omitempty"`
-	MaxAgeMs       *int                  `json:"maxAgeMs,omitempty"`
-	ParseParams    *MapsParseParams      `json:"parseParams,omitempty"`
-	ProductParams  *ProductParams        `json:"productParams,omitempty"`
-	SharedParams   *SharedParams         `json:"sharedParams,omitempty"`
-	Tags           *[]string             `json:"tags,omitempty"`
-	TimeoutOpts    *StyleguideTimeout    `json:"timeoutOpts,omitempty"`
-	Url            string                `json:"url"`
-	Zdr            *DataScrapeRequestZdr `json:"zdr,omitempty"`
+	Formats        ScrapeFormats   `json:"formats"`
+	MarkdownParams *MarkdownParams `json:"markdownParams,omitempty"`
+
+	// MaxAgeMs Maximum cached result age in milliseconds. Omit for server policy; zero forces fresh extraction.
+	MaxAgeMs      *int                  `json:"maxAgeMs,omitempty"`
+	ParseParams   *MapsParseParams      `json:"parseParams,omitempty"`
+	ProductParams *ProductParams        `json:"productParams,omitempty"`
+	SharedParams  *SharedParams         `json:"sharedParams,omitempty"`
+	Tags          *[]string             `json:"tags,omitempty"`
+	TimeoutOpts   *StyleguideTimeout    `json:"timeoutOpts,omitempty"`
+	Url           string                `json:"url"`
+	Zdr           *DataScrapeRequestZdr `json:"zdr,omitempty"`
 }
 
 // DataScrapeRequestZdr defines model for DataScrapeRequest.Zdr.
@@ -4852,9 +4860,12 @@ type StyleguideMode string
 
 // StyleguideCacheMetadata defines model for StyleguideCacheMetadata.
 type StyleguideCacheMetadata struct {
-	AgeMs  *int    `json:"age_ms,omitempty"`
-	Status *string `json:"status,omitempty"`
+	AgeMs  *int                           `json:"age_ms,omitempty"`
+	Status *StyleguideCacheMetadataStatus `json:"status,omitempty"`
 }
+
+// StyleguideCacheMetadataStatus defines model for StyleguideCacheMetadata.Status.
+type StyleguideCacheMetadataStatus string
 
 // StyleguideResponse defines model for StyleguideResponse.
 type StyleguideResponse struct {
@@ -5284,20 +5295,74 @@ type ListAuditEventsParams struct {
 
 // ListDataApisParams defines parameters for ListDataApis.
 type ListDataApisParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // BrandRetrieveParams defines parameters for BrandRetrieve.
 type BrandRetrieveParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// InvalidateParams defines parameters for Invalidate.
+type InvalidateParams struct {
+	Capability *string `form:"capability,omitempty" json:"capability,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// GetPolicyParams defines parameters for GetPolicy.
+type GetPolicyParams struct {
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // MapsSearchParams defines parameters for MapsSearch.
 type MapsSearchParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // ListMonitorsParams defines parameters for ListMonitors.
@@ -5312,14 +5377,31 @@ type ListMonitorsParams struct {
 	ChangeDetectionType *string `form:"change_detection_type,omitempty" json:"change_detection_type,omitempty"`
 	Tags                *string `form:"tags,omitempty" json:"tags,omitempty"`
 	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // CreateParams defines parameters for Create.
 type CreateParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // AccountChangesParams defines parameters for AccountChanges.
@@ -5332,117 +5414,258 @@ type AccountChangesParams struct {
 	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
 	Since               *string `form:"since,omitempty" json:"since,omitempty"`
 	Until               *string `form:"until,omitempty" json:"until,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // CreditUsageParams defines parameters for CreditUsage.
 type CreditUsageParams struct {
-	Since               *string `form:"since,omitempty" json:"since,omitempty"`
-	Until               *string `form:"until,omitempty" json:"until,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	Since *string `form:"since,omitempty" json:"since,omitempty"`
+	Until *string `form:"until,omitempty" json:"until,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // LimitsParams defines parameters for Limits.
 type LimitsParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // AccountRunsParams defines parameters for AccountRuns.
 type AccountRunsParams struct {
-	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
-	Status              *string `form:"status,omitempty" json:"status,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // DeleteParams defines parameters for Delete.
 type DeleteParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RetrieveParams defines parameters for Retrieve.
 type RetrieveParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // UpdateParams defines parameters for Update.
 type UpdateParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // ChangesParams defines parameters for Changes.
 type ChangesParams struct {
-	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
-	Tag                 *string `form:"tag,omitempty" json:"tag,omitempty"`
-	Since               *string `form:"since,omitempty" json:"since,omitempty"`
-	Until               *string `form:"until,omitempty" json:"until,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Tag    *string `form:"tag,omitempty" json:"tag,omitempty"`
+	Since  *string `form:"since,omitempty" json:"since,omitempty"`
+	Until  *string `form:"until,omitempty" json:"until,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RetrieveChangeParams defines parameters for RetrieveChange.
 type RetrieveChangeParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RunNowParams defines parameters for RunNow.
 type RunNowParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RunsParams defines parameters for Runs.
 type RunsParams struct {
-	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
-	Status              *string `form:"status,omitempty" json:"status,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RetrieveRunParams defines parameters for RetrieveRun.
 type RetrieveRunParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RotateSecretParams defines parameters for RotateSecret.
 type RotateSecretParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // NewsSearchParams defines parameters for NewsSearch.
 type NewsSearchParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // PeopleEnrichParams defines parameters for PeopleEnrich.
 type PeopleEnrichParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // ExtractProductEndpointParams defines parameters for ExtractProductEndpoint.
 type ExtractProductEndpointParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
-// ScrapeSpecializedDataParams defines parameters for ScrapeSpecializedData.
-type ScrapeSpecializedDataParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+// FetchSpecializedDataParams defines parameters for FetchSpecializedData.
+type FetchSpecializedDataParams struct {
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // StyleguideEndpointParams defines parameters for StyleguideEndpoint.
@@ -5455,41 +5678,92 @@ type StyleguideEndpointParams struct {
 	TimeoutOptsBehavior     *string `form:"timeoutOpts[behavior],omitempty" json:"timeoutOpts[behavior],omitempty"`
 	Zdr                     *string `form:"zdr,omitempty" json:"zdr,omitempty"`
 	Tags                    *string `form:"tags,omitempty" json:"tags,omitempty"`
-	XNotteRequestOrigin     *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion        *string `json:"x-notte-sdk-version,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // DeliveriesParams defines parameters for Deliveries.
 type DeliveriesParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RetrieveDeliveryParams defines parameters for RetrieveDelivery.
 type RetrieveDeliveryParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // AttemptsParams defines parameters for Attempts.
 type AttemptsParams struct {
-	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor              *string `form:"cursor,omitempty" json:"cursor,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // RetryParams defines parameters for Retry.
 type RetryParams struct {
-	IdempotencyKey      *string `json:"Idempotency-Key,omitempty"`
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // YoutubeEndpointParams defines parameters for YoutubeEndpoint.
 type YoutubeEndpointParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // ListFunctionsParams defines parameters for ListFunctions.
@@ -6225,8 +6499,8 @@ type PeopleEnrichJSONRequestBody = PeopleEnrichRequest
 // ExtractProductEndpointJSONRequestBody defines body for ExtractProductEndpoint for application/json ContentType.
 type ExtractProductEndpointJSONRequestBody = ProductExtractRequest
 
-// ScrapeSpecializedDataJSONRequestBody defines body for ScrapeSpecializedData for application/json ContentType.
-type ScrapeSpecializedDataJSONRequestBody = DataScrapeRequest
+// FetchSpecializedDataJSONRequestBody defines body for FetchSpecializedData for application/json ContentType.
+type FetchSpecializedDataJSONRequestBody = DataScrapeRequest
 
 // DeliveriesJSONRequestBody defines body for Deliveries for application/json ContentType.
 type DeliveriesJSONRequestBody = DeliveryList
@@ -14213,6 +14487,12 @@ type ClientInterface interface {
 
 	BrandRetrieve(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Invalidate request
+	Invalidate(ctx context.Context, params *InvalidateParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPolicy request
+	GetPolicy(ctx context.Context, params *GetPolicyParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MapsSearchWithBody request with any body
 	MapsSearchWithBody(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -14282,10 +14562,10 @@ type ClientInterface interface {
 
 	ExtractProductEndpoint(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ScrapeSpecializedDataWithBody request with any body
-	ScrapeSpecializedDataWithBody(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// FetchSpecializedDataWithBody request with any body
+	FetchSpecializedDataWithBody(ctx context.Context, params *FetchSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ScrapeSpecializedData(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	FetchSpecializedData(ctx context.Context, params *FetchSpecializedDataParams, body FetchSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// StyleguideEndpoint request
 	StyleguideEndpoint(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -14787,6 +15067,30 @@ func (c *Client) BrandRetrieve(ctx context.Context, params *BrandRetrieveParams,
 	return c.Client.Do(req)
 }
 
+func (c *Client) Invalidate(ctx context.Context, params *InvalidateParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInvalidateRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPolicy(ctx context.Context, params *GetPolicyParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPolicyRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) MapsSearchWithBody(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMapsSearchRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
@@ -15087,8 +15391,8 @@ func (c *Client) ExtractProductEndpoint(ctx context.Context, params *ExtractProd
 	return c.Client.Do(req)
 }
 
-func (c *Client) ScrapeSpecializedDataWithBody(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeSpecializedDataRequestWithBody(c.Server, params, contentType, body)
+func (c *Client) FetchSpecializedDataWithBody(ctx context.Context, params *FetchSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFetchSpecializedDataRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -15099,8 +15403,8 @@ func (c *Client) ScrapeSpecializedDataWithBody(ctx context.Context, params *Scra
 	return c.Client.Do(req)
 }
 
-func (c *Client) ScrapeSpecializedData(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewScrapeSpecializedDataRequest(c.Server, params, body)
+func (c *Client) FetchSpecializedData(ctx context.Context, params *FetchSpecializedDataParams, body FetchSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFetchSpecializedDataRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17371,26 +17675,59 @@ func NewListDataApisRequest(server string, params *ListDataApisParams) (*http.Re
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -17437,26 +17774,253 @@ func NewBrandRetrieveRequestWithBody(server string, params *BrandRetrieveParams,
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewInvalidateRequest generates requests for Invalidate
+func NewInvalidateRequest(server string, params *InvalidateParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/cache")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Capability != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "capability", runtime.ParamLocationQuery, *params.Capability); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteCacheMode != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam4)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetPolicyRequest generates requests for GetPolicy
+func NewGetPolicyRequest(server string, params *GetPolicyParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/cache")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteCacheMode != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -17503,26 +18067,59 @@ func NewMapsSearchRequestWithBody(server string, params *MapsSearchParams, conte
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -17722,26 +18319,59 @@ func NewListMonitorsRequest(server string, params *ListMonitorsParams) (*http.Re
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -17788,26 +18418,59 @@ func NewCreateRequestWithBody(server string, params *CreateParams, contentType s
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -17975,26 +18638,59 @@ func NewAccountChangesRequest(server string, params *AccountChangesParams) (*htt
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18066,26 +18762,59 @@ func NewCreditUsageRequest(server string, params *CreditUsageParams) (*http.Requ
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18119,26 +18848,59 @@ func NewLimitsRequest(server string, params *LimitsParams) (*http.Request, error
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18226,26 +18988,59 @@ func NewAccountRunsRequest(server string, params *AccountRunsParams) (*http.Requ
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18286,26 +19081,59 @@ func NewDeleteRequest(server string, monitorId string, params *DeleteParams) (*h
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18346,26 +19174,59 @@ func NewRetrieveRequest(server string, monitorId string, params *RetrieveParams)
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18419,26 +19280,59 @@ func NewUpdateRequestWithBody(server string, monitorId string, params *UpdatePar
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18565,26 +19459,59 @@ func NewChangesRequest(server string, monitorId string, params *ChangesParams) (
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18632,26 +19559,59 @@ func NewRetrieveChangeRequest(server string, monitorId string, changeId string, 
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18692,26 +19652,59 @@ func NewRunNowRequest(server string, monitorId string, params *RunNowParams) (*h
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18806,26 +19799,59 @@ func NewRunsRequest(server string, monitorId string, params *RunsParams) (*http.
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18873,26 +19899,59 @@ func NewRetrieveRunRequest(server string, monitorId string, runId string, params
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18933,26 +19992,59 @@ func NewRotateSecretRequest(server string, monitorId string, params *RotateSecre
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -18999,26 +20091,59 @@ func NewNewsSearchRequestWithBody(server string, params *NewsSearchParams, conte
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19065,26 +20190,59 @@ func NewPeopleEnrichRequestWithBody(server string, params *PeopleEnrichParams, c
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19131,26 +20289,59 @@ func NewExtractProductEndpointRequestWithBody(server string, params *ExtractProd
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19158,19 +20349,19 @@ func NewExtractProductEndpointRequestWithBody(server string, params *ExtractProd
 	return req, nil
 }
 
-// NewScrapeSpecializedDataRequest calls the generic ScrapeSpecializedData builder with application/json body
-func NewScrapeSpecializedDataRequest(server string, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody) (*http.Request, error) {
+// NewFetchSpecializedDataRequest calls the generic FetchSpecializedData builder with application/json body
+func NewFetchSpecializedDataRequest(server string, params *FetchSpecializedDataParams, body FetchSpecializedDataJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewScrapeSpecializedDataRequestWithBody(server, params, "application/json", bodyReader)
+	return NewFetchSpecializedDataRequestWithBody(server, params, "application/json", bodyReader)
 }
 
-// NewScrapeSpecializedDataRequestWithBody generates requests for ScrapeSpecializedData with any type of body
-func NewScrapeSpecializedDataRequestWithBody(server string, params *ScrapeSpecializedDataParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewFetchSpecializedDataRequestWithBody generates requests for FetchSpecializedData with any type of body
+func NewFetchSpecializedDataRequestWithBody(server string, params *FetchSpecializedDataParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -19178,7 +20369,7 @@ func NewScrapeSpecializedDataRequestWithBody(server string, params *ScrapeSpecia
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/data/web/scrape")
+	operationPath := fmt.Sprintf("/data/web/fetch")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -19197,26 +20388,59 @@ func NewScrapeSpecializedDataRequestWithBody(server string, params *ScrapeSpecia
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19384,26 +20608,59 @@ func NewStyleguideEndpointRequest(server string, params *StyleguideEndpointParam
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19450,26 +20707,59 @@ func NewDeliveriesRequestWithBody(server string, params *DeliveriesParams, conte
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19510,26 +20800,59 @@ func NewRetrieveDeliveryRequest(server string, deliveryId string, params *Retrie
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19608,26 +20931,59 @@ func NewAttemptsRequest(server string, deliveryId string, params *AttemptsParams
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -19692,26 +21048,59 @@ func NewRetryRequestWithBody(server string, deliveryId string, params *RetryPara
 			req.Header.Set("Idempotency-Key", headerParam0)
 		}
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam1 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam1)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam1)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam2)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam3)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam4)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam2 string
+			var headerParam5 string
 
-			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam5, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam2)
+			req.Header.Set("x-notte-sdk-version", headerParam5)
 		}
 
 	}
@@ -19758,26 +21147,59 @@ func NewYoutubeEndpointRequestWithBody(server string, params *YoutubeEndpointPar
 
 	if params != nil {
 
-		if params.XNotteRequestOrigin != nil {
+		if params.XNotteCacheMode != nil {
 			var headerParam0 string
 
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-request-origin", headerParam0)
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
 		}
 
 		if params.XNotteSdkVersion != nil {
-			var headerParam1 string
+			var headerParam4 string
 
-			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
 			if err != nil {
 				return nil, err
 			}
 
-			req.Header.Set("x-notte-sdk-version", headerParam1)
+			req.Header.Set("x-notte-sdk-version", headerParam4)
 		}
 
 	}
@@ -26773,6 +28195,12 @@ type ClientWithResponsesInterface interface {
 
 	BrandRetrieveWithResponse(ctx context.Context, params *BrandRetrieveParams, body BrandRetrieveJSONRequestBody, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error)
 
+	// InvalidateWithResponse request
+	InvalidateWithResponse(ctx context.Context, params *InvalidateParams, reqEditors ...RequestEditorFn) (*InvalidateResult, error)
+
+	// GetPolicyWithResponse request
+	GetPolicyWithResponse(ctx context.Context, params *GetPolicyParams, reqEditors ...RequestEditorFn) (*GetPolicyResult, error)
+
 	// MapsSearchWithBodyWithResponse request with any body
 	MapsSearchWithBodyWithResponse(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MapsSearchResult, error)
 
@@ -26842,10 +28270,10 @@ type ClientWithResponsesInterface interface {
 
 	ExtractProductEndpointWithResponse(ctx context.Context, params *ExtractProductEndpointParams, body ExtractProductEndpointJSONRequestBody, reqEditors ...RequestEditorFn) (*ExtractProductEndpointResult, error)
 
-	// ScrapeSpecializedDataWithBodyWithResponse request with any body
-	ScrapeSpecializedDataWithBodyWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error)
+	// FetchSpecializedDataWithBodyWithResponse request with any body
+	FetchSpecializedDataWithBodyWithResponse(ctx context.Context, params *FetchSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FetchSpecializedDataResult, error)
 
-	ScrapeSpecializedDataWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error)
+	FetchSpecializedDataWithResponse(ctx context.Context, params *FetchSpecializedDataParams, body FetchSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*FetchSpecializedDataResult, error)
 
 	// StyleguideEndpointWithResponse request
 	StyleguideEndpointWithResponse(ctx context.Context, params *StyleguideEndpointParams, reqEditors ...RequestEditorFn) (*StyleguideEndpointResult, error)
@@ -27410,6 +28838,52 @@ func (r BrandRetrieveResult) StatusCode() int {
 	return 0
 }
 
+type InvalidateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]bool
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r InvalidateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r InvalidateResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPolicyResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPolicyResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPolicyResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type MapsSearchResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -27846,7 +29320,7 @@ func (r ExtractProductEndpointResult) StatusCode() int {
 	return 0
 }
 
-type ScrapeSpecializedDataResult struct {
+type FetchSpecializedDataResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ScrapeResponse
@@ -27854,7 +29328,7 @@ type ScrapeSpecializedDataResult struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r ScrapeSpecializedDataResult) Status() string {
+func (r FetchSpecializedDataResult) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -27862,7 +29336,7 @@ func (r ScrapeSpecializedDataResult) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ScrapeSpecializedDataResult) StatusCode() int {
+func (r FetchSpecializedDataResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -30159,6 +31633,24 @@ func (c *ClientWithResponses) BrandRetrieveWithResponse(ctx context.Context, par
 	return ParseBrandRetrieveResult(rsp)
 }
 
+// InvalidateWithResponse request returning *InvalidateResult
+func (c *ClientWithResponses) InvalidateWithResponse(ctx context.Context, params *InvalidateParams, reqEditors ...RequestEditorFn) (*InvalidateResult, error) {
+	rsp, err := c.Invalidate(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInvalidateResult(rsp)
+}
+
+// GetPolicyWithResponse request returning *GetPolicyResult
+func (c *ClientWithResponses) GetPolicyWithResponse(ctx context.Context, params *GetPolicyParams, reqEditors ...RequestEditorFn) (*GetPolicyResult, error) {
+	rsp, err := c.GetPolicy(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPolicyResult(rsp)
+}
+
 // MapsSearchWithBodyWithResponse request with arbitrary body returning *MapsSearchResult
 func (c *ClientWithResponses) MapsSearchWithBodyWithResponse(ctx context.Context, params *MapsSearchParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MapsSearchResult, error) {
 	rsp, err := c.MapsSearchWithBody(ctx, params, contentType, body, reqEditors...)
@@ -30378,21 +31870,21 @@ func (c *ClientWithResponses) ExtractProductEndpointWithResponse(ctx context.Con
 	return ParseExtractProductEndpointResult(rsp)
 }
 
-// ScrapeSpecializedDataWithBodyWithResponse request with arbitrary body returning *ScrapeSpecializedDataResult
-func (c *ClientWithResponses) ScrapeSpecializedDataWithBodyWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error) {
-	rsp, err := c.ScrapeSpecializedDataWithBody(ctx, params, contentType, body, reqEditors...)
+// FetchSpecializedDataWithBodyWithResponse request with arbitrary body returning *FetchSpecializedDataResult
+func (c *ClientWithResponses) FetchSpecializedDataWithBodyWithResponse(ctx context.Context, params *FetchSpecializedDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FetchSpecializedDataResult, error) {
+	rsp, err := c.FetchSpecializedDataWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseScrapeSpecializedDataResult(rsp)
+	return ParseFetchSpecializedDataResult(rsp)
 }
 
-func (c *ClientWithResponses) ScrapeSpecializedDataWithResponse(ctx context.Context, params *ScrapeSpecializedDataParams, body ScrapeSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*ScrapeSpecializedDataResult, error) {
-	rsp, err := c.ScrapeSpecializedData(ctx, params, body, reqEditors...)
+func (c *ClientWithResponses) FetchSpecializedDataWithResponse(ctx context.Context, params *FetchSpecializedDataParams, body FetchSpecializedDataJSONRequestBody, reqEditors ...RequestEditorFn) (*FetchSpecializedDataResult, error) {
+	rsp, err := c.FetchSpecializedData(ctx, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseScrapeSpecializedDataResult(rsp)
+	return ParseFetchSpecializedDataResult(rsp)
 }
 
 // StyleguideEndpointWithResponse request returning *StyleguideEndpointResult
@@ -31827,6 +33319,72 @@ func ParseBrandRetrieveResult(rsp *http.Response) (*BrandRetrieveResult, error) 
 	return response, nil
 }
 
+// ParseInvalidateResult parses an HTTP response from a InvalidateWithResponse call
+func ParseInvalidateResult(rsp *http.Response) (*InvalidateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &InvalidateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]bool
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPolicyResult parses an HTTP response from a GetPolicyWithResponse call
+func ParseGetPolicyResult(rsp *http.Response) (*GetPolicyResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPolicyResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseMapsSearchResult parses an HTTP response from a MapsSearchWithResponse call
 func ParseMapsSearchResult(rsp *http.Response) (*MapsSearchResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -32447,15 +34005,15 @@ func ParseExtractProductEndpointResult(rsp *http.Response) (*ExtractProductEndpo
 	return response, nil
 }
 
-// ParseScrapeSpecializedDataResult parses an HTTP response from a ScrapeSpecializedDataWithResponse call
-func ParseScrapeSpecializedDataResult(rsp *http.Response) (*ScrapeSpecializedDataResult, error) {
+// ParseFetchSpecializedDataResult parses an HTTP response from a FetchSpecializedDataWithResponse call
+func ParseFetchSpecializedDataResult(rsp *http.Response) (*FetchSpecializedDataResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ScrapeSpecializedDataResult{
+	response := &FetchSpecializedDataResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
