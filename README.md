@@ -367,12 +367,13 @@ previously stored sessionStorage unchanged.
 
 Storage imports require an API deployment supporting `POST /profiles/{id}/state`.
 Older deployments return an explicit unsupported-server error; the CLI never
-silently drops localStorage to fall back to cookies. Cookie-only snapshots keep
-using the existing cookies API. For storage imports, `--mode replace` replaces
-the captured state classes within `--domain` (or all sites without a scope), and
-`--mode append` merges cookie identities and storage keys. The cookie-only API
-replaces the whole cookie set in replace mode, so use append to preserve other
-sites' cookies. Avoid importing into a profile while a remote browser is saving
+silently drops localStorage to fall back to cookies. Scoped cookie-only syncs
+also use the state API to preserve other sites. Unscoped cookie-only disk syncs
+remain compatible with the existing cookies API. `--mode replace` replaces
+captured state classes within `--domain` (or all sites without a scope).
+Live sync replaces web storage only for captured origins, preserving saved
+state for closed tabs. `--mode append` merges cookie identities and storage keys.
+Avoid importing into a profile while a remote browser is saving
 its state into that same profile.
 
 The snapshot limit is 8 MiB. Values are never printed in summaries or JSON

@@ -19,6 +19,7 @@ type BrowserStateUploadRequest struct {
 	SessionStorage *map[string]map[string]string `json:"session_storage,omitempty"`
 	Domains        []string                      `json:"domains,omitempty"`
 	Mode           string                        `json:"mode"`
+	StorageScope   string                        `json:"storage_scope,omitempty"`
 }
 
 type BrowserStateUploadResponse struct {
@@ -28,14 +29,23 @@ type BrowserStateUploadResponse struct {
 	SessionStorageOrigins int  `json:"session_storage_origins"`
 }
 
-func (c *NotteClient) ProfileStateSetWithResponse(ctx context.Context, id string, state BrowserStateUploadRequest) (*BrowserStateUploadResponse, int, error) {
+// Validate checks the final wire representation before a destination is created.
+func (state BrowserStateUploadRequest) Validate() error {
 	body, err := json.Marshal(state)
 	if err != nil {
-		return nil, 0, fmt.Errorf("cannot encode browser state")
+		return fmt.Errorf("cannot encode browser state")
 	}
 	if len(body) > 8*1024*1024 {
-		return nil, 0, fmt.Errorf("browser state exceeds the 8 MiB import limit")
+		return fmt.Errorf("browser state exceeds the 8 MiB import limit")
 	}
+	return nil
+}
+
+func (c *NotteClient) ProfileStateSetWithResponse(ctx context.Context, id string, state BrowserStateUploadRequest) (*BrowserStateUploadResponse, int, error) {
+	if err := state.Validate(); err != nil {
+		return nil, 0, err
+	}
+	body, _ := json.Marshal(state)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL(), "/")+"/profiles/"+url.PathEscape(id)+"/state", bytes.NewReader(body))
 	if err != nil {
 		return nil, 0, err

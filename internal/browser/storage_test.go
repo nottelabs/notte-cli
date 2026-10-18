@@ -214,3 +214,20 @@ func TestFirefoxLegacyLSNGStorage(t *testing.T) {
 		}
 	}
 }
+
+func TestFirefoxScopedSyncSkipsUnrelatedCorruptDatabase(t *testing.T) {
+	p := Profile{Browser: Browser{kind: firefoxKind}, path: t.TempDir()}
+	dir := filepath.Join(p.path, "storage", "default", "https+++unrelated.test", "ls")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "data.sqlite"), []byte("broken database"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.ReadState([]string{"bsky.app"}); err != nil {
+		t.Fatal("unrelated corrupt storage must not block scoped sync", err)
+	}
+	if _, err := p.ReadState([]string{"unrelated.test"}); err == nil {
+		t.Fatal("selected corrupt storage must fail")
+	}
+}

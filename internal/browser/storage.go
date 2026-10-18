@@ -258,6 +258,16 @@ func (p Profile) readFirefoxStorage(domains []string) (map[string]map[string]str
 		if !entry.IsDir() || strings.Contains(entry.Name(), "^") {
 			continue
 		} // containers and partitioned origins
+		// Firefox encodes scheme://host[:port] as scheme+++host[+port].
+		// Filter the directory before touching unrelated databases, then still
+		// validate the stored origin inside each selected database.
+		parts := strings.SplitN(entry.Name(), "+++", 2)
+		if len(parts) != 2 || (parts[0] != "http" && parts[0] != "https") {
+			continue
+		}
+		if _, allowed := storageOrigin(parts[0]+"://"+strings.ReplaceAll(parts[1], "+", ":"), domains); !allowed {
+			continue
+		}
 		dbPath := filepath.Join(root, entry.Name(), "ls", "data.sqlite")
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 			continue

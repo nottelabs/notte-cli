@@ -93,6 +93,13 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no cookies or web storage found for the selected sites")
 	}
 	cookies := toAPICookies(result.Cookies)
+	useStateImport := len(result.LocalStorage) > 0 || len(result.SessionStorage) > 0 || len(syncDomains) > 0 || syncCDPURL != ""
+	stateRequest := buildStateUpload(result, cookies, syncDomains, syncMode, syncCDPURL != "")
+	if useStateImport {
+		if err := stateRequest.Validate(); err != nil {
+			return err
+		}
+	}
 	printCookieSummary(browser.ReadResult{Cookies: result.Cookies}, cookies)
 	PrintInfo(fmt.Sprintf("Web storage: %d localStorage origins, %d sessionStorage origins.", len(result.LocalStorage), len(result.SessionStorage)))
 	if syncCDPURL == "" {
@@ -134,15 +141,8 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		created = true
 	}
 
-	if len(result.LocalStorage) > 0 || len(result.SessionStorage) > 0 {
-		if cookies == nil {
-			cookies = []api.Cookie{}
-		}
-		var sessions *map[string]map[string]string
-		if syncCDPURL != "" {
-			sessions = &result.SessionStorage
-		}
-		response, status, importErr := client.ProfileStateSetWithResponse(ctx, targetID, api.BrowserStateUploadRequest{Cookies: cookies, LocalStorage: result.LocalStorage, SessionStorage: sessions, Domains: syncDomains, Mode: syncMode})
+	if useStateImport {
+		response, status, importErr := client.ProfileStateSetWithResponse(ctx, targetID, stateRequest)
 		if importErr != nil {
 			if created && status >= 400 && status < 500 {
 				_, _ = client.Client().ProfileDeleteWithResponse(ctx, targetID, &api.ProfileDeleteParams{})
@@ -186,6 +186,24 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 
 	printSyncSuccess(targetID, len(cookies), resp.JSON200)
 	return nil
+}
+
+func buildStateUpload(state browser.State, cookies []api.Cookie, domains []string, mode string, live bool) api.BrowserStateUploadRequest {
+	if cookies == nil {
+		cookies = []api.Cookie{}
+	}
+	if state.LocalStorage == nil {
+		state.LocalStorage = map[string]map[string]string{}
+	}
+	request := api.BrowserStateUploadRequest{Cookies: cookies, LocalStorage: state.LocalStorage, Domains: domains, Mode: mode}
+	if live {
+		if state.SessionStorage == nil {
+			state.SessionStorage = map[string]map[string]string{}
+		}
+		request.SessionStorage = &state.SessionStorage
+		request.StorageScope = "origins"
+	}
+	return request
 }
 
 func storageItems(storage map[string]map[string]string) int {

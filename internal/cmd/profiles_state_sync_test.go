@@ -12,10 +12,19 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/spf13/cobra"
 
+	"github.com/nottelabs/notte-cli/internal/browser"
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
 func liveSyncFixture(t *testing.T, empty bool) string {
+	value := "synthetic-private-token"
+	if empty {
+		value = ""
+	}
+	return liveSyncValueFixture(t, value)
+}
+
+func liveSyncValueFixture(t *testing.T, value string) string {
 	t.Helper()
 	u := websocket.Upgrader{}
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +44,8 @@ func liveSyncFixture(t *testing.T, empty bool) string {
 			var result any = map[string]any{"cookies": []any{}}
 			if request.Method == "Runtime.evaluate" {
 				local := map[string]string{}
-				if !empty {
-					local["BSKY_STORAGE"] = "synthetic-private-token"
+				if value != "" {
+					local["BSKY_STORAGE"] = value
 				}
 				snapshot, _ := json.Marshal(map[string]any{"origin": "https://bsky.app", "local": local, "session": map[string]string{}})
 				result = map[string]any{"result": map[string]any{"value": string(snapshot)}}
@@ -94,6 +103,9 @@ func TestLiveSyncCommandStorageOnlyAndFailureCleanup(t *testing.T) {
 						if _, ok := body["session_storage"]; !ok {
 							t.Error("live sync must capture session storage explicitly")
 						}
+						if string(body["storage_scope"]) != `"origins"` {
+							t.Error("live snapshots must preserve storage for closed tabs")
+						}
 						w.WriteHeader(status)
 						if status == 200 {
 							_, _ = w.Write([]byte(`{"success":true,"cookies_count":0,"local_storage_origins":1,"session_storage_origins":1}`))
@@ -142,6 +154,27 @@ func TestLiveSyncCommandStorageOnlyAndFailureCleanup(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestOversizedFinalRequestNeverCreatesProfile(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	configureLiveSyncTest(t, liveSyncValueFixture(t, strings.Repeat("x", browser.MaxStateBytes-4096)))
+	// The browser snapshot fits; adding the requested domain scope does not.
+	syncDomains = make([]string, 1000)
+	for i := range syncDomains {
+		syncDomains[i] = "bsky.app"
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("oversized request accessed the API", r.URL.Path)
+	}))
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL)
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	if err := runProfilesSync(cmd, nil); err == nil || !strings.Contains(err.Error(), "import limit") {
+		t.Fatal("final wire size must be checked before profile creation", err)
 	}
 }
 
