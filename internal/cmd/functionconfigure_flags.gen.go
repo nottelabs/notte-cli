@@ -31,7 +31,7 @@ var (
 	// Let an agent repair the function when a run fails
 	FunctionConfigureSelfHealing bool
 
-	// Enable or disable public code sharing and forking for this function. Runs, results and secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
+	// Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
 	FunctionConfigureShared bool
 )
 
@@ -44,7 +44,7 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FunctionConfigureName, "name", "", "name")
 	cmd.Flags().StringVar(&FunctionConfigureResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
 	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let an agent repair the function when a run fails")
-	cmd.Flags().BoolVar(&FunctionConfigureShared, "shared", false, "Enable or disable public code sharing and forking for this function. Runs, results and secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.")
+	cmd.Flags().BoolVar(&FunctionConfigureShared, "shared", false, "Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.")
 }
 
 // BuildFunctionConfigureRequest builds the API request from CLI flags

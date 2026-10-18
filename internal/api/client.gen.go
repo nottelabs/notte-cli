@@ -2685,7 +2685,7 @@ type FunctionMetadataUpdateRequest struct {
 	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
 	SelfHealing    *bool                   `json:"self_healing,omitempty"`
 
-	// Shared Enable or disable public code sharing and forking for this function. Runs, results and secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
+	// Shared Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
 	Shared *bool `json:"shared,omitempty"`
 }
 
