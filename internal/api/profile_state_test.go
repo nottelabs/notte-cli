@@ -39,7 +39,7 @@ func TestImportProfileStorageOnly(t *testing.T) {
 				sessions := map[string]map[string]string{}
 				state.SessionStorage = &sessions
 			}
-			response, status, err := client.ImportProfileState(context.Background(), "notte-profile-0123456789abcdef", state)
+			response, status, err := client.ProfileStateSetWithResponse(context.Background(), "notte-profile-0123456789abcdef", state)
 			if err != nil || status != 200 || response.LocalStorageOrigins != 1 {
 				t.Fatalf("import failed: %v", err)
 			}
@@ -63,7 +63,7 @@ func TestImportProfileStateNeverLeaksBodyOrFollowsRedirects(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, _, err = client.ImportProfileState(context.Background(), "profile", BrowserStateUploadRequest{LocalStorage: map[string]map[string]string{"https://bsky.app": {"token": "synthetic-private-token"}}})
+			_, _, err = client.ProfileStateSetWithResponse(context.Background(), "profile", BrowserStateUploadRequest{LocalStorage: map[string]map[string]string{"https://bsky.app": {"token": "synthetic-private-token"}}})
 			if err == nil || strings.Contains(err.Error(), "synthetic-private-token") || forwarded {
 				t.Fatal("import failure leaked or forwarded browser credentials")
 			}

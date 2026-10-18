@@ -142,7 +142,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		if syncCDPURL != "" {
 			sessions = &result.SessionStorage
 		}
-		response, status, importErr := client.ImportProfileState(ctx, targetID, api.BrowserStateUploadRequest{Cookies: cookies, LocalStorage: result.LocalStorage, SessionStorage: sessions, Domains: syncDomains, Mode: syncMode})
+		response, status, importErr := client.ProfileStateSetWithResponse(ctx, targetID, api.BrowserStateUploadRequest{Cookies: cookies, LocalStorage: result.LocalStorage, SessionStorage: sessions, Domains: syncDomains, Mode: syncMode})
 		if importErr != nil {
 			if created && status >= 400 && status < 500 {
 				_, _ = client.Client().ProfileDeleteWithResponse(ctx, targetID, &api.ProfileDeleteParams{})

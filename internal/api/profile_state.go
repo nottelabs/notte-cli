@@ -28,7 +28,7 @@ type BrowserStateUploadResponse struct {
 	SessionStorageOrigins int  `json:"session_storage_origins"`
 }
 
-func (c *NotteClient) ImportProfileState(ctx context.Context, id string, state BrowserStateUploadRequest) (*BrowserStateUploadResponse, int, error) {
+func (c *NotteClient) ProfileStateSetWithResponse(ctx context.Context, id string, state BrowserStateUploadRequest) (*BrowserStateUploadResponse, int, error) {
 	body, err := json.Marshal(state)
 	if err != nil {
 		return nil, 0, fmt.Errorf("cannot encode browser state")
