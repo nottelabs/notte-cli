@@ -69,12 +69,15 @@ skip POST /anything/start # anything.notte.cc entry point, not a CLI workflow
 # point of this file, not an endorsement.
 skip GET /audit-events # audit-event listing is not yet exposed by the CLI
 skip POST /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53
+skip POST /profiles/{profile_id}/state # importing full browser state is not yet exposed by the CLI; profiles cookies-set imports cookies only
 skip GET /functions/{function_id}/runs/{run_id}/payloads/{field} # downloading overflow run payloads is not yet exposed by the CLI
 skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # preparing run payload uploads is not exposed by the CLI
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
 skip GET /data # Data API commands are not yet exposed by the CLI
 skip POST /data/brand/retrieve # Data API commands are not yet exposed by the CLI
+skip DELETE /data/cache # Data API commands are not yet exposed by the CLI
+skip GET /data/cache # Data API commands are not yet exposed by the CLI
 skip POST /data/maps/search # Data API commands are not yet exposed by the CLI
 skip GET /data/monitors # Data API commands are not yet exposed by the CLI
 skip POST /data/monitors # Data API commands are not yet exposed by the CLI
@@ -94,7 +97,7 @@ skip POST /data/monitors/{monitor_id}/webhook/rotate-secret # Data API commands 
 skip POST /data/news/search # Data API commands are not yet exposed by the CLI
 skip POST /data/people/enrich # Data API commands are not yet exposed by the CLI
 skip POST /data/products/extract # Data API commands are not yet exposed by the CLI
-skip POST /data/web/scrape # Data API commands are not yet exposed by the CLI
+skip POST /data/web/fetch # Data API commands are not yet exposed by the CLI
 skip GET /data/web/styleguide # Data API commands are not yet exposed by the CLI
 skip POST /data/webhooks/deliveries # Data API commands are not yet exposed by the CLI
 skip GET /data/webhooks/deliveries/{delivery_id} # Data API commands are not yet exposed by the CLI
