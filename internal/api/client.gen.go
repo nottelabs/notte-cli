@@ -550,6 +550,12 @@ const (
 	Unreachable FunctionRuntimeHealthResponseStatus = "unreachable"
 )
 
+// Defines values for FunctionSdkGeneration.
+const (
+	V110 FunctionSdkGeneration = "v110"
+	V19  FunctionSdkGeneration = "v19"
+)
+
 // Defines values for FunctionSource.
 const (
 	Anything  FunctionSource = "anything"
@@ -2508,6 +2514,18 @@ type FallbackFillActionOutput_Value struct {
 	union json.RawMessage
 }
 
+// FileExecutionRequest defines model for FileExecutionRequest.
+type FileExecutionRequest struct {
+	Action   FileExecutionRequest_Action `json:"action"`
+	Record   *bool                       `json:"record,omitempty"`
+	TargetId string                      `json:"target_id"`
+}
+
+// FileExecutionRequest_Action defines model for FileExecutionRequest.Action.
+type FileExecutionRequest_Action struct {
+	union json.RawMessage
+}
+
 // FileSource defines model for FileSource.
 type FileSource string
 
@@ -2823,10 +2841,13 @@ type FunctionRuntimeHealthResponse struct {
 	Reachable bool `json:"reachable"`
 
 	// ReservedEnvNames `function_env` names the platform owns, rejected at write time. Served here so a client validating secret names before pushing them does not have to vendor its own copy and watch it drift.
-	ReservedEnvNames *[]string `json:"reserved_env_names,omitempty"`
+	ReservedEnvNames    *[]string `json:"reserved_env_names,omitempty"`
+	RunnerPolicyVersion *string   `json:"runner_policy_version,omitempty"`
 
 	// RuntimeDigest Digest of the reproducible contract - Python version, packages with their sources, allowed imports, reserved names - and nothing volatile, so it changes if and only if an environment built against it would now be wrong. Cache against it to detect a runner rebuild. Null unless `status` is 'ok', since a partial report is not a contract. Also returned as the response ETag.
-	RuntimeDigest *string `json:"runtime_digest,omitempty"`
+	RuntimeDigest     *string `json:"runtime_digest,omitempty"`
+	RuntimeLockDigest *string `json:"runtime_lock_digest,omitempty"`
+	SdkGeneration     *string `json:"sdk_generation,omitempty"`
 
 	// Status 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
 	Status FunctionRuntimeHealthResponseStatus `json:"status"`
@@ -2846,6 +2867,9 @@ type FunctionScheduleCreateRequest struct {
 	// Variables Values passed to the function on every scheduled run. Must supply every function variable that has no default, and no names the function does not declare.
 	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
+
+// FunctionSdkGeneration defines model for FunctionSdkGeneration.
+type FunctionSdkGeneration string
 
 // FunctionSource defines model for FunctionSource.
 type FunctionSource string
@@ -2937,7 +2961,8 @@ type GetCreditCardResponse struct {
 
 // GetFunctionRunResponse defines model for GetFunctionRunResponse.
 type GetFunctionRunResponse struct {
-	CreatedAt FlexibleTime `json:"created_at"`
+	ArtifactSdkGeneration *FunctionSdkGeneration `json:"artifact_sdk_generation,omitempty"`
+	CreatedAt             FlexibleTime           `json:"created_at"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -2955,7 +2980,8 @@ type GetFunctionRunResponse struct {
 	Payloads    *map[string]RunPayloadReference `json:"payloads,omitempty"`
 
 	// Result The result of the workflow run (if any)
-	Result *string `json:"result,omitempty"`
+	Result        *string                `json:"result,omitempty"`
+	SdkGeneration *FunctionSdkGeneration `json:"sdk_generation,omitempty"`
 
 	// SessionId The ID of the session
 	SessionId *string                      `json:"session_id,omitempty"`
@@ -5849,7 +5875,8 @@ type FunctionDeleteParams struct {
 
 // FunctionDownloadUrlParams defines parameters for FunctionDownloadUrl.
 type FunctionDownloadUrlParams struct {
-	Version *string `form:"version,omitempty" json:"version,omitempty"`
+	Version       *string `form:"version,omitempty" json:"version,omitempty"`
+	FunctionRunId *string `form:"function_run_id,omitempty" json:"function_run_id,omitempty"`
 
 	// DecryptionKey The decryption key for the function
 	DecryptionKey       *string `form:"decryption_key,omitempty" json:"decryption_key,omitempty"`
@@ -6346,6 +6373,13 @@ type PageExecuteParams struct {
 	XNotteSdkVersion      *string  `json:"x-notte-sdk-version,omitempty"`
 }
 
+// ExecuteSessionFileParams defines parameters for ExecuteSessionFile.
+type ExecuteSessionFileParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // PageObserveParams defines parameters for PageObserve.
 type PageObserveParams struct {
 	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
@@ -6644,6 +6678,9 @@ type UploadSessionFileMultipartRequestBody = BodyUploadSessionFileSessionsSessio
 
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
 type PageExecuteJSONRequestBody = PageExecuteRequestBody
+
+// ExecuteSessionFileJSONRequestBody defines body for ExecuteSessionFile for application/json ContentType.
+type ExecuteSessionFileJSONRequestBody = FileExecutionRequest
 
 // PageObserveJSONRequestBody defines body for PageObserve for application/json ContentType.
 type PageObserveJSONRequestBody = ObserveRequest
@@ -11146,6 +11183,99 @@ func (t *FallbackFillActionOutput_Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsUploadFileActionInput returns the union data inside the FileExecutionRequest_Action as a UploadFileActionInput
+func (t FileExecutionRequest_Action) AsUploadFileActionInput() (UploadFileActionInput, error) {
+	var body UploadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUploadFileActionInput overwrites any union data inside the FileExecutionRequest_Action as the provided UploadFileActionInput
+func (t *FileExecutionRequest_Action) FromUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUploadFileActionInput performs a merge with any union data inside the FileExecutionRequest_Action, using the provided UploadFileActionInput
+func (t *FileExecutionRequest_Action) MergeUploadFileActionInput(v UploadFileActionInput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDownloadFileActionInput returns the union data inside the FileExecutionRequest_Action as a DownloadFileActionInput
+func (t FileExecutionRequest_Action) AsDownloadFileActionInput() (DownloadFileActionInput, error) {
+	var body DownloadFileActionInput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDownloadFileActionInput overwrites any union data inside the FileExecutionRequest_Action as the provided DownloadFileActionInput
+func (t *FileExecutionRequest_Action) FromDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDownloadFileActionInput performs a merge with any union data inside the FileExecutionRequest_Action, using the provided DownloadFileActionInput
+func (t *FileExecutionRequest_Action) MergeDownloadFileActionInput(v DownloadFileActionInput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FileExecutionRequest_Action) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t FileExecutionRequest_Action) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "download_file":
+		return t.AsDownloadFileActionInput()
+	case "upload_file":
+		return t.AsUploadFileActionInput()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t FileExecutionRequest_Action) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FileExecutionRequest_Action) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsFillActionInputSelector0 returns the union data inside the FillActionInput_Selector as a FillActionInputSelector0
 func (t FillActionInput_Selector) AsFillActionInputSelector0() (FillActionInputSelector0, error) {
 	var body FillActionInputSelector0
@@ -14903,6 +15033,11 @@ type ClientInterface interface {
 
 	PageExecute(ctx context.Context, sessionId string, params *PageExecuteParams, body PageExecuteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ExecuteSessionFileWithBody request with any body
+	ExecuteSessionFileWithBody(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ExecuteSessionFile(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, body ExecuteSessionFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PageObserveWithBody request with any body
 	PageObserveWithBody(ctx context.Context, sessionId string, params *PageObserveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16720,6 +16855,30 @@ func (c *Client) PageExecuteWithBody(ctx context.Context, sessionId string, para
 
 func (c *Client) PageExecute(ctx context.Context, sessionId string, params *PageExecuteParams, body PageExecuteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPageExecuteRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExecuteSessionFileWithBody(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExecuteSessionFileRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExecuteSessionFile(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, body ExecuteSessionFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExecuteSessionFileRequest(c.Server, sessionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -21660,6 +21819,22 @@ func NewFunctionDownloadUrlRequest(server string, functionId string, params *Fun
 
 		}
 
+		if params.FunctionRunId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "function_run_id", runtime.ParamLocationQuery, *params.FunctionRunId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DecryptionKey != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "decryption_key", runtime.ParamLocationQuery, *params.DecryptionKey); err != nil {
@@ -26565,6 +26740,101 @@ func NewPageExecuteRequestWithBody(server string, sessionId string, params *Page
 	return req, nil
 }
 
+// NewExecuteSessionFileRequest calls the generic ExecuteSessionFile builder with application/json body
+func NewExecuteSessionFileRequest(server string, sessionId string, params *ExecuteSessionFileParams, body ExecuteSessionFileJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewExecuteSessionFileRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewExecuteSessionFileRequestWithBody generates requests for ExecuteSessionFile with any type of body
+func NewExecuteSessionFileRequestWithBody(server string, sessionId string, params *ExecuteSessionFileParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/execute/file", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewPageObserveRequest calls the generic PageObserve builder with application/json body
 func NewPageObserveRequest(server string, sessionId string, params *PageObserveParams, body PageObserveJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -28712,6 +28982,11 @@ type ClientWithResponsesInterface interface {
 	PageExecuteWithBodyWithResponse(ctx context.Context, sessionId string, params *PageExecuteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageExecuteResult, error)
 
 	PageExecuteWithResponse(ctx context.Context, sessionId string, params *PageExecuteParams, body PageExecuteJSONRequestBody, reqEditors ...RequestEditorFn) (*PageExecuteResult, error)
+
+	// ExecuteSessionFileWithBodyWithResponse request with any body
+	ExecuteSessionFileWithBodyWithResponse(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExecuteSessionFileResult, error)
+
+	ExecuteSessionFileWithResponse(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, body ExecuteSessionFileJSONRequestBody, reqEditors ...RequestEditorFn) (*ExecuteSessionFileResult, error)
 
 	// PageObserveWithBodyWithResponse request with any body
 	PageObserveWithBodyWithResponse(ctx context.Context, sessionId string, params *PageObserveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageObserveResult, error)
@@ -31246,6 +31521,29 @@ func (r PageExecuteResult) StatusCode() int {
 	return 0
 }
 
+type ExecuteSessionFileResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiExecutionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ExecuteSessionFileResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ExecuteSessionFileResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PageObserveResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -32981,6 +33279,23 @@ func (c *ClientWithResponses) PageExecuteWithResponse(ctx context.Context, sessi
 		return nil, err
 	}
 	return ParsePageExecuteResult(rsp)
+}
+
+// ExecuteSessionFileWithBodyWithResponse request with arbitrary body returning *ExecuteSessionFileResult
+func (c *ClientWithResponses) ExecuteSessionFileWithBodyWithResponse(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExecuteSessionFileResult, error) {
+	rsp, err := c.ExecuteSessionFileWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExecuteSessionFileResult(rsp)
+}
+
+func (c *ClientWithResponses) ExecuteSessionFileWithResponse(ctx context.Context, sessionId string, params *ExecuteSessionFileParams, body ExecuteSessionFileJSONRequestBody, reqEditors ...RequestEditorFn) (*ExecuteSessionFileResult, error) {
+	rsp, err := c.ExecuteSessionFile(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExecuteSessionFileResult(rsp)
 }
 
 // PageObserveWithBodyWithResponse request with arbitrary body returning *PageObserveResult
@@ -36708,6 +37023,39 @@ func ParsePageExecuteResult(rsp *http.Response) (*PageExecuteResult, error) {
 	}
 
 	response := &PageExecuteResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiExecutionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseExecuteSessionFileResult parses an HTTP response from a ExecuteSessionFileWithResponse call
+func ParseExecuteSessionFileResult(rsp *http.Response) (*ExecuteSessionFileResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ExecuteSessionFileResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
