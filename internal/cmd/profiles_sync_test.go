@@ -85,22 +85,30 @@ func TestFilterByProfileName(t *testing.T) {
 func TestHasValidDomain(t *testing.T) {
 	valid := [][]string{
 		{"github.com"},
-		{" ", "github.com"},
+		{"GitHub.com", " localhost "},
 		{".github.com"},
+		{"127.0.0.1", "::1"},
 	}
 	for _, in := range valid {
-		if !hasValidDomain(in) {
-			t.Errorf("hasValidDomain(%q) = false, want true", in)
+		if err := browser.ValidateDomains(in); err != nil {
+			t.Errorf("ValidateDomains(%q): %v", in, err)
 		}
 	}
 	invalid := [][]string{
 		{" "},
 		{"."},
 		{"", " ", "."},
+		{"github.com", " "},
+		{"https://github.com"},
+		{"github.com:443"},
+		{"git..com"},
+		{"-github.com"},
+		{"github.com/path"},
+		{"github.com?secret=x"},
 	}
 	for _, in := range invalid {
-		if hasValidDomain(in) {
-			t.Errorf("hasValidDomain(%q) = true, want false", in)
+		if browser.ValidateDomains(in) == nil {
+			t.Errorf("ValidateDomains(%q) accepted invalid scope", in)
 		}
 	}
 }

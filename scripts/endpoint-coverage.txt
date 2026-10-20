@@ -107,3 +107,5 @@ skip GET /data/webhooks/deliveries/{delivery_id} # Data API commands are not yet
 skip GET /data/webhooks/deliveries/{delivery_id}/attempts # Data API commands are not yet exposed by the CLI
 skip POST /data/webhooks/deliveries/{delivery_id}/retry # Data API commands are not yet exposed by the CLI
 skip POST /data/youtube/extract # Data API commands are not yet exposed by the CLI
+skip GET /data/cache # Data API commands are not yet exposed by the CLI
+skip DELETE /data/cache # Data API commands are not yet exposed by the CLI
