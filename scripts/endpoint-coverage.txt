@@ -78,6 +78,9 @@ skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # prepa
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
 skip GET /data # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics/requests # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics/requests/{request_id} # Data API commands are not yet exposed by the CLI
 skip POST /data/brand/retrieve # Data API commands are not yet exposed by the CLI
 skip DELETE /data/cache # Data API commands are not yet exposed by the CLI
 skip GET /data/cache # Data API commands are not yet exposed by the CLI
