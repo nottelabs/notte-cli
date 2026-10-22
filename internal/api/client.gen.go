@@ -523,10 +523,22 @@ const (
 	FunctionListItemResponseDefaultRuntimeStandard FunctionListItemResponseDefaultRuntime = "standard"
 )
 
+// Defines values for FunctionListItemResponseSdkGeneration.
+const (
+	FunctionListItemResponseSdkGenerationV110 FunctionListItemResponseSdkGeneration = "v110"
+	FunctionListItemResponseSdkGenerationV19  FunctionListItemResponseSdkGeneration = "v19"
+)
+
 // Defines values for FunctionResponseDefaultRuntime.
 const (
 	FunctionResponseDefaultRuntimeExtended FunctionResponseDefaultRuntime = "extended"
 	FunctionResponseDefaultRuntimeStandard FunctionResponseDefaultRuntime = "standard"
+)
+
+// Defines values for FunctionResponseSdkGeneration.
+const (
+	FunctionResponseSdkGenerationV110 FunctionResponseSdkGeneration = "v110"
+	FunctionResponseSdkGenerationV19  FunctionResponseSdkGeneration = "v19"
 )
 
 // Defines values for FunctionRunListItemResponseStatus.
@@ -543,6 +555,12 @@ const (
 	FunctionRunUpdateRequestStatusFailed FunctionRunUpdateRequestStatus = "failed"
 )
 
+// Defines values for FunctionRuntimeHealthResponseSdkGeneration.
+const (
+	FunctionRuntimeHealthResponseSdkGenerationV110 FunctionRuntimeHealthResponseSdkGeneration = "v110"
+	FunctionRuntimeHealthResponseSdkGenerationV19  FunctionRuntimeHealthResponseSdkGeneration = "v19"
+)
+
 // Defines values for FunctionRuntimeHealthResponseStatus.
 const (
 	Degraded    FunctionRuntimeHealthResponseStatus = "degraded"
@@ -552,8 +570,8 @@ const (
 
 // Defines values for FunctionSdkGeneration.
 const (
-	V110 FunctionSdkGeneration = "v110"
-	V19  FunctionSdkGeneration = "v19"
+	FunctionSdkGenerationV110 FunctionSdkGeneration = "v110"
+	FunctionSdkGenerationV19  FunctionSdkGeneration = "v19"
 )
 
 // Defines values for FunctionSource.
@@ -570,6 +588,12 @@ const (
 const (
 	Extended FunctionWithLinkResponseDefaultRuntime = "extended"
 	Standard FunctionWithLinkResponseDefaultRuntime = "standard"
+)
+
+// Defines values for FunctionWithLinkResponseSdkGeneration.
+const (
+	FunctionWithLinkResponseSdkGenerationV110 FunctionWithLinkResponseSdkGeneration = "v110"
+	FunctionWithLinkResponseSdkGenerationV19  FunctionWithLinkResponseSdkGeneration = "v19"
 )
 
 // Defines values for GetFunctionRunResponseStatus.
@@ -592,16 +616,6 @@ const (
 	GlobalScrapeRequestScreenshotTypeFull       GlobalScrapeRequestScreenshotType = "full"
 	GlobalScrapeRequestScreenshotTypeLastAction GlobalScrapeRequestScreenshotType = "last_action"
 	GlobalScrapeRequestScreenshotTypeRaw        GlobalScrapeRequestScreenshotType = "raw"
-)
-
-// Defines values for ImageCategory.
-const (
-	ContentImage ImageCategory = "content_image"
-	Decorative   ImageCategory = "decorative"
-	Favicon      ImageCategory = "favicon"
-	Icon         ImageCategory = "icon"
-	SvgContent   ImageCategory = "svg_content"
-	SvgIcon      ImageCategory = "svg_icon"
 )
 
 // Defines values for IntervalUnit.
@@ -1158,6 +1172,12 @@ const (
 	YouTubeResultCaptionsStatusUnavailable   YouTubeResultCaptionsStatus = "unavailable"
 )
 
+// Defines values for FunctionRuntimeHealthParamsSdkGeneration.
+const (
+	FunctionRuntimeHealthParamsSdkGenerationV110 FunctionRuntimeHealthParamsSdkGeneration = "v110"
+	FunctionRuntimeHealthParamsSdkGenerationV19  FunctionRuntimeHealthParamsSdkGeneration = "v19"
+)
+
 // Defines values for FunctionRunGetMetadataParamsPayloadMode.
 const (
 	Inline     FunctionRunGetMetadataParamsPayloadMode = "inline"
@@ -1418,7 +1438,8 @@ type ApiSessionStartRequest struct {
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
 
-	// ScreenshotType The type of screenshot to use for the session.
+	// ScreenshotType Ignored since notte 1.10: screenshots are returned without highlighting.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ScreenshotType *ApiSessionStartRequestScreenshotType `json:"screenshot_type,omitempty"`
 
 	// SolveCaptchas Whether to try to automatically solve captchas
@@ -1462,7 +1483,7 @@ type ApiSessionStartRequest_Proxies struct {
 	union json.RawMessage
 }
 
-// ApiSessionStartRequestScreenshotType The type of screenshot to use for the session.
+// ApiSessionStartRequestScreenshotType Ignored since notte 1.10: screenshots are returned without highlighting.
 type ApiSessionStartRequestScreenshotType string
 
 // AuditEvent defines model for AuditEvent.
@@ -2210,9 +2231,6 @@ type DataScrapeRequestZdr string
 
 // DataSpace defines model for DataSpace.
 type DataSpace struct {
-	// Images List of images extracted from the page (ID and download link)
-	Images *[]ImageData `json:"images,omitempty"`
-
 	// Markdown Markdown representation of the extracted data
 	Markdown   string                   `json:"markdown"`
 	Structured *StructuredDataBaseModel `json:"structured,omitempty"`
@@ -2641,11 +2659,11 @@ type FrameData struct {
 
 // FunctionListItemResponse defines model for FunctionListItemResponse.
 type FunctionListItemResponse struct {
-	// CreatedAt The creation time of the workflow
+	// CreatedAt The creation time of the function
 	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionListItemResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
-	// Description The description of the workflow
+	// Description The description of the function
 	Description *string `json:"description,omitempty"`
 
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
@@ -2654,42 +2672,47 @@ type FunctionListItemResponse struct {
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
-	// LatestVersion The version of the workflow
+	// LatestVersion The version of the function
 	LatestVersion string `json:"latest_version"`
 
-	// Name The name of the workflow
+	// Name The name of the function
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
-	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
-	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
+	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
+	ReferenceWorkflowId *string                                `json:"reference_workflow_id,omitempty"`
+	RequiredSecrets     *[]string                              `json:"required_secrets,omitempty"`
+	SdkGeneration       *FunctionListItemResponseSdkGeneration `json:"sdk_generation,omitempty"`
 
 	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
 	SelfHealing *bool `json:"self_healing,omitempty"`
 
-	// Shared Whether the workflow is public and can beshared with other users
+	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
 
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`
 
-	// Status The status of the workflow
+	// Status The status of the function
 	Status string `json:"status"`
 
-	// UpdatedAt The last update time of the workflow
-	UpdatedAt FlexibleTime `json:"updated_at"`
+	// UpdatedAt The last update time of the function
+	UpdatedAt        FlexibleTime `json:"updated_at"`
+	UploadSdkVersion *string      `json:"upload_sdk_version,omitempty"`
 
-	// Variables The variables to run the workflow with
+	// Variables The variables to run the function with
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
-	// Versions The versions of the workflow
+	// Versions The versions of the function
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
 // FunctionListItemResponseDefaultRuntime defines model for FunctionListItemResponse.DefaultRuntime.
 type FunctionListItemResponseDefaultRuntime string
+
+// FunctionListItemResponseSdkGeneration defines model for FunctionListItemResponse.SdkGeneration.
+type FunctionListItemResponseSdkGeneration string
 
 // FunctionMetadataUpdateRequest defines model for FunctionMetadataUpdateRequest.
 type FunctionMetadataUpdateRequest struct {
@@ -2709,11 +2732,11 @@ type FunctionMetadataUpdateRequest struct {
 
 // FunctionResponse defines model for FunctionResponse.
 type FunctionResponse struct {
-	// CreatedAt The creation time of the workflow
+	// CreatedAt The creation time of the function
 	CreatedAt      FlexibleTime                    `json:"created_at"`
 	DefaultRuntime *FunctionResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
-	// Description The description of the workflow
+	// Description The description of the function
 	Description *string `json:"description,omitempty"`
 
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
@@ -2725,14 +2748,14 @@ type FunctionResponse struct {
 	// Instructions Builder's operating notes: typical run duration, known failure modes, which parameters matter.
 	Instructions *string `json:"instructions,omitempty"`
 
-	// LatestVersion The version of the workflow
+	// LatestVersion The version of the function
 	LatestVersion string `json:"latest_version"`
 
-	// Name The name of the workflow
+	// Name The name of the function
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
+	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
@@ -2746,33 +2769,38 @@ type FunctionResponse struct {
 	ScheduleState *string `json:"schedule_state,omitempty"`
 
 	// ScheduleVariables Variables passed to each scheduled run, or null if it is not scheduled.
-	ScheduleVariables *map[string]interface{} `json:"schedule_variables,omitempty"`
+	ScheduleVariables *map[string]interface{}        `json:"schedule_variables,omitempty"`
+	SdkGeneration     *FunctionResponseSdkGeneration `json:"sdk_generation,omitempty"`
 
 	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
 	SelfHealing *bool `json:"self_healing,omitempty"`
 
-	// Shared Whether the workflow is public and can beshared with other users
+	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
 
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`
 
-	// Status The status of the workflow
+	// Status The status of the function
 	Status string `json:"status"`
 
-	// UpdatedAt The last update time of the workflow
-	UpdatedAt FlexibleTime `json:"updated_at"`
+	// UpdatedAt The last update time of the function
+	UpdatedAt        FlexibleTime `json:"updated_at"`
+	UploadSdkVersion *string      `json:"upload_sdk_version,omitempty"`
 
-	// Variables The variables to run the workflow with
+	// Variables The variables to run the function with
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
-	// Versions The versions of the workflow
+	// Versions The versions of the function
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
 // FunctionResponseDefaultRuntime defines model for FunctionResponse.DefaultRuntime.
 type FunctionResponseDefaultRuntime string
+
+// FunctionResponseSdkGeneration defines model for FunctionResponse.SdkGeneration.
+type FunctionResponseSdkGeneration string
 
 // FunctionRollbackRequest defines model for FunctionRollbackRequest.
 type FunctionRollbackRequest struct {
@@ -2845,9 +2873,10 @@ type FunctionRuntimeHealthResponse struct {
 	RunnerPolicyVersion *string   `json:"runner_policy_version,omitempty"`
 
 	// RuntimeDigest Digest of the reproducible contract - Python version, packages with their sources, allowed imports, reserved names - and nothing volatile, so it changes if and only if an environment built against it would now be wrong. Cache against it to detect a runner rebuild. Null unless `status` is 'ok', since a partial report is not a contract. Also returned as the response ETag.
-	RuntimeDigest     *string `json:"runtime_digest,omitempty"`
-	RuntimeLockDigest *string `json:"runtime_lock_digest,omitempty"`
-	SdkGeneration     *string `json:"sdk_generation,omitempty"`
+	RuntimeDigest     *string                                     `json:"runtime_digest,omitempty"`
+	RuntimeLockDigest *string                                     `json:"runtime_lock_digest,omitempty"`
+	SdkGeneration     *FunctionRuntimeHealthResponseSdkGeneration `json:"sdk_generation,omitempty"`
+	SourceManifest    *map[string]interface{}                     `json:"source_manifest,omitempty"`
 
 	// Status 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
 	Status FunctionRuntimeHealthResponseStatus `json:"status"`
@@ -2855,6 +2884,9 @@ type FunctionRuntimeHealthResponse struct {
 	// StdlibModules Standard-library modules the sandbox allows. Versionless: the Python version covers them.
 	StdlibModules *[]string `json:"stdlib_modules,omitempty"`
 }
+
+// FunctionRuntimeHealthResponseSdkGeneration defines model for FunctionRuntimeHealthResponse.SdkGeneration.
+type FunctionRuntimeHealthResponseSdkGeneration string
 
 // FunctionRuntimeHealthResponseStatus 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
 type FunctionRuntimeHealthResponseStatus string
@@ -2876,11 +2908,11 @@ type FunctionSource string
 
 // FunctionWithLinkResponse defines model for FunctionWithLinkResponse.
 type FunctionWithLinkResponse struct {
-	// CreatedAt The creation time of the workflow
+	// CreatedAt The creation time of the function
 	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionWithLinkResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
-	// Description The description of the workflow
+	// Description The description of the function
 	Description *string `json:"description,omitempty"`
 
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
@@ -2892,14 +2924,14 @@ type FunctionWithLinkResponse struct {
 	// Instructions Builder's operating notes: typical run duration, known failure modes, which parameters matter.
 	Instructions *string `json:"instructions,omitempty"`
 
-	// LatestVersion The version of the workflow
+	// LatestVersion The version of the function
 	LatestVersion string `json:"latest_version"`
 
-	// Name The name of the workflow
+	// Name The name of the function
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference workflow (i.e wether the workflow was forked from another workflow or not)
+	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
@@ -2913,36 +2945,41 @@ type FunctionWithLinkResponse struct {
 	ScheduleState *string `json:"schedule_state,omitempty"`
 
 	// ScheduleVariables Variables passed to each scheduled run, or null if it is not scheduled.
-	ScheduleVariables *map[string]interface{} `json:"schedule_variables,omitempty"`
+	ScheduleVariables *map[string]interface{}                `json:"schedule_variables,omitempty"`
+	SdkGeneration     *FunctionWithLinkResponseSdkGeneration `json:"sdk_generation,omitempty"`
 
 	// SelfHealing Whether the build is finished and the function may be healed automatically. Can only be enabled on a function that has a thread for self-heal to resume.
 	SelfHealing *bool `json:"self_healing,omitempty"`
 
-	// Shared Whether the workflow is public and can beshared with other users
+	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
 
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`
 
-	// Status The status of the workflow
+	// Status The status of the function
 	Status string `json:"status"`
 
-	// UpdatedAt The last update time of the workflow
-	UpdatedAt FlexibleTime `json:"updated_at"`
+	// UpdatedAt The last update time of the function
+	UpdatedAt        FlexibleTime `json:"updated_at"`
+	UploadSdkVersion *string      `json:"upload_sdk_version,omitempty"`
 
 	// Url URL to download file from
 	Url string `json:"url"`
 
-	// Variables The variables to run the workflow with
+	// Variables The variables to run the function with
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
-	// Versions The versions of the workflow
+	// Versions The versions of the function
 	Versions   []string `json:"versions"`
 	WorkflowId *string  `json:"workflow_id,omitempty"`
 }
 
 // FunctionWithLinkResponseDefaultRuntime defines model for FunctionWithLinkResponse.DefaultRuntime.
 type FunctionWithLinkResponseDefaultRuntime string
+
+// FunctionWithLinkResponseSdkGeneration defines model for FunctionWithLinkResponse.SdkGeneration.
+type FunctionWithLinkResponseSdkGeneration string
 
 // GetCookiesResponse defines model for GetCookiesResponse.
 type GetCookiesResponse struct {
@@ -2971,15 +3008,15 @@ type GetFunctionRunResponse struct {
 	FunctionRunId   string  `json:"function_run_id"`
 	FunctionVersion *string `json:"function_version,omitempty"`
 
-	// Local Whether the workflow has been run locally or on the cloud
+	// Local Whether the function has been run locally or on the cloud
 	Local *bool `json:"local,omitempty"`
 
-	// Logs The logs of the workflow run
+	// Logs The logs of the function run
 	Logs        *[]string                       `json:"logs,omitempty"`
 	PayloadUrls *map[string]string              `json:"payload_urls,omitempty"`
 	Payloads    *map[string]RunPayloadReference `json:"payloads,omitempty"`
 
-	// Result The result of the workflow run (if any)
+	// Result The result of the function run (if any)
 	Result        *string                `json:"result,omitempty"`
 	SdkGeneration *FunctionSdkGeneration `json:"sdk_generation,omitempty"`
 
@@ -2989,7 +3026,7 @@ type GetFunctionRunResponse struct {
 	StoppedAt *string                      `json:"stopped_at,omitempty"`
 	UpdatedAt FlexibleTime                 `json:"updated_at"`
 
-	// Variables The variables of the workflow run
+	// Variables The variables of the function run
 	Variables     *map[string]interface{} `json:"variables,omitempty"`
 	WorkflowId    *string                 `json:"workflow_id,omitempty"`
 	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
@@ -3037,10 +3074,11 @@ type GlobalScrapeRequest struct {
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
 
-	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-	Model *GlobalScrapeRequest_Model `json:"model,omitempty"`
+	// Model Model used for structured extraction. Canonical OpenRouter ids: google/gemini-3.5-flash, google/gemini-3.5-flash-lite, google/gemini-3.1-flash-lite, google/gemini-3.1-flash-lite-preview, google/gemini-2.5-flash, openai/gpt-4.1-mini, openai/gpt-4o, google/gemma-3-27b-it, openai/gpt-oss-120b, perplexity/sonar-pro, deepseek/deepseek-r1, meta-llama/llama-3.3-70b-instruct, anthropic/claude-sonnet-4-5, anthropic/claude-haiku-4-5, moonshotai/kimi-k2.5, x-ai/grok-4.3, minimax/minimax-m2.5. Reviewed legacy LiteLLM ids remain accepted. Defaults to google/gemini-3.5-flash.
+	Model *string `json:"model,omitempty"`
 
-	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
+	// OnlyImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
@@ -3053,13 +3091,15 @@ type GlobalScrapeRequest struct {
 	// ResponseFormat The response format to use for the scrape. You can use a Pydantic model or a JSON Schema dict (cf. https://docs.pydantic.dev/latest/concepts/json_schema/#generating-json-schema.)
 	ResponseFormat interface{} `json:"response_format"`
 
-	// ScrapeImages Whether to scrape images from the page. Images are scraped by default.
+	// ScrapeImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ScrapeImages *bool `json:"scrape_images,omitempty"`
 
 	// ScrapeLinks Whether to scrape links from the page. Links are scraped by default.
 	ScrapeLinks *bool `json:"scrape_links,omitempty"`
 
-	// ScreenshotType The type of screenshot to use for the session.
+	// ScreenshotType Ignored since notte 1.10: screenshots are returned without highlighting.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ScreenshotType *GlobalScrapeRequestScreenshotType `json:"screenshot_type,omitempty"`
 
 	// Selector Playwright selector to scope the scrape to. Only content inside this selector will be scraped.
@@ -3094,14 +3134,6 @@ type GlobalScrapeRequest struct {
 // GlobalScrapeRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 type GlobalScrapeRequestBrowserType string
 
-// GlobalScrapeRequestModel1 defines model for .
-type GlobalScrapeRequestModel1 = string
-
-// GlobalScrapeRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-type GlobalScrapeRequest_Model struct {
-	union json.RawMessage
-}
-
 // GlobalScrapeRequestProxies0 defines model for .
 type GlobalScrapeRequestProxies0 = []GlobalScrapeRequest_Proxies_0_Item
 
@@ -3118,7 +3150,7 @@ type GlobalScrapeRequest_Proxies struct {
 	union json.RawMessage
 }
 
-// GlobalScrapeRequestScreenshotType The type of screenshot to use for the session.
+// GlobalScrapeRequestScreenshotType Ignored since notte 1.10: screenshots are returned without highlighting.
 type GlobalScrapeRequestScreenshotType string
 
 // GoBackAction defines model for GoBackAction.
@@ -3180,20 +3212,6 @@ type HelpAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
-// ImageCategory defines model for ImageCategory.
-type ImageCategory string
-
-// ImageData defines model for ImageData.
-type ImageData struct {
-	Category *ImageCategory `json:"category,omitempty"`
-
-	// Description Description of the image
-	Description *string `json:"description,omitempty"`
-
-	// Url URL of the image
-	Url *string `json:"url,omitempty"`
-}
-
 // ImageResolution defines model for ImageResolution.
 type ImageResolution struct {
 	AspectRatio float32 `json:"aspect_ratio"`
@@ -3211,7 +3229,9 @@ type Interval struct {
 // IntervalUnit defines model for Interval.Unit.
 type IntervalUnit string
 
-// LegacyAgentStatusResponse defines model for LegacyAgentStatusResponse.
+// LegacyAgentStatusResponse This class is used to handle the legacy agent status response.
+// The rationale is that we are likely to change the `AgentStepResponse` in the future and we want to be able to handle the legacy response.
+// This is a temporary solution to avoid breaking changes.
 type LegacyAgentStatusResponse struct {
 	// AgentId The ID of the agent
 	AgentId string `json:"agent_id"`
@@ -3686,7 +3706,8 @@ type Observation struct {
 
 // ObserveRequest defines model for ObserveRequest.
 type ObserveRequest struct {
-	// Instructions Additional instructions to use for the observation.
+	// Instructions Deprecated: removed on December 1, 2026. Additional instructions to use for the observation. <<ALTERNATIVE FOR instructions: session.act() — pending>>. See https://docs.notte.cc/features/sessions/observe-migration
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	Instructions *string `json:"instructions,omitempty"`
 
 	// MaxNbActions The maximum number of actions to list after which the listing will stop. Used when min_nb_actions is not provided.
@@ -3695,7 +3716,7 @@ type ObserveRequest struct {
 	// MinNbActions The minimum number of actions to list before stopping. If not provided, the listing will continue until the maximum number of actions is reached.
 	MinNbActions *int `json:"min_nb_actions,omitempty"`
 
-	// PerceptionType Whether to run with fast or deep perception
+	// PerceptionType Whether to run with fast or deep perception. `deep` is deprecated and removed on December 1, 2026; use `fast` (the default). See https://docs.notte.cc/features/sessions/observe-migration
 	PerceptionType *string `json:"perception_type,omitempty"`
 }
 
@@ -4165,9 +4186,7 @@ type ProfileResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
 	// Name Profile name
-	Name *string `json:"name,omitempty"`
-
-	// PersistedDomains List of domains with persisted browser state (cookies, localStorage, sessionStorage)
+	Name             *string   `json:"name,omitempty"`
 	PersistedDomains *[]string `json:"persisted_domains,omitempty"`
 
 	// ProfileId Profile ID (format: `notte-profile-{16 hex chars}`)
@@ -4349,9 +4368,6 @@ type ScrapeAction struct {
 	IgnoredTags  *[]string `json:"ignored_tags,omitempty"`
 	Instructions *string   `json:"instructions,omitempty"`
 
-	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
-	OnlyImages *bool `json:"only_images,omitempty"`
-
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
 	OnlyMainContent *bool `json:"only_main_content,omitempty"`
 
@@ -4388,10 +4404,11 @@ type ScrapeFromHtmlRequest struct {
 	// Instructions User description as to what needs to be scraped
 	Instructions *string `json:"instructions,omitempty"`
 
-	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-	Model *ScrapeFromHtmlRequest_Model `json:"model,omitempty"`
+	// Model Model used for structured extraction. Canonical OpenRouter ids: google/gemini-3.5-flash, google/gemini-3.5-flash-lite, google/gemini-3.1-flash-lite, google/gemini-3.1-flash-lite-preview, google/gemini-2.5-flash, openai/gpt-4.1-mini, openai/gpt-4o, google/gemma-3-27b-it, openai/gpt-oss-120b, perplexity/sonar-pro, deepseek/deepseek-r1, meta-llama/llama-3.3-70b-instruct, anthropic/claude-sonnet-4-5, anthropic/claude-haiku-4-5, moonshotai/kimi-k2.5, x-ai/grok-4.3, minimax/minimax-m2.5. Reviewed legacy LiteLLM ids remain accepted. Defaults to google/gemini-3.5-flash.
+	Model *string `json:"model,omitempty"`
 
-	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
+	// OnlyImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
@@ -4400,7 +4417,8 @@ type ScrapeFromHtmlRequest struct {
 	// ResponseFormat The response format to use for the scrape. You can use a Pydantic model or a JSON Schema dict (cf. https://docs.pydantic.dev/latest/concepts/json_schema/#generating-json-schema.)
 	ResponseFormat interface{} `json:"response_format"`
 
-	// ScrapeImages Whether to scrape images from the page. Images are scraped by default.
+	// ScrapeImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ScrapeImages *bool `json:"scrape_images,omitempty"`
 
 	// ScrapeLinks Whether to scrape links from the page. Links are scraped by default.
@@ -4411,14 +4429,6 @@ type ScrapeFromHtmlRequest struct {
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
-}
-
-// ScrapeFromHtmlRequestModel1 defines model for .
-type ScrapeFromHtmlRequestModel1 = string
-
-// ScrapeFromHtmlRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-type ScrapeFromHtmlRequest_Model struct {
-	union json.RawMessage
 }
 
 // ScrapeOutput defines model for ScrapeOutput.
@@ -4432,10 +4442,11 @@ type ScrapeRequest struct {
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
 	Instructions *string `json:"instructions,omitempty"`
 
-	// Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-	Model *ScrapeRequest_Model `json:"model,omitempty"`
+	// Model Model used for structured extraction. Canonical OpenRouter ids: google/gemini-3.5-flash, google/gemini-3.5-flash-lite, google/gemini-3.1-flash-lite, google/gemini-3.1-flash-lite-preview, google/gemini-2.5-flash, openai/gpt-4.1-mini, openai/gpt-4o, google/gemma-3-27b-it, openai/gpt-oss-120b, perplexity/sonar-pro, deepseek/deepseek-r1, meta-llama/llama-3.3-70b-instruct, anthropic/claude-sonnet-4-5, anthropic/claude-haiku-4-5, moonshotai/kimi-k2.5, x-ai/grok-4.3, minimax/minimax-m2.5. Reviewed legacy LiteLLM ids remain accepted. Defaults to google/gemini-3.5-flash.
+	Model *string `json:"model,omitempty"`
 
-	// OnlyImages Whether to only scrape images from the page. If True, the page content is excluded.
+	// OnlyImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
@@ -4444,7 +4455,8 @@ type ScrapeRequest struct {
 	// ResponseFormat The response format to use for the scrape. You can use a Pydantic model or a JSON Schema dict (cf. https://docs.pydantic.dev/latest/concepts/json_schema/#generating-json-schema.)
 	ResponseFormat interface{} `json:"response_format"`
 
-	// ScrapeImages Whether to scrape images from the page. Images are scraped by default.
+	// ScrapeImages Image scraping was removed; true returns 422.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ScrapeImages *bool `json:"scrape_images,omitempty"`
 
 	// ScrapeLinks Whether to scrape links from the page. Links are scraped by default.
@@ -4455,14 +4467,6 @@ type ScrapeRequest struct {
 
 	// UseLinkPlaceholders Whether to use link/image placeholders to reduce the number of tokens in the prompt and hallucinations. However this is an experimental feature and might not work as expected.
 	UseLinkPlaceholders *bool `json:"use_link_placeholders,omitempty"`
-}
-
-// ScrapeRequestModel1 defines model for .
-type ScrapeRequestModel1 = string
-
-// ScrapeRequest_Model The LLM used to extract structured data when `instructions` or `response_format` is set, e.g. 'vertex_ai/gemini-3.1-flash-lite'. Defaults to the platform model.
-type ScrapeRequest_Model struct {
-	union json.RawMessage
 }
 
 // ScrapeResponse defines model for ScrapeResponse.
@@ -4492,9 +4496,8 @@ type ScrapeSchemaResponse struct {
 
 // Screenshot defines model for Screenshot.
 type Screenshot struct {
-	Bboxes       *[]BoundingBox `json:"bboxes,omitempty"`
-	LastActionId *string        `json:"last_action_id,omitempty"`
-	Raw          string         `json:"raw"`
+	Bboxes *[]BoundingBox `json:"bboxes,omitempty"`
+	Raw    string         `json:"raw"`
 }
 
 // ScrollAction defines model for ScrollAction.
@@ -5374,6 +5377,56 @@ type ListDataApisParams struct {
 	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// SummaryParams defines parameters for Summary.
+type SummaryParams struct {
+	Since *string `form:"since,omitempty" json:"since,omitempty"`
+	Until *string `form:"until,omitempty" json:"until,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// HistoryParams defines parameters for History.
+type HistoryParams struct {
+	Since  *string `form:"since,omitempty" json:"since,omitempty"`
+	Until  *string `form:"until,omitempty" json:"until,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// DetailParams defines parameters for Detail.
+type DetailParams struct {
+	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
+	XNotteCacheMode *string `json:"X-Notte-Cache-Mode,omitempty"`
+
+	// XNotteCacheMaxAgeMs Maximum cached result age in milliseconds; zero forces refresh.
+	XNotteCacheMaxAgeMs *string `json:"X-Notte-Cache-Max-Age-Ms,omitempty"`
+
+	// XNotteCacheTtlSeconds Shorten the server storage TTL; zero bypasses caching.
+	XNotteCacheTtlSeconds *string `json:"X-Notte-Cache-Ttl-Seconds,omitempty"`
+	XNotteRequestOrigin   *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion      *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // BrandRetrieveParams defines parameters for BrandRetrieve.
 type BrandRetrieveParams struct {
 	// XNotteCacheMode Extraction cache: default, refresh, or bypass.
@@ -5863,9 +5916,13 @@ type FunctionCreateParams struct {
 
 // FunctionRuntimeHealthParams defines parameters for FunctionRuntimeHealth.
 type FunctionRuntimeHealthParams struct {
-	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+	SdkGeneration       *FunctionRuntimeHealthParamsSdkGeneration `form:"sdk_generation,omitempty" json:"sdk_generation,omitempty"`
+	XNotteRequestOrigin *string                                   `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string                                   `json:"x-notte-sdk-version,omitempty"`
 }
+
+// FunctionRuntimeHealthParamsSdkGeneration defines parameters for FunctionRuntimeHealth.
+type FunctionRuntimeHealthParamsSdkGeneration string
 
 // FunctionDeleteParams defines parameters for FunctionDelete.
 type FunctionDeleteParams struct {
@@ -11586,68 +11643,6 @@ func (t *FormFillAction_Value_AdditionalProperties) UnmarshalJSON(b []byte) erro
 	return err
 }
 
-// AsLlmModel returns the union data inside the GlobalScrapeRequest_Model as a LlmModel
-func (t GlobalScrapeRequest_Model) AsLlmModel() (LlmModel, error) {
-	var body LlmModel
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromLlmModel overwrites any union data inside the GlobalScrapeRequest_Model as the provided LlmModel
-func (t *GlobalScrapeRequest_Model) FromLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeLlmModel performs a merge with any union data inside the GlobalScrapeRequest_Model, using the provided LlmModel
-func (t *GlobalScrapeRequest_Model) MergeLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGlobalScrapeRequestModel1 returns the union data inside the GlobalScrapeRequest_Model as a GlobalScrapeRequestModel1
-func (t GlobalScrapeRequest_Model) AsGlobalScrapeRequestModel1() (GlobalScrapeRequestModel1, error) {
-	var body GlobalScrapeRequestModel1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGlobalScrapeRequestModel1 overwrites any union data inside the GlobalScrapeRequest_Model as the provided GlobalScrapeRequestModel1
-func (t *GlobalScrapeRequest_Model) FromGlobalScrapeRequestModel1(v GlobalScrapeRequestModel1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGlobalScrapeRequestModel1 performs a merge with any union data inside the GlobalScrapeRequest_Model, using the provided GlobalScrapeRequestModel1
-func (t *GlobalScrapeRequest_Model) MergeGlobalScrapeRequestModel1(v GlobalScrapeRequestModel1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GlobalScrapeRequest_Model) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GlobalScrapeRequest_Model) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
 // AsNotteProxy returns the union data inside the GlobalScrapeRequest_Proxies_0_Item as a NotteProxy
 func (t GlobalScrapeRequest_Proxies_0_Item) AsNotteProxy() (NotteProxy, error) {
 	var body NotteProxy
@@ -12498,130 +12493,6 @@ func (t PeopleEnrichResponse_Match) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PeopleEnrichResponse_Match) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsLlmModel returns the union data inside the ScrapeFromHtmlRequest_Model as a LlmModel
-func (t ScrapeFromHtmlRequest_Model) AsLlmModel() (LlmModel, error) {
-	var body LlmModel
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromLlmModel overwrites any union data inside the ScrapeFromHtmlRequest_Model as the provided LlmModel
-func (t *ScrapeFromHtmlRequest_Model) FromLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeLlmModel performs a merge with any union data inside the ScrapeFromHtmlRequest_Model, using the provided LlmModel
-func (t *ScrapeFromHtmlRequest_Model) MergeLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsScrapeFromHtmlRequestModel1 returns the union data inside the ScrapeFromHtmlRequest_Model as a ScrapeFromHtmlRequestModel1
-func (t ScrapeFromHtmlRequest_Model) AsScrapeFromHtmlRequestModel1() (ScrapeFromHtmlRequestModel1, error) {
-	var body ScrapeFromHtmlRequestModel1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromScrapeFromHtmlRequestModel1 overwrites any union data inside the ScrapeFromHtmlRequest_Model as the provided ScrapeFromHtmlRequestModel1
-func (t *ScrapeFromHtmlRequest_Model) FromScrapeFromHtmlRequestModel1(v ScrapeFromHtmlRequestModel1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeScrapeFromHtmlRequestModel1 performs a merge with any union data inside the ScrapeFromHtmlRequest_Model, using the provided ScrapeFromHtmlRequestModel1
-func (t *ScrapeFromHtmlRequest_Model) MergeScrapeFromHtmlRequestModel1(v ScrapeFromHtmlRequestModel1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t ScrapeFromHtmlRequest_Model) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *ScrapeFromHtmlRequest_Model) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsLlmModel returns the union data inside the ScrapeRequest_Model as a LlmModel
-func (t ScrapeRequest_Model) AsLlmModel() (LlmModel, error) {
-	var body LlmModel
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromLlmModel overwrites any union data inside the ScrapeRequest_Model as the provided LlmModel
-func (t *ScrapeRequest_Model) FromLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeLlmModel performs a merge with any union data inside the ScrapeRequest_Model, using the provided LlmModel
-func (t *ScrapeRequest_Model) MergeLlmModel(v LlmModel) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsScrapeRequestModel1 returns the union data inside the ScrapeRequest_Model as a ScrapeRequestModel1
-func (t ScrapeRequest_Model) AsScrapeRequestModel1() (ScrapeRequestModel1, error) {
-	var body ScrapeRequestModel1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromScrapeRequestModel1 overwrites any union data inside the ScrapeRequest_Model as the provided ScrapeRequestModel1
-func (t *ScrapeRequest_Model) FromScrapeRequestModel1(v ScrapeRequestModel1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeScrapeRequestModel1 performs a merge with any union data inside the ScrapeRequest_Model, using the provided ScrapeRequestModel1
-func (t *ScrapeRequest_Model) MergeScrapeRequestModel1(v ScrapeRequestModel1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t ScrapeRequest_Model) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *ScrapeRequest_Model) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -14662,6 +14533,15 @@ type ClientInterface interface {
 	// ListDataApis request
 	ListDataApis(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Summary request
+	Summary(ctx context.Context, params *SummaryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// History request
+	History(ctx context.Context, params *HistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Detail request
+	Detail(ctx context.Context, requestId openapi_types.UUID, params *DetailParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BrandRetrieveWithBody request with any body
 	BrandRetrieveWithBody(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -15223,6 +15103,42 @@ func (c *Client) ListAuditEvents(ctx context.Context, params *ListAuditEventsPar
 
 func (c *Client) ListDataApis(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListDataApisRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Summary(ctx context.Context, params *SummaryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSummaryRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) History(ctx context.Context, params *HistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHistoryRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Detail(ctx context.Context, requestId openapi_types.UUID, params *DetailParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDetailRequest(c.Server, requestId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -17897,6 +17813,379 @@ func NewListDataApisRequest(server string, params *ListDataApisParams) (*http.Re
 	}
 
 	operationPath := fmt.Sprintf("/data")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteCacheMode != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam4)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewSummaryRequest generates requests for Summary
+func NewSummaryRequest(server string, params *SummaryParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/analytics")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteCacheMode != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam4)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewHistoryRequest generates requests for History
+func NewHistoryRequest(server string, params *HistoryParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/analytics/requests")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Since != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "since", runtime.ParamLocationQuery, *params.Since); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Until != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "until", runtime.ParamLocationQuery, *params.Until); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteCacheMode != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Mode", runtime.ParamLocationHeader, *params.XNotteCacheMode)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Mode", headerParam0)
+		}
+
+		if params.XNotteCacheMaxAgeMs != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Max-Age-Ms", runtime.ParamLocationHeader, *params.XNotteCacheMaxAgeMs)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Max-Age-Ms", headerParam1)
+		}
+
+		if params.XNotteCacheTtlSeconds != nil {
+			var headerParam2 string
+
+			headerParam2, err = runtime.StyleParamWithLocation("simple", false, "X-Notte-Cache-Ttl-Seconds", runtime.ParamLocationHeader, *params.XNotteCacheTtlSeconds)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-Notte-Cache-Ttl-Seconds", headerParam2)
+		}
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam3 string
+
+			headerParam3, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam3)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam4 string
+
+			headerParam4, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam4)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDetailRequest generates requests for Detail
+func NewDetailRequest(server string, requestId openapi_types.UUID, params *DetailParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "request_id", runtime.ParamLocationPath, requestId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/data/analytics/requests/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -21678,6 +21967,28 @@ func NewFunctionRuntimeHealthRequest(server string, params *FunctionRuntimeHealt
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.SdkGeneration != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "sdk_generation", runtime.ParamLocationQuery, *params.SdkGeneration); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -28612,6 +28923,15 @@ type ClientWithResponsesInterface interface {
 	// ListDataApisWithResponse request
 	ListDataApisWithResponse(ctx context.Context, params *ListDataApisParams, reqEditors ...RequestEditorFn) (*ListDataApisResult, error)
 
+	// SummaryWithResponse request
+	SummaryWithResponse(ctx context.Context, params *SummaryParams, reqEditors ...RequestEditorFn) (*SummaryResult, error)
+
+	// HistoryWithResponse request
+	HistoryWithResponse(ctx context.Context, params *HistoryParams, reqEditors ...RequestEditorFn) (*HistoryResult, error)
+
+	// DetailWithResponse request
+	DetailWithResponse(ctx context.Context, requestId openapi_types.UUID, params *DetailParams, reqEditors ...RequestEditorFn) (*DetailResult, error)
+
 	// BrandRetrieveWithBodyWithResponse request with any body
 	BrandRetrieveWithBodyWithResponse(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error)
 
@@ -29241,6 +29561,75 @@ func (r ListDataApisResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListDataApisResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SummaryResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SummaryResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SummaryResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type HistoryResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r HistoryResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r HistoryResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DetailResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DetailResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DetailResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -32094,6 +32483,33 @@ func (c *ClientWithResponses) ListDataApisWithResponse(ctx context.Context, para
 	return ParseListDataApisResult(rsp)
 }
 
+// SummaryWithResponse request returning *SummaryResult
+func (c *ClientWithResponses) SummaryWithResponse(ctx context.Context, params *SummaryParams, reqEditors ...RequestEditorFn) (*SummaryResult, error) {
+	rsp, err := c.Summary(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSummaryResult(rsp)
+}
+
+// HistoryWithResponse request returning *HistoryResult
+func (c *ClientWithResponses) HistoryWithResponse(ctx context.Context, params *HistoryParams, reqEditors ...RequestEditorFn) (*HistoryResult, error) {
+	rsp, err := c.History(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHistoryResult(rsp)
+}
+
+// DetailWithResponse request returning *DetailResult
+func (c *ClientWithResponses) DetailWithResponse(ctx context.Context, requestId openapi_types.UUID, params *DetailParams, reqEditors ...RequestEditorFn) (*DetailResult, error) {
+	rsp, err := c.Detail(ctx, requestId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDetailResult(rsp)
+}
+
 // BrandRetrieveWithBodyWithResponse request with arbitrary body returning *BrandRetrieveResult
 func (c *ClientWithResponses) BrandRetrieveWithBodyWithResponse(ctx context.Context, params *BrandRetrieveParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BrandRetrieveResult, error) {
 	rsp, err := c.BrandRetrieveWithBody(ctx, params, contentType, body, reqEditors...)
@@ -33781,6 +34197,105 @@ func ParseListDataApisResult(rsp *http.Response) (*ListDataApisResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []CapabilityEndpoint
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSummaryResult parses an HTTP response from a SummaryWithResponse call
+func ParseSummaryResult(rsp *http.Response) (*SummaryResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SummaryResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseHistoryResult parses an HTTP response from a HistoryWithResponse call
+func ParseHistoryResult(rsp *http.Response) (*HistoryResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &HistoryResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDetailResult parses an HTTP response from a DetailWithResponse call
+func ParseDetailResult(rsp *http.Response) (*DetailResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DetailResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
