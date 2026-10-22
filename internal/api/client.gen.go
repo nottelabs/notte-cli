@@ -1888,13 +1888,14 @@ type CardStyle struct {
 
 // CheckActionInput defines model for CheckAction-Input.
 type CheckActionInput struct {
-	Category    *string                    `json:"category,omitempty"`
-	Description *string                    `json:"description,omitempty"`
-	Id          *string                    `json:"id,omitempty"`
-	Param       *ActionParameter           `json:"param,omitempty"`
-	PressEnter  *bool                      `json:"press_enter,omitempty"`
-	Selector    *CheckActionInput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                    `json:"text_label,omitempty"`
+	AccessibleName *string                    `json:"accessible_name,omitempty"`
+	Category       *string                    `json:"category,omitempty"`
+	Description    *string                    `json:"description,omitempty"`
+	Id             *string                    `json:"id,omitempty"`
+	Param          *ActionParameter           `json:"param,omitempty"`
+	PressEnter     *bool                      `json:"press_enter,omitempty"`
+	Selector       *CheckActionInput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -1912,12 +1913,13 @@ type CheckActionInput_Selector struct {
 
 // CheckActionOutput defines model for CheckAction-Output.
 type CheckActionOutput struct {
-	Category    *string                     `json:"category,omitempty"`
-	Description *string                     `json:"description,omitempty"`
-	Id          *string                     `json:"id,omitempty"`
-	PressEnter  *bool                       `json:"press_enter,omitempty"`
-	Selector    *CheckActionOutput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                     `json:"text_label,omitempty"`
+	AccessibleName *string                     `json:"accessible_name,omitempty"`
+	Category       *string                     `json:"category,omitempty"`
+	Description    *string                     `json:"description,omitempty"`
+	Id             *string                     `json:"id,omitempty"`
+	PressEnter     *bool                       `json:"press_enter,omitempty"`
+	Selector       *CheckActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                     `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -1935,13 +1937,14 @@ type CheckActionOutput_Selector struct {
 
 // ClickActionInput defines model for ClickAction-Input.
 type ClickActionInput struct {
-	Category    *string                    `json:"category,omitempty"`
-	Description *string                    `json:"description,omitempty"`
-	Id          *string                    `json:"id,omitempty"`
-	Param       *ActionParameter           `json:"param,omitempty"`
-	PressEnter  *bool                      `json:"press_enter,omitempty"`
-	Selector    *ClickActionInput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                    `json:"text_label,omitempty"`
+	AccessibleName *string                    `json:"accessible_name,omitempty"`
+	Category       *string                    `json:"category,omitempty"`
+	Description    *string                    `json:"description,omitempty"`
+	Id             *string                    `json:"id,omitempty"`
+	Param          *ActionParameter           `json:"param,omitempty"`
+	PressEnter     *bool                      `json:"press_enter,omitempty"`
+	Selector       *ClickActionInput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -1958,12 +1961,13 @@ type ClickActionInput_Selector struct {
 
 // ClickActionOutput defines model for ClickAction-Output.
 type ClickActionOutput struct {
-	Category    *string                     `json:"category,omitempty"`
-	Description *string                     `json:"description,omitempty"`
-	Id          *string                     `json:"id,omitempty"`
-	PressEnter  *bool                       `json:"press_enter,omitempty"`
-	Selector    *ClickActionOutput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                     `json:"text_label,omitempty"`
+	AccessibleName *string                     `json:"accessible_name,omitempty"`
+	Category       *string                     `json:"category,omitempty"`
+	Description    *string                     `json:"description,omitempty"`
+	Id             *string                     `json:"id,omitempty"`
+	PressEnter     *bool                       `json:"press_enter,omitempty"`
+	Selector       *ClickActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                     `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -2310,13 +2314,14 @@ type DeliveryList struct {
 
 // DownloadFileActionInput defines model for DownloadFileAction-Input.
 type DownloadFileActionInput struct {
-	Category    *string                           `json:"category,omitempty"`
-	Description *string                           `json:"description,omitempty"`
-	Id          *string                           `json:"id,omitempty"`
-	Param       *ActionParameter                  `json:"param,omitempty"`
-	PressEnter  *bool                             `json:"press_enter,omitempty"`
-	Selector    *DownloadFileActionInput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                           `json:"text_label,omitempty"`
+	AccessibleName *string                           `json:"accessible_name,omitempty"`
+	Category       *string                           `json:"category,omitempty"`
+	Description    *string                           `json:"description,omitempty"`
+	Id             *string                           `json:"id,omitempty"`
+	Param          *ActionParameter                  `json:"param,omitempty"`
+	PressEnter     *bool                             `json:"press_enter,omitempty"`
+	Selector       *DownloadFileActionInput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                           `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -2333,12 +2338,13 @@ type DownloadFileActionInput_Selector struct {
 
 // DownloadFileActionOutput defines model for DownloadFileAction-Output.
 type DownloadFileActionOutput struct {
-	Category    *string                            `json:"category,omitempty"`
-	Description *string                            `json:"description,omitempty"`
-	Id          *string                            `json:"id,omitempty"`
-	PressEnter  *bool                              `json:"press_enter,omitempty"`
-	Selector    *DownloadFileActionOutput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                            `json:"text_label,omitempty"`
+	AccessibleName *string                            `json:"accessible_name,omitempty"`
+	Category       *string                            `json:"category,omitempty"`
+	Description    *string                            `json:"description,omitempty"`
+	Id             *string                            `json:"id,omitempty"`
+	PressEnter     *bool                              `json:"press_enter,omitempty"`
+	Selector       *DownloadFileActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                            `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -2359,6 +2365,33 @@ type EducationClue struct {
 	FieldOfStudy   *string           `json:"field_of_study,omitempty"`
 	GraduationYear *int              `json:"graduation_year,omitempty"`
 	Institution    *OrganizationClue `json:"institution,omitempty"`
+}
+
+// ElementState defines model for ElementState.
+type ElementState struct {
+	Checked          *bool                 `json:"checked,omitempty"`
+	Expanded         *bool                 `json:"expanded,omitempty"`
+	Filled           *bool                 `json:"filled,omitempty"`
+	Mixed            *bool                 `json:"mixed,omitempty"`
+	Multiple         *bool                 `json:"multiple,omitempty"`
+	Options          *[]SelectOption       `json:"options,omitempty"`
+	OptionsTruncated *bool                 `json:"optionsTruncated,omitempty"`
+	Pressed          *ElementState_Pressed `json:"pressed,omitempty"`
+	Selected         *bool                 `json:"selected,omitempty"`
+	Value            *string               `json:"value,omitempty"`
+	ValueDigest      *string               `json:"valueDigest,omitempty"`
+	ValueTruncated   *bool                 `json:"valueTruncated,omitempty"`
+}
+
+// ElementStatePressed0 defines model for .
+type ElementStatePressed0 = bool
+
+// ElementStatePressed1 defines model for .
+type ElementStatePressed1 = string
+
+// ElementState_Pressed defines model for ElementState.Pressed.
+type ElementState_Pressed struct {
+	union json.RawMessage
 }
 
 // EmailReadAction defines model for EmailReadAction.
@@ -2463,6 +2496,7 @@ type ExtractTarget struct {
 
 // FallbackFillActionInput defines model for FallbackFillAction-Input.
 type FallbackFillActionInput struct {
+	AccessibleName  *string                           `json:"accessible_name,omitempty"`
 	Category        *string                           `json:"category,omitempty"`
 	ClearBeforeFill *bool                             `json:"clear_before_fill,omitempty"`
 	Description     *string                           `json:"description,omitempty"`
@@ -2499,6 +2533,7 @@ type FallbackFillActionInput_Value struct {
 
 // FallbackFillActionOutput defines model for FallbackFillAction-Output.
 type FallbackFillActionOutput struct {
+	AccessibleName  *string                            `json:"accessible_name,omitempty"`
 	Category        *string                            `json:"category,omitempty"`
 	ClearBeforeFill *bool                              `json:"clear_before_fill,omitempty"`
 	Description     *string                            `json:"description,omitempty"`
@@ -2549,6 +2584,7 @@ type FileSource string
 
 // FillActionInput defines model for FillAction-Input.
 type FillActionInput struct {
+	AccessibleName  *string                   `json:"accessible_name,omitempty"`
 	Category        *string                   `json:"category,omitempty"`
 	ClearBeforeFill *bool                     `json:"clear_before_fill,omitempty"`
 	Description     *string                   `json:"description,omitempty"`
@@ -2585,6 +2621,7 @@ type FillActionInput_Value struct {
 
 // FillActionOutput defines model for FillAction-Output.
 type FillActionOutput struct {
+	AccessibleName  *string                    `json:"accessible_name,omitempty"`
 	Category        *string                    `json:"category,omitempty"`
 	ClearBeforeFill *bool                      `json:"clear_before_fill,omitempty"`
 	Description     *string                    `json:"description,omitempty"`
@@ -3450,6 +3487,7 @@ type MouseReplayPage struct {
 
 // MultiFactorFillActionInput defines model for MultiFactorFillAction-Input.
 type MultiFactorFillActionInput struct {
+	AccessibleName  *string                              `json:"accessible_name,omitempty"`
 	Category        *string                              `json:"category,omitempty"`
 	ClearBeforeFill *bool                                `json:"clear_before_fill,omitempty"`
 	Description     *string                              `json:"description,omitempty"`
@@ -3486,6 +3524,7 @@ type MultiFactorFillActionInput_Value struct {
 
 // MultiFactorFillActionOutput defines model for MultiFactorFillAction-Output.
 type MultiFactorFillActionOutput struct {
+	AccessibleName  *string                               `json:"accessible_name,omitempty"`
 	Category        *string                               `json:"category,omitempty"`
 	ClearBeforeFill *bool                                 `json:"clear_before_fill,omitempty"`
 	Description     *string                               `json:"description,omitempty"`
@@ -3697,11 +3736,16 @@ type NotteProxy struct {
 
 // Observation defines model for Observation.
 type Observation struct {
-	EndedAt    FlexibleTime     `json:"ended_at"`
-	Metadata   SnapshotMetadata `json:"metadata"`
-	Screenshot Screenshot       `json:"screenshot"`
-	Space      ActionSpace      `json:"space"`
-	StartedAt  FlexibleTime     `json:"started_at"`
+	// ElementStates Live state of the interactive elements that have one (current value, checked state, select options, aria state), by action id. Not rendered into the action descriptions.
+	ElementStates *map[string]interface{} `json:"element_states,omitempty"`
+	EndedAt       FlexibleTime            `json:"ended_at"`
+
+	// Fingerprint Hash of the page URL and of the id, label and live state of every interactive element: it changes when the page offers other actions or a field value changes.
+	Fingerprint *string          `json:"fingerprint,omitempty"`
+	Metadata    SnapshotMetadata `json:"metadata"`
+	Screenshot  Screenshot       `json:"screenshot"`
+	Space       ActionSpace      `json:"space"`
+	StartedAt   FlexibleTime     `json:"started_at"`
 }
 
 // ObserveRequest defines model for ObserveRequest.
@@ -4590,13 +4634,14 @@ type SecretValueResponse struct {
 
 // SelectDropdownOptionActionInput defines model for SelectDropdownOptionAction-Input.
 type SelectDropdownOptionActionInput struct {
-	Category    *string                                   `json:"category,omitempty"`
-	Description *string                                   `json:"description,omitempty"`
-	Id          *string                                   `json:"id,omitempty"`
-	Param       *ActionParameter                          `json:"param,omitempty"`
-	PressEnter  *bool                                     `json:"press_enter,omitempty"`
-	Selector    *SelectDropdownOptionActionInput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                                   `json:"text_label,omitempty"`
+	AccessibleName *string                                   `json:"accessible_name,omitempty"`
+	Category       *string                                   `json:"category,omitempty"`
+	Description    *string                                   `json:"description,omitempty"`
+	Id             *string                                   `json:"id,omitempty"`
+	Param          *ActionParameter                          `json:"param,omitempty"`
+	PressEnter     *bool                                     `json:"press_enter,omitempty"`
+	Selector       *SelectDropdownOptionActionInput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                                   `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                                  `json:"timeout,omitempty"`
@@ -4625,12 +4670,13 @@ type SelectDropdownOptionActionInput_Value struct {
 
 // SelectDropdownOptionActionOutput defines model for SelectDropdownOptionAction-Output.
 type SelectDropdownOptionActionOutput struct {
-	Category    *string                                    `json:"category,omitempty"`
-	Description *string                                    `json:"description,omitempty"`
-	Id          *string                                    `json:"id,omitempty"`
-	PressEnter  *bool                                      `json:"press_enter,omitempty"`
-	Selector    *SelectDropdownOptionActionOutput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                                    `json:"text_label,omitempty"`
+	AccessibleName *string                                    `json:"accessible_name,omitempty"`
+	Category       *string                                    `json:"category,omitempty"`
+	Description    *string                                    `json:"description,omitempty"`
+	Id             *string                                    `json:"id,omitempty"`
+	PressEnter     *bool                                      `json:"press_enter,omitempty"`
+	Selector       *SelectDropdownOptionActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                                    `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int                                   `json:"timeout,omitempty"`
@@ -4655,6 +4701,14 @@ type SelectDropdownOptionActionOutputValue1 = string
 // SelectDropdownOptionActionOutput_Value defines model for SelectDropdownOptionActionOutput.Value.
 type SelectDropdownOptionActionOutput_Value struct {
 	union json.RawMessage
+}
+
+// SelectOption defines model for SelectOption.
+type SelectOption struct {
+	Disabled *bool  `json:"disabled,omitempty"`
+	Label    string `json:"label"`
+	Selected *bool  `json:"selected,omitempty"`
+	Value    string `json:"value"`
 }
 
 // SemanticDetection defines model for SemanticDetection.
@@ -5038,14 +5092,15 @@ type UpdateMonitor struct {
 
 // UploadFileActionInput defines model for UploadFileAction-Input.
 type UploadFileActionInput struct {
-	Category    *string                         `json:"category,omitempty"`
-	Description *string                         `json:"description,omitempty"`
-	FilePath    string                          `json:"file_path"`
-	Id          *string                         `json:"id,omitempty"`
-	Param       *ActionParameter                `json:"param,omitempty"`
-	PressEnter  *bool                           `json:"press_enter,omitempty"`
-	Selector    *UploadFileActionInput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                         `json:"text_label,omitempty"`
+	AccessibleName *string                         `json:"accessible_name,omitempty"`
+	Category       *string                         `json:"category,omitempty"`
+	Description    *string                         `json:"description,omitempty"`
+	FilePath       string                          `json:"file_path"`
+	Id             *string                         `json:"id,omitempty"`
+	Param          *ActionParameter                `json:"param,omitempty"`
+	PressEnter     *bool                           `json:"press_enter,omitempty"`
+	Selector       *UploadFileActionInput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                         `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -5062,13 +5117,14 @@ type UploadFileActionInput_Selector struct {
 
 // UploadFileActionOutput defines model for UploadFileAction-Output.
 type UploadFileActionOutput struct {
-	Category    *string                          `json:"category,omitempty"`
-	Description *string                          `json:"description,omitempty"`
-	FilePath    string                           `json:"file_path"`
-	Id          *string                          `json:"id,omitempty"`
-	PressEnter  *bool                            `json:"press_enter,omitempty"`
-	Selector    *UploadFileActionOutput_Selector `json:"selector,omitempty"`
-	TextLabel   *string                          `json:"text_label,omitempty"`
+	AccessibleName *string                          `json:"accessible_name,omitempty"`
+	Category       *string                          `json:"category,omitempty"`
+	Description    *string                          `json:"description,omitempty"`
+	FilePath       string                           `json:"file_path"`
+	Id             *string                          `json:"id,omitempty"`
+	PressEnter     *bool                            `json:"press_enter,omitempty"`
+	Selector       *UploadFileActionOutput_Selector `json:"selector,omitempty"`
+	TextLabel      *string                          `json:"text_label,omitempty"`
 
 	// Timeout Action timeout in milliseconds
 	Timeout *int    `json:"timeout,omitempty"`
@@ -10988,6 +11044,68 @@ func (t DownloadFileActionOutput_Selector) MarshalJSON() ([]byte, error) {
 }
 
 func (t *DownloadFileActionOutput_Selector) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsElementStatePressed0 returns the union data inside the ElementState_Pressed as a ElementStatePressed0
+func (t ElementState_Pressed) AsElementStatePressed0() (ElementStatePressed0, error) {
+	var body ElementStatePressed0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromElementStatePressed0 overwrites any union data inside the ElementState_Pressed as the provided ElementStatePressed0
+func (t *ElementState_Pressed) FromElementStatePressed0(v ElementStatePressed0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeElementStatePressed0 performs a merge with any union data inside the ElementState_Pressed, using the provided ElementStatePressed0
+func (t *ElementState_Pressed) MergeElementStatePressed0(v ElementStatePressed0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsElementStatePressed1 returns the union data inside the ElementState_Pressed as a ElementStatePressed1
+func (t ElementState_Pressed) AsElementStatePressed1() (ElementStatePressed1, error) {
+	var body ElementStatePressed1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromElementStatePressed1 overwrites any union data inside the ElementState_Pressed as the provided ElementStatePressed1
+func (t *ElementState_Pressed) FromElementStatePressed1(v ElementStatePressed1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeElementStatePressed1 performs a merge with any union data inside the ElementState_Pressed, using the provided ElementStatePressed1
+func (t *ElementState_Pressed) MergeElementStatePressed1(v ElementStatePressed1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ElementState_Pressed) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ElementState_Pressed) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
