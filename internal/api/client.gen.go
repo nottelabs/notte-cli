@@ -2394,6 +2394,21 @@ type ElementState_Pressed struct {
 	union json.RawMessage
 }
 
+// EmailAttachment defines model for EmailAttachment.
+type EmailAttachment struct {
+	// ContentType MIME type, as the sender declared it
+	ContentType string `json:"content_type"`
+
+	// DownloadUrl Signed download URL, valid for one hour
+	DownloadUrl string `json:"download_url"`
+
+	// Filename Filename, as the sender named it
+	Filename string `json:"filename"`
+
+	// SizeBytes Size in bytes
+	SizeBytes int `json:"size_bytes"`
+}
+
 // EmailReadAction defines model for EmailReadAction.
 type EmailReadAction struct {
 	Category    *string `json:"category,omitempty"`
@@ -2412,6 +2427,9 @@ type EmailReadAction struct {
 
 // EmailResponse defines model for EmailResponse.
 type EmailResponse struct {
+	// Attachments Files attached to the email, with short-lived download URLs
+	Attachments *[]EmailAttachment `json:"attachments,omitempty"`
+
 	// CreatedAt Creation date
 	CreatedAt FlexibleTime `json:"created_at"`
 
