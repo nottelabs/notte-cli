@@ -1043,6 +1043,7 @@ const (
 
 // Defines values for ReplayMissingResponseReplayStatus.
 const (
+	ReplayMissingResponseReplayStatusDisabled          ReplayMissingResponseReplayStatus = "disabled"
 	ReplayMissingResponseReplayStatusFailed            ReplayMissingResponseReplayStatus = "failed"
 	ReplayMissingResponseReplayStatusProcessing        ReplayMissingResponseReplayStatus = "processing"
 	ReplayMissingResponseReplayStatusUnavailable       ReplayMissingResponseReplayStatus = "unavailable"
@@ -1166,10 +1167,10 @@ const (
 
 // Defines values for YouTubeResultCaptionsStatus.
 const (
-	YouTubeResultCaptionsStatusAvailable     YouTubeResultCaptionsStatus = "available"
-	YouTubeResultCaptionsStatusDisabled      YouTubeResultCaptionsStatus = "disabled"
-	YouTubeResultCaptionsStatusNotApplicable YouTubeResultCaptionsStatus = "not_applicable"
-	YouTubeResultCaptionsStatusUnavailable   YouTubeResultCaptionsStatus = "unavailable"
+	Available     YouTubeResultCaptionsStatus = "available"
+	Disabled      YouTubeResultCaptionsStatus = "disabled"
+	NotApplicable YouTubeResultCaptionsStatus = "not_applicable"
+	Unavailable   YouTubeResultCaptionsStatus = "unavailable"
 )
 
 // Defines values for FunctionRuntimeHealthParamsSdkGeneration.
@@ -1200,8 +1201,8 @@ const (
 
 // Defines values for SessionStopParamsCloseReason.
 const (
-	SessionStopParamsCloseReasonError  SessionStopParamsCloseReason = "error"
-	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
+	Error  SessionStopParamsCloseReason = "error"
+	Manual SessionStopParamsCloseReason = "manual"
 )
 
 // ActionParameter defines model for ActionParameter.
@@ -1431,12 +1432,18 @@ type ApiSessionStartRequest struct {
 	// IdleTimeoutMinutes Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	IdleTimeoutMinutes *int `json:"idle_timeout_minutes,omitempty"`
 
+	// LogSession Save browser session logs. False permanently disables saved logs, without disabling metering.
+	LogSession *bool `json:"log_session,omitempty"`
+
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	MaxDurationMinutes *int            `json:"max_duration_minutes,omitempty"`
 	Profile            *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
+
+	// RecordSession Save session replay. False permanently disables saved replay; Live View remains available.
+	RecordSession *bool `json:"record_session,omitempty"`
 
 	// ScreenshotType Ignored since notte 1.10: screenshots are returned without highlighting.
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
@@ -4832,6 +4839,7 @@ type SessionResponse struct {
 
 	// LastAccessedAt Last access time
 	LastAccessedAt FlexibleTime `json:"last_accessed_at"`
+	LogSession     *bool        `json:"log_session,omitempty"`
 
 	// MaxDurationMinutes Session max duration in minutes. Will timeout if now() > creation time + max_duration_minutes
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
@@ -4843,7 +4851,8 @@ type SessionResponse struct {
 	NetworkResponseBytes *int `json:"network_response_bytes,omitempty"`
 
 	// Proxies Whether proxies were used for the session. True if any proxy was applied during session creation.
-	Proxies *bool `json:"proxies,omitempty"`
+	Proxies       *bool `json:"proxies,omitempty"`
+	RecordSession *bool `json:"record_session,omitempty"`
 
 	// SessionId The ID of the session (created or existing). Use this ID to interact with the session for the next operation.
 	SessionId string `json:"session_id"`
@@ -7035,6 +7044,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "last_accessed_at")
 	}
 
+	if raw, found := object["log_session"]; found {
+		err = json.Unmarshal(raw, &a.LogSession)
+		if err != nil {
+			return fmt.Errorf("error reading 'log_session': %w", err)
+		}
+		delete(object, "log_session")
+	}
+
 	if raw, found := object["max_duration_minutes"]; found {
 		err = json.Unmarshal(raw, &a.MaxDurationMinutes)
 		if err != nil {
@@ -7065,6 +7082,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 			return fmt.Errorf("error reading 'proxies': %w", err)
 		}
 		delete(object, "proxies")
+	}
+
+	if raw, found := object["record_session"]; found {
+		err = json.Unmarshal(raw, &a.RecordSession)
+		if err != nil {
+			return fmt.Errorf("error reading 'record_session': %w", err)
+		}
+		delete(object, "record_session")
 	}
 
 	if raw, found := object["session_id"]; found {
@@ -7238,6 +7263,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'last_accessed_at': %w", err)
 	}
 
+	if a.LogSession != nil {
+		object["log_session"], err = json.Marshal(a.LogSession)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'log_session': %w", err)
+		}
+	}
+
 	if a.MaxDurationMinutes != nil {
 		object["max_duration_minutes"], err = json.Marshal(a.MaxDurationMinutes)
 		if err != nil {
@@ -7263,6 +7295,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		object["proxies"], err = json.Marshal(a.Proxies)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'proxies': %w", err)
+		}
+	}
+
+	if a.RecordSession != nil {
+		object["record_session"], err = json.Marshal(a.RecordSession)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'record_session': %w", err)
 		}
 	}
 

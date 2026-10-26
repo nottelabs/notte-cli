@@ -40,12 +40,18 @@ var (
 	// Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	SessionStartIdleTimeoutMinutes int
 
+	// Save browser session logs. False permanently disables saved logs, without disabling metering.
+	SessionStartLogSession bool
+
 	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	SessionStartMaxDurationMinutes int
 
 	// Flattened: profile object
 	SessionStartProfileId      string
 	SessionStartProfilePersist bool
+
+	// Save session replay. False permanently disables saved replay; Live View remains available.
+	SessionStartRecordSession bool
 
 	// Ignored since notte 1.10: screenshots are returned without highlighting.
 	SessionStartScreenshotType string
@@ -84,10 +90,12 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().BoolVar(&SessionStartDemonstrate, "demonstrate", false, "Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false. (API default: false)")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation). (API default: 3)")
+	cmd.Flags().BoolVar(&SessionStartLogSession, "log-session", false, "Save browser session logs. False permanently disables saved logs, without disabling metering. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close (API default: false)")
+	cmd.Flags().BoolVar(&SessionStartRecordSession, "record-session", false, "Save session replay. False permanently disables saved replay; Live View remains available. (API default: true)")
 	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "Ignored since notte 1.10: screenshots are returned without highlighting. (API default: last_action) (raw, full, last_action)")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas (API default: true)")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
@@ -143,6 +151,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		body.IdleTimeoutMinutes = &SessionStartIdleTimeoutMinutes
 	}
 
+	if cmd.Flags().Changed("log-session") {
+		body.LogSession = &SessionStartLogSession
+	}
+
 	if SessionStartMaxDurationMinutes > 0 {
 		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
 	}
@@ -161,6 +173,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 			profile.Persist = &SessionStartProfilePersist
 		}
 		body.Profile = &profile
+	}
+
+	if cmd.Flags().Changed("record-session") {
+		body.RecordSession = &SessionStartRecordSession
 	}
 
 	if SessionStartScreenshotType != "" {

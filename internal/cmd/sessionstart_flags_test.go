@@ -93,3 +93,42 @@ func TestAdvancedStealthMapping(t *testing.T) {
 		})
 	}
 }
+
+func TestCaptureFlagsPreserveFalseAndOmission(t *testing.T) {
+	for _, flag := range []string{"record-session", "log-session"} {
+		for _, value := range []string{"", "true", "false"} {
+			t.Run(flag+"/"+value, func(t *testing.T) {
+				cmd := newSessionStartFlagsCmd()
+				if value != "" {
+					cmd.SetArgs([]string{"--" + flag + "=" + value})
+				}
+				if err := cmd.Execute(); err != nil {
+					t.Fatal(err)
+				}
+				body, err := BuildSessionStartRequest(cmd)
+				if err != nil {
+					t.Fatal(err)
+				}
+				data, err := json.Marshal(body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var payload map[string]any
+				if err := json.Unmarshal(data, &payload); err != nil {
+					t.Fatal(err)
+				}
+				field := "record_session"
+				if flag == "log-session" {
+					field = "log_session"
+				}
+				got, present := payload[field]
+				if present != (value != "") {
+					t.Fatalf("%s presence=%v", field, present)
+				}
+				if present && got != (value == "true") {
+					t.Fatalf("%s = %v", field, got)
+				}
+			})
+		}
+	}
+}
