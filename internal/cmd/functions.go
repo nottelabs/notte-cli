@@ -130,8 +130,11 @@ var functionsConfigureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Update function metadata",
 	Long: "Update a function's metadata.\n\n" +
-		"Pass any of --name, --description, --domain, --run-instructions, --default-runtime, --response-format, or --self-healing. " +
+		"Pass any of --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, or --shared. " +
 		"Only the flags you pass are sent; omitted fields are left unchanged.\n\n" +
+		"--shared enables a public code/fork link; --shared=false disables it. " +
+		"Code literals become public. Runs, results and runtime secrets stay private. " +
+		"This does not enable public execution.\n\n" +
 		"--run-instructions is documentation for whoever calls the function - how long a " +
 		"run takes, what each variable is for, which sites it trips over. It is not " +
 		"input to the self-healing agent.\n\n" +
@@ -607,7 +610,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		{"run-instructions", FunctionConfigureInstructions},
 		{"default-runtime", FunctionConfigureDefaultRuntime},
 	}
-	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format")
+	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format") || cmd.Flags().Changed("shared")
 	for _, f := range stringFlags {
 		if !cmd.Flags().Changed(f.name) {
 			continue
@@ -621,7 +624,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !anyChanged {
-		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, and/or --self-healing")
+		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, and/or --shared")
 	}
 	if cmd.Flags().Changed("default-runtime") {
 		if err := validateRuntime("default-runtime", FunctionConfigureDefaultRuntime); err != nil {

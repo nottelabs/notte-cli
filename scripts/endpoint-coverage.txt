@@ -37,6 +37,9 @@ skip DELETE /sessions/{session_id}/files/{file_id} # file deletion is not expose
 skip POST /scrape # use notte page scrape, which runs in a session
 skip POST /scrape_from_html # use notte page scrape, which runs in a session
 
+# --- alternative routes already covered by existing commands ----------------
+skip POST /sessions/{session_id}/page/execute/file # notte page upload and download use /sessions/{session_id}/page/execute, which also accepts file actions
+
 # --- browser-first flows the CLI has no shape for ----------------------------
 skip GET    /sessions/{session_id}/profile-preview # hidden session-viewer endpoint for the profile-save confirmation
 skip GET    /sessions/{session_id}/replay/mouse # mouse replay data is consumed by the session viewer, not the CLI
@@ -74,7 +77,12 @@ skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # prepa
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
 skip GET /data # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics/requests # Data API commands are not yet exposed by the CLI
+skip GET /data/analytics/requests/{request_id} # Data API commands are not yet exposed by the CLI
 skip POST /data/brand/retrieve # Data API commands are not yet exposed by the CLI
+skip DELETE /data/cache # Data API commands are not yet exposed by the CLI
+skip GET /data/cache # Data API commands are not yet exposed by the CLI
 skip POST /data/maps/search # Data API commands are not yet exposed by the CLI
 skip GET /data/monitors # Data API commands are not yet exposed by the CLI
 skip POST /data/monitors # Data API commands are not yet exposed by the CLI
@@ -101,5 +109,3 @@ skip GET /data/webhooks/deliveries/{delivery_id} # Data API commands are not yet
 skip GET /data/webhooks/deliveries/{delivery_id}/attempts # Data API commands are not yet exposed by the CLI
 skip POST /data/webhooks/deliveries/{delivery_id}/retry # Data API commands are not yet exposed by the CLI
 skip POST /data/youtube/extract # Data API commands are not yet exposed by the CLI
-skip GET /data/cache # Data API commands are not yet exposed by the CLI
-skip DELETE /data/cache # Data API commands are not yet exposed by the CLI

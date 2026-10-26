@@ -47,7 +47,7 @@ var (
 	SessionStartProfileId      string
 	SessionStartProfilePersist bool
 
-	// The type of screenshot to use for the session.
+	// Ignored since notte 1.10: screenshots are returned without highlighting.
 	SessionStartScreenshotType string
 
 	// Whether to try to automatically solve captchas
@@ -88,7 +88,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close (API default: false)")
-	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "The type of screenshot to use for the session. (API default: last_action) (raw, full, last_action)")
+	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "Ignored since notte 1.10: screenshots are returned without highlighting. (API default: last_action) (raw, full, last_action)")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas (API default: true)")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
 	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
