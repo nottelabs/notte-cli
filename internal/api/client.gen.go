@@ -2385,6 +2385,7 @@ type ElementState struct {
 	OptionsTruncated *bool                 `json:"optionsTruncated,omitempty"`
 	Pressed          *ElementState_Pressed `json:"pressed,omitempty"`
 	Selected         *bool                 `json:"selected,omitempty"`
+	Sort             *string               `json:"sort,omitempty"`
 	Value            *string               `json:"value,omitempty"`
 	ValueDigest      *string               `json:"valueDigest,omitempty"`
 	ValueTruncated   *bool                 `json:"valueTruncated,omitempty"`
@@ -3133,6 +3134,9 @@ type GlobalScrapeRequest struct {
 	// Instructions Additional instructions to use for the scrape. E.g. 'Extract only the title, date and content of the articles.'
 	Instructions *string `json:"instructions,omitempty"`
 
+	// LogSession Save browser session logs. False permanently disables saved logs, without disabling metering.
+	LogSession *bool `json:"log_session,omitempty"`
+
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
 
@@ -3149,6 +3153,9 @@ type GlobalScrapeRequest struct {
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *GlobalScrapeRequest_Proxies `json:"proxies,omitempty"`
+
+	// RecordSession Save session replay. False permanently disables saved replay; Live View remains available.
+	RecordSession *bool `json:"record_session,omitempty"`
 
 	// ResponseFormat The response format to use for the scrape. You can use a Pydantic model or a JSON Schema dict (cf. https://docs.pydantic.dev/latest/concepts/json_schema/#generating-json-schema.)
 	ResponseFormat interface{} `json:"response_format"`
@@ -4839,7 +4846,9 @@ type SessionResponse struct {
 
 	// LastAccessedAt Last access time
 	LastAccessedAt FlexibleTime `json:"last_accessed_at"`
-	LogSession     *bool        `json:"log_session,omitempty"`
+
+	// LogSession Whether saved browser session logs are enabled. Defaults to true.
+	LogSession *bool `json:"log_session,omitempty"`
 
 	// MaxDurationMinutes Session max duration in minutes. Will timeout if now() > creation time + max_duration_minutes
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
@@ -4850,8 +4859,13 @@ type SessionResponse struct {
 	// NetworkResponseBytes Total byte usage for network responses.
 	NetworkResponseBytes *int `json:"network_response_bytes,omitempty"`
 
+	// PlaywrightUrl The WebSocket URL for Playwright's chromium.connect(), when supported by the server. Requires a matching Playwright client version. This is a live browser connection, not a replay URL.
+	PlaywrightUrl *string `json:"playwright_url,omitempty"`
+
 	// Proxies Whether proxies were used for the session. True if any proxy was applied during session creation.
-	Proxies       *bool `json:"proxies,omitempty"`
+	Proxies *bool `json:"proxies,omitempty"`
+
+	// RecordSession Whether saved session replay is enabled. Defaults to true.
 	RecordSession *bool `json:"record_session,omitempty"`
 
 	// SessionId The ID of the session (created or existing). Use this ID to interact with the session for the next operation.
@@ -7076,6 +7090,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "network_response_bytes")
 	}
 
+	if raw, found := object["playwright_url"]; found {
+		err = json.Unmarshal(raw, &a.PlaywrightUrl)
+		if err != nil {
+			return fmt.Errorf("error reading 'playwright_url': %w", err)
+		}
+		delete(object, "playwright_url")
+	}
+
 	if raw, found := object["proxies"]; found {
 		err = json.Unmarshal(raw, &a.Proxies)
 		if err != nil {
@@ -7288,6 +7310,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		object["network_response_bytes"], err = json.Marshal(a.NetworkResponseBytes)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'network_response_bytes': %w", err)
+		}
+	}
+
+	if a.PlaywrightUrl != nil {
+		object["playwright_url"], err = json.Marshal(a.PlaywrightUrl)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'playwright_url': %w", err)
 		}
 	}
 
