@@ -10,7 +10,13 @@ NOTTE_API_URL="${NOTTE_API_URL:-https://us-staging.notte.cc}"
 OPENAPI_URL="${NOTTE_API_URL}/openapi.json"
 
 echo "Fetching OpenAPI spec from ${NOTTE_API_URL}..."
-if ! curl -f -s "${OPENAPI_URL}" -o /tmp/notte-openapi.json; then
+# Supply an optional API key only to known HTTPS API origins. Keep it off the
+# command line and do not follow redirects, including to another API host.
+schema_header=""
+if [[ "$NOTTE_API_URL" =~ ^https://(api|us-(prod|staging|dev|dev-test)|preview-([1-9]|1[0-9]|20)-dev-test)\.notte\.cc$ && -n "${NOTTE_API_KEY:-}" ]]; then
+  schema_header="Authorization: Bearer ${NOTTE_API_KEY}"
+fi
+if ! printf '%s\n' "$schema_header" | curl -f -s --header @- "${OPENAPI_URL}" -o /tmp/notte-openapi.json; then
   echo "Error: Failed to fetch OpenAPI spec from ${NOTTE_API_URL}" >&2
   exit 1
 fi
