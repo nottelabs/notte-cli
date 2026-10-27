@@ -40,6 +40,7 @@ jobs:
 
       - name: Check generated code is up to date
         run: |
+          bash scripts/test-generate-auth.sh
           go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
           ./scripts/generate.sh
           if [ -n "$(git status --porcelain internal/api/client.gen.go)" ]; then
