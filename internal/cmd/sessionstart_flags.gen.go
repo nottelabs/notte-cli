@@ -151,7 +151,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		body.IdleTimeoutMinutes = &SessionStartIdleTimeoutMinutes
 	}
 
-	if cmd.Flags().Changed("log-session") {
+	if cmd.Flags().Changed("log-session") && !SessionStartLogSession {
 		body.LogSession = &SessionStartLogSession
 	}
 
@@ -175,7 +175,7 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 		body.Profile = &profile
 	}
 
-	if cmd.Flags().Changed("record-session") {
+	if cmd.Flags().Changed("record-session") && !SessionStartRecordSession {
 		body.RecordSession = &SessionStartRecordSession
 	}
 

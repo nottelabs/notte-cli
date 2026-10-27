@@ -122,7 +122,7 @@ func TestCaptureFlagsPreserveFalseAndOmission(t *testing.T) {
 					field = "log_session"
 				}
 				got, present := payload[field]
-				if present != (value != "") {
+				if present != (value == "false") {
 					t.Fatalf("%s presence=%v", field, present)
 				}
 				if present && got != (value == "true") {

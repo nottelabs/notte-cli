@@ -447,7 +447,12 @@ func generateSimpleFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
 
 	if fc.Field.Type == "boolean" {
 		// For booleans, check if flag was changed
-		fmt.Fprintf(buf, "\tif cmd.Flags().Changed(\"%s\") {\n", fc.FlagName)
+		if fc.Field.Name == "record_session" || fc.Field.Name == "log_session" {
+			// Both API generations capture by default; only opt-outs need a field.
+			fmt.Fprintf(buf, "\tif cmd.Flags().Changed(%q) && !%s {\n", fc.FlagName, fc.VarName)
+		} else {
+			fmt.Fprintf(buf, "\tif cmd.Flags().Changed(\"%s\") {\n", fc.FlagName)
+		}
 		fmt.Fprintf(buf, "\t\tbody.%s = %s\n", apiFieldName, assignOp)
 		buf.WriteString("\t}\n\n")
 	} else if fc.Field.Required {
