@@ -38,7 +38,19 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 		t.Fatalf("payment preflight failed: status=%d error=%s", apiError.StatusCode, apiError.Error)
 	}
 
-	started := runCLI(t, "sessions", "start", "--proxy=false", "--no-solve-captchas", "--idle-timeout-minutes", "5", "--max-duration-minutes", "10")
+	// Payments require the session's worker connection and card vault. An
+	// explicit empty vault selects that path instead of a workerless session.
+	createdVault := runCLI(t, "vaults", "create", "--name", "CLI sandbox payment test")
+	requireSuccess(t, createdVault)
+	var vault struct {
+		ID string `json:"vault_id"`
+	}
+	if err := json.Unmarshal([]byte(createdVault.Stdout), &vault); err != nil || vault.ID == "" {
+		t.Fatal("vault create returned no vault ID")
+	}
+	t.Cleanup(func() { cleanupVault(t, vault.ID) })
+
+	started := runCLI(t, "sessions", "start", "--vault-id", vault.ID, "--proxy=false", "--no-solve-captchas", "--idle-timeout-minutes", "5", "--max-duration-minutes", "10")
 	requireSuccess(t, started)
 	var session struct {
 		ID string `json:"session_id"`
@@ -116,7 +128,7 @@ func TestPaymentSandboxLifecycle(t *testing.T) {
 		denied := runCLI(t, args...)
 		requireFailure(t, denied)
 		if !strings.Contains(denied.Stderr, "wallet_not_connected") || !strings.Contains(denied.Stderr, "payment connect") {
-			t.Fatal("missing connect-first guidance")
+			t.Fatalf("missing connect-first guidance: %s", denied.Stderr)
 		}
 		return // Manual wallet authorization is intentionally not automated in CI.
 	}
