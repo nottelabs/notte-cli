@@ -8,18 +8,16 @@ cat > "$fixture_dir/curl" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$GENERATOR_AUTH_FIXTURE/args"
 cat > "$GENERATOR_AUTH_FIXTURE/header"
-STUB
-# Stop after downloading so this test never runs generators or changes code.
-cat > "$fixture_dir/jq" <<'STUB'
-#!/usr/bin/env bash
+# Stop at the download so the test never reaches codegen or writes the
+# generator's shared temporary paths.
 exit 17
 STUB
-chmod +x "$fixture_dir/curl" "$fixture_dir/jq"
+chmod +x "$fixture_dir/curl"
 check() {
   local url="$1" expected="$2" status=0
   PATH="$fixture_dir:$PATH" NOTTE_API_KEY=fixture-key NOTTE_API_URL="$url" \
     bash "$script_dir/generate.sh" >/dev/null 2>&1 || status=$?
-  [[ "$status" == 17 ]] || { echo "Generator did not reach the conversion step"; exit 1; }
+  [[ "$status" == 1 ]] || { echo "Generator did not report the fixture download failure"; exit 1; }
   [[ $(cat "$fixture_dir/header") == "$expected" ]] || { echo "Unexpected schema authorization"; exit 1; }
   if grep -q fixture-key "$fixture_dir/args"; then
     echo "Schema credential must not appear in curl arguments"; exit 1
