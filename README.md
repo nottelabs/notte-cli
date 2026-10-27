@@ -339,27 +339,50 @@ notte profiles delete --profile-id <id>  # Delete a profile
 notte profiles sync                      # Copy your local browser login into a profile
 ```
 
-`profiles sync` reads the cookies from a local Firefox, Chrome, Brave, Edge,
-Chromium, Arc or Helium profile and uploads them into a Notte profile, so remote
-sessions start already logged in. The cookies are read from a copy of the
-browser's own files on your machine (and, for the Chromium browsers, decrypted
-with the key from your OS keychain); nothing is sent until you confirm, and
-`--domain` limits the sync to the sites you name.
+`profiles sync` copies cookies and localStorage from a local Firefox, Chrome,
+Brave, Edge, Chromium, Arc or Helium profile into a Notte profile. This includes
+logins stored only in localStorage, even when the site has no cookies. Browser
+files are read through private temporary copies; encrypted cookies are decrypted
+locally. Nothing is uploaded until you confirm (or pass `--yes`). `--domain`
+restricts cookies and storage to the named hosts and their subdomains.
 
 ```bash
-notte profiles sync                                        # pick a browser profile, create a Notte profile
-notte profiles sync --domain github.com --domain mail.google.com   # only these sites (and subdomains)
-notte profiles sync --profile-id <id>                      # refresh an existing profile after a re-login
-notte profiles sync --browser brave --local-profile Work   # choose the source without the prompt
+notte profiles sync                                      # choose a local browser profile
+notte profiles sync --domain bsky.app                    # include storage-only logins
+notte profiles sync --browser brave --local-profile Work # choose the source explicitly
+notte profiles sync --profile-id <id> --domain bsky.app   # refresh an existing profile
+notte profiles sync --cdp-url http://127.0.0.1:9222 --domain bsky.app
 ```
 
-Then start a session with it: `notte sessions start --profile-id <id>`. Re-run
-`sync` whenever the local login changes. Supported on macOS and Linux (Arc and
-Helium on macOS only); for the
-Chromium browsers the first run asks permission to read the browser key from your
-OS keychain (Firefox stores cookies in the clear and needs no such permission).
-Scoped syncs into an existing profile may want `--mode append` so other sites'
-cookies are kept.
+Start a remote session with `notte sessions start --profile-id <id>`. Re-run sync
+when a local login changes. Disk reading is supported on macOS and Linux (Arc
+and Helium on macOS only). Chromium cookie decryption may ask for OS keychain
+access. Close the source browser and retry if its files change during a copy.
+
+For live **sessionStorage**, use `--cdp-url` with a Chromium browser already
+running with remote debugging enabled in a dedicated profile. Sign into the
+site there and keep its tab open. Accepts a debugger HTTP origin or a **page**
+WebSocket URL; it reads matching top-level tabs without navigating them. Tabs
+with conflicting state for the same origin are rejected rather than combining
+different accounts. Disk sync cannot capture in-memory sessionStorage and leaves
+previously stored sessionStorage unchanged.
+
+Storage imports require an API deployment supporting `POST /profiles/{id}/state`.
+Older deployments return an explicit unsupported-server error; the CLI never
+silently drops localStorage to fall back to cookies. Scoped cookie-only syncs
+also use the state API to preserve other sites. Unscoped cookie-only disk syncs
+remain compatible with the existing cookies API. `--mode replace` replaces
+captured state classes within `--domain` (or all sites without a scope).
+Live sync replaces web storage only for captured origins, preserving saved
+state for closed tabs. `--mode append` merges cookie identities and storage keys.
+Avoid importing into a profile while a remote browser is saving
+its state into that same profile.
+
+The snapshot limit is 8 MiB. Values are never printed in summaries or JSON
+output. Unreadable or undecryptable selected state fails before upload. IndexedDB,
+partitioned/container storage, browser extensions, passkeys and device-bound
+credentials are not transferred. Some sites also bind sessions to an IP or
+require a new sign-in; copying browser state cannot guarantee every site's login.
 
 ### Files
 
