@@ -39,9 +39,6 @@ jobs:
         run: go build -v ./...
 
       - name: Check generated code is up to date
-        env:
-          # Use the reviewed SDK schema while capture controls await API release.
-          NOTTE_API_URL: https://raw.githubusercontent.com/nottelabs/notte/a271724bc3ace49be3ec7d9c4617d87df1aa772d/openapi
         run: |
           go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
           ./scripts/generate.sh
