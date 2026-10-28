@@ -2386,6 +2386,7 @@ type EducationClue struct {
 // ElementState defines model for ElementState.
 type ElementState struct {
 	Checked          *bool                 `json:"checked,omitempty"`
+	Draggable        *bool                 `json:"draggable,omitempty"`
 	Expanded         *bool                 `json:"expanded,omitempty"`
 	Filled           *bool                 `json:"filled,omitempty"`
 	Mixed            *bool                 `json:"mixed,omitempty"`
@@ -3791,7 +3792,7 @@ type Observation struct {
 
 // ObserveRequest defines model for ObserveRequest.
 type ObserveRequest struct {
-	// Instructions Deprecated: removed on December 1, 2026. Additional instructions to use for the observation. <<ALTERNATIVE FOR instructions: session.act() — pending>>. See https://docs.notte.cc/features/sessions/observe-migration
+	// Instructions Deprecated: removed on December 1, 2026. Additional instructions to use for the observation. Instead, use session.act() on a local session of the Python SDK, which picks the action and runs it, or call observe() without instructions and pick from the returned actions. See https://docs.notte.cc/features/sessions/observe-migration
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	Instructions *string `json:"instructions,omitempty"`
 
