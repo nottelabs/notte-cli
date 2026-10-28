@@ -74,6 +74,7 @@ skip GET /audit-events # audit-event listing is not yet exposed by the CLI
 skip POST /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in #53
 skip GET /functions/{function_id}/runs/{run_id}/payloads/{field} # downloading overflow run payloads is not yet exposed by the CLI
 skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # preparing run payload uploads is not exposed by the CLI
+skip POST /functions/{function_id}/rollback/conditional # conditional rollback (expected_current_version) is not yet exposed; functions rollback uses the unconditional endpoint
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
 skip GET /data # Data API commands are not yet exposed by the CLI
