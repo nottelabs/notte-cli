@@ -1,8 +1,11 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -220,5 +223,59 @@ func TestClientMethodDoesNotMatchLongerOperation(t *testing.T) {
 	}
 	if !callsGeneratedClient(`client.CreateWithResponse(ctx)`, Endpoint{OperationID: "create"}) {
 		t.Error("exact client method was not recognized")
+	}
+}
+
+// The staging schema needs NOTTE_API_KEY, but only Notte's own API origins may
+// receive it: generate.sh uses the same allowlist.
+func TestSchemaOriginsMatchOnlyKnownAPIHosts(t *testing.T) {
+	for _, origin := range []string{
+		"https://api.notte.cc",
+		"https://us-staging.notte.cc",
+		"https://us-dev-test.notte.cc",
+		"https://preview-20-dev-test.notte.cc",
+	} {
+		if !schemaOrigins.MatchString(origin) {
+			t.Errorf("%s should receive the API key", origin)
+		}
+	}
+	for _, origin := range []string{
+		"http://us-staging.notte.cc",
+		"https://us-staging.notte.cc.example.com",
+		"https://evil.notte.cc",
+		"https://preview-21-dev-test.notte.cc",
+		"https://raw.githubusercontent.com/nottelabs/notte/main/openapi",
+	} {
+		if schemaOrigins.MatchString(origin) {
+			t.Errorf("%s should not receive the API key", origin)
+		}
+	}
+}
+
+func TestFetchSpecKeepsTheKeyFromOtherHosts(t *testing.T) {
+	t.Setenv("NOTTE_API_KEY", "sk-notte-test")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if auth := r.Header.Get("Authorization"); auth != "" {
+			t.Errorf("custom host received Authorization %q", auth)
+		}
+		_, _ = w.Write([]byte(testSpec))
+	}))
+	defer server.Close()
+
+	if _, err := fetchSpec(server.URL+"/openapi.json", time.Second); err != nil {
+		t.Fatalf("fetchSpec: %v", err)
+	}
+}
+
+func TestFetchSpecDoesNotFollowRedirects(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("the redirect was followed")
+	}))
+	defer target.Close()
+	server := httptest.NewServer(http.RedirectHandler(target.URL, http.StatusFound))
+	defer server.Close()
+
+	if _, err := fetchSpec(server.URL+"/openapi.json", time.Second); err == nil {
+		t.Error("a redirect should fail the download")
 	}
 }
