@@ -2024,6 +2024,15 @@ type Components struct {
 	Card   *CardStyle   `json:"card,omitempty"`
 }
 
+// ConditionalFunctionRollbackRequest defines model for ConditionalFunctionRollbackRequest.
+type ConditionalFunctionRollbackRequest struct {
+	// ExpectedCurrentVersion Restore only if the function still serves this version at the final atomic update
+	ExpectedCurrentVersion string `json:"expected_current_version"`
+
+	// Version A version from the function's `versions` history to restore
+	Version string `json:"version"`
+}
+
 // ConnectLinkContext defines model for ConnectLinkContext.
 type ConnectLinkContext struct {
 	AttemptsRemaining int          `json:"attempts_remaining"`
@@ -6069,6 +6078,14 @@ type FunctionRollbackParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// FunctionConditionalRollbackParams defines parameters for FunctionConditionalRollback.
+type FunctionConditionalRollbackParams struct {
+	// Restricted Whether to restrict the function code
+	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ListFunctionRunsByFunctionIdParams defines parameters for ListFunctionRunsByFunctionId.
 type ListFunctionRunsByFunctionIdParams struct {
 	// Page Page number
@@ -6757,6 +6774,9 @@ type FunctionUpdateMultipartRequestBody = BodyFunctionUpdateFunctionsFunctionIdP
 
 // FunctionRollbackJSONRequestBody defines body for FunctionRollback for application/json ContentType.
 type FunctionRollbackJSONRequestBody = FunctionRollbackRequest
+
+// FunctionConditionalRollbackJSONRequestBody defines body for FunctionConditionalRollback for application/json ContentType.
+type FunctionConditionalRollbackJSONRequestBody = ConditionalFunctionRollbackRequest
 
 // FunctionRunStartJSONRequestBody defines body for FunctionRunStart for application/json ContentType.
 type FunctionRunStartJSONRequestBody = RunFunctionRequest
@@ -14886,6 +14906,11 @@ type ClientInterface interface {
 
 	FunctionRollback(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FunctionConditionalRollbackWithBody request with any body
+	FunctionConditionalRollbackWithBody(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionConditionalRollback(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, body FunctionConditionalRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListFunctionRunsByFunctionId request
 	ListFunctionRunsByFunctionId(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -15955,6 +15980,30 @@ func (c *Client) FunctionRollbackWithBody(ctx context.Context, functionId string
 
 func (c *Client) FunctionRollback(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFunctionRollbackRequest(c.Server, functionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionConditionalRollbackWithBody(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionConditionalRollbackRequestWithBody(c.Server, functionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionConditionalRollback(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, body FunctionConditionalRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionConditionalRollbackRequest(c.Server, functionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -22731,6 +22780,101 @@ func NewFunctionRollbackRequestWithBody(server string, functionId string, params
 	return req, nil
 }
 
+// NewFunctionConditionalRollbackRequest calls the generic FunctionConditionalRollback builder with application/json body
+func NewFunctionConditionalRollbackRequest(server string, functionId string, params *FunctionConditionalRollbackParams, body FunctionConditionalRollbackJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionConditionalRollbackRequestWithBody(server, functionId, params, "application/json", bodyReader)
+}
+
+// NewFunctionConditionalRollbackRequestWithBody generates requests for FunctionConditionalRollback with any type of body
+func NewFunctionConditionalRollbackRequestWithBody(server string, functionId string, params *FunctionConditionalRollbackParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/rollback/conditional", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Restricted != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "restricted", runtime.ParamLocationQuery, *params.Restricted); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewListFunctionRunsByFunctionIdRequest generates requests for ListFunctionRunsByFunctionId
 func NewListFunctionRunsByFunctionIdRequest(server string, functionId string, params *ListFunctionRunsByFunctionIdParams) (*http.Request, error) {
 	var err error
@@ -29276,6 +29420,11 @@ type ClientWithResponsesInterface interface {
 
 	FunctionRollbackWithResponse(ctx context.Context, functionId string, params *FunctionRollbackParams, body FunctionRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionRollbackResult, error)
 
+	// FunctionConditionalRollbackWithBodyWithResponse request with any body
+	FunctionConditionalRollbackWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionConditionalRollbackResult, error)
+
+	FunctionConditionalRollbackWithResponse(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, body FunctionConditionalRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionConditionalRollbackResult, error)
+
 	// ListFunctionRunsByFunctionIdWithResponse request
 	ListFunctionRunsByFunctionIdWithResponse(ctx context.Context, functionId string, params *ListFunctionRunsByFunctionIdParams, reqEditors ...RequestEditorFn) (*ListFunctionRunsByFunctionIdResult, error)
 
@@ -30707,6 +30856,29 @@ func (r FunctionRollbackResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FunctionRollbackResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionConditionalRollbackResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionConditionalRollbackResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionConditionalRollbackResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -33158,6 +33330,23 @@ func (c *ClientWithResponses) FunctionRollbackWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseFunctionRollbackResult(rsp)
+}
+
+// FunctionConditionalRollbackWithBodyWithResponse request with arbitrary body returning *FunctionConditionalRollbackResult
+func (c *ClientWithResponses) FunctionConditionalRollbackWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionConditionalRollbackResult, error) {
+	rsp, err := c.FunctionConditionalRollbackWithBody(ctx, functionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionConditionalRollbackResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionConditionalRollbackWithResponse(ctx context.Context, functionId string, params *FunctionConditionalRollbackParams, body FunctionConditionalRollbackJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionConditionalRollbackResult, error) {
+	rsp, err := c.FunctionConditionalRollback(ctx, functionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionConditionalRollbackResult(rsp)
 }
 
 // ListFunctionRunsByFunctionIdWithResponse request returning *ListFunctionRunsByFunctionIdResult
@@ -35740,6 +35929,39 @@ func ParseFunctionRollbackResult(rsp *http.Response) (*FunctionRollbackResult, e
 	}
 
 	response := &FunctionRollbackResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionConditionalRollbackResult parses an HTTP response from a FunctionConditionalRollbackWithResponse call
+func ParseFunctionConditionalRollbackResult(rsp *http.Response) (*FunctionConditionalRollbackResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionConditionalRollbackResult{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

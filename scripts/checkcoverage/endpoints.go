@@ -236,10 +236,27 @@ func checkEndpoints(endpoints []Endpoint, source string, exceptions []Exception)
 	return problems
 }
 
-// fetchSpec downloads an OpenAPI document.
+// schemaOrigins are the API origins that receive NOTTE_API_KEY with a schema
+// download. It matches the allowlist in scripts/generate.sh.
+var schemaOrigins = regexp.MustCompile(`^https://(api|us-(prod|staging|dev|dev-test)|preview-([1-9]|1[0-9]|20)-dev-test)\.notte\.cc$`)
+
+// fetchSpec downloads an OpenAPI document. Known API origins get NOTTE_API_KEY
+// when it is set, and redirects are not followed so the key cannot leave them.
 func fetchSpec(url string, timeout time.Duration) ([]byte, error) {
-	client := &http.Client{Timeout: timeout}
-	resp, err := client.Get(url)
+	client := &http.Client{
+		Timeout: timeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetching %s: %w", url, err)
+	}
+	if key := os.Getenv("NOTTE_API_KEY"); key != "" && schemaOrigins.MatchString(strings.TrimSuffix(url, "/openapi.json")) {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetching %s: %w", url, err)
 	}
