@@ -1,9 +1,9 @@
 name: Prepare release
 
-# Open a draft release with generated notes at the commit to release. Publish the
-# draft with publish-release.yml, or from the Releases page, once production
-# serves the API of the generated client. Publishing creates the vX.Y.Z tag,
-# which runs release.yml.
+# Open a draft release with generated notes at the commit to release. Once
+# production serves the API of the generated code, publish-release.yml tags the
+# draft's commit, and release.yml uploads the files into the draft and publishes
+# it. Do not publish the draft from the Releases page.
 on:
   workflow_dispatch:
     inputs:
@@ -129,4 +129,4 @@ jobs:
           fi
           url=$(gh release create "$TAG" --draft --target "$TARGET" --title "$TAG" --generate-notes)
           echo "Draft release for $TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
-          echo "Review the notes and publish the draft: $url"
+          echo "Review the notes; Publish release tags and publishes the draft: $url"

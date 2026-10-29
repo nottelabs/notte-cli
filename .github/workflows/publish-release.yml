@@ -1,8 +1,9 @@
 name: Publish release
 
-# Publish the draft that prepare-release.yml opened, once production serves the
-# API the generated client uses. Publishing creates the vX.Y.Z tag, which runs
-# release.yml.
+# Tag the commit of the draft that prepare-release.yml opened, once production
+# serves the API of the generated code. The tag runs release.yml, whose
+# GoReleaser uploads the files into the draft and only then publishes it, so the
+# latest release always has its downloads.
 on:
   workflow_dispatch:
     inputs:
@@ -71,7 +72,7 @@ jobs:
             echo "::error::$count drafts match; pass version and target_sha to choose one"
             exit 1
           fi
-          IFS=$'\t' read -r id tag target <<< "$drafts"
+          IFS=$'\t' read -r _ tag target <<< "$drafts"
           if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && "$target" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::The draft must name vX.Y.Z at a full commit SHA, got $tag at $target"
             exit 1
@@ -79,11 +80,10 @@ jobs:
           tags=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" \
             --jq ".[] | select(.ref == \"refs/tags/$tag\") | .ref")
           if [ -n "$tags" ]; then
-            echo "::error::Tag $tag exists without a published release"
+            echo "::error::Tag $tag exists while its release is a draft: rerun Release for $tag"
             exit 1
           fi
           {
-            echo "id=$id"
             echo "tag=$tag"
             echo "sha=$target"
             echo "skip=false"
@@ -101,9 +101,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Check the generated client against production
-        # The CI check of the generated client, against production instead of
-        # staging: fail here, before the release is public.
+      - name: Check the generated code against production
+        # make check against production instead of staging: fail here, before
+        # the release is public.
         if: steps.draft.outputs.skip == 'false'
         env:
           NOTTE_API_URL: https://api.notte.cc
@@ -112,23 +112,24 @@ jobs:
           set -euo pipefail
           go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
           ./scripts/generate.sh
-          if [ -n "$(git status --porcelain internal/api/client.gen.go)" ]; then
-            echo "::error::The generated client differs from production's OpenAPI: production does not serve this release's API yet."
-            git diff --stat internal/api/client.gen.go
+          generated=(internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go')
+          if [ -n "$(git status --porcelain -- "${generated[@]}")" ]; then
+            echo "::error::The generated code differs from production's OpenAPI: production does not serve this release's API yet."
+            git status --short -- "${generated[@]}"
             exit 1
           fi
 
-      - name: Publish the draft
+      - name: Tag the draft's commit
         if: steps.draft.outputs.skip == 'false'
         env:
           # A tag created with the workflow token would not start release.yml,
-          # so publish with the PAT that already pushes the Homebrew formula.
+          # so tag with the PAT that already pushes the Homebrew formula.
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          ID: ${{ steps.draft.outputs.id }}
           TAG: ${{ steps.draft.outputs.tag }}
           TARGET: ${{ steps.draft.outputs.sha }}
         run: |
           set -euo pipefail
-          url=$(gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$ID" -F draft=false --jq .html_url)
-          echo "Published $TAG for $TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
-          echo "Published $TAG for $TARGET: $url"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$TARGET" > /dev/null
+          message="Tagged $TAG at $TARGET. Release uploads the files into the draft, then publishes it: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/release.yml"
+          echo "$message" >> "$GITHUB_STEP_SUMMARY"
+          echo "$message"

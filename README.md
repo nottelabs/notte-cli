@@ -636,9 +636,9 @@ This installs [lefthook](https://github.com/evilmartians/lefthook) pre-commit an
 Releases follow the Notte API's production deployments in two steps:
 
 1. **Prepare release** (`prepare-release.yml`) opens a draft at a `main` commit (default: current `main`) with generated notes. The version defaults to the next patch. A draft of the same version and commit is kept, and any other draft is replaced, so one release waits at a time. It drafts nothing when the commit has no changes since the last tag besides `Formula/`.
-2. **Publish release** (`publish-release.yml`) regenerates the API client from production's OpenAPI and publishes the draft only if it matches. Publishing creates the tag, which runs `release.yml` (GoReleaser and the Homebrew formula).
+2. **Publish release** (`publish-release.yml`) regenerates the API client, property names and flags from production's OpenAPI and, only if they match, tags the draft's commit. The tag runs `release.yml`: GoReleaser uploads the files into the draft, publishes it, and updates the Homebrew formula.
 
-A production deployment of the Notte API triggers both steps automatically. You can also run either step by hand, or publish the draft from the Releases page.
+A production deployment of the Notte API triggers both steps automatically. You can also run either step by hand. Do not publish the draft from the Releases page: the release would go public before its files exist, and GoReleaser would then find no draft to upload into.
 
 ## License
 
