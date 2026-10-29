@@ -1,0 +1,135 @@
+name: Publish release
+
+# Tag the commit of the draft that prepare-release.yml opened, once production
+# serves the API of the generated code. The tag runs release.yml, whose
+# GoReleaser uploads the files into the draft and only then publishes it, so the
+# latest release always has its downloads.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (X.Y.Z or vX.Y.Z; empty for the pending draft)
+        required: false
+        type: string
+        default: ""
+      target_sha:
+        description: Full SHA of the commit the draft must target (empty for the pending draft)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+# Preparation and publication change the same releases: never run them at once,
+# and queue every request so a pending publication is never dropped.
+concurrency:
+  group: release
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  publish:
+    if: github.repository == 'nottelabs/notte-cli' && github.ref == 'refs/heads/main'
+    name: Check and publish the draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The workflow token lists draft releases only with push access.
+    permissions:
+      contents: write
+    steps:
+      - name: Find the draft
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: |
+          set -euo pipefail
+          tag=""
+          [ -z "$VERSION" ] || tag="v${VERSION#v}"
+          if [ -n "$TARGET_SHA" ] && ! [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Expected a full 40-character commit SHA, got '$TARGET_SHA'"
+            exit 1
+          fi
+          drafts=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" \
+            --jq '.[] | select(.draft) | [.id, .tag_name, .target_commitish] | @tsv' \
+            | awk -F '\t' -v tag="$tag" -v target="$TARGET_SHA" \
+              '(tag == "" || $2 == tag) && (target == "" || $3 == target)')
+          count=$(awk 'NF { n++ } END { print n + 0 }' <<< "$drafts")
+          if [ "$count" -eq 0 ]; then
+            if [ -z "$tag$TARGET_SHA" ]; then
+              # Production rollouts dispatch this after every deployment; most
+              # have no CLI release waiting.
+              echo "No draft release to publish" | tee -a "$GITHUB_STEP_SUMMARY"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::No draft ${tag:-release} targets ${TARGET_SHA:-any commit}. Run Prepare release first."
+            exit 1
+          fi
+          if [ "$count" -gt 1 ]; then
+            echo "::error::$count drafts match; pass version and target_sha to choose one"
+            exit 1
+          fi
+          IFS=$'\t' read -r _ tag target <<< "$drafts"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && "$target" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The draft must name vX.Y.Z at a full commit SHA, got $tag at $target"
+            exit 1
+          fi
+          tags=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" \
+            --jq ".[] | select(.ref == \"refs/tags/$tag\") | .ref")
+          if [ -n "$tags" ]; then
+            echo "::error::Tag $tag exists while its release is a draft: rerun Release for $tag"
+            exit 1
+          fi
+          {
+            echo "tag=$tag"
+            echo "sha=$target"
+            echo "skip=false"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        if: steps.draft.outputs.skip == 'false'
+        with:
+          ref: ${{ steps.draft.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        if: steps.draft.outputs.skip == 'false'
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check the generated code against production
+        # make check against production instead of staging: fail here, before
+        # the release is public.
+        if: steps.draft.outputs.skip == 'false'
+        env:
+          NOTTE_API_URL: https://api.notte.cc
+          NOTTE_API_KEY: ${{ secrets.NOTTE_API_KEY }}
+        run: |
+          set -euo pipefail
+          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+          ./scripts/generate.sh
+          generated=(internal/api/client.gen.go internal/api/property_names.gen.go 'internal/cmd/*_flags.gen.go')
+          if [ -n "$(git status --porcelain -- "${generated[@]}")" ]; then
+            echo "::error::The generated code differs from production's OpenAPI: production does not serve this release's API yet."
+            git status --short -- "${generated[@]}"
+            exit 1
+          fi
+
+      - name: Tag the draft's commit
+        if: steps.draft.outputs.skip == 'false'
+        env:
+          # A tag created with the workflow token would not start release.yml,
+          # so tag with the PAT that already pushes the Homebrew formula.
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAG: ${{ steps.draft.outputs.tag }}
+          TARGET: ${{ steps.draft.outputs.sha }}
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$TARGET" > /dev/null
+          message="Tagged $TAG at $TARGET. Release uploads the files into the draft, then publishes it: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/release.yml"
+          echo "$message" >> "$GITHUB_STEP_SUMMARY"
+          echo "$message"

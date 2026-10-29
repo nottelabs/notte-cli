@@ -50,6 +50,10 @@ archives:
 
 release:
   replace_existing_artifacts: true
+  # publish-release.yml tags the commit of a draft with generated notes. Upload
+  # into that draft (found by its name, the tag) and keep its notes; GoReleaser
+  # publishes it only after the upload.
+  use_existing_draft: true
 
 checksum:
   name_template: "checksums.txt"
