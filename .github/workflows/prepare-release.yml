@@ -2,7 +2,7 @@ name: Prepare release
 
 # Open a draft release with generated notes at the commit to release. Publish the
 # draft with publish-release.yml, or from the Releases page, once production
-# serves the API the generated client uses: publishing creates the vX.Y.Z tag,
+# serves the API of the generated client. Publishing creates the vX.Y.Z tag,
 # which runs release.yml.
 on:
   workflow_dispatch:
