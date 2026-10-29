@@ -631,6 +631,15 @@ make setup
 
 This installs [lefthook](https://github.com/evilmartians/lefthook) pre-commit and pre-push hooks for linting and testing.
 
+### Releasing
+
+Releases follow the Notte API's production deployments in two steps:
+
+1. **Prepare release** (`prepare-release.yml`) opens a draft at a `main` commit (default: current `main`) with generated notes. The version defaults to the next patch. A draft of the same version and commit is kept, and any other draft is replaced, so one release waits at a time. It drafts nothing when the commit has no changes since the last tag besides `Formula/`.
+2. **Publish release** (`publish-release.yml`) regenerates the API client from production's OpenAPI and publishes the draft only if it matches. Publishing creates the tag, which runs `release.yml` (GoReleaser and the Homebrew formula).
+
+A production deployment of the Notte API triggers both steps automatically. You can also run either step by hand, or publish the draft from the Releases page.
+
 ## License
 
 This project is licensed under the MIT License.
