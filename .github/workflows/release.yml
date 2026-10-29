@@ -8,6 +8,13 @@ on:
 permissions:
   contents: write
 
+# Share the release workflows' group: Prepare release waits while GoReleaser
+# uploads into the tagged draft instead of replacing it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   goreleaser:
     runs-on: macos-latest

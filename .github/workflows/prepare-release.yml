@@ -102,6 +102,15 @@ jobs:
             echo "::error::$TAG already exists: ${published:-tag $TAG}"
             exit 1
           fi
+          # A tagged draft is the release that release.yml uploads into: never
+          # replace it. It stays a draft only if that upload failed.
+          all_tags=$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/" --jq '.[].ref')
+          tagged=$(awk -F '\t' 'NR == FNR { tags[$0]; next } ("refs/tags/" $2) in tags { print $2 }' \
+            <(printf '%s\n' "$all_tags") <(printf '%s\n' "$releases"))
+          if [ -n "$tagged" ]; then
+            echo "::error::$(paste -sd ' ' - <<< "$tagged") is tagged but still a draft: rerun Release for it before preparing another release"
+            exit 1
+          fi
           # Keep a draft of the same version and commit, with any edited notes.
           # Every other draft is replaced, so only one release waits to publish.
           kept=$(awk -F '\t' -v tag="$TAG" -v target="$TARGET" '$2 == tag && $3 == target { print $4; exit }' <<< "$releases")
