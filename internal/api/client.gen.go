@@ -4371,6 +4371,9 @@ type RunFunctionRequest struct {
 	// Variables The variables to run the function with
 	Variables *map[string]interface{} `json:"variables,omitempty"`
 
+	// Version Run this saved version of the function instead of the latest. Only the function's owner can choose a version other than the latest.
+	Version *string `json:"version,omitempty"`
+
 	// WorkflowId The ID of the function to run
 	WorkflowId string `json:"workflow_id"`
 }
