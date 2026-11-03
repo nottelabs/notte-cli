@@ -54,9 +54,16 @@ var SkippedFields = map[string]bool{
 // schema and is a free-form object, which no flag can express, so
 // runFunctionSchedule hard-codes an empty map after calling the generated
 // builder. Skipping it here keeps that endpoint generating cleanly instead of
-// reporting the same unsupported field on every run.
+// reporting the same unsupported field on every run. The schedules commands
+// take the same body and read variables from --var and --vars instead.
 var CommandSkippedFields = map[string]map[string]bool{
 	"FunctionScheduleSet": {
+		"variables": true,
+	},
+	"FunctionSchedulesAdd": {
+		"variables": true,
+	},
+	"FunctionSchedulesUpdate": {
 		"variables": true,
 	},
 }

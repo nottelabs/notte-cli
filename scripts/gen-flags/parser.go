@@ -96,18 +96,20 @@ type endpoint struct {
 // /scrape, /scrape_from_html and /vaults/{vault_id}/card were removed rather
 // than repaired.
 var endpointMap = map[endpoint]string{
-	{"POST", "/sessions/start"}:                   "SessionStart",
-	{"POST", "/personas/create"}:                  "PersonaCreate",
-	{"PATCH", "/personas/{persona_id}"}:           "PersonaUpdate",
-	{"POST", "/profiles/create"}:                  "ProfileCreate",
-	{"POST", "/vaults/create"}:                    "VaultCreate",
-	{"PATCH", "/vaults/{vault_id}"}:               "VaultUpdate",
-	{"POST", "/vaults/{vault_id}/credentials"}:    "VaultCredentialsAdd",
-	{"POST", "/functions"}:                        "FunctionCreate",
-	{"POST", "/functions/{function_id}"}:          "FunctionUpdate",
-	{"PATCH", "/functions/{function_id}"}:         "FunctionConfigure",
-	{"POST", "/functions/{function_id}/rollback"}: "FunctionRollback",
-	{"POST", "/functions/{function_id}/schedule"}: "FunctionScheduleSet",
+	{"POST", "/sessions/start"}:                                   "SessionStart",
+	{"POST", "/personas/create"}:                                  "PersonaCreate",
+	{"PATCH", "/personas/{persona_id}"}:                           "PersonaUpdate",
+	{"POST", "/profiles/create"}:                                  "ProfileCreate",
+	{"POST", "/vaults/create"}:                                    "VaultCreate",
+	{"PATCH", "/vaults/{vault_id}"}:                               "VaultUpdate",
+	{"POST", "/vaults/{vault_id}/credentials"}:                    "VaultCredentialsAdd",
+	{"POST", "/functions"}:                                        "FunctionCreate",
+	{"POST", "/functions/{function_id}"}:                          "FunctionUpdate",
+	{"PATCH", "/functions/{function_id}"}:                         "FunctionConfigure",
+	{"POST", "/functions/{function_id}/rollback"}:                 "FunctionRollback",
+	{"POST", "/functions/{function_id}/schedule"}:                 "FunctionScheduleSet",
+	{"POST", "/functions/{function_id}/schedules"}:                "FunctionSchedulesAdd",
+	{"PATCH", "/functions/{function_id}/schedules/{schedule_id}"}: "FunctionSchedulesUpdate",
 }
 
 // methods is the set of operations inspected, in a fixed order so a spec that

@@ -568,6 +568,9 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if resp.JSON200 != nil {
+		warnAboutScheduleInputs(ctx, client, resp.JSON200.Variables)
+	}
 	return GetFormatter().Print(resp.JSON200)
 }
 
@@ -770,26 +773,10 @@ func runFunctionRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Parse variables
-	variables := make(map[string]interface{})
-
-	// First, parse JSON variables if provided
-	if functionRunVariablesJSON != "" {
-		if err := json.Unmarshal([]byte(functionRunVariablesJSON), &variables); err != nil {
-			return fmt.Errorf("failed to parse --vars JSON: %w", err)
-		}
-	}
-	if variables == nil {
-		return errors.New("--vars must be a JSON object")
-	}
-
-	// Then, parse key=value pairs (these override JSON if there's a conflict)
-	for _, kv := range functionRunVariables {
-		parts := strings.SplitN(kv, "=", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid variable format %q: expected key=value", kv)
-		}
-		variables[parts[0]] = parts[1]
+	// key=value pairs override the JSON variables if there's a conflict
+	variables, err := parseVariables(functionRunVariablesJSON, functionRunVariables)
+	if err != nil {
+		return err
 	}
 
 	if functionRunRuntime != "" {
