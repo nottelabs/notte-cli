@@ -104,12 +104,21 @@ func TestRunFunctionSchedulesUpdateKeepsWhatIsNotGiven(t *testing.T) {
 		flags map[string][]string
 		want  map[string]any
 	}{
-		{"cron only", map[string][]string{"cron": {"0 18 ? * MON-FRI *"}},
-			map[string]any{"cron": "0 18 ? * MON-FRI *", "variables": map[string]any{"city": "tokyo", "limit": float64(5)}}},
-		{"variables only", map[string][]string{"var": {"city=osaka"}},
-			map[string]any{"cron": "0 17 ? * MON-FRI *", "variables": map[string]any{"city": "osaka"}}},
-		{"both", map[string][]string{"cron": {"0 1 ? * * *"}, "vars": {`{"city": "kyoto"}`}},
-			map[string]any{"cron": "0 1 ? * * *", "variables": map[string]any{"city": "kyoto"}}},
+		{
+			"cron only",
+			map[string][]string{"cron": {"0 18 ? * MON-FRI *"}},
+			map[string]any{"cron": "0 18 ? * MON-FRI *", "variables": map[string]any{"city": "tokyo", "limit": float64(5)}},
+		},
+		{
+			"variables only",
+			map[string][]string{"var": {"city=osaka"}},
+			map[string]any{"cron": "0 17 ? * MON-FRI *", "variables": map[string]any{"city": "osaka"}},
+		},
+		{
+			"both",
+			map[string][]string{"cron": {"0 1 ? * * *"}, "vars": {`{"city": "kyoto"}`}},
+			map[string]any{"cron": "0 1 ? * * *", "variables": map[string]any{"city": "kyoto"}},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
