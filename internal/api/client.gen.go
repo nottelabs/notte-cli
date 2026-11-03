@@ -2964,6 +2964,14 @@ type FunctionRuntimeHealthResponseSdkGeneration string
 // FunctionRuntimeHealthResponseStatus 'ok' when the runtime reported itself, 'degraded' when it is alive but too old to describe itself (its image predates this endpoint), 'unreachable' when it did not answer.
 type FunctionRuntimeHealthResponseStatus string
 
+// FunctionSchedule defines model for FunctionSchedule.
+type FunctionSchedule struct {
+	CreatedAt  *string                 `json:"created_at,omitempty"`
+	Cron       string                  `json:"cron"`
+	ScheduleId string                  `json:"schedule_id"`
+	Variables  *map[string]interface{} `json:"variables,omitempty"`
+}
+
 // FunctionScheduleCreateRequest defines model for FunctionScheduleCreateRequest.
 type FunctionScheduleCreateRequest struct {
 	// Cron AWS EventBridge schedule expression. Six space-separated fields, minutes first: `minutes hours day-of-month month day-of-week year`. This is neither five-field Unix crontab nor the seconds-first six-field dialect used by Quartz and cron-parser. Exactly one of day-of-month and day-of-week must be `?`, the other must be a real value. Schedules fire in UTC. Example: `0 12 ? * * *` runs daily at noon UTC. `rate(...)` expressions such as `rate(1 hour)` are accepted too.
@@ -2971,6 +2979,17 @@ type FunctionScheduleCreateRequest struct {
 
 	// Variables Values passed to the function on every scheduled run. Must supply every function variable that has no default, and no names the function does not declare.
 	Variables *map[string]interface{} `json:"variables,omitempty"`
+}
+
+// FunctionScheduleListResponse defines model for FunctionScheduleListResponse.
+type FunctionScheduleListResponse struct {
+	PausedReason *string `json:"paused_reason,omitempty"`
+
+	// Schedules The function's schedules, oldest first.
+	Schedules []FunctionSchedule `json:"schedules"`
+
+	// State Applies to every schedule. Null when the function has none.
+	State *string `json:"state,omitempty"`
 }
 
 // FunctionSdkGeneration defines model for FunctionSdkGeneration.
@@ -6173,6 +6192,36 @@ type FunctionScheduleSetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// FunctionSchedulesListParams defines parameters for FunctionSchedulesList.
+type FunctionSchedulesListParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionSchedulesAddParams defines parameters for FunctionSchedulesAdd.
+type FunctionSchedulesAddParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionSchedulesResumeParams defines parameters for FunctionSchedulesResume.
+type FunctionSchedulesResumeParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionSchedulesRemoveParams defines parameters for FunctionSchedulesRemove.
+type FunctionSchedulesRemoveParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// FunctionSchedulesUpdateParams defines parameters for FunctionSchedulesUpdate.
+type FunctionSchedulesUpdateParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // MailboxListParams defines parameters for MailboxList.
 type MailboxListParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -6793,6 +6842,12 @@ type PrepareRunPayloadUploadJSONRequestBody = RunPayloadUploadRequest
 
 // FunctionScheduleSetJSONRequestBody defines body for FunctionScheduleSet for application/json ContentType.
 type FunctionScheduleSetJSONRequestBody = FunctionScheduleCreateRequest
+
+// FunctionSchedulesAddJSONRequestBody defines body for FunctionSchedulesAdd for application/json ContentType.
+type FunctionSchedulesAddJSONRequestBody = FunctionScheduleCreateRequest
+
+// FunctionSchedulesUpdateJSONRequestBody defines body for FunctionSchedulesUpdate for application/json ContentType.
+type FunctionSchedulesUpdateJSONRequestBody = FunctionScheduleCreateRequest
 
 // MailboxConnectTokenJSONRequestBody defines body for MailboxConnectToken for application/json ContentType.
 type MailboxConnectTokenJSONRequestBody = MailboxConnectRequest
@@ -14950,6 +15005,25 @@ type ClientInterface interface {
 
 	FunctionScheduleSet(ctx context.Context, functionId string, params *FunctionScheduleSetParams, body FunctionScheduleSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FunctionSchedulesList request
+	FunctionSchedulesList(ctx context.Context, functionId string, params *FunctionSchedulesListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FunctionSchedulesAddWithBody request with any body
+	FunctionSchedulesAddWithBody(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionSchedulesAdd(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, body FunctionSchedulesAddJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FunctionSchedulesResume request
+	FunctionSchedulesResume(ctx context.Context, functionId string, params *FunctionSchedulesResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FunctionSchedulesRemove request
+	FunctionSchedulesRemove(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesRemoveParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FunctionSchedulesUpdateWithBody request with any body
+	FunctionSchedulesUpdateWithBody(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	FunctionSchedulesUpdate(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, body FunctionSchedulesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16164,6 +16238,90 @@ func (c *Client) FunctionScheduleSetWithBody(ctx context.Context, functionId str
 
 func (c *Client) FunctionScheduleSet(ctx context.Context, functionId string, params *FunctionScheduleSetParams, body FunctionScheduleSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFunctionScheduleSetRequest(c.Server, functionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesList(ctx context.Context, functionId string, params *FunctionSchedulesListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesListRequest(c.Server, functionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesAddWithBody(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesAddRequestWithBody(c.Server, functionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesAdd(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, body FunctionSchedulesAddJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesAddRequest(c.Server, functionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesResume(ctx context.Context, functionId string, params *FunctionSchedulesResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesResumeRequest(c.Server, functionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesRemove(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesRemoveParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesRemoveRequest(c.Server, functionId, scheduleId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesUpdateWithBody(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesUpdateRequestWithBody(c.Server, functionId, scheduleId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FunctionSchedulesUpdate(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, body FunctionSchedulesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFunctionSchedulesUpdateRequest(c.Server, functionId, scheduleId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -23664,6 +23822,346 @@ func NewFunctionScheduleSetRequestWithBody(server string, functionId string, par
 	return req, nil
 }
 
+// NewFunctionSchedulesListRequest generates requests for FunctionSchedulesList
+func NewFunctionSchedulesListRequest(server string, functionId string, params *FunctionSchedulesListParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/schedules", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionSchedulesAddRequest calls the generic FunctionSchedulesAdd builder with application/json body
+func NewFunctionSchedulesAddRequest(server string, functionId string, params *FunctionSchedulesAddParams, body FunctionSchedulesAddJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionSchedulesAddRequestWithBody(server, functionId, params, "application/json", bodyReader)
+}
+
+// NewFunctionSchedulesAddRequestWithBody generates requests for FunctionSchedulesAdd with any type of body
+func NewFunctionSchedulesAddRequestWithBody(server string, functionId string, params *FunctionSchedulesAddParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/schedules", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionSchedulesResumeRequest generates requests for FunctionSchedulesResume
+func NewFunctionSchedulesResumeRequest(server string, functionId string, params *FunctionSchedulesResumeParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/schedules/resume", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionSchedulesRemoveRequest generates requests for FunctionSchedulesRemove
+func NewFunctionSchedulesRemoveRequest(server string, functionId string, scheduleId string, params *FunctionSchedulesRemoveParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "schedule_id", runtime.ParamLocationPath, scheduleId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/schedules/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewFunctionSchedulesUpdateRequest calls the generic FunctionSchedulesUpdate builder with application/json body
+func NewFunctionSchedulesUpdateRequest(server string, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, body FunctionSchedulesUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewFunctionSchedulesUpdateRequestWithBody(server, functionId, scheduleId, params, "application/json", bodyReader)
+}
+
+// NewFunctionSchedulesUpdateRequestWithBody generates requests for FunctionSchedulesUpdate with any type of body
+func NewFunctionSchedulesUpdateRequestWithBody(server string, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "function_id", runtime.ParamLocationPath, functionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "schedule_id", runtime.ParamLocationPath, scheduleId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/functions/%s/schedules/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewHealthCheckRequest generates requests for HealthCheck
 func NewHealthCheckRequest(server string) (*http.Request, error) {
 	var err error
@@ -29464,6 +29962,25 @@ type ClientWithResponsesInterface interface {
 
 	FunctionScheduleSetWithResponse(ctx context.Context, functionId string, params *FunctionScheduleSetParams, body FunctionScheduleSetJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionScheduleSetResult, error)
 
+	// FunctionSchedulesListWithResponse request
+	FunctionSchedulesListWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesListParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesListResult, error)
+
+	// FunctionSchedulesAddWithBodyWithResponse request with any body
+	FunctionSchedulesAddWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionSchedulesAddResult, error)
+
+	FunctionSchedulesAddWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, body FunctionSchedulesAddJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionSchedulesAddResult, error)
+
+	// FunctionSchedulesResumeWithResponse request
+	FunctionSchedulesResumeWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesResumeParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesResumeResult, error)
+
+	// FunctionSchedulesRemoveWithResponse request
+	FunctionSchedulesRemoveWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesRemoveParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesRemoveResult, error)
+
+	// FunctionSchedulesUpdateWithBodyWithResponse request with any body
+	FunctionSchedulesUpdateWithBodyWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionSchedulesUpdateResult, error)
+
+	FunctionSchedulesUpdateWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, body FunctionSchedulesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionSchedulesUpdateResult, error)
+
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResult, error)
 
@@ -31090,6 +31607,121 @@ func (r FunctionScheduleSetResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FunctionScheduleSetResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionSchedulesListResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionScheduleListResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionSchedulesListResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionSchedulesListResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionSchedulesAddResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionSchedule
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionSchedulesAddResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionSchedulesAddResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionSchedulesResumeResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionScheduleListResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionSchedulesResumeResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionSchedulesResumeResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionSchedulesRemoveResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ScheduleDeleteResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionSchedulesRemoveResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionSchedulesRemoveResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FunctionSchedulesUpdateResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FunctionSchedule
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r FunctionSchedulesUpdateResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FunctionSchedulesUpdateResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -33464,6 +34096,67 @@ func (c *ClientWithResponses) FunctionScheduleSetWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseFunctionScheduleSetResult(rsp)
+}
+
+// FunctionSchedulesListWithResponse request returning *FunctionSchedulesListResult
+func (c *ClientWithResponses) FunctionSchedulesListWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesListParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesListResult, error) {
+	rsp, err := c.FunctionSchedulesList(ctx, functionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesListResult(rsp)
+}
+
+// FunctionSchedulesAddWithBodyWithResponse request with arbitrary body returning *FunctionSchedulesAddResult
+func (c *ClientWithResponses) FunctionSchedulesAddWithBodyWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionSchedulesAddResult, error) {
+	rsp, err := c.FunctionSchedulesAddWithBody(ctx, functionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesAddResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionSchedulesAddWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesAddParams, body FunctionSchedulesAddJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionSchedulesAddResult, error) {
+	rsp, err := c.FunctionSchedulesAdd(ctx, functionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesAddResult(rsp)
+}
+
+// FunctionSchedulesResumeWithResponse request returning *FunctionSchedulesResumeResult
+func (c *ClientWithResponses) FunctionSchedulesResumeWithResponse(ctx context.Context, functionId string, params *FunctionSchedulesResumeParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesResumeResult, error) {
+	rsp, err := c.FunctionSchedulesResume(ctx, functionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesResumeResult(rsp)
+}
+
+// FunctionSchedulesRemoveWithResponse request returning *FunctionSchedulesRemoveResult
+func (c *ClientWithResponses) FunctionSchedulesRemoveWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesRemoveParams, reqEditors ...RequestEditorFn) (*FunctionSchedulesRemoveResult, error) {
+	rsp, err := c.FunctionSchedulesRemove(ctx, functionId, scheduleId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesRemoveResult(rsp)
+}
+
+// FunctionSchedulesUpdateWithBodyWithResponse request with arbitrary body returning *FunctionSchedulesUpdateResult
+func (c *ClientWithResponses) FunctionSchedulesUpdateWithBodyWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*FunctionSchedulesUpdateResult, error) {
+	rsp, err := c.FunctionSchedulesUpdateWithBody(ctx, functionId, scheduleId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesUpdateResult(rsp)
+}
+
+func (c *ClientWithResponses) FunctionSchedulesUpdateWithResponse(ctx context.Context, functionId string, scheduleId string, params *FunctionSchedulesUpdateParams, body FunctionSchedulesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*FunctionSchedulesUpdateResult, error) {
+	rsp, err := c.FunctionSchedulesUpdate(ctx, functionId, scheduleId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFunctionSchedulesUpdateResult(rsp)
 }
 
 // HealthCheckWithResponse request returning *HealthCheckResult
@@ -36270,6 +36963,171 @@ func ParseFunctionScheduleSetResult(rsp *http.Response) (*FunctionScheduleSetRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ScheduleResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionSchedulesListResult parses an HTTP response from a FunctionSchedulesListWithResponse call
+func ParseFunctionSchedulesListResult(rsp *http.Response) (*FunctionSchedulesListResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionSchedulesListResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionScheduleListResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionSchedulesAddResult parses an HTTP response from a FunctionSchedulesAddWithResponse call
+func ParseFunctionSchedulesAddResult(rsp *http.Response) (*FunctionSchedulesAddResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionSchedulesAddResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionSchedule
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionSchedulesResumeResult parses an HTTP response from a FunctionSchedulesResumeWithResponse call
+func ParseFunctionSchedulesResumeResult(rsp *http.Response) (*FunctionSchedulesResumeResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionSchedulesResumeResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionScheduleListResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionSchedulesRemoveResult parses an HTTP response from a FunctionSchedulesRemoveWithResponse call
+func ParseFunctionSchedulesRemoveResult(rsp *http.Response) (*FunctionSchedulesRemoveResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionSchedulesRemoveResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ScheduleDeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseFunctionSchedulesUpdateResult parses an HTTP response from a FunctionSchedulesUpdateWithResponse call
+func ParseFunctionSchedulesUpdateResult(rsp *http.Response) (*FunctionSchedulesUpdateResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FunctionSchedulesUpdateResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FunctionSchedule
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
