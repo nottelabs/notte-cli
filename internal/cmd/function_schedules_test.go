@@ -142,6 +142,31 @@ func TestRunFunctionSchedulesUpdateKeepsWhatIsNotGiven(t *testing.T) {
 	}
 }
 
+func TestRunFunctionSchedulesUpdateKeepsLargeIntegersExact(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest+"/schedules", 200,
+		`{"schedules":[{"schedule_id":"s2","cron":"0 17 ? * * *","variables":{"id":9007199254740993,"ratio":0.1}}],"state":"enabled"}`)
+	path := "/functions/" + functionIDTest + "/schedules/s2"
+	server.AddResponse(path, 200, `{"schedule_id":"s2","cron":"0 18 ? * * *","variables":{}}`)
+	cmd := scheduleCommand(t, RegisterFunctionSchedulesUpdateFlags, map[string][]string{"cron": {"0 18 ? * * *"}})
+
+	_, _ = testutil.CaptureOutput(func() {
+		if err := runFunctionSchedulesUpdate(cmd, []string{"s2"}); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	var sent string
+	for _, r := range server.Requests(path) {
+		if r.Method == "PATCH" {
+			sent = r.Body
+		}
+	}
+	if !strings.Contains(sent, `"id":9007199254740993`) || !strings.Contains(sent, `"ratio":0.1`) {
+		t.Errorf("variables changed on a cron-only update: %s", sent)
+	}
+}
+
 func TestRunFunctionSchedulesUpdateRejectsNoChange(t *testing.T) {
 	setupFunctionTest(t)
 	cmd := scheduleCommand(t, RegisterFunctionSchedulesUpdateFlags, nil)
@@ -203,6 +228,30 @@ func TestRunFunctionSchedulesResume(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "enabled") {
 		t.Errorf("expected the resumed state in the output, got %q", stdout)
+	}
+}
+
+func TestRunFunctionSchedulesListEmptyJSONKeepsTheResponseShape(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest+"/schedules", 200, `{"schedules":[],"state":null,"paused_reason":null}`)
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runFunctionSchedulesList(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	var out map[string]any
+	if err := json.Unmarshal([]byte(stdout), &out); err != nil {
+		t.Fatalf("stdout is not a JSON object: %q", stdout)
+	}
+	if schedules, ok := out["schedules"].([]any); !ok || len(schedules) != 0 {
+		t.Errorf("schedules = %v, want []", out["schedules"])
 	}
 }
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -119,6 +120,9 @@ func scheduleVariablesGiven(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("var") || cmd.Flags().Changed("vars")
 }
 
+// listFunctionSchedules reads the function's schedules with their variables'
+// numbers kept as sent (json.Number), so one written back is unchanged: the
+// generated decoder reads them as float64, which rounds integers above 2^53.
 func listFunctionSchedules(ctx context.Context, client *api.NotteClient) (*api.FunctionScheduleListResponse, error) {
 	resp, err := client.Client().FunctionSchedulesListWithResponse(ctx, functionID, &api.FunctionSchedulesListParams{})
 	if err != nil {
@@ -127,10 +131,16 @@ func listFunctionSchedules(ctx context.Context, client *api.NotteClient) (*api.F
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return nil, err
 	}
-	if resp.JSON200 == nil {
-		return &api.FunctionScheduleListResponse{}, nil
+	list := &api.FunctionScheduleListResponse{}
+	if len(resp.Body) == 0 {
+		return list, nil
 	}
-	return resp.JSON200, nil
+	decoder := json.NewDecoder(bytes.NewReader(resp.Body))
+	decoder.UseNumber()
+	if err := decoder.Decode(list); err != nil {
+		return nil, fmt.Errorf("failed to parse schedules: %w", err)
+	}
+	return list, nil
 }
 
 func runFunctionSchedulesList(cmd *cobra.Command, args []string) error {
@@ -148,9 +158,10 @@ func runFunctionSchedulesList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if printed, err := PrintListOrEmpty(list.Schedules, "No schedules found."); err != nil {
-		return err
-	} else if printed {
+	// JSON output is the whole response whether or not there are schedules,
+	// so `.schedules` and `.state` stay readable once the last one is removed.
+	if !IsJSONOutput() && len(list.Schedules) == 0 {
+		PrintInfo("No schedules found.")
 		return nil
 	}
 	return GetFormatter().Print(list)
