@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -239,4 +240,81 @@ func mustJSON(t *testing.T, v any) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+func TestRunFunctionUpdateWarnsAboutSchedulesItBreaks(t *testing.T) {
+	server := setupFunctionTest(t)
+	updated := `{"function_id":"` + functionIDTest + `","latest_version":"2","status":"active","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z","versions":["1","2"],` +
+		`"variables":[{"name":"city","default":null},{"name":"limit","default":"10"}]}`
+	server.AddResponse("/functions/"+functionIDTest, 200, updated)
+	// s2 still sets `zip`; the new version also needs `city`, which the
+	// first schedule has. A schedule without inputs misses `city`.
+	server.AddResponse("/functions/"+functionIDTest+"/schedules", 200, `{"schedules":[`+
+		`{"schedule_id":"`+functionIDTest+`","cron":"0 9 ? * * *","variables":{"city":"paris"}},`+
+		`{"schedule_id":"s2","cron":"0 17 ? * * *","variables":{"city":"tokyo","zip":"100"}},`+
+		`{"schedule_id":"s3","cron":"0 1 ? * * *"}`+
+		`],"state":"enabled"}`)
+
+	tmpFile, err := os.CreateTemp("", "function-update-*.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = tmpFile.Close()
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
+	origFile := FunctionUpdateFile
+	FunctionUpdateFile = tmpFile.Name()
+	t.Cleanup(func() { FunctionUpdateFile = origFile })
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	stdout, stderr := testutil.CaptureOutput(func() {
+		if err := runFunctionUpdate(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, `"latest_version"`) || strings.Contains(stdout, "Warning") {
+		t.Errorf("stdout should be the function only, got %q", stdout)
+	}
+	for _, want := range []string{
+		"2 of the function's schedules no longer match its inputs",
+		"s2 (0 17 ? * * *): no longer takes zip",
+		"s3 (0 1 ? * * *): missing required city",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Errorf("stderr missing %q, got %q", want, stderr)
+		}
+	}
+	if strings.Contains(stderr, functionIDTest+" (0 9") {
+		t.Errorf("the matching schedule should not be listed: %q", stderr)
+	}
+}
+
+func TestRunFunctionUpdateSaysNothingWhenSchedulesCannotBeRead(t *testing.T) {
+	server := setupFunctionTest(t)
+	server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+	tmpFile, err := os.CreateTemp("", "function-update-*.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = tmpFile.Close()
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
+	origFile := FunctionUpdateFile
+	FunctionUpdateFile = tmpFile.Name()
+	t.Cleanup(func() { FunctionUpdateFile = origFile })
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	_, stderr := testutil.CaptureOutput(func() {
+		if err := runFunctionUpdate(cmd, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	if strings.Contains(stderr, "Warning") {
+		t.Errorf("expected no warning, got %q", stderr)
+	}
 }

@@ -568,6 +568,9 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if resp.JSON200 != nil {
+		warnAboutScheduleInputs(ctx, client, resp.JSON200.Variables)
+	}
 	return GetFormatter().Print(resp.JSON200)
 }
 

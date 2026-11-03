@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -296,4 +298,61 @@ func runFunctionSchedulesResume(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return GetFormatter().Print(resp.JSON200)
+}
+
+// scheduleInputProblem is how a schedule's inputs disagree with the function's
+// variables: required ones it does not set, and ones the function no longer
+// takes. The API applies the same rule when a schedule is saved, not when the
+// function changes, so either fails every run of an older schedule.
+func scheduleInputProblem(values *map[string]interface{}, variables *[]api.ParameterInfo) (missing, unused []string) {
+	set := map[string]interface{}{}
+	if values != nil {
+		set = *values
+	}
+	declared := map[string]bool{}
+	if variables != nil {
+		for _, v := range *variables {
+			declared[v.Name] = true
+			if _, ok := set[v.Name]; !ok && v.Default == nil {
+				missing = append(missing, v.Name)
+			}
+		}
+	}
+	for name := range set {
+		if !declared[name] {
+			unused = append(unused, name)
+		}
+	}
+	sort.Strings(unused)
+	return missing, unused
+}
+
+// warnAboutScheduleInputs prints, on stderr, the schedules whose inputs no
+// longer fit the function's variables after an update. The update itself
+// succeeded: when the schedules cannot be read there is nothing to print.
+func warnAboutScheduleInputs(ctx context.Context, client *api.NotteClient, variables *[]api.ParameterInfo) {
+	list, err := listFunctionSchedules(ctx, client)
+	if err != nil {
+		return
+	}
+	var lines []string
+	for _, s := range list.Schedules {
+		missing, unused := scheduleInputProblem(s.Variables, variables)
+		var parts []string
+		if len(missing) > 0 {
+			parts = append(parts, "missing required "+strings.Join(missing, ", "))
+		}
+		if len(unused) > 0 {
+			parts = append(parts, "no longer takes "+strings.Join(unused, ", "))
+		}
+		if len(parts) > 0 {
+			lines = append(lines, fmt.Sprintf("  %s (%s): %s", s.ScheduleId, s.Cron, strings.Join(parts, "; ")))
+		}
+	}
+	if len(lines) == 0 {
+		return
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "Warning: %d of the function's schedules no longer match its inputs, so their runs fail:\n%s\n"+
+		"Fix them with: notte functions schedules update <schedule-id> --function-id %s --var name=value\n",
+		len(lines), strings.Join(lines, "\n"), functionID)
 }
