@@ -16,6 +16,9 @@ var (
 	// Runtime this function's runs use unless a run overrides it: standard or extended
 	FunctionConfigureDefaultRuntime string
 
+	// Turn deletion protection on or off. While it is on, the function cannot be deleted. Any workspace member's key can turn it on; turning it off takes the key of a workspace admin or owner. Omit or send null to leave it unchanged.
+	FunctionConfigureDeletionProtected bool
+
 	FunctionConfigureDescription string
 
 	FunctionConfigureDomain string
@@ -38,6 +41,7 @@ var (
 // RegisterFunctionConfigureFlags registers all flags for FunctionConfigure command
 func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FunctionConfigureDefaultRuntime, "default-runtime", "", "Runtime this function's runs use unless a run overrides it: standard or extended")
+	cmd.Flags().BoolVar(&FunctionConfigureDeletionProtected, "deletion-protected", false, "Turn deletion protection on or off. While it is on, the function cannot be deleted. Any workspace member's key can turn it on; turning it off takes the key of a workspace admin or owner. Omit or send null to leave it unchanged.")
 	cmd.Flags().StringVar(&FunctionConfigureDescription, "description", "", "description")
 	cmd.Flags().StringVar(&FunctionConfigureDomain, "domain", "", "domain")
 	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
@@ -53,6 +57,10 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 
 	if FunctionConfigureDefaultRuntime != "" {
 		body.DefaultRuntime = &FunctionConfigureDefaultRuntime
+	}
+
+	if cmd.Flags().Changed("deletion-protected") {
+		body.DeletionProtected = &FunctionConfigureDeletionProtected
 	}
 
 	if FunctionConfigureDescription != "" {

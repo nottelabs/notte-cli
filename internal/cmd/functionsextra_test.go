@@ -26,6 +26,7 @@ func configureCmd(t *testing.T) *cobra.Command {
 		FunctionConfigureDefaultRuntime = ""
 		FunctionConfigureSelfHealing = false
 		FunctionConfigureShared = false
+		FunctionConfigureDeletionProtected = false
 	})
 	return cmd
 }
@@ -533,5 +534,64 @@ func TestFunctionConfigure_RejectsUnknownDefaultRuntime(t *testing.T) {
 	}
 	if got := server.Requests("/functions/" + functionIDTest); len(got) != 0 {
 		t.Errorf("sent %d requests despite an invalid runtime, want 0", len(got))
+	}
+}
+
+// --deletion-protected=false is a deliberate write, so it must reach the API
+// instead of reading as "flag not passed".
+func TestFunctionConfigure_SendsDeletionProtectionWhenSetExplicitly(t *testing.T) {
+	for _, value := range []string{"true", "false"} {
+		t.Run(value, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+			origFormat := outputFormat
+			outputFormat = "json"
+			t.Cleanup(func() { outputFormat = origFormat })
+
+			cmd := configureCmd(t)
+			if err := cmd.Flags().Set("deletion-protected", value); err != nil {
+				t.Fatalf("setting --deletion-protected: %v", err)
+			}
+
+			testutil.CaptureOutput(func() {
+				if err := runFunctionConfigure(cmd, nil); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+
+			requests := server.Requests("/functions/" + functionIDTest)
+			if len(requests) != 1 {
+				t.Fatalf("got %d requests, want 1", len(requests))
+			}
+			body := requestBody(t, requests[0])
+			if got := body["deletion_protected"]; got != (value == "true") {
+				t.Errorf("deletion_protected = %v, want %s", got, value)
+			}
+			if _, present := body["self_healing"]; present {
+				t.Error("self_healing was sent for a call that did not pass --self-healing")
+			}
+		})
+	}
+}
+
+// A refused delete says why, so the caller knows protection is what to turn off.
+func TestFunctionDelete_ReportsDeletionProtection(t *testing.T) {
+	server := setupFunctionTest(t)
+	detail := "The function has deletion protection on. Turn it off to delete this function."
+	server.AddResponse("/functions/"+functionIDTest, 409, `{"detail":"`+detail+`"}`)
+
+	origSkip := skipConfirmation
+	skipConfirmation = true
+	t.Cleanup(func() { skipConfirmation = origSkip })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	err := runFunctionDelete(cmd, nil)
+	if err == nil {
+		t.Fatal("expected the refused delete to fail")
+	}
+	if !strings.Contains(err.Error(), "deletion protection") {
+		t.Errorf("error = %q, want it to name deletion protection", err)
 	}
 }

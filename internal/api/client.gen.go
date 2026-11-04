@@ -2758,6 +2758,9 @@ type FunctionListItemResponse struct {
 	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionListItemResponseDefaultRuntime `json:"default_runtime,omitempty"`
 
+	// DeletionProtected Whether the function is protected from deletion. It must be turned off before a delete.
+	DeletionProtected *bool `json:"deletion_protected,omitempty"`
+
 	// Description The description of the function
 	Description *string `json:"description,omitempty"`
 
@@ -2812,10 +2815,13 @@ type FunctionListItemResponseSdkGeneration string
 // FunctionMetadataUpdateRequest defines model for FunctionMetadataUpdateRequest.
 type FunctionMetadataUpdateRequest struct {
 	DefaultRuntime *string `json:"default_runtime,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	Domain         *string `json:"domain,omitempty"`
-	Instructions   *string `json:"instructions,omitempty"`
-	Name           *string `json:"name,omitempty"`
+
+	// DeletionProtected Turn deletion protection on or off. While it is on, the function cannot be deleted. Any workspace member's key can turn it on; turning it off takes the key of a workspace admin or owner. Omit or send null to leave it unchanged.
+	DeletionProtected *bool   `json:"deletion_protected,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	Domain            *string `json:"domain,omitempty"`
+	Instructions      *string `json:"instructions,omitempty"`
+	Name              *string `json:"name,omitempty"`
 
 	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
 	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
@@ -2830,6 +2836,9 @@ type FunctionResponse struct {
 	// CreatedAt The creation time of the function
 	CreatedAt      FlexibleTime                    `json:"created_at"`
 	DefaultRuntime *FunctionResponseDefaultRuntime `json:"default_runtime,omitempty"`
+
+	// DeletionProtected Whether the function is protected from deletion. It must be turned off before a delete.
+	DeletionProtected *bool `json:"deletion_protected,omitempty"`
 
 	// Description The description of the function
 	Description *string `json:"description,omitempty"`
@@ -3025,6 +3034,9 @@ type FunctionWithLinkResponse struct {
 	// CreatedAt The creation time of the function
 	CreatedAt      FlexibleTime                            `json:"created_at"`
 	DefaultRuntime *FunctionWithLinkResponseDefaultRuntime `json:"default_runtime,omitempty"`
+
+	// DeletionProtected Whether the function is protected from deletion. It must be turned off before a delete.
+	DeletionProtected *bool `json:"deletion_protected,omitempty"`
 
 	// Description The description of the function
 	Description *string `json:"description,omitempty"`
