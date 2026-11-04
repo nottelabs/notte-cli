@@ -753,6 +753,22 @@ const (
 	PaymentConnectRequestModeTest PaymentConnectRequestMode = "test"
 )
 
+// Defines values for PaymentConnectionStatusResponseMode.
+const (
+	PaymentConnectionStatusResponseModeLive PaymentConnectionStatusResponseMode = "live"
+	PaymentConnectionStatusResponseModeTest PaymentConnectionStatusResponseMode = "test"
+)
+
+// Defines values for PaymentConnectionStatusResponseStatus.
+const (
+	PaymentConnectionStatusResponseStatusAwaitingConnection PaymentConnectionStatusResponseStatus = "awaiting_connection"
+	PaymentConnectionStatusResponseStatusConnected          PaymentConnectionStatusResponseStatus = "connected"
+	PaymentConnectionStatusResponseStatusCreating           PaymentConnectionStatusResponseStatus = "creating"
+	PaymentConnectionStatusResponseStatusExpired            PaymentConnectionStatusResponseStatus = "expired"
+	PaymentConnectionStatusResponseStatusFailed             PaymentConnectionStatusResponseStatus = "failed"
+	PaymentConnectionStatusResponseStatusNotConnected       PaymentConnectionStatusResponseStatus = "not_connected"
+)
+
 // Defines values for PaymentDisconnectResponseMode.
 const (
 	PaymentDisconnectResponseModeLive PaymentDisconnectResponseMode = "live"
@@ -781,8 +797,8 @@ const (
 
 // Defines values for PaymentRequestMode.
 const (
-	Live PaymentRequestMode = "live"
-	Test PaymentRequestMode = "test"
+	PaymentRequestModeLive PaymentRequestMode = "live"
+	PaymentRequestModeTest PaymentRequestMode = "test"
 )
 
 // Defines values for PeopleTimeoutBehavior.
@@ -1199,10 +1215,16 @@ const (
 	PrepareRunPayloadUploadParamsFieldVariables PrepareRunPayloadUploadParamsField = "variables"
 )
 
+// Defines values for GetPaymentWalletConnectionParamsMode.
+const (
+	Live GetPaymentWalletConnectionParamsMode = "live"
+	Test GetPaymentWalletConnectionParamsMode = "test"
+)
+
 // Defines values for SessionStopParamsCloseReason.
 const (
-	Error  SessionStopParamsCloseReason = "error"
-	Manual SessionStopParamsCloseReason = "manual"
+	SessionStopParamsCloseReasonError  SessionStopParamsCloseReason = "error"
+	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
 )
 
 // ActionParameter defines model for ActionParameter.
@@ -3877,6 +3899,15 @@ type PaginatedResponseFunctionRunListItemResponse struct {
 	PageSize    int                           `json:"page_size"`
 }
 
+// PaginatedResponsePaymentListItem defines model for PaginatedResponse_PaymentListItem_.
+type PaginatedResponsePaymentListItem struct {
+	HasNext     bool              `json:"has_next"`
+	HasPrevious *bool             `json:"has_previous,omitempty"`
+	Items       []PaymentListItem `json:"items"`
+	Page        int               `json:"page"`
+	PageSize    int               `json:"page_size"`
+}
+
 // PaginatedResponsePersonaResponse defines model for PaginatedResponse_PersonaResponse_.
 type PaginatedResponsePersonaResponse struct {
 	HasNext     bool              `json:"has_next"`
@@ -3951,6 +3982,27 @@ type PaymentConnectionResponse struct {
 	Status           string  `json:"status"`
 }
 
+// PaymentConnectionStatusResponse defines model for PaymentConnectionStatusResponse.
+type PaymentConnectionStatusResponse struct {
+	ConnectionPhrase *string `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string `json:"connection_url,omitempty"`
+	CreatedAt        *string `json:"created_at,omitempty"`
+	ErrorCode        *string `json:"error_code,omitempty"`
+	ExpiresAt        *string `json:"expires_at,omitempty"`
+
+	// Id Null when the caller has never connected a wallet in this mode.
+	Id        *string                               `json:"id,omitempty"`
+	Mode      PaymentConnectionStatusResponseMode   `json:"mode"`
+	Status    PaymentConnectionStatusResponseStatus `json:"status"`
+	UpdatedAt *string                               `json:"updated_at,omitempty"`
+}
+
+// PaymentConnectionStatusResponseMode defines model for PaymentConnectionStatusResponse.Mode.
+type PaymentConnectionStatusResponseMode string
+
+// PaymentConnectionStatusResponseStatus defines model for PaymentConnectionStatusResponse.Status.
+type PaymentConnectionStatusResponseStatus string
+
 // PaymentDisconnectError defines model for PaymentDisconnectError.
 type PaymentDisconnectError struct {
 	Detail string `json:"detail"`
@@ -3964,6 +4016,32 @@ type PaymentDisconnectResponse struct {
 
 // PaymentDisconnectResponseMode defines model for PaymentDisconnectResponse.Mode.
 type PaymentDisconnectResponseMode string
+
+// PaymentListItem defines model for PaymentListItem.
+type PaymentListItem struct {
+	// Amount Amount in currency units, serialized as an exact decimal string.
+	Amount           string             `json:"amount"`
+	ApprovalUrl      *string            `json:"approval_url,omitempty"`
+	ConnectionPhrase *string            `json:"connection_phrase,omitempty"`
+	ConnectionUrl    *string            `json:"connection_url,omitempty"`
+	CreatedAt        FlexibleTime       `json:"created_at"`
+	Currency         string             `json:"currency"`
+	ErrorCode        *string            `json:"error_code,omitempty"`
+	ExpiresAt        *string            `json:"expires_at,omitempty"`
+	Id               string             `json:"id"`
+	MerchantName     string             `json:"merchant_name"`
+	MerchantUrl      string             `json:"merchant_url"`
+	Mode             string             `json:"mode"`
+	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
+	PurchaseStatus   *string            `json:"purchase_status,omitempty"`
+	SessionId        string             `json:"session_id"`
+	Status           string             `json:"status"`
+	UpdatedAt        FlexibleTime       `json:"updated_at"`
+
+	// UserId The user who requested the payment.
+	UserId  string  `json:"user_id"`
+	VaultId *string `json:"vault_id,omitempty"`
+}
 
 // PaymentNextAction defines model for PaymentNextAction.
 type PaymentNextAction struct {
@@ -6335,11 +6413,44 @@ type ConnectLinkSubmitParams struct {
 	XNotteConnectToken string `json:"X-Notte-Connect-Token"`
 }
 
+// ListPaymentRequestsParams defines parameters for ListPaymentRequests.
+type ListPaymentRequestsParams struct {
+	// Page Page number
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+
+	// PageSize Number of items per page
+	PageSize *int `form:"page_size,omitempty" json:"page_size,omitempty"`
+
+	// SessionId Only payments of this session
+	SessionId *string `form:"session_id,omitempty" json:"session_id,omitempty"`
+
+	// Status Only payments in this state
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+
+	// Mode Only test or live payments
+	Mode *string `form:"mode,omitempty" json:"mode,omitempty"`
+
+	// UserId Only payments this user requested. Members see only their own payments.
+	UserId              *string `form:"user_id,omitempty" json:"user_id,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // ConnectPaymentWalletParams defines parameters for ConnectPaymentWallet.
 type ConnectPaymentWalletParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
+
+// GetPaymentWalletConnectionParams defines parameters for GetPaymentWalletConnection.
+type GetPaymentWalletConnectionParams struct {
+	Mode                *GetPaymentWalletConnectionParamsMode `form:"mode,omitempty" json:"mode,omitempty"`
+	XNotteRequestOrigin *string                               `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string                               `json:"x-notte-sdk-version,omitempty"`
+}
+
+// GetPaymentWalletConnectionParamsMode defines parameters for GetPaymentWalletConnection.
+type GetPaymentWalletConnectionParamsMode string
 
 // DisconnectPaymentWalletParams defines parameters for DisconnectPaymentWallet.
 type DisconnectPaymentWalletParams struct {
@@ -15194,10 +15305,16 @@ type ClientInterface interface {
 
 	ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListPaymentRequests request
+	ListPaymentRequests(ctx context.Context, params *ListPaymentRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ConnectPaymentWalletWithBody request with any body
 	ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPaymentWalletConnection request
+	GetPaymentWalletConnection(ctx context.Context, params *GetPaymentWalletConnectionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DisconnectPaymentWalletWithBody request with any body
 	DisconnectPaymentWalletWithBody(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16698,6 +16815,18 @@ func (c *Client) ConnectLinkSubmit(ctx context.Context, params *ConnectLinkSubmi
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListPaymentRequests(ctx context.Context, params *ListPaymentRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListPaymentRequestsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ConnectPaymentWalletWithBody(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectPaymentWalletRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
@@ -16712,6 +16841,18 @@ func (c *Client) ConnectPaymentWalletWithBody(ctx context.Context, params *Conne
 
 func (c *Client) ConnectPaymentWallet(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectPaymentWalletRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPaymentWalletConnection(ctx context.Context, params *GetPaymentWalletConnectionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPaymentWalletConnectionRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -25026,6 +25167,161 @@ func NewConnectLinkSubmitRequestWithBody(server string, params *ConnectLinkSubmi
 	return req, nil
 }
 
+// NewListPaymentRequestsRequest generates requests for ListPaymentRequests
+func NewListPaymentRequestsRequest(server string, params *ListPaymentRequestsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageSize != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page_size", runtime.ParamLocationQuery, *params.PageSize); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.SessionId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "session_id", runtime.ParamLocationQuery, *params.SessionId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Mode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "mode", runtime.ParamLocationQuery, *params.Mode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UserId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, *params.UserId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewConnectPaymentWalletRequest calls the generic ConnectPaymentWallet builder with application/json body
 func NewConnectPaymentWalletRequest(server string, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -25062,6 +25358,81 @@ func NewConnectPaymentWalletRequestWithBody(server string, params *ConnectPaymen
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetPaymentWalletConnectionRequest generates requests for GetPaymentWalletConnection
+func NewGetPaymentWalletConnectionRequest(server string, params *GetPaymentWalletConnectionParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/connection")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Mode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "mode", runtime.ParamLocationQuery, *params.Mode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	if params != nil {
 
@@ -30151,10 +30522,16 @@ type ClientWithResponsesInterface interface {
 
 	ConnectLinkSubmitWithResponse(ctx context.Context, params *ConnectLinkSubmitParams, body ConnectLinkSubmitJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectLinkSubmitResult, error)
 
+	// ListPaymentRequestsWithResponse request
+	ListPaymentRequestsWithResponse(ctx context.Context, params *ListPaymentRequestsParams, reqEditors ...RequestEditorFn) (*ListPaymentRequestsResult, error)
+
 	// ConnectPaymentWalletWithBodyWithResponse request with any body
 	ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
 
 	ConnectPaymentWalletWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, body ConnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error)
+
+	// GetPaymentWalletConnectionWithResponse request
+	GetPaymentWalletConnectionWithResponse(ctx context.Context, params *GetPaymentWalletConnectionParams, reqEditors ...RequestEditorFn) (*GetPaymentWalletConnectionResult, error)
 
 	// DisconnectPaymentWalletWithBodyWithResponse request with any body
 	DisconnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error)
@@ -32162,6 +32539,29 @@ func (r ConnectLinkSubmitResult) StatusCode() int {
 	return 0
 }
 
+type ListPaymentRequestsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaginatedResponsePaymentListItem
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListPaymentRequestsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListPaymentRequestsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ConnectPaymentWalletResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -32179,6 +32579,29 @@ func (r ConnectPaymentWalletResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectPaymentWalletResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPaymentWalletConnectionResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PaymentConnectionStatusResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPaymentWalletConnectionResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPaymentWalletConnectionResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -34455,6 +34878,15 @@ func (c *ClientWithResponses) ConnectLinkSubmitWithResponse(ctx context.Context,
 	return ParseConnectLinkSubmitResult(rsp)
 }
 
+// ListPaymentRequestsWithResponse request returning *ListPaymentRequestsResult
+func (c *ClientWithResponses) ListPaymentRequestsWithResponse(ctx context.Context, params *ListPaymentRequestsParams, reqEditors ...RequestEditorFn) (*ListPaymentRequestsResult, error) {
+	rsp, err := c.ListPaymentRequests(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListPaymentRequestsResult(rsp)
+}
+
 // ConnectPaymentWalletWithBodyWithResponse request with arbitrary body returning *ConnectPaymentWalletResult
 func (c *ClientWithResponses) ConnectPaymentWalletWithBodyWithResponse(ctx context.Context, params *ConnectPaymentWalletParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectPaymentWalletResult, error) {
 	rsp, err := c.ConnectPaymentWalletWithBody(ctx, params, contentType, body, reqEditors...)
@@ -34470,6 +34902,15 @@ func (c *ClientWithResponses) ConnectPaymentWalletWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseConnectPaymentWalletResult(rsp)
+}
+
+// GetPaymentWalletConnectionWithResponse request returning *GetPaymentWalletConnectionResult
+func (c *ClientWithResponses) GetPaymentWalletConnectionWithResponse(ctx context.Context, params *GetPaymentWalletConnectionParams, reqEditors ...RequestEditorFn) (*GetPaymentWalletConnectionResult, error) {
+	rsp, err := c.GetPaymentWalletConnection(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPaymentWalletConnectionResult(rsp)
 }
 
 // DisconnectPaymentWalletWithBodyWithResponse request with arbitrary body returning *DisconnectPaymentWalletResult
@@ -37707,6 +38148,39 @@ func ParseConnectLinkSubmitResult(rsp *http.Response) (*ConnectLinkSubmitResult,
 	return response, nil
 }
 
+// ParseListPaymentRequestsResult parses an HTTP response from a ListPaymentRequestsWithResponse call
+func ParseListPaymentRequestsResult(rsp *http.Response) (*ListPaymentRequestsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListPaymentRequestsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaginatedResponsePaymentListItem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseConnectPaymentWalletResult parses an HTTP response from a ConnectPaymentWalletWithResponse call
 func ParseConnectPaymentWalletResult(rsp *http.Response) (*ConnectPaymentWalletResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -37723,6 +38197,39 @@ func ParseConnectPaymentWalletResult(rsp *http.Response) (*ConnectPaymentWalletR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PaymentConnectionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPaymentWalletConnectionResult parses an HTTP response from a GetPaymentWalletConnectionWithResponse call
+func ParseGetPaymentWalletConnectionResult(rsp *http.Response) (*GetPaymentWalletConnectionResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPaymentWalletConnectionResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PaymentConnectionStatusResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
