@@ -30,6 +30,9 @@ type vaultConnectionCall struct {
 	body   map[string]string
 }
 
+// dropAfterConnect makes vaultConnectionAPI close the connection instead of answering a connect.
+const dropAfterConnect = -1
+
 // vaultConnectionAPI fakes the session's vault connection routes, answering `status` to connects.
 func vaultConnectionAPI(t *testing.T, status int) func() []vaultConnectionCall {
 	t.Helper()
@@ -48,6 +51,14 @@ func vaultConnectionAPI(t *testing.T, status int) func() []vaultConnectionCall {
 		mu.Lock()
 		calls = append(calls, call)
 		mu.Unlock()
+		if r.Method == http.MethodPost && status == dropAfterConnect {
+			// Applied, but the answer never arrives.
+			conn, _, err := w.(http.Hijacker).Hijack()
+			if err == nil {
+				_ = conn.Close()
+			}
+			return
+		}
 		if r.Method == http.MethodPost && status != http.StatusOK {
 			w.WriteHeader(status)
 			_, _ = w.Write([]byte(`{"detail":"Session not found"}`))
@@ -307,5 +318,21 @@ func TestARefusedConnectStopsAListenerIgnoringTheInterrupt(t *testing.T) {
 	}
 	if got := calls(); len(got) != 1 || got[0].method != http.MethodPost {
 		t.Fatalf("nothing to disconnect after a refused connect, got %+v", got)
+	}
+}
+
+func TestAConnectWhoseAnswerIsLostIsDisconnected(t *testing.T) {
+	calls := vaultConnectionAPI(t, dropAfterConnect)
+	t.Setenv("HOME", t.TempDir())
+	_ = fakeListener(t, "trap 'exit 130' INT TERM; while true; do sleep 0.05; done")
+
+	_, _, err := runVaultCommand(t, runVaultsConnect)
+
+	if err == nil {
+		t.Fatal("an unconfirmed connect must fail the command")
+	}
+	got := calls()
+	if len(got) < 2 || got[0].method != http.MethodPost || got[len(got)-1].method != http.MethodDelete {
+		t.Fatalf("the session may hold the token: it must be disconnected, got %+v", got)
 	}
 }

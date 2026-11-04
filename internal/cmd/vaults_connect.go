@@ -14,6 +14,7 @@ import (
 
 	"github.com/nottelabs/notte-cli/internal/aac"
 	"github.com/nottelabs/notte-cli/internal/api"
+	clierrors "github.com/nottelabs/notte-cli/internal/errors"
 )
 
 // aacTokenEnv holds the token of a listener the user runs themselves (aac reads the same variable).
@@ -143,28 +144,28 @@ Quit aac (Esc or Ctrl+C) to disconnect the session.
 
 	stops, stopNotify := notifyStop()
 	defer stopNotify()
-	connected := false
+	// Whether the session may hold the token: a connect whose answer was lost or
+	// cut short may have been applied, so only an answer refusing it rules that out.
+	mayBeConnected := false
 	err = startListener(binary, vaultConnectAACProvider, stops, func(ctx context.Context) error {
 		fingerprint, err := aac.WaitForFingerprint(ctx, binary, 200*time.Millisecond)
 		if err != nil {
 			return err
 		}
-		if err := connectVault(ctx, client, sessionID, aac.Token(psk, fingerprint)); err != nil {
-			return err
-		}
-		connected = true
-		return nil
+		err = connectVault(ctx, client, sessionID, aac.Token(psk, fingerprint))
+		mayBeConnected = err == nil || !refusedByAPI(err)
+		return err
 	})
-	if !connected {
+	if !mayBeConnected {
 		return err
 	}
 	// The listener quit: later fills must not wait for approvals nobody can give.
 	disconnectErr := disconnectVault(cmd.Context(), client, sessionID)
-	if err != nil {
-		return errors.Join(err, disconnectErr)
-	}
 	if disconnectErr != nil {
-		return fmt.Errorf("aac quit, but the session is still connected: %w; run \"notte vaults disconnect --session-id %s\"", disconnectErr, sessionID)
+		disconnectErr = fmt.Errorf("the session may still be connected to the stopped listener: %w; run \"notte vaults disconnect --session-id %s\"", disconnectErr, sessionID)
+	}
+	if err != nil || disconnectErr != nil {
+		return errors.Join(err, disconnectErr)
 	}
 	return PrintResult(fmt.Sprintf("aac quit: Bitwarden is disconnected from session %s.", sessionID), map[string]any{
 		"session_id": sessionID,
@@ -244,6 +245,15 @@ func listenerExit(err error, stopping bool) error {
 		return nil
 	}
 	return fmt.Errorf("aac listen failed: %w", err)
+}
+
+// refusedByAPI reports whether err is the API's answer to a request, which it did not apply.
+func refusedByAPI(err error) bool {
+	var apiErr *clierrors.APIError
+	var authErr *clierrors.AuthError
+	var validationErr *clierrors.ValidationError
+	var rateLimitErr *clierrors.RateLimitError
+	return errors.As(err, &apiErr) || errors.As(err, &authErr) || errors.As(err, &validationErr) || errors.As(err, &rateLimitErr)
 }
 
 func connectVault(ctx context.Context, client *api.NotteClient, sessionID, token string) error {
