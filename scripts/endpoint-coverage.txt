@@ -19,6 +19,8 @@ manual POST /payments/disconnect # notte payment disconnect uses the shared auth
 manual POST /payments/connect # notte payment connect uses the shared authenticated transport
 manual POST /sessions/{session_id}/payments # notte payment request uses the shared authenticated transport
 manual GET /payments/{payment_id} # notte payment status and wait use the shared authenticated transport
+skip GET /payments # read by the console Payments page for now; `notte payment list` is a follow-up (nottelabs/monorepo#5047)
+skip GET /payments/connection # read by the console Payments page for now; notte payment connect already reports the wallet's state
 manual POST /functions/{function_id}/runs/start # notte functions run builds the body itself to send function_id and variables
 manual POST /sessions/{session_id}/page/screenshot # notte page screenshot writes the image bytes out rather than decoding JSON
 manual GET  /sessions/{session_id}/files # notte files list builds the source-filtered request itself
