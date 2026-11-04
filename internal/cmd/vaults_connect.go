@@ -196,6 +196,7 @@ func startListener(binary, provider string, stops <-chan os.Signal, connect func
 	go func() { connected <- connect(ctx) }()
 
 	stopping := false
+	var connectErr error
 	var deadline <-chan time.Time
 	stop := func(sig os.Signal) {
 		stopping = true
@@ -209,16 +210,18 @@ func startListener(binary, provider string, stops <-chan os.Signal, connect func
 		case err := <-connected:
 			connected = nil
 			if err != nil {
-				// Interrupted rather than killed, so aac restores the terminal.
+				// Interrupted rather than killed, so aac restores the terminal; killed after the deadline.
+				connectErr = err
 				stop(os.Interrupt)
-				<-exited
-				return err
 			}
 		case sig := <-stops:
 			stop(sig)
 		case <-deadline:
 			_ = listener.Process.Kill()
 		case err := <-exited:
+			if connectErr != nil {
+				return connectErr
+			}
 			err = listenerExit(err, stopping)
 			if connected != nil {
 				cancel()

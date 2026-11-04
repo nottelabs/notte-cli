@@ -282,3 +282,30 @@ func TestAListenerFailingAfterTheConnectIsReportedAndDisconnected(t *testing.T) 
 		t.Fatalf("the session must still be disconnected, got %+v", got)
 	}
 }
+
+func TestARefusedConnectStopsAListenerIgnoringTheInterrupt(t *testing.T) {
+	calls := vaultConnectionAPI(t, http.StatusNotFound)
+	t.Setenv("HOME", t.TempDir())
+	old := listenerStopTimeout
+	listenerStopTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { listenerStopTimeout = old })
+	_ = fakeListener(t, "trap '' TERM INT; while true; do sleep 0.05; done")
+
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := runVaultCommand(t, runVaultsConnect)
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("the refused connect must fail the command")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the command hung on a listener that ignores the interrupt")
+	}
+	if got := calls(); len(got) != 1 || got[0].method != http.MethodPost {
+		t.Fatalf("nothing to disconnect after a refused connect, got %+v", got)
+	}
+}
