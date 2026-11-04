@@ -3792,7 +3792,10 @@ type NotteProxy struct {
 	City    *string                  `json:"city,omitempty"`
 	Country *ProxyGeolocationCountry `json:"country,omitempty"`
 	Id      *string                  `json:"id,omitempty"`
-	Type    *string                  `json:"type,omitempty"`
+
+	// StickySession Keep the session's exit on one residential IP, shared with a proxy gateway credential minted with the same `sticky_session`. 1-64 letters, digits or hyphens.
+	StickySession *string `json:"sticky_session,omitempty"`
+	Type          *string `json:"type,omitempty"`
 }
 
 // Observation defines model for Observation.
@@ -4689,14 +4692,14 @@ type SecretProxy struct {
 	// CaCertificate PEM CA certificates the browser trusts for this session: for the secret proxy itself and for the certificates it presents for `hosts`. At most 16384 bytes; each must be a CA and not expired. Never include a private key.
 	CaCertificate *string `json:"ca_certificate,omitempty"`
 
-	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed.
-	Hosts []string `json:"hosts"`
+	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed. Required with `server`.
+	Hosts *[]string `json:"hosts,omitempty"`
 
 	// Password Basic auth password for the secret proxy. Never stored or returned.
 	Password *string `json:"password,omitempty"`
 
-	// Server The secret proxy, as http://host:port or https://host:port on a public address.
-	Server string  `json:"server"`
+	// Server The secret proxy, as http://host:port or https://host:port on a public address. Omit it (or send null) to use the workspace's saved secret proxy (Settings > Integrations in the console): the other fields you send then replace the saved ones for this session, and a field sent as null keeps its saved value.
+	Server *string `json:"server,omitempty"`
 	Type   *string `json:"type,omitempty"`
 
 	// Username Basic auth username for the secret proxy.
@@ -4707,8 +4710,12 @@ type SecretProxy struct {
 type SecretProxySummary struct {
 	// CaSha256 SHA-256 fingerprints (hex) of the trusted CA certificates.
 	CaSha256 *[]string `json:"ca_sha256,omitempty"`
-	Hosts    []string  `json:"hosts"`
-	Server   string    `json:"server"`
+
+	// Hosts Hosts routed through the secret proxy.
+	Hosts []string `json:"hosts"`
+
+	// Server URL of the secret proxy.
+	Server string `json:"server"`
 }
 
 // SecretStoreRequest defines model for SecretStoreRequest.
@@ -12091,6 +12098,36 @@ func (t *GlobalScrapeRequest_Proxies_0_Item) MergeTailnetProxy(v TailnetProxy) e
 	return err
 }
 
+// AsSecretProxy returns the union data inside the GlobalScrapeRequest_Proxies_0_Item as a SecretProxy
+func (t GlobalScrapeRequest_Proxies_0_Item) AsSecretProxy() (SecretProxy, error) {
+	var body SecretProxy
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSecretProxy overwrites any union data inside the GlobalScrapeRequest_Proxies_0_Item as the provided SecretProxy
+func (t *GlobalScrapeRequest_Proxies_0_Item) FromSecretProxy(v SecretProxy) error {
+	tmp := "secret"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSecretProxy performs a merge with any union data inside the GlobalScrapeRequest_Proxies_0_Item, using the provided SecretProxy
+func (t *GlobalScrapeRequest_Proxies_0_Item) MergeSecretProxy(v SecretProxy) error {
+	tmp := "secret"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t GlobalScrapeRequest_Proxies_0_Item) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -12109,6 +12146,8 @@ func (t GlobalScrapeRequest_Proxies_0_Item) ValueByDiscriminator() (interface{},
 		return t.AsExternalProxy()
 	case "notte":
 		return t.AsNotteProxy()
+	case "secret":
+		return t.AsSecretProxy()
 	case "tailnet":
 		return t.AsTailnetProxy()
 	default:
