@@ -1439,7 +1439,7 @@ type ApiSessionStartRequest struct {
 	MaxDurationMinutes *int            `json:"max_duration_minutes,omitempty"`
 	Profile            *SessionProfile `json:"profile,omitempty"`
 
-	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
+	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used. At most one `secret` entry routes its hosts through the caller's secret proxy; the other entry, if any, is the session's exit.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
 
 	// RecordSession Save session replay. False permanently disables saved replay; Live View remains available.
@@ -1485,7 +1485,7 @@ type ApiSessionStartRequest_Proxies_0_Item struct {
 // ApiSessionStartRequestProxies1 defines model for .
 type ApiSessionStartRequestProxies1 = bool
 
-// ApiSessionStartRequest_Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
+// ApiSessionStartRequest_Proxies List of custom proxies to use for the session. If True, the default proxies will be used. At most one `secret` entry routes its hosts through the caller's secret proxy; the other entry, if any, is the session's exit.
 type ApiSessionStartRequest_Proxies struct {
 	union json.RawMessage
 }
@@ -4684,6 +4684,33 @@ type SecretMetadata struct {
 // SecretNamespace defines model for SecretNamespace.
 type SecretNamespace string
 
+// SecretProxy defines model for SecretProxy.
+type SecretProxy struct {
+	// CaCertificate PEM CA certificates the browser trusts for this session: for the secret proxy itself and for the certificates it presents for `hosts`. At most 16384 bytes; each must be a CA and not expired. Never include a private key.
+	CaCertificate *string `json:"ca_certificate,omitempty"`
+
+	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed.
+	Hosts []string `json:"hosts"`
+
+	// Password Basic auth password for the secret proxy. Never stored or returned.
+	Password *string `json:"password,omitempty"`
+
+	// Server The secret proxy, as http://host:port or https://host:port on a public address.
+	Server string  `json:"server"`
+	Type   *string `json:"type,omitempty"`
+
+	// Username Basic auth username for the secret proxy.
+	Username *string `json:"username,omitempty"`
+}
+
+// SecretProxySummary defines model for SecretProxySummary.
+type SecretProxySummary struct {
+	// CaSha256 SHA-256 fingerprints (hex) of the trusted CA certificates.
+	CaSha256 *[]string `json:"ca_sha256,omitempty"`
+	Hosts    []string  `json:"hosts"`
+	Server   string    `json:"server"`
+}
+
 // SecretStoreRequest defines model for SecretStoreRequest.
 type SecretStoreRequest struct {
 	Name      string          `json:"name"`
@@ -4898,7 +4925,8 @@ type SessionResponse struct {
 	Proxies *bool `json:"proxies,omitempty"`
 
 	// RecordSession Whether saved session replay is enabled. Defaults to true.
-	RecordSession *bool `json:"record_session,omitempty"`
+	RecordSession *bool               `json:"record_session,omitempty"`
+	SecretProxy   *SecretProxySummary `json:"secret_proxy,omitempty"`
 
 	// SessionId The ID of the session (created or existing). Use this ID to interact with the session for the next operation.
 	SessionId string `json:"session_id"`
@@ -7193,6 +7221,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "record_session")
 	}
 
+	if raw, found := object["secret_proxy"]; found {
+		err = json.Unmarshal(raw, &a.SecretProxy)
+		if err != nil {
+			return fmt.Errorf("error reading 'secret_proxy': %w", err)
+		}
+		delete(object, "secret_proxy")
+	}
+
 	if raw, found := object["session_id"]; found {
 		err = json.Unmarshal(raw, &a.SessionId)
 		if err != nil {
@@ -7410,6 +7446,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		object["record_session"], err = json.Marshal(a.RecordSession)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'record_session': %w", err)
+		}
+	}
+
+	if a.SecretProxy != nil {
+		object["secret_proxy"], err = json.Marshal(a.SecretProxy)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'secret_proxy': %w", err)
 		}
 	}
 
@@ -10449,6 +10492,36 @@ func (t *ApiSessionStartRequest_Proxies_0_Item) MergeTailnetProxy(v TailnetProxy
 	return err
 }
 
+// AsSecretProxy returns the union data inside the ApiSessionStartRequest_Proxies_0_Item as a SecretProxy
+func (t ApiSessionStartRequest_Proxies_0_Item) AsSecretProxy() (SecretProxy, error) {
+	var body SecretProxy
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSecretProxy overwrites any union data inside the ApiSessionStartRequest_Proxies_0_Item as the provided SecretProxy
+func (t *ApiSessionStartRequest_Proxies_0_Item) FromSecretProxy(v SecretProxy) error {
+	tmp := "secret"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSecretProxy performs a merge with any union data inside the ApiSessionStartRequest_Proxies_0_Item, using the provided SecretProxy
+func (t *ApiSessionStartRequest_Proxies_0_Item) MergeSecretProxy(v SecretProxy) error {
+	tmp := "secret"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t ApiSessionStartRequest_Proxies_0_Item) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -10467,6 +10540,8 @@ func (t ApiSessionStartRequest_Proxies_0_Item) ValueByDiscriminator() (interface
 		return t.AsExternalProxy()
 	case "notte":
 		return t.AsNotteProxy()
+	case "secret":
+		return t.AsSecretProxy()
 	case "tailnet":
 		return t.AsTailnetProxy()
 	default:
