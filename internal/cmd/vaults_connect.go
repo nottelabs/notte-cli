@@ -56,13 +56,14 @@ session and keeps it running: unlock your vault with /unlock and approve the
 requests there. Quit aac (Esc or Ctrl+C) to disconnect the session.
 
 To run the listener yourself instead (in another terminal or on another
-machine), start "aac listen --reusable-psk" and pass its token with --token or
-` + aacTokenEnv + `: the command then connects the session and returns. Disconnect
-it with "notte vaults disconnect".
+machine), start "aac listen --reusable-psk" and pass its token in ` + aacTokenEnv + `
+(or --token): the command then connects the session and returns. Disconnect it
+with "notte vaults disconnect". Prefer ` + aacTokenEnv + `: a --token value is in argv,
+where other processes on this machine can read it while the command runs.
 
 Requires aac ` + aac.Version + ` and the Bitwarden CLI (bw), logged in.`,
 	Example: `  notte vaults connect --provider bitwarden --session-id <session-id>
-  notte vaults connect --provider bitwarden --token "$AAC_TOKEN"
+  AAC_TOKEN=<token> notte vaults connect --provider bitwarden
   notte page fill 'input[name=password]' --vault-field password`,
 	Args: cobra.NoArgs,
 	RunE: runVaultsConnect,
@@ -82,7 +83,7 @@ func init() {
 
 	vaultsConnectCmd.Flags().StringVar(&vaultConnectProvider, "provider", providerBitwarden, "Password manager to connect (bitwarden)")
 	vaultsConnectCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
-	vaultsConnectCmd.Flags().StringVar(&vaultConnectToken, "token", "", "Token of an \"aac listen --reusable-psk\" you run yourself (or set "+aacTokenEnv+")")
+	vaultsConnectCmd.Flags().StringVar(&vaultConnectToken, "token", "", "Token of an \"aac listen --reusable-psk\" you run yourself (prefer "+aacTokenEnv+": flag values are visible in ps)")
 	// aac's own provider for the listener: "example" serves aac's demo logins, for trying the flow without a vault.
 	vaultsConnectCmd.Flags().StringVar(&vaultConnectAACProvider, "aac-provider", providerBitwarden, "aac credential provider the listener reads")
 	_ = vaultsConnectCmd.Flags().MarkHidden("aac-provider")

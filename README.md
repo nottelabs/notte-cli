@@ -325,8 +325,8 @@ Bitwarden Password Manager, through [Agent Access](https://github.com/bitwarden/
 (aac v0.11.0 and a logged-in `bw`). It runs `aac listen --reusable-psk` in your terminal:
 unlock your vault with `/unlock`, approve each login request there within 30 seconds, and
 quit aac (Esc or Ctrl+C) to disconnect the session. Fills ask Bitwarden first, then the
-session's Notte vault. To run the listener yourself, pass its token with `--token` (or
-`AAC_TOKEN`); the command then connects the session and returns.
+session's Notte vault. To run the listener yourself, pass its token in `AAC_TOKEN` (or
+`--token`, whose value `ps` can read); the command then connects the session and returns.
 
 ### Personas
 
