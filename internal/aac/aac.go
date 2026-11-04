@@ -84,49 +84,91 @@ func ReusablePSK() (string, error) {
 		return "", err
 	}
 	path := filepath.Join(dir, pskStoreFile)
-	var store pskStore
-	data, err := os.ReadFile(path)
-	switch {
-	case err == nil:
-		if err := json.Unmarshal(data, &store); err != nil {
-			return "", fmt.Errorf("unreadable aac PSK store %s: %w", path, err)
-		}
-		// aac loads the first stored PSK.
-		if len(store.Psks) > 0 {
-			psk := store.Psks[0].PskHex
-			if raw, err := hex.DecodeString(psk); err != nil || len(raw) != pskLength {
-				return "", fmt.Errorf("aac PSK store %s holds an invalid PSK", path)
-			}
-			return psk, nil
-		}
-	case !errors.Is(err, os.ErrNotExist):
-		return "", fmt.Errorf("could not read the aac PSK store %s: %w", path, err)
+	psk, exists, err := storedPSK(path)
+	if err != nil || psk != "" {
+		return psk, err
 	}
+	if err := createStore(dir, path, exists); err != nil {
+		return "", err
+	}
+	// Another connect (or aac) may have created the store first: its PSK is the one
+	// the listener loads, so it is the one returned.
+	psk, _, err = storedPSK(path)
+	if err == nil && psk == "" {
+		err = fmt.Errorf("aac PSK store %s holds no PSK", path)
+	}
+	return psk, err
+}
 
+// storedPSK returns the first PSK in the store at path ("" when it holds none),
+// and whether the store exists.
+func storedPSK(path string) (string, bool, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("could not read the aac PSK store %s: %w", path, err)
+	}
+	var store pskStore
+	if err := json.Unmarshal(data, &store); err != nil {
+		return "", true, fmt.Errorf("unreadable aac PSK store %s: %w", path, err)
+	}
+	// aac loads the first stored PSK.
+	if len(store.Psks) == 0 {
+		return "", true, nil
+	}
+	psk := store.Psks[0].PskHex
+	if raw, err := hex.DecodeString(psk); err != nil || len(raw) != pskLength {
+		return "", true, fmt.Errorf("aac PSK store %s holds an invalid PSK", path)
+	}
+	return psk, true, nil
+}
+
+// createStore writes a store holding one new PSK. It is written whole to a
+// temporary file, then linked into place only if no store exists, so concurrent
+// connects agree on one PSK; an existing store without PSKs is replaced.
+func createStore(dir, path string, replace bool) error {
 	raw := make([]byte, pskLength)
 	if _, err := rand.Read(raw); err != nil {
-		return "", fmt.Errorf("could not generate a PSK: %w", err)
+		return fmt.Errorf("could not generate a PSK: %w", err)
 	}
 	digest := sha256.Sum256(raw)
 	name := "notte"
-	store.Psks = []pskRecord{{
+	data, err := json.MarshalIndent(pskStore{Psks: []pskRecord{{
 		// aac's PSK id: the first 8 bytes of the PSK's SHA-256, as hex.
 		PskID:     hex.EncodeToString(digest[:8]),
 		PskHex:    hex.EncodeToString(raw),
 		Name:      &name,
 		CreatedAt: time.Now().Unix(),
-	}}
-	data, err = json.MarshalIndent(store, "", "  ")
+	}}}, "", "  ")
 	if err != nil {
-		return "", err
+		return err
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", fmt.Errorf("could not create %s: %w", dir, err)
+		return fmt.Errorf("could not create %s: %w", dir, err)
 	}
-	if err := os.WriteFile(path, data, 0o600); err != nil {
-		return "", fmt.Errorf("could not write the aac PSK store %s: %w", path, err)
+	tmp, err := os.CreateTemp(dir, pskStoreFile+".*")
+	if err != nil {
+		return fmt.Errorf("could not write the aac PSK store: %w", err)
 	}
-	return store.Psks[0].PskHex, nil
+	defer func() { _ = os.Remove(tmp.Name()) }()
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("could not write the aac PSK store: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("could not write the aac PSK store: %w", err)
+	}
+	if replace {
+		err = os.Rename(tmp.Name(), path)
+	} else if err = os.Link(tmp.Name(), path); errors.Is(err, os.ErrExist) {
+		err = nil
+	}
+	if err != nil {
+		return fmt.Errorf("could not write the aac PSK store %s: %w", path, err)
+	}
+	return nil
 }
 
 // Fingerprint returns the listener's identity fingerprint, as hex. ErrNoIdentity

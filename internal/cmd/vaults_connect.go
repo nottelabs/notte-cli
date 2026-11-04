@@ -25,8 +25,8 @@ const providerBitwarden = "bitwarden"
 // listenerIdentityTimeout bounds the wait for a starting `aac listen` to create its identity.
 const listenerIdentityTimeout = 15 * time.Second
 
-// listenerStopTimeout bounds the wait for `aac listen` to quit after an interrupt.
-const listenerStopTimeout = 5 * time.Second
+// listenerStopTimeout bounds the wait for `aac listen` to quit after an interrupt. Swapped out in tests.
+var listenerStopTimeout = 5 * time.Second
 
 var (
 	vaultConnectProvider    string
@@ -34,10 +34,14 @@ var (
 	vaultConnectAACProvider string
 )
 
-// findAAC and runListener are swapped out in tests.
+// findAAC and notifyStop are swapped out in tests.
 var (
-	findAAC     = aac.Find
-	runListener = startListener
+	findAAC    = aac.Find
+	notifyStop = func() (<-chan os.Signal, func()) {
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+		return signals, func() { signal.Stop(signals) }
+	}
 )
 
 var vaultsConnectCmd = &cobra.Command{
@@ -137,8 +141,10 @@ In aac: unlock your vault with /unlock, then approve each login request.
 Quit aac (Esc or Ctrl+C) to disconnect the session.
 `, sessionID)
 
+	stops, stopNotify := notifyStop()
+	defer stopNotify()
 	connected := false
-	err = runListener(binary, vaultConnectAACProvider, func(ctx context.Context) error {
+	err = startListener(binary, vaultConnectAACProvider, stops, func(ctx context.Context) error {
 		fingerprint, err := aac.WaitForFingerprint(ctx, binary, 200*time.Millisecond)
 		if err != nil {
 			return err
@@ -170,15 +176,14 @@ Quit aac (Esc or Ctrl+C) to disconnect the session.
 // startListener runs `aac listen --reusable-psk` in this terminal. Once it runs,
 // connect gets the listener's identity and connects the session; then it waits
 // for the user to quit aac. When connect fails the listener is stopped.
-func startListener(binary, provider string, connect func(context.Context) error) error {
+//
+// A signal on stops (Ctrl+C outside aac's screen, or `kill` of this process
+// only) is forwarded to aac, which is killed if it has not quit within
+// listenerStopTimeout. A quit the user or such a signal asked for is not an
+// error; any other non-zero exit of aac is.
+func startListener(binary, provider string, stops <-chan os.Signal, connect func(context.Context) error) error {
 	listener := exec.Command(binary, "listen", "--reusable-psk", "--provider", provider)
 	listener.Stdin, listener.Stdout, listener.Stderr = os.Stdin, os.Stdout, os.Stderr
-
-	// The terminal's interrupts reach aac too: wait for it to quit rather than exit first.
-	interrupts := make(chan os.Signal, 1)
-	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(interrupts)
-
 	if err := listener.Start(); err != nil {
 		return fmt.Errorf("could not start aac listen: %w", err)
 	}
@@ -186,49 +191,56 @@ func startListener(binary, provider string, connect func(context.Context) error)
 	go func() { exited <- listener.Wait() }()
 
 	ctx, cancel := context.WithTimeout(context.Background(), listenerIdentityTimeout)
+	defer cancel()
 	connected := make(chan error, 1)
 	go func() { connected <- connect(ctx) }()
-	defer cancel()
 
+	stopping := false
+	var deadline <-chan time.Time
+	stop := func(sig os.Signal) {
+		stopping = true
+		_ = listener.Process.Signal(sig)
+		if deadline == nil {
+			deadline = time.After(listenerStopTimeout)
+		}
+	}
 	for {
 		select {
 		case err := <-connected:
 			connected = nil
 			if err != nil {
-				stopListener(listener, exited)
+				// Interrupted rather than killed, so aac restores the terminal.
+				stop(os.Interrupt)
+				<-exited
 				return err
 			}
+		case sig := <-stops:
+			stop(sig)
+		case <-deadline:
+			_ = listener.Process.Kill()
 		case err := <-exited:
+			err = listenerExit(err, stopping)
 			if connected != nil {
 				cancel()
 				<-connected
-				return fmt.Errorf("aac listen quit before the session was connected: %w", exitError(err))
+				if err == nil {
+					return errors.New("aac listen quit before the session was connected")
+				}
+				return fmt.Errorf("aac listen quit before the session was connected: %w", err)
 			}
-			return exitError(err)
-		case <-interrupts:
-			// aac got it too, and quits.
+			return err
 		}
 	}
 }
 
-// stopListener interrupts aac, so it can restore the terminal, then kills it if it does not quit.
-func stopListener(listener *exec.Cmd, exited <-chan error) {
-	_ = listener.Process.Signal(os.Interrupt)
-	select {
-	case <-exited:
-	case <-time.After(listenerStopTimeout):
-		_ = listener.Process.Kill()
-		<-exited
-	}
-}
-
-// exitError ignores how a quit aac exited: an interrupt or /exit both mean "done".
-func exitError(err error) error {
+// listenerExit is the error of aac's exit: none when it quit normally (Esc,
+// Ctrl+C or /exit in its screen) or after a stop this command sent it.
+func listenerExit(err error, stopping bool) error {
 	var exit *exec.ExitError
-	if errors.As(err, &exit) {
+	if err == nil || (stopping && errors.As(err, &exit)) {
 		return nil
 	}
-	return err
+	return fmt.Errorf("aac listen failed: %w", err)
 }
 
 func connectVault(ctx context.Context, client *api.NotteClient, sessionID, token string) error {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -144,5 +145,51 @@ func TestToken(t *testing.T) {
 		if ValidToken(invalid) {
 			t.Errorf("%q must be refused", invalid)
 		}
+	}
+}
+
+func TestConcurrentConnectsAgreeOnOnePSK(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	const connects = 16
+	psks := make(chan string, connects)
+	var wg sync.WaitGroup
+	for range connects {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			psk, err := ReusablePSK()
+			if err != nil {
+				t.Error(err)
+			}
+			psks <- psk
+		}()
+	}
+	wg.Wait()
+	close(psks)
+	stored := readStore(t, home).Psks[0].PskHex
+	for psk := range psks {
+		if psk != stored {
+			t.Fatalf("a connect got %q while the store holds %q: its token would not pair", psk, stored)
+		}
+	}
+	leftovers, _ := filepath.Glob(filepath.Join(home, ".access-protocol", pskStoreFile+".*"))
+	if len(leftovers) != 0 {
+		t.Fatalf("temporary stores left behind: %v", leftovers)
+	}
+}
+
+func TestAnEmptyStoreGetsAPSK(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(filepath.Join(home, ".access-protocol"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(home, ".access-protocol", pskStoreFile), []byte(`{"psks":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	psk, err := ReusablePSK()
+	if err != nil || psk != readStore(t, home).Psks[0].PskHex {
+		t.Fatalf("got %q, %v; want the PSK written to the empty store", psk, err)
 	}
 }

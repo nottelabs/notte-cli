@@ -47,7 +47,10 @@ func (c *NotteClient) vaultConnection(ctx context.Context, method, sessionID str
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	resp, err := c.HTTPClient().Do(req)
+	// Redirects must never forward a body containing the listener token.
+	httpClient := *c.HTTPClient()
+	httpClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, nil, nil, err
 	}

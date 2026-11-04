@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -156,12 +157,7 @@ func TestVaultsConnectRunsTheListenerUntilItQuitsThenDisconnects(t *testing.T) {
 	t.Setenv("HOME", home)
 	// The listener stays up until the session is connected, then the user quits it.
 	binary := fakeListener(t, "while [ ! -f \"$HOME/quit\" ]; do sleep 0.05; done")
-	go func() {
-		for len(calls()) == 0 {
-			time.Sleep(10 * time.Millisecond)
-		}
-		_ = os.WriteFile(filepath.Join(home, "quit"), nil, 0o600)
-	}()
+	afterConnect(calls, func() { _ = os.WriteFile(filepath.Join(home, "quit"), nil, 0o600) })
 
 	stdout, _, err := runVaultCommand(t, runVaultsConnect)
 	if err != nil {
@@ -208,5 +204,81 @@ func TestVaultsDisconnect(t *testing.T) {
 	}
 	if got := calls(); len(got) != 1 || got[0].method != http.MethodDelete || got[0].path != "/sessions/"+vaultConnectSessionID+"/vault/connection" {
 		t.Fatalf("unexpected calls %+v", got)
+	}
+}
+
+// stopsFor makes the command read stop signals from the returned channel.
+func stopsFor(t *testing.T) chan os.Signal {
+	t.Helper()
+	stops := make(chan os.Signal, 1)
+	old := notifyStop
+	notifyStop = func() (<-chan os.Signal, func()) { return stops, func() {} }
+	t.Cleanup(func() { notifyStop = old })
+	return stops
+}
+
+// afterConnect runs fn once the API received its first request.
+func afterConnect(calls func() []vaultConnectionCall, fn func()) {
+	go func() {
+		for len(calls()) == 0 {
+			time.Sleep(10 * time.Millisecond)
+		}
+		fn()
+	}()
+}
+
+func TestAStopSignalToTheCLIAloneStopsTheListenerAndDisconnects(t *testing.T) {
+	calls := vaultConnectionAPI(t, http.StatusOK)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	stops := stopsFor(t)
+	// Quits on SIGTERM as aac does, noting it got it.
+	_ = fakeListener(t, "trap 'touch \"$HOME/stopped\"; exit 143' TERM; while true; do sleep 0.05; done")
+	afterConnect(calls, func() { stops <- syscall.SIGTERM })
+
+	_, _, err := runVaultCommand(t, runVaultsConnect)
+	if err != nil {
+		t.Fatalf("a requested stop is not a failure: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(home, "stopped")); err != nil {
+		t.Fatal("the signal must be forwarded to aac")
+	}
+	if got := calls(); len(got) != 2 || got[1].method != http.MethodDelete {
+		t.Fatalf("want a connect then a disconnect, got %+v", got)
+	}
+}
+
+func TestAListenerIgnoringTheStopIsKilled(t *testing.T) {
+	calls := vaultConnectionAPI(t, http.StatusOK)
+	t.Setenv("HOME", t.TempDir())
+	stops := stopsFor(t)
+	old := listenerStopTimeout
+	listenerStopTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { listenerStopTimeout = old })
+	_ = fakeListener(t, "trap '' TERM INT; while true; do sleep 0.05; done")
+	afterConnect(calls, func() { stops <- syscall.SIGTERM })
+
+	if _, _, err := runVaultCommand(t, runVaultsConnect); err != nil {
+		t.Fatal(err)
+	}
+	if got := calls(); len(got) != 2 || got[1].method != http.MethodDelete {
+		t.Fatalf("want a connect then a disconnect, got %+v", got)
+	}
+}
+
+func TestAListenerFailingAfterTheConnectIsReportedAndDisconnected(t *testing.T) {
+	calls := vaultConnectionAPI(t, http.StatusOK)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	_ = fakeListener(t, "while [ ! -f \"$HOME/quit\" ]; do sleep 0.05; done; exit 3")
+	afterConnect(calls, func() { _ = os.WriteFile(filepath.Join(home, "quit"), nil, 0o600) })
+
+	_, _, err := runVaultCommand(t, runVaultsConnect)
+
+	if err == nil || !strings.Contains(err.Error(), "aac listen failed") {
+		t.Fatalf("got %v, want aac's failure", err)
+	}
+	if got := calls(); len(got) != 2 || got[1].method != http.MethodDelete {
+		t.Fatalf("the session must still be disconnected, got %+v", got)
 	}
 }
