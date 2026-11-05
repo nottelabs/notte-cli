@@ -354,3 +354,22 @@ func TestRefEnumCastsToTheReferencedType(t *testing.T) {
 		}
 	}
 }
+
+// An inline string enum plus another string branch is still a scalar CLI flag.
+// Pydantic emits this shape for an enum extended with a string Literal.
+func TestInlineEnumStringUnionPreservesFlag(t *testing.T) {
+	field := convertSchemaRefToField("browser_type", SchemaRef{
+		AnyOf: []SchemaRef{
+			{Type: "string", Enum: []interface{}{"chromium", "chrome"}},
+			{Type: "string"},
+		},
+		Default: "chromium",
+	}, nil)
+	category, err := ClassifyField("SessionStart", field, nil)
+	if err != nil || category != CategoryEnumFlag || !field.IsUnionType {
+		t.Fatalf("string union was not retained as a flag: category=%v union=%v err=%v", category, field.IsUnionType, err)
+	}
+	if field.Default != "chromium" || len(field.Enum) != 2 {
+		t.Fatalf("string union lost its default or suggestions: %#v", field)
+	}
+}
