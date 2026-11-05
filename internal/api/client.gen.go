@@ -2409,8 +2409,11 @@ type EducationClue struct {
 type ElementState struct {
 	Checked          *bool                 `json:"checked,omitempty"`
 	Draggable        *bool                 `json:"draggable,omitempty"`
+	Error            *string               `json:"error,omitempty"`
+	ErrorTruncated   *bool                 `json:"errorTruncated,omitempty"`
 	Expanded         *bool                 `json:"expanded,omitempty"`
 	Filled           *bool                 `json:"filled,omitempty"`
+	Invalid          *bool                 `json:"invalid,omitempty"`
 	Mixed            *bool                 `json:"mixed,omitempty"`
 	Multiple         *bool                 `json:"multiple,omitempty"`
 	Options          *[]SelectOption       `json:"options,omitempty"`
