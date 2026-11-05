@@ -36,6 +36,26 @@ builds:
       - -X main.commit={{.ShortCommit}}
       - -X main.date={{.Date}}
 
+# Sign the darwin binaries with the Notte Labs Developer ID Application
+# certificate and notarize them. macOS ties a Keychain "Always Allow" to the
+# signing team, so it carries over from one release to the next; with the
+# linker's ad-hoc signature it was tied to each binary's hash. Skipped while
+# the MACOS_SIGN_P12 secret is not set.
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids:
+        - notte-darwin
+      sign:
+        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
+        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
+      notarize:
+        issuer_id: "{{ .Env.MACOS_NOTARY_ISSUER_ID }}"
+        key_id: "{{ .Env.MACOS_NOTARY_KEY_ID }}"
+        key: "{{ .Env.MACOS_NOTARY_KEY }}"
+        wait: true
+        timeout: 20m
+
 archives:
   - id: default
     formats:

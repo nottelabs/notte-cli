@@ -644,6 +644,15 @@ Releases follow the Notte API's production deployments in two steps:
 
 A production deployment of the Notte API triggers both steps automatically. You can also run either step by hand. Do not publish the draft from the Releases page: the release would go public before its files exist, and GoReleaser would then find no draft to upload into.
 
+GoReleaser signs the macOS binaries with the Notte Labs Developer ID Application certificate and notarizes them. Without that signature, macOS asks for Keychain access again after every upgrade. It needs these repository secrets:
+
+- `MACOS_SIGN_P12`: the certificate, its private key, and Apple's Developer ID G2 CA and Apple Root CA, as a base64 `.p12`. Without the root, the binaries are notarized but do not satisfy their own designated requirement (`codesign --verify --strict`), and macOS keeps asking for Keychain access.
+- `MACOS_SIGN_PASSWORD`: the `.p12` password
+- `MACOS_NOTARY_ISSUER_ID`, `MACOS_NOTARY_KEY_ID`: an App Store Connect API key of the same team
+- `MACOS_NOTARY_KEY`: that key's `.p8`, base64
+
+Apple rejects signing-certificate and notarization requests while the team's Account Holder has not accepted the latest Program License Agreement (developer.apple.com > Account).
+
 ## License
 
 This project is licensed under the MIT License.
