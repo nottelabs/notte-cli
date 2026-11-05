@@ -77,6 +77,9 @@ skip POST /profiles/{profile_id}/duplicate # `profiles duplicate` is proposed in
 skip GET /functions/{function_id}/runs/{run_id}/payloads/{field} # downloading overflow run payloads is not yet exposed by the CLI
 skip POST /functions/{function_id}/runs/{run_id}/payloads/{field}/upload # preparing run payload uploads is not exposed by the CLI
 skip POST /functions/{function_id}/rollback/conditional # conditional rollback (expected_current_version) is not yet exposed; functions rollback uses the unconditional endpoint
+skip POST /sessions/{session_id}/page/act # natural-language page act is not yet exposed by the CLI
+skip POST /sessions/{session_id}/page/check # natural-language page check is not yet exposed by the CLI
+skip POST /sessions/{session_id}/page/choose # natural-language page choose is not yet exposed by the CLI
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
 skip GET /data # Data API commands are not yet exposed by the CLI
