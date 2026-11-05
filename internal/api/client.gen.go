@@ -28,12 +28,13 @@ const (
 	AgentStatusClosed AgentStatus = "closed"
 )
 
-// Defines values for ApiSessionStartRequestBrowserType.
+// Defines values for ApiSessionStartRequestBrowserType0.
 const (
-	ApiSessionStartRequestBrowserTypeChrome        ApiSessionStartRequestBrowserType = "chrome"
-	ApiSessionStartRequestBrowserTypeChromeNightly ApiSessionStartRequestBrowserType = "chrome-nightly"
-	ApiSessionStartRequestBrowserTypeChromeTurbo   ApiSessionStartRequestBrowserType = "chrome-turbo"
-	ApiSessionStartRequestBrowserTypeChromium      ApiSessionStartRequestBrowserType = "chromium"
+	ApiSessionStartRequestBrowserType0Chrome        ApiSessionStartRequestBrowserType0 = "chrome"
+	ApiSessionStartRequestBrowserType0ChromeNightly ApiSessionStartRequestBrowserType0 = "chrome-nightly"
+	ApiSessionStartRequestBrowserType0ChromeTurbo   ApiSessionStartRequestBrowserType0 = "chrome-turbo"
+	ApiSessionStartRequestBrowserType0Chromium      ApiSessionStartRequestBrowserType0 = "chromium"
+	ApiSessionStartRequestBrowserType0Firefox       ApiSessionStartRequestBrowserType0 = "firefox"
 )
 
 // Defines values for ApiSessionStartRequestScreenshotType.
@@ -1436,8 +1437,8 @@ type ApiSessionStartRequest struct {
 	// BlockAds Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers.
 	BlockAds *bool `json:"block_ads,omitempty"`
 
-	// BrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
-	BrowserType *ApiSessionStartRequestBrowserType `json:"browser_type,omitempty"`
+	// BrowserType The browser type to use. Supported values are chromium, chrome and chrome-nitro. chrome-nitro creates a managed Chrome Nitro session. chrome-nightly and chrome-turbo are legacy aliases for chrome.
+	BrowserType *ApiSessionStartRequest_BrowserType `json:"browser_type,omitempty"`
 
 	// CdpUrl The CDP URL of another remote session provider.
 	CdpUrl *string `json:"cdp_url,omitempty"`
@@ -1493,8 +1494,16 @@ type ApiSessionStartRequest struct {
 	WebBotAuth *bool `json:"web_bot_auth,omitempty"`
 }
 
-// ApiSessionStartRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
-type ApiSessionStartRequestBrowserType string
+// ApiSessionStartRequestBrowserType0 defines model for ApiSessionStartRequest.BrowserType.0.
+type ApiSessionStartRequestBrowserType0 string
+
+// ApiSessionStartRequestBrowserType1 defines model for .
+type ApiSessionStartRequestBrowserType1 = string
+
+// ApiSessionStartRequest_BrowserType The browser type to use. Supported values are chromium, chrome and chrome-nitro. chrome-nitro creates a managed Chrome Nitro session. chrome-nightly and chrome-turbo are legacy aliases for chrome.
+type ApiSessionStartRequest_BrowserType struct {
+	union json.RawMessage
+}
 
 // ApiSessionStartRequestProxies0 defines model for .
 type ApiSessionStartRequestProxies0 = []ApiSessionStartRequest_Proxies_0_Item
@@ -10531,6 +10540,68 @@ func (t ApiExecutionResponse_Action) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ApiExecutionResponse_Action) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsApiSessionStartRequestBrowserType0 returns the union data inside the ApiSessionStartRequest_BrowserType as a ApiSessionStartRequestBrowserType0
+func (t ApiSessionStartRequest_BrowserType) AsApiSessionStartRequestBrowserType0() (ApiSessionStartRequestBrowserType0, error) {
+	var body ApiSessionStartRequestBrowserType0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApiSessionStartRequestBrowserType0 overwrites any union data inside the ApiSessionStartRequest_BrowserType as the provided ApiSessionStartRequestBrowserType0
+func (t *ApiSessionStartRequest_BrowserType) FromApiSessionStartRequestBrowserType0(v ApiSessionStartRequestBrowserType0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApiSessionStartRequestBrowserType0 performs a merge with any union data inside the ApiSessionStartRequest_BrowserType, using the provided ApiSessionStartRequestBrowserType0
+func (t *ApiSessionStartRequest_BrowserType) MergeApiSessionStartRequestBrowserType0(v ApiSessionStartRequestBrowserType0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApiSessionStartRequestBrowserType1 returns the union data inside the ApiSessionStartRequest_BrowserType as a ApiSessionStartRequestBrowserType1
+func (t ApiSessionStartRequest_BrowserType) AsApiSessionStartRequestBrowserType1() (ApiSessionStartRequestBrowserType1, error) {
+	var body ApiSessionStartRequestBrowserType1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApiSessionStartRequestBrowserType1 overwrites any union data inside the ApiSessionStartRequest_BrowserType as the provided ApiSessionStartRequestBrowserType1
+func (t *ApiSessionStartRequest_BrowserType) FromApiSessionStartRequestBrowserType1(v ApiSessionStartRequestBrowserType1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApiSessionStartRequestBrowserType1 performs a merge with any union data inside the ApiSessionStartRequest_BrowserType, using the provided ApiSessionStartRequestBrowserType1
+func (t *ApiSessionStartRequest_BrowserType) MergeApiSessionStartRequestBrowserType1(v ApiSessionStartRequestBrowserType1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ApiSessionStartRequest_BrowserType) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ApiSessionStartRequest_BrowserType) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
