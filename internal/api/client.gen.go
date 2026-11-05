@@ -4244,7 +4244,10 @@ type PersonaCreateRequest struct {
 	CreatePhoneNumber *bool `json:"create_phone_number,omitempty"`
 
 	// CreateVault Whether to create a vault for the persona
-	CreateVault   *bool                 `json:"create_vault,omitempty"`
+	CreateVault *bool `json:"create_vault,omitempty"`
+
+	// EmailDomain Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain; other configured domains are listed by GET /personas/create/email-domains.
+	EmailDomain   *string               `json:"email_domain,omitempty"`
 	EmailProvider *PersonaEmailProvider `json:"email_provider,omitempty"`
 	Name          *string               `json:"name,omitempty"`
 }
