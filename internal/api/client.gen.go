@@ -22,6 +22,15 @@ const (
 	OAuth2PasswordBearerScopes = "OAuth2PasswordBearer.Scopes"
 )
 
+// Defines values for ActResultStatus.
+const (
+	Blocked  ActResultStatus = "blocked"
+	Done     ActResultStatus = "done"
+	Executed ActResultStatus = "executed"
+	Proposed ActResultStatus = "proposed"
+	Stale    ActResultStatus = "stale"
+)
+
 // Defines values for AgentStatus.
 const (
 	AgentStatusActive AgentStatus = "active"
@@ -1228,6 +1237,52 @@ const (
 	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
 )
 
+// ActRequest defines model for ActRequest.
+type ActRequest struct {
+	// DryRun Choose the action without running it (`status="proposed"`).
+	DryRun *bool `json:"dry_run,omitempty"`
+
+	// Instruction What to do, e.g. "accept the cookies".
+	Instruction string `json:"instruction"`
+
+	// MinConfidence Below this decider confidence nothing runs (`status="blocked"`).
+	MinConfidence *float32 `json:"min_confidence,omitempty"`
+
+	// Variables Values for `{{name}}` placeholders in typed text, substituted after the model call: they never reach a model.
+	Variables *map[string]interface{} `json:"variables,omitempty"`
+}
+
+// ActResult defines model for ActResult.
+type ActResult struct {
+	Action                 interface{}         `json:"action"`
+	Confidence             *float32            `json:"confidence,omitempty"`
+	Execution              *ExecutionResult    `json:"execution,omitempty"`
+	Fingerprint            *string             `json:"fingerprint,omitempty"`
+	Instruction            string              `json:"instruction"`
+	Message                *string             `json:"message,omitempty"`
+	Model                  *string             `json:"model,omitempty"`
+	Operation              *string             `json:"operation,omitempty"`
+	OperationProbabilities *map[string]float32 `json:"operation_probabilities,omitempty"`
+	Probabilities          *map[string]float32 `json:"probabilities,omitempty"`
+	Status                 ActResultStatus     `json:"status"`
+	Target                 *string             `json:"target,omitempty"`
+	Timings                *ActTimings         `json:"timings,omitempty"`
+	Value                  *string             `json:"value,omitempty"`
+}
+
+// ActResultStatus defines model for ActResult.Status.
+type ActResultStatus string
+
+// ActTimings defines model for ActTimings.
+type ActTimings struct {
+	DecideMs  *float32 `json:"decide_ms,omitempty"`
+	ExecuteMs *float32 `json:"execute_ms,omitempty"`
+	FreshMs   *float32 `json:"fresh_ms,omitempty"`
+	ObserveMs *float32 `json:"observe_ms,omitempty"`
+	TotalMs   *float32 `json:"total_ms,omitempty"`
+	WriteMs   *float32 `json:"write_ms,omitempty"`
+}
+
 // ActionParameter defines model for ActionParameter.
 type ActionParameter struct {
 	Default *string   `json:"default,omitempty"`
@@ -1973,6 +2028,43 @@ type CheckActionOutput_Selector struct {
 	union json.RawMessage
 }
 
+// CheckRequest defines model for CheckRequest.
+type CheckRequest struct {
+	Question string `json:"question"`
+}
+
+// CheckResponse defines model for CheckResponse.
+type CheckResponse struct {
+	// Probability The probability (0 to 1) that the statement or question holds.
+	Probability float32 `json:"probability"`
+}
+
+// Choice defines model for Choice.
+type Choice struct {
+	Choice        string             `json:"choice"`
+	Confidence    float32            `json:"confidence"`
+	Model         *string            `json:"model,omitempty"`
+	Probabilities map[string]float32 `json:"probabilities"`
+}
+
+// ChooseRequest defines model for ChooseRequest.
+type ChooseRequest struct {
+	// Options The options, or a mapping from option key to a description of the option.
+	Options  ChooseRequest_Options `json:"options"`
+	Question string                `json:"question"`
+}
+
+// ChooseRequestOptions0 defines model for .
+type ChooseRequestOptions0 = []string
+
+// ChooseRequestOptions1 defines model for .
+type ChooseRequestOptions1 map[string]string
+
+// ChooseRequest_Options The options, or a mapping from option key to a description of the option.
+type ChooseRequest_Options struct {
+	union json.RawMessage
+}
+
 // ClickActionInput defines model for ClickAction-Input.
 type ClickActionInput struct {
 	AccessibleName *string                    `json:"accessible_name,omitempty"`
@@ -2542,6 +2634,23 @@ type ExecutionResponse struct {
 
 	// Success Whether the operation was successful
 	Success bool `json:"success"`
+}
+
+// ExecutionResult defines model for ExecutionResult.
+type ExecutionResult struct {
+	Action          ExecutionResult_Action `json:"action"`
+	Data            *DataSpace             `json:"data,omitempty"`
+	EndedAt         FlexibleTime           `json:"ended_at"`
+	Exception       interface{}            `json:"exception"`
+	ExceptionDetail *SerializedError       `json:"exception_detail,omitempty"`
+	Message         string                 `json:"message"`
+	StartedAt       FlexibleTime           `json:"started_at"`
+	Success         bool                   `json:"success"`
+}
+
+// ExecutionResult_Action defines model for ExecutionResult.Action.
+type ExecutionResult_Action struct {
+	union json.RawMessage
 }
 
 // ExternalProxy defines model for ExternalProxy.
@@ -6760,6 +6869,27 @@ type SessionOffsetParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// PageActParams defines parameters for PageAct.
+type PageActParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PageCheckParams defines parameters for PageCheck.
+type PageCheckParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// PageChooseParams defines parameters for PageChoose.
+type PageChooseParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
 	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
@@ -7081,6 +7211,15 @@ type SessionCookiesSetJSONRequestBody = BodySessionCookiesSetSessionsSessionIdCo
 
 // UploadSessionFileMultipartRequestBody defines body for UploadSessionFile for multipart/form-data ContentType.
 type UploadSessionFileMultipartRequestBody = BodyUploadSessionFileSessionsSessionIdFilesPost
+
+// PageActJSONRequestBody defines body for PageAct for application/json ContentType.
+type PageActJSONRequestBody = ActRequest
+
+// PageCheckJSONRequestBody defines body for PageCheck for application/json ContentType.
+type PageCheckJSONRequestBody = CheckRequest
+
+// PageChooseJSONRequestBody defines body for PageChoose for application/json ContentType.
+type PageChooseJSONRequestBody = ChooseRequest
 
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
 type PageExecuteJSONRequestBody = PageExecuteRequestBody
@@ -11128,6 +11267,68 @@ func (t *CheckActionOutput_Selector) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsChooseRequestOptions0 returns the union data inside the ChooseRequest_Options as a ChooseRequestOptions0
+func (t ChooseRequest_Options) AsChooseRequestOptions0() (ChooseRequestOptions0, error) {
+	var body ChooseRequestOptions0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChooseRequestOptions0 overwrites any union data inside the ChooseRequest_Options as the provided ChooseRequestOptions0
+func (t *ChooseRequest_Options) FromChooseRequestOptions0(v ChooseRequestOptions0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChooseRequestOptions0 performs a merge with any union data inside the ChooseRequest_Options, using the provided ChooseRequestOptions0
+func (t *ChooseRequest_Options) MergeChooseRequestOptions0(v ChooseRequestOptions0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsChooseRequestOptions1 returns the union data inside the ChooseRequest_Options as a ChooseRequestOptions1
+func (t ChooseRequest_Options) AsChooseRequestOptions1() (ChooseRequestOptions1, error) {
+	var body ChooseRequestOptions1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChooseRequestOptions1 overwrites any union data inside the ChooseRequest_Options as the provided ChooseRequestOptions1
+func (t *ChooseRequest_Options) FromChooseRequestOptions1(v ChooseRequestOptions1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChooseRequestOptions1 performs a merge with any union data inside the ChooseRequest_Options, using the provided ChooseRequestOptions1
+func (t *ChooseRequest_Options) MergeChooseRequestOptions1(v ChooseRequestOptions1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ChooseRequest_Options) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ChooseRequest_Options) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsClickActionInputSelector0 returns the union data inside the ClickActionInput_Selector as a ClickActionInputSelector0
 func (t ClickActionInput_Selector) AsClickActionInputSelector0() (ClickActionInputSelector0, error) {
 	var body ClickActionInputSelector0
@@ -11553,6 +11754,931 @@ func (t ElementState_Pressed) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ElementState_Pressed) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFormFillAction returns the union data inside the ExecutionResult_Action as a FormFillAction
+func (t ExecutionResult_Action) AsFormFillAction() (FormFillAction, error) {
+	var body FormFillAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFormFillAction overwrites any union data inside the ExecutionResult_Action as the provided FormFillAction
+func (t *ExecutionResult_Action) FromFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFormFillAction performs a merge with any union data inside the ExecutionResult_Action, using the provided FormFillAction
+func (t *ExecutionResult_Action) MergeFormFillAction(v FormFillAction) error {
+	tmp := "form_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoAction returns the union data inside the ExecutionResult_Action as a GotoAction
+func (t ExecutionResult_Action) AsGotoAction() (GotoAction, error) {
+	var body GotoAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoAction overwrites any union data inside the ExecutionResult_Action as the provided GotoAction
+func (t *ExecutionResult_Action) FromGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoAction performs a merge with any union data inside the ExecutionResult_Action, using the provided GotoAction
+func (t *ExecutionResult_Action) MergeGotoAction(v GotoAction) error {
+	tmp := "goto"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGotoNewTabAction returns the union data inside the ExecutionResult_Action as a GotoNewTabAction
+func (t ExecutionResult_Action) AsGotoNewTabAction() (GotoNewTabAction, error) {
+	var body GotoNewTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGotoNewTabAction overwrites any union data inside the ExecutionResult_Action as the provided GotoNewTabAction
+func (t *ExecutionResult_Action) FromGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGotoNewTabAction performs a merge with any union data inside the ExecutionResult_Action, using the provided GotoNewTabAction
+func (t *ExecutionResult_Action) MergeGotoNewTabAction(v GotoNewTabAction) error {
+	tmp := "goto_new_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCloseTabAction returns the union data inside the ExecutionResult_Action as a CloseTabAction
+func (t ExecutionResult_Action) AsCloseTabAction() (CloseTabAction, error) {
+	var body CloseTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCloseTabAction overwrites any union data inside the ExecutionResult_Action as the provided CloseTabAction
+func (t *ExecutionResult_Action) FromCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCloseTabAction performs a merge with any union data inside the ExecutionResult_Action, using the provided CloseTabAction
+func (t *ExecutionResult_Action) MergeCloseTabAction(v CloseTabAction) error {
+	tmp := "close_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchTabAction returns the union data inside the ExecutionResult_Action as a SwitchTabAction
+func (t ExecutionResult_Action) AsSwitchTabAction() (SwitchTabAction, error) {
+	var body SwitchTabAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchTabAction overwrites any union data inside the ExecutionResult_Action as the provided SwitchTabAction
+func (t *ExecutionResult_Action) FromSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchTabAction performs a merge with any union data inside the ExecutionResult_Action, using the provided SwitchTabAction
+func (t *ExecutionResult_Action) MergeSwitchTabAction(v SwitchTabAction) error {
+	tmp := "switch_tab"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoBackAction returns the union data inside the ExecutionResult_Action as a GoBackAction
+func (t ExecutionResult_Action) AsGoBackAction() (GoBackAction, error) {
+	var body GoBackAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoBackAction overwrites any union data inside the ExecutionResult_Action as the provided GoBackAction
+func (t *ExecutionResult_Action) FromGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoBackAction performs a merge with any union data inside the ExecutionResult_Action, using the provided GoBackAction
+func (t *ExecutionResult_Action) MergeGoBackAction(v GoBackAction) error {
+	tmp := "go_back"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGoForwardAction returns the union data inside the ExecutionResult_Action as a GoForwardAction
+func (t ExecutionResult_Action) AsGoForwardAction() (GoForwardAction, error) {
+	var body GoForwardAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGoForwardAction overwrites any union data inside the ExecutionResult_Action as the provided GoForwardAction
+func (t *ExecutionResult_Action) FromGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGoForwardAction performs a merge with any union data inside the ExecutionResult_Action, using the provided GoForwardAction
+func (t *ExecutionResult_Action) MergeGoForwardAction(v GoForwardAction) error {
+	tmp := "go_forward"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsReloadAction returns the union data inside the ExecutionResult_Action as a ReloadAction
+func (t ExecutionResult_Action) AsReloadAction() (ReloadAction, error) {
+	var body ReloadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromReloadAction overwrites any union data inside the ExecutionResult_Action as the provided ReloadAction
+func (t *ExecutionResult_Action) FromReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeReloadAction performs a merge with any union data inside the ExecutionResult_Action, using the provided ReloadAction
+func (t *ExecutionResult_Action) MergeReloadAction(v ReloadAction) error {
+	tmp := "reload"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWaitActionOutput returns the union data inside the ExecutionResult_Action as a WaitActionOutput
+func (t ExecutionResult_Action) AsWaitActionOutput() (WaitActionOutput, error) {
+	var body WaitActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWaitActionOutput overwrites any union data inside the ExecutionResult_Action as the provided WaitActionOutput
+func (t *ExecutionResult_Action) FromWaitActionOutput(v WaitActionOutput) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWaitActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided WaitActionOutput
+func (t *ExecutionResult_Action) MergeWaitActionOutput(v WaitActionOutput) error {
+	tmp := "wait"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPressKeyAction returns the union data inside the ExecutionResult_Action as a PressKeyAction
+func (t ExecutionResult_Action) AsPressKeyAction() (PressKeyAction, error) {
+	var body PressKeyAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPressKeyAction overwrites any union data inside the ExecutionResult_Action as the provided PressKeyAction
+func (t *ExecutionResult_Action) FromPressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePressKeyAction performs a merge with any union data inside the ExecutionResult_Action, using the provided PressKeyAction
+func (t *ExecutionResult_Action) MergePressKeyAction(v PressKeyAction) error {
+	tmp := "press_key"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollUpAction returns the union data inside the ExecutionResult_Action as a ScrollUpAction
+func (t ExecutionResult_Action) AsScrollUpAction() (ScrollUpAction, error) {
+	var body ScrollUpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollUpAction overwrites any union data inside the ExecutionResult_Action as the provided ScrollUpAction
+func (t *ExecutionResult_Action) FromScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollUpAction performs a merge with any union data inside the ExecutionResult_Action, using the provided ScrollUpAction
+func (t *ExecutionResult_Action) MergeScrollUpAction(v ScrollUpAction) error {
+	tmp := "scroll_up"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrollDownAction returns the union data inside the ExecutionResult_Action as a ScrollDownAction
+func (t ExecutionResult_Action) AsScrollDownAction() (ScrollDownAction, error) {
+	var body ScrollDownAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrollDownAction overwrites any union data inside the ExecutionResult_Action as the provided ScrollDownAction
+func (t *ExecutionResult_Action) FromScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrollDownAction performs a merge with any union data inside the ExecutionResult_Action, using the provided ScrollDownAction
+func (t *ExecutionResult_Action) MergeScrollDownAction(v ScrollDownAction) error {
+	tmp := "scroll_down"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCaptchaSolveAction returns the union data inside the ExecutionResult_Action as a CaptchaSolveAction
+func (t ExecutionResult_Action) AsCaptchaSolveAction() (CaptchaSolveAction, error) {
+	var body CaptchaSolveAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCaptchaSolveAction overwrites any union data inside the ExecutionResult_Action as the provided CaptchaSolveAction
+func (t *ExecutionResult_Action) FromCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCaptchaSolveAction performs a merge with any union data inside the ExecutionResult_Action, using the provided CaptchaSolveAction
+func (t *ExecutionResult_Action) MergeCaptchaSolveAction(v CaptchaSolveAction) error {
+	tmp := "captcha_solve"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsHelpAction returns the union data inside the ExecutionResult_Action as a HelpAction
+func (t ExecutionResult_Action) AsHelpAction() (HelpAction, error) {
+	var body HelpAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHelpAction overwrites any union data inside the ExecutionResult_Action as the provided HelpAction
+func (t *ExecutionResult_Action) FromHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHelpAction performs a merge with any union data inside the ExecutionResult_Action, using the provided HelpAction
+func (t *ExecutionResult_Action) MergeHelpAction(v HelpAction) error {
+	tmp := "help"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCompletionAction returns the union data inside the ExecutionResult_Action as a CompletionAction
+func (t ExecutionResult_Action) AsCompletionAction() (CompletionAction, error) {
+	var body CompletionAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCompletionAction overwrites any union data inside the ExecutionResult_Action as the provided CompletionAction
+func (t *ExecutionResult_Action) FromCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCompletionAction performs a merge with any union data inside the ExecutionResult_Action, using the provided CompletionAction
+func (t *ExecutionResult_Action) MergeCompletionAction(v CompletionAction) error {
+	tmp := "completion"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsScrapeAction returns the union data inside the ExecutionResult_Action as a ScrapeAction
+func (t ExecutionResult_Action) AsScrapeAction() (ScrapeAction, error) {
+	var body ScrapeAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromScrapeAction overwrites any union data inside the ExecutionResult_Action as the provided ScrapeAction
+func (t *ExecutionResult_Action) FromScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeScrapeAction performs a merge with any union data inside the ExecutionResult_Action, using the provided ScrapeAction
+func (t *ExecutionResult_Action) MergeScrapeAction(v ScrapeAction) error {
+	tmp := "scrape"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailReadAction returns the union data inside the ExecutionResult_Action as a EmailReadAction
+func (t ExecutionResult_Action) AsEmailReadAction() (EmailReadAction, error) {
+	var body EmailReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailReadAction overwrites any union data inside the ExecutionResult_Action as the provided EmailReadAction
+func (t *ExecutionResult_Action) FromEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailReadAction performs a merge with any union data inside the ExecutionResult_Action, using the provided EmailReadAction
+func (t *ExecutionResult_Action) MergeEmailReadAction(v EmailReadAction) error {
+	tmp := "email_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEmailVerificationReadAction returns the union data inside the ExecutionResult_Action as a EmailVerificationReadAction
+func (t ExecutionResult_Action) AsEmailVerificationReadAction() (EmailVerificationReadAction, error) {
+	var body EmailVerificationReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEmailVerificationReadAction overwrites any union data inside the ExecutionResult_Action as the provided EmailVerificationReadAction
+func (t *ExecutionResult_Action) FromEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEmailVerificationReadAction performs a merge with any union data inside the ExecutionResult_Action, using the provided EmailVerificationReadAction
+func (t *ExecutionResult_Action) MergeEmailVerificationReadAction(v EmailVerificationReadAction) error {
+	tmp := "email_verification_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSmsReadAction returns the union data inside the ExecutionResult_Action as a SmsReadAction
+func (t ExecutionResult_Action) AsSmsReadAction() (SmsReadAction, error) {
+	var body SmsReadAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSmsReadAction overwrites any union data inside the ExecutionResult_Action as the provided SmsReadAction
+func (t *ExecutionResult_Action) FromSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSmsReadAction performs a merge with any union data inside the ExecutionResult_Action, using the provided SmsReadAction
+func (t *ExecutionResult_Action) MergeSmsReadAction(v SmsReadAction) error {
+	tmp := "sms_read"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEvaluateJsAction returns the union data inside the ExecutionResult_Action as a EvaluateJsAction
+func (t ExecutionResult_Action) AsEvaluateJsAction() (EvaluateJsAction, error) {
+	var body EvaluateJsAction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEvaluateJsAction overwrites any union data inside the ExecutionResult_Action as the provided EvaluateJsAction
+func (t *ExecutionResult_Action) FromEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEvaluateJsAction performs a merge with any union data inside the ExecutionResult_Action, using the provided EvaluateJsAction
+func (t *ExecutionResult_Action) MergeEvaluateJsAction(v EvaluateJsAction) error {
+	tmp := "evaluate_js"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClickActionOutput returns the union data inside the ExecutionResult_Action as a ClickActionOutput
+func (t ExecutionResult_Action) AsClickActionOutput() (ClickActionOutput, error) {
+	var body ClickActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClickActionOutput overwrites any union data inside the ExecutionResult_Action as the provided ClickActionOutput
+func (t *ExecutionResult_Action) FromClickActionOutput(v ClickActionOutput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClickActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided ClickActionOutput
+func (t *ExecutionResult_Action) MergeClickActionOutput(v ClickActionOutput) error {
+	tmp := "click"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFillActionOutput returns the union data inside the ExecutionResult_Action as a FillActionOutput
+func (t ExecutionResult_Action) AsFillActionOutput() (FillActionOutput, error) {
+	var body FillActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFillActionOutput overwrites any union data inside the ExecutionResult_Action as the provided FillActionOutput
+func (t *ExecutionResult_Action) FromFillActionOutput(v FillActionOutput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFillActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided FillActionOutput
+func (t *ExecutionResult_Action) MergeFillActionOutput(v FillActionOutput) error {
+	tmp := "fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMultiFactorFillActionOutput returns the union data inside the ExecutionResult_Action as a MultiFactorFillActionOutput
+func (t ExecutionResult_Action) AsMultiFactorFillActionOutput() (MultiFactorFillActionOutput, error) {
+	var body MultiFactorFillActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMultiFactorFillActionOutput overwrites any union data inside the ExecutionResult_Action as the provided MultiFactorFillActionOutput
+func (t *ExecutionResult_Action) FromMultiFactorFillActionOutput(v MultiFactorFillActionOutput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMultiFactorFillActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided MultiFactorFillActionOutput
+func (t *ExecutionResult_Action) MergeMultiFactorFillActionOutput(v MultiFactorFillActionOutput) error {
+	tmp := "multi_factor_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFallbackFillActionOutput returns the union data inside the ExecutionResult_Action as a FallbackFillActionOutput
+func (t ExecutionResult_Action) AsFallbackFillActionOutput() (FallbackFillActionOutput, error) {
+	var body FallbackFillActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFallbackFillActionOutput overwrites any union data inside the ExecutionResult_Action as the provided FallbackFillActionOutput
+func (t *ExecutionResult_Action) FromFallbackFillActionOutput(v FallbackFillActionOutput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFallbackFillActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided FallbackFillActionOutput
+func (t *ExecutionResult_Action) MergeFallbackFillActionOutput(v FallbackFillActionOutput) error {
+	tmp := "fallback_fill"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckActionOutput returns the union data inside the ExecutionResult_Action as a CheckActionOutput
+func (t ExecutionResult_Action) AsCheckActionOutput() (CheckActionOutput, error) {
+	var body CheckActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckActionOutput overwrites any union data inside the ExecutionResult_Action as the provided CheckActionOutput
+func (t *ExecutionResult_Action) FromCheckActionOutput(v CheckActionOutput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided CheckActionOutput
+func (t *ExecutionResult_Action) MergeCheckActionOutput(v CheckActionOutput) error {
+	tmp := "check"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSelectDropdownOptionActionOutput returns the union data inside the ExecutionResult_Action as a SelectDropdownOptionActionOutput
+func (t ExecutionResult_Action) AsSelectDropdownOptionActionOutput() (SelectDropdownOptionActionOutput, error) {
+	var body SelectDropdownOptionActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSelectDropdownOptionActionOutput overwrites any union data inside the ExecutionResult_Action as the provided SelectDropdownOptionActionOutput
+func (t *ExecutionResult_Action) FromSelectDropdownOptionActionOutput(v SelectDropdownOptionActionOutput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSelectDropdownOptionActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided SelectDropdownOptionActionOutput
+func (t *ExecutionResult_Action) MergeSelectDropdownOptionActionOutput(v SelectDropdownOptionActionOutput) error {
+	tmp := "select_dropdown_option"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUploadFileActionOutput returns the union data inside the ExecutionResult_Action as a UploadFileActionOutput
+func (t ExecutionResult_Action) AsUploadFileActionOutput() (UploadFileActionOutput, error) {
+	var body UploadFileActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUploadFileActionOutput overwrites any union data inside the ExecutionResult_Action as the provided UploadFileActionOutput
+func (t *ExecutionResult_Action) FromUploadFileActionOutput(v UploadFileActionOutput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUploadFileActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided UploadFileActionOutput
+func (t *ExecutionResult_Action) MergeUploadFileActionOutput(v UploadFileActionOutput) error {
+	tmp := "upload_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDownloadFileActionOutput returns the union data inside the ExecutionResult_Action as a DownloadFileActionOutput
+func (t ExecutionResult_Action) AsDownloadFileActionOutput() (DownloadFileActionOutput, error) {
+	var body DownloadFileActionOutput
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDownloadFileActionOutput overwrites any union data inside the ExecutionResult_Action as the provided DownloadFileActionOutput
+func (t *ExecutionResult_Action) FromDownloadFileActionOutput(v DownloadFileActionOutput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDownloadFileActionOutput performs a merge with any union data inside the ExecutionResult_Action, using the provided DownloadFileActionOutput
+func (t *ExecutionResult_Action) MergeDownloadFileActionOutput(v DownloadFileActionOutput) error {
+	tmp := "download_file"
+	v.Type = &tmp
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ExecutionResult_Action) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t ExecutionResult_Action) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "captcha_solve":
+		return t.AsCaptchaSolveAction()
+	case "check":
+		return t.AsCheckActionOutput()
+	case "click":
+		return t.AsClickActionOutput()
+	case "close_tab":
+		return t.AsCloseTabAction()
+	case "completion":
+		return t.AsCompletionAction()
+	case "download_file":
+		return t.AsDownloadFileActionOutput()
+	case "email_read":
+		return t.AsEmailReadAction()
+	case "email_verification_read":
+		return t.AsEmailVerificationReadAction()
+	case "evaluate_js":
+		return t.AsEvaluateJsAction()
+	case "fallback_fill":
+		return t.AsFallbackFillActionOutput()
+	case "fill":
+		return t.AsFillActionOutput()
+	case "form_fill":
+		return t.AsFormFillAction()
+	case "go_back":
+		return t.AsGoBackAction()
+	case "go_forward":
+		return t.AsGoForwardAction()
+	case "goto":
+		return t.AsGotoAction()
+	case "goto_new_tab":
+		return t.AsGotoNewTabAction()
+	case "help":
+		return t.AsHelpAction()
+	case "multi_factor_fill":
+		return t.AsMultiFactorFillActionOutput()
+	case "press_key":
+		return t.AsPressKeyAction()
+	case "reload":
+		return t.AsReloadAction()
+	case "scrape":
+		return t.AsScrapeAction()
+	case "scroll_down":
+		return t.AsScrollDownAction()
+	case "scroll_up":
+		return t.AsScrollUpAction()
+	case "select_dropdown_option":
+		return t.AsSelectDropdownOptionActionOutput()
+	case "sms_read":
+		return t.AsSmsReadAction()
+	case "switch_tab":
+		return t.AsSwitchTabAction()
+	case "upload_file":
+		return t.AsUploadFileActionOutput()
+	case "wait":
+		return t.AsWaitActionOutput()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t ExecutionResult_Action) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ExecutionResult_Action) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -15535,6 +16661,21 @@ type ClientInterface interface {
 	// SessionOffset request
 	SessionOffset(ctx context.Context, sessionId string, params *SessionOffsetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PageActWithBody request with any body
+	PageActWithBody(ctx context.Context, sessionId string, params *PageActParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PageAct(ctx context.Context, sessionId string, params *PageActParams, body PageActJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PageCheckWithBody request with any body
+	PageCheckWithBody(ctx context.Context, sessionId string, params *PageCheckParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PageCheck(ctx context.Context, sessionId string, params *PageCheckParams, body PageCheckJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PageChooseWithBody request with any body
+	PageChooseWithBody(ctx context.Context, sessionId string, params *PageChooseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PageChoose(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PageExecuteWithBody request with any body
 	PageExecuteWithBody(ctx context.Context, sessionId string, params *PageExecuteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -17506,6 +18647,78 @@ func (c *Client) SessionNetworkLogs(ctx context.Context, sessionId string, param
 
 func (c *Client) SessionOffset(ctx context.Context, sessionId string, params *SessionOffsetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionOffsetRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageActWithBody(ctx context.Context, sessionId string, params *PageActParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageActRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageAct(ctx context.Context, sessionId string, params *PageActParams, body PageActJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageActRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageCheckWithBody(ctx context.Context, sessionId string, params *PageCheckParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageCheckRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageCheck(ctx context.Context, sessionId string, params *PageCheckParams, body PageCheckJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageCheckRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageChooseWithBody(ctx context.Context, sessionId string, params *PageChooseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageChooseRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageChoose(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageChooseRequest(c.Server, sessionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -28332,6 +29545,291 @@ func NewSessionOffsetRequest(server string, sessionId string, params *SessionOff
 	return req, nil
 }
 
+// NewPageActRequest calls the generic PageAct builder with application/json body
+func NewPageActRequest(server string, sessionId string, params *PageActParams, body PageActJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPageActRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewPageActRequestWithBody generates requests for PageAct with any type of body
+func NewPageActRequestWithBody(server string, sessionId string, params *PageActParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/act", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPageCheckRequest calls the generic PageCheck builder with application/json body
+func NewPageCheckRequest(server string, sessionId string, params *PageCheckParams, body PageCheckJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPageCheckRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewPageCheckRequestWithBody generates requests for PageCheck with any type of body
+func NewPageCheckRequestWithBody(server string, sessionId string, params *PageCheckParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/check", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPageChooseRequest calls the generic PageChoose builder with application/json body
+func NewPageChooseRequest(server string, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPageChooseRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewPageChooseRequestWithBody generates requests for PageChoose with any type of body
+func NewPageChooseRequestWithBody(server string, sessionId string, params *PageChooseParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/choose", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewPageExecuteRequest calls the generic PageExecute builder with application/json body
 func NewPageExecuteRequest(server string, sessionId string, params *PageExecuteParams, body PageExecuteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -30751,6 +32249,21 @@ type ClientWithResponsesInterface interface {
 
 	// SessionOffsetWithResponse request
 	SessionOffsetWithResponse(ctx context.Context, sessionId string, params *SessionOffsetParams, reqEditors ...RequestEditorFn) (*SessionOffsetResult, error)
+
+	// PageActWithBodyWithResponse request with any body
+	PageActWithBodyWithResponse(ctx context.Context, sessionId string, params *PageActParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageActResult, error)
+
+	PageActWithResponse(ctx context.Context, sessionId string, params *PageActParams, body PageActJSONRequestBody, reqEditors ...RequestEditorFn) (*PageActResult, error)
+
+	// PageCheckWithBodyWithResponse request with any body
+	PageCheckWithBodyWithResponse(ctx context.Context, sessionId string, params *PageCheckParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageCheckResult, error)
+
+	PageCheckWithResponse(ctx context.Context, sessionId string, params *PageCheckParams, body PageCheckJSONRequestBody, reqEditors ...RequestEditorFn) (*PageCheckResult, error)
+
+	// PageChooseWithBodyWithResponse request with any body
+	PageChooseWithBodyWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageChooseResult, error)
+
+	PageChooseWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*PageChooseResult, error)
 
 	// PageExecuteWithBodyWithResponse request with any body
 	PageExecuteWithBodyWithResponse(ctx context.Context, sessionId string, params *PageExecuteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageExecuteResult, error)
@@ -33525,6 +35038,75 @@ func (r SessionOffsetResult) StatusCode() int {
 	return 0
 }
 
+type PageActResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ActResult
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PageActResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PageActResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PageCheckResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CheckResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PageCheckResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PageCheckResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PageChooseResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Choice
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PageChooseResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PageChooseResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PageExecuteResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -35412,6 +36994,57 @@ func (c *ClientWithResponses) SessionOffsetWithResponse(ctx context.Context, ses
 		return nil, err
 	}
 	return ParseSessionOffsetResult(rsp)
+}
+
+// PageActWithBodyWithResponse request with arbitrary body returning *PageActResult
+func (c *ClientWithResponses) PageActWithBodyWithResponse(ctx context.Context, sessionId string, params *PageActParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageActResult, error) {
+	rsp, err := c.PageActWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageActResult(rsp)
+}
+
+func (c *ClientWithResponses) PageActWithResponse(ctx context.Context, sessionId string, params *PageActParams, body PageActJSONRequestBody, reqEditors ...RequestEditorFn) (*PageActResult, error) {
+	rsp, err := c.PageAct(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageActResult(rsp)
+}
+
+// PageCheckWithBodyWithResponse request with arbitrary body returning *PageCheckResult
+func (c *ClientWithResponses) PageCheckWithBodyWithResponse(ctx context.Context, sessionId string, params *PageCheckParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageCheckResult, error) {
+	rsp, err := c.PageCheckWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageCheckResult(rsp)
+}
+
+func (c *ClientWithResponses) PageCheckWithResponse(ctx context.Context, sessionId string, params *PageCheckParams, body PageCheckJSONRequestBody, reqEditors ...RequestEditorFn) (*PageCheckResult, error) {
+	rsp, err := c.PageCheck(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageCheckResult(rsp)
+}
+
+// PageChooseWithBodyWithResponse request with arbitrary body returning *PageChooseResult
+func (c *ClientWithResponses) PageChooseWithBodyWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageChooseResult, error) {
+	rsp, err := c.PageChooseWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageChooseResult(rsp)
+}
+
+func (c *ClientWithResponses) PageChooseWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*PageChooseResult, error) {
+	rsp, err := c.PageChoose(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageChooseResult(rsp)
 }
 
 // PageExecuteWithBodyWithResponse request with arbitrary body returning *PageExecuteResult
@@ -39510,6 +41143,105 @@ func ParseSessionOffsetResult(rsp *http.Response) (*SessionOffsetResult, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionOffsetResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePageActResult parses an HTTP response from a PageActWithResponse call
+func ParsePageActResult(rsp *http.Response) (*PageActResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PageActResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ActResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePageCheckResult parses an HTTP response from a PageCheckWithResponse call
+func ParsePageCheckResult(rsp *http.Response) (*PageCheckResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PageCheckResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CheckResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePageChooseResult parses an HTTP response from a PageChooseWithResponse call
+func ParsePageChooseResult(rsp *http.Response) (*PageChooseResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PageChooseResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Choice
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
