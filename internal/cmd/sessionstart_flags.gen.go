@@ -25,6 +25,9 @@ var (
 	// Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers.
 	SessionStartBlockAds bool
 
+	// The browser type to use. Supported values are chromium, chrome and chrome-nitro. chrome-nitro creates a managed Chrome Nitro session. chrome-nightly and chrome-turbo are legacy aliases for chrome.
+	SessionStartBrowserType string
+
 	// The CDP URL of another remote session provider.
 	SessionStartCdpUrl string
 
@@ -82,6 +85,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&SessionStartAuthIds, "auth-ids", []string{}, "Managed Auth connection IDs to verify and, when necessary, authenticate inside this session. Initial verification runs before returning; when login is needed, the session returns as authenticating. Poll /sessions/{id}/auth for readiness. (repeatable)")
 	cmd.Flags().IntVar(&SessionStartAuthRetry, "auth-retry", 0, "auth-retry (API default: 0)")
 	cmd.Flags().BoolVar(&SessionStartBlockAds, "block-ads", false, "Block ads and trackers in managed browsers using Basic filtering. Set false to disable. Does not configure externally supplied CDP browsers. (API default: true)")
+	cmd.Flags().StringVar(&SessionStartBrowserType, "browser-type", "", "The browser type to use. Supported values are chromium, chrome and chrome-nitro. chrome-nitro creates a managed Chrome Nitro session. chrome-nightly and chrome-turbo are legacy aliases for chrome. (API default: chromium) (chromium, chrome, firefox, chrome-nightly, chrome-turbo)")
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().BoolVar(&SessionStartDemonstrate, "demonstrate", false, "Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false. (API default: false)")
@@ -124,6 +128,14 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if cmd.Flags().Changed("block-ads") {
 		body.BlockAds = &SessionStartBlockAds
+	}
+
+	if SessionStartBrowserType != "" {
+		var val api.ApiSessionStartRequest_BrowserType
+		if err := val.FromApiSessionStartRequestBrowserType1(SessionStartBrowserType); err != nil {
+			return nil, fmt.Errorf("invalid browser-type: %w", err)
+		}
+		body.BrowserType = &val
 	}
 
 	if SessionStartCdpUrl != "" {

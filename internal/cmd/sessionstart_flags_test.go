@@ -54,6 +54,40 @@ func newSessionStartFlagsCmd() *cobra.Command {
 	return cmd
 }
 
+func TestBrowserTypeUnionMapping(t *testing.T) {
+	for _, browser := range []string{"", "chromium", "chrome", "chrome-nitro", "invalid-browser"} {
+		t.Run(browser, func(t *testing.T) {
+			cmd := newSessionStartFlagsCmd()
+			if browser != "" {
+				cmd.SetArgs([]string{"--browser-type", browser})
+			}
+			if err := cmd.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			body, err := BuildSessionStartRequest(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := json.Marshal(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]any
+			if err := json.Unmarshal(data, &payload); err != nil {
+				t.Fatal(err)
+			}
+			got, present := payload["browser_type"]
+			if browser == "" {
+				if present {
+					t.Fatalf("omitted browser_type was sent: %v", got)
+				}
+			} else if got != browser {
+				t.Fatalf("browser_type = %v, want %q", got, browser)
+			}
+		})
+	}
+}
+
 // TestAdvancedStealthMapping covers the flag added by the OpenAPI regeneration
 // that introduced advanced_stealth. The nil case is the important one: omitting
 // the flag has to send nothing so the server default applies, and an explicit

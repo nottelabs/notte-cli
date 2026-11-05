@@ -338,6 +338,7 @@ func convertSchemaRefToField(name string, schemaRef SchemaRef, allSchemas map[st
 	if len(schemaRef.AnyOf) > 0 {
 		field = handleAnyOf(name, schemaRef, allSchemas)
 		field.Description = schemaRef.Description
+		field.Default = schemaRef.Default
 		return field
 	}
 
@@ -382,8 +383,15 @@ func handleAnyOf(name string, schemaRef SchemaRef, allSchemas map[string]SchemaR
 	var enumValues []string
 	hasString := false
 	hasEnumRef := false
+	hasInlineEnum := false
 
 	for _, variant := range schemaRef.AnyOf {
+		if variant.Type == "string" && len(variant.Enum) > 0 {
+			hasInlineEnum = true
+			for _, e := range variant.Enum {
+				enumValues = append(enumValues, fmt.Sprintf("%v", e))
+			}
+		}
 		if variant.Type == "string" && len(variant.Enum) == 0 {
 			hasString = true
 		}
@@ -401,7 +409,7 @@ func handleAnyOf(name string, schemaRef SchemaRef, allSchemas map[string]SchemaR
 	}
 
 	// If we have enum ref + string, treat as string with enum suggestions (union type)
-	if hasEnumRef && hasString {
+	if (hasEnumRef || hasInlineEnum) && hasString {
 		field.Type = "string"
 		field.Enum = enumValues // Store for description purposes
 		field.IsUnionType = true
