@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en" data-app="notte-cli-playground">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>notte</title>
+  <style>
+    :root{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;color:#d6ded8;background:#111614;font-size:13px;line-height:1.8}
+    *{box-sizing:border-box}body{margin:0}button,input{font:inherit}::selection{background:#45604d;color:#fff}
+    .terminal{display:flex;flex-direction:column;width:min(1120px,calc(100% - 40px));min-height:calc(100dvh - 40px);margin:20px auto;padding:25px 28px 17px;border:1px solid #26302a;border-radius:8px;background:#171e1a;box-shadow:0 15px 60px #0000000d}
+    .transcript{min-width:0}.entry{margin-bottom:22px}.command-line{display:flex;gap:13px;align-items:baseline;margin-bottom:8px;min-width:0}.prompt{color:#b8dca0;user-select:none;flex-shrink:0}.command{margin:0;color:#e4ebe3;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;min-width:0}.output{white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4;margin:0;font:inherit;color:#bdcbbf}.output:empty{display:none}.stream-note{font-size:10px;line-height:1.5;color:#7e8d7e;margin-top:9px}.diagnostic{color:#d99b85}.pending{color:#71816e}.input-line{display:flex;align-items:baseline;gap:13px;margin-top:0}.input-wrap{flex:1;min-width:0}.input{font:inherit;line-height:1.8;display:block;width:100%;min-width:0;border:0;padding:0;margin:0;background:transparent;color:#edf2e9;outline:none;caret-color:#c8e7b2;border-radius:0}.input::placeholder{color:#5e6d5d}.status{display:flex;justify-content:flex-end;align-items:center;gap:6px;color:#687c67;font-size:10px;line-height:1.6;margin-top:auto;padding-top:21px;min-height:16px}.status-dot{width:4px;height:4px;border-radius:50%;background:currentColor}.status.busy{color:#a29b73}.status.failed{color:#d39982}.build-error{border-top:1px solid #493d34;margin:18px 0 0;padding:12px 0 0;color:#d9a18b;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:11px;line-height:1.7;max-height:270px;overflow:auto}.build-error[hidden]{display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:650px){:root{font-size:12px}.terminal{width:100%;min-height:100dvh;margin:0;padding:21px 18px 14px;border:0;border-radius:0}.command-line,.input-line{gap:10px}.entry{margin-bottom:21px}.status{margin-top:auto;padding-top:16px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main id="terminal" class="terminal" aria-label="Interactive Notte CLI playground">
+    <div id="transcript" class="transcript" role="log" aria-label="Terminal history" aria-live="polite" aria-relevant="additions"></div>
+    <form id="form" class="input-line" autocomplete="off" spellcheck="false">
+      <span class="prompt" aria-hidden="true">$</span>
+      <div class="input-wrap"><label class="sr-only" for="input">Command</label><input id="input" class="input" name="command" value="notte" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command"></div>
+    </form>
+    <pre id="build-error" class="build-error" role="alert" hidden></pre>
+    <div id="status" class="status" role="status" aria-live="polite"><span class="status-dot" aria-hidden="true"></span><span id="status-text">connecting</span></div>
+  </main>
+  <script>
+    'use strict';
+    const STATIC = document.documentElement.dataset.mode === 'static';
+    const STORAGE = 'notte-terminal-v2';
+    const $ = id => document.getElementById(id);
+    const input = $('input');
+    const state = {preview:null, revision:'', connected:false, entries:[], history:[], historyIndex:0, draft:'', running:false, replay:false, refreshID:0};
+    const colors = ['#17201a','#ed8a80','#b9db94','#ebce8c','#97b8e1','#c9a5db','#90ced0','#d5dfd8','#8a9a8c','#ffa396','#cceca6','#ffe3a2','#adcdf1','#e0beee','#a6e5e3','#f5faf3'];
+    const completions = ['notte','notte sessions','notte sessions start','notte sessions list','notte sessions status','notte sessions stop','notte page','notte page observe','notte page scrape','notte version','notte --help','notte sessions --help','notte page --help','clear'];
+
+    function stripANSI(value) {
+      return String(value || '').replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g,'').replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'').replace(/\r\n/g,'\n');
+    }
+    function palette(index) {
+      if (index < 16) return colors[index];
+      if (index >= 232) return 'rgb(' + Array(3).fill(8 + (index-232)*10).join(',') + ')';
+      const n = index-16;
+      return 'rgb(' + [Math.floor(n/36),Math.floor(n/6)%6,n%6].map(v => v === 0 ? 0 : 55+v*40).join(',') + ')';
+    }
+    function renderANSI(target, value) {
+      target.replaceChildren();
+      const text = String(value || '').replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g,'').replace(/\r\n/g,'\n');
+      const regex = /\x1b\[([0-9;]*)m/g;
+      let cursor = 0, match, style = {};
+      function append(part) {
+        part = part.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'');
+        if (!part) return;
+        const span = document.createElement('span');
+        span.textContent = part;
+        Object.assign(span.style, style);
+        target.appendChild(span);
+      }
+      while ((match = regex.exec(text)) !== null) {
+        append(text.slice(cursor, match.index));
+        cursor = regex.lastIndex;
+        const codes = (match[1] || '0').split(';').map(Number);
+        for (let i=0; i<codes.length; i++) {
+          const c = codes[i];
+          if (c === 0) style = {};
+          else if (c === 1) style.fontWeight = '700';
+          else if (c === 2) style.opacity = '.65';
+          else if (c === 3) style.fontStyle = 'italic';
+          else if (c === 4) style.textDecoration = 'underline';
+          else if (c === 22) { delete style.fontWeight; delete style.opacity; }
+          else if (c === 23) delete style.fontStyle;
+          else if (c === 24) delete style.textDecoration;
+          else if (c >= 30 && c <= 37) style.color = colors[c-30];
+          else if (c >= 90 && c <= 97) style.color = colors[c-90+8];
+          else if (c === 39) delete style.color;
+          else if (c >= 40 && c <= 47) style.backgroundColor = colors[c-40];
+          else if (c >= 100 && c <= 107) style.backgroundColor = colors[c-100+8];
+          else if (c === 49) delete style.backgroundColor;
+          else if ((c === 38 || c === 48) && codes[i+1] === 5 && Number.isInteger(codes[i+2]) && codes[i+2] >= 0 && codes[i+2] <= 255) {
+            style[c === 38 ? 'color' : 'backgroundColor'] = palette(codes[i+2]); i += 2;
+          } else if ((c === 38 || c === 48) && codes[i+1] === 2 && codes.slice(i+2,i+5).length === 3 && codes.slice(i+2,i+5).every(v => Number.isInteger(v) && v >= 0 && v <= 255)) {
+            style[c === 38 ? 'color' : 'backgroundColor'] = 'rgb(' + codes.slice(i+2,i+5).join(',') + ')'; i += 4;
+          }
+        }
+      }
+      append(text.slice(cursor));
+    }
+    function tokenize(line) {
+      const tokens = [];
+      let token = '', quote = '', escaped = false, started = false;
+      for (let i=0; i<line.length; i++) {
+        const char = line[i];
+        if (escaped) { token += char; escaped = false; started = true; continue; }
+        if (char === '\\' && quote !== "'") { escaped = true; started = true; continue; }
+        if (quote) { if (char === quote) quote = ''; else token += char; started = true; continue; }
+        if (char === '"' || char === "'") { quote = char; started = true; continue; }
+        if (/\s/.test(char)) { if (started) { tokens.push(token); token = ''; started = false; } continue; }
+        if (/[|;&<>`]/.test(char) || (char === '$' && line[i+1] === '(')) throw new Error('Shell operators are not supported. Enter one notte command.');
+        token += char; started = true;
+      }
+      if (quote) throw new Error('Unclosed quote. Close it and run the command again.');
+      if (escaped) throw new Error('A trailing backslash needs a character to escape.');
+      if (started) tokens.push(token);
+      return tokens;
+    }
+    function argsFor(line) {
+      const tokens = tokenize(line);
+      if (tokens[0] === 'help') return tokens.length === 1 ? [] : [...tokens.slice(1), '--help'];
+      if (tokens[0] !== 'notte') throw new Error('Enter a notte command, or clear. Try notte --help.');
+      return tokens.slice(1);
+    }
+    function save() {
+      try { sessionStorage.setItem(STORAGE, JSON.stringify({entries:state.entries.slice(-60),history:state.history.slice(-100),input:input.value,revision:state.revision})); } catch { /* Terminal remains usable when browser storage is unavailable. */ }
+    }
+    function restore() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(STORAGE));
+        if (!saved || !Array.isArray(saved.entries) || !Array.isArray(saved.history)) return;
+        state.entries = saved.entries.filter(e => typeof e.line === 'string').slice(-60).map(e => ({line:e.line,args:Array.isArray(e.args)?e.args:undefined,result:e.result,diagnostic:e.diagnostic,pending:false}));
+        state.history = saved.history.filter(v => typeof v === 'string').slice(-100);
+        state.historyIndex = state.history.length;
+        state.revision = typeof saved.revision === 'string' ? saved.revision : '';
+        input.value = typeof saved.input === 'string' ? saved.input : '';
+        state.replay = state.entries.some(e => e.args);
+      } catch { /* A corrupt saved session starts with a fresh terminal. */ }
+    }
+    function setStatus(text, kind) {
+      $('status-text').textContent = text;
+      $('status').className = 'status' + (kind ? ' ' + kind : '');
+    }
+    function renderStatus() {
+      const preview = state.preview;
+      const hasResults = state.entries.some(entry => entry.result);
+      if (preview?.error) {
+        setStatus('build failed' + (hasResults ? ' · previous output is stale' : ''),'failed');
+        $('build-error').textContent = preview.error;
+        $('build-error').hidden = false;
+      } else {
+        $('build-error').hidden = true;
+        if (preview?.building) setStatus(hasResults ? 'rebuilding · previous output is stale' : 'building CLI','busy');
+        else if (state.running) setStatus('running','busy');
+        else if (STATIC) setStatus('recorded examples','');
+        else if (!state.connected) setStatus('reconnecting','busy');
+        else setStatus('live','');
+      }
+    }
+    function render() {
+      const transcript = $('transcript');
+      transcript.replaceChildren();
+      for (const entry of state.entries) {
+        const section = document.createElement('section');
+        section.className = 'entry';
+        const commandLine = document.createElement('div');
+        commandLine.className = 'command-line';
+        const prompt = document.createElement('span');
+        prompt.className = 'prompt'; prompt.textContent = '$'; prompt.setAttribute('aria-hidden','true');
+        const command = document.createElement('pre');
+        command.className = 'command'; command.textContent = entry.line;
+        commandLine.append(prompt, command); section.appendChild(commandLine);
+        if (entry.diagnostic) {
+          const note = document.createElement('pre');
+          note.className = 'output diagnostic'; note.textContent = 'Playground: ' + entry.diagnostic;
+          section.appendChild(note);
+        } else if (entry.result) {
+          const out = document.createElement('pre'); out.className = 'output'; renderANSI(out, entry.result.stdout); section.appendChild(out);
+          if (entry.result.stdout && entry.result.stderr) {
+            const label = document.createElement('div'); label.className = 'stream-note'; label.textContent = 'stderr'; section.appendChild(label);
+          }
+          const err = document.createElement('pre'); err.className = 'output'; renderANSI(err, entry.result.stderr); section.appendChild(err);
+        } else if (entry.pending) {
+          const pending = document.createElement('pre'); pending.className = 'output pending'; pending.textContent = '...'; section.appendChild(pending);
+        }
+        transcript.appendChild(section);
+      }
+      renderStatus();
+    }
+    function scrollToPrompt() { input.scrollIntoView({block:'nearest'}); }
+    function normalized(args) {
+      const core = [];
+      let format = 'text', color = true;
+      for (let i=0; i<args.length; i++) {
+        const arg = args[i];
+        if (arg === '--output' || arg === '-o') {
+          format = args[++i];
+          if (!['text','json'].includes(format)) throw new Error('Output format must be text or json.');
+        } else if (arg.startsWith('--output=')) {
+          format = arg.slice(9);
+          if (!['text','json'].includes(format)) throw new Error('Output format must be text or json.');
+        } else if (arg === '--no-color') color = false;
+        else if (arg !== '--yes' && arg !== '-y') core.push(arg);
+      }
+      const variant = format === 'json' ? 'json' : color ? 'color' : 'text';
+      if (!core.length || (core.length === 1 && ['--help','-h'].includes(core[0]))) return {core:[],variant};
+      if (['sessions','page'].includes(core[0]) && (core.length === 1 || (core.length === 2 && ['--help','-h'].includes(core[1])))) return {core:[core[0],'--help'],variant};
+      return {core,variant};
+    }
+    function recordedResult(args) {
+      const requested = normalized(args);
+      const scenarios = state.preview?.scenarios || [];
+      let match = scenarios.find(s => JSON.stringify(normalized(s.args).core) === JSON.stringify(requested.core));
+      if (!match && requested.core.length === 2 && requested.core.every(a => !a.startsWith('-'))) {
+        match = scenarios.find(s => s.expectedExit === 0 && JSON.stringify(normalized(s.args).core.slice(0,2)) === JSON.stringify(requested.core));
+      }
+      if (!match?.variants?.[requested.variant]) throw new Error('This static playground contains recorded examples only. Try notte, notte sessions start, notte sessions list, notte sessions status, or notte page scrape.');
+      return match.variants[requested.variant];
+    }
+    async function run(args) {
+      if (STATIC) return recordedResult(args);
+      const response = await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({args})});
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error || 'Command request returned HTTP ' + response.status);
+      if (!body || typeof body.stdout !== 'string' || typeof body.stderr !== 'string' || !Number.isInteger(body.exitCode)) throw new Error('The command runner returned an invalid response.');
+      return body;
+    }
+    async function processQueue() {
+      if (state.running || state.preview?.building || state.preview?.error || !state.preview) return;
+      state.running = true; renderStatus();
+      try {
+        if (state.replay) {
+          state.replay = false;
+          for (const entry of state.entries) { if (entry.args) { entry.pending = true; delete entry.diagnostic; } }
+        }
+        let entry;
+        while ((entry = state.entries.find(e => e.pending && e.args))) {
+          try { entry.result = await run(entry.args); delete entry.diagnostic; }
+          catch (error) { entry.diagnostic = error.message; }
+          entry.pending = false; render(); save();
+          if (state.preview?.building || state.preview?.error) break;
+        }
+      } finally { state.running = false; renderStatus(); save(); scrollToPrompt(); }
+    }
+    function clearTerminal() { state.entries = []; state.replay = false; render(); save(); scrollToPrompt(); }
+    function submit(line) {
+      if (!line.trim()) return;
+      state.history.push(line); state.history = state.history.slice(-100); state.historyIndex = state.history.length; state.draft = '';
+      let tokens;
+      try { tokens = tokenize(line); }
+      catch (error) { state.entries.push({line,diagnostic:error.message}); render(); save(); scrollToPrompt(); return; }
+      if (tokens.length === 1 && tokens[0] === 'clear') { clearTerminal(); return; }
+      const entry = {line};
+      try { entry.args = argsFor(line); entry.pending = true; }
+      catch (error) { entry.diagnostic = error.message; }
+      state.entries.push(entry); state.entries = state.entries.slice(-60); render(); save(); scrollToPrompt(); processQueue();
+    }
+    async function refresh() {
+      const request = ++state.refreshID;
+      try {
+        const response = await fetch(STATIC ? './preview.json' : '/api/preview',{cache:'no-store'});
+        if (!response.ok) throw new Error('Preview returned HTTP ' + response.status);
+        const preview = await response.json();
+        if (request !== state.refreshID) return;
+        if (!Array.isArray(preview.scenarios)) throw new Error('Preview did not contain recorded examples.');
+        if (!STATIC && state.revision && preview.revision && preview.revision !== state.revision && !preview.building && !preview.error) {
+          state.revision = preview.revision;
+          save(); location.reload(); return;
+        }
+        state.preview = preview;
+        if (preview.revision) state.revision = preview.revision;
+        renderStatus(); save(); processQueue();
+      } catch (error) {
+        if (request !== state.refreshID) return;
+        setStatus('preview unavailable','failed'); $('build-error').textContent = 'Playground: ' + error.message; $('build-error').hidden = false;
+      }
+    }
+    $('form').addEventListener('submit',event => { event.preventDefault(); const line = input.value; input.value = ''; submit(line); });
+    input.addEventListener('input',save);
+    input.addEventListener('keydown',event => {
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (state.historyIndex === state.history.length) state.draft = input.value;
+        state.historyIndex = Math.max(0, Math.min(state.history.length,state.historyIndex + (event.key === 'ArrowUp' ? -1 : 1)));
+        input.value = state.historyIndex === state.history.length ? state.draft : state.history[state.historyIndex];
+        input.setSelectionRange(input.value.length,input.value.length); save();
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        const matches = completions.filter(value => value.startsWith(input.value));
+        if (matches.length) {
+          let prefix = matches[0];
+          for (const match of matches) { while (!match.startsWith(prefix)) prefix = prefix.slice(0,-1); }
+          input.value = prefix + (matches.length === 1 ? ' ' : ''); save();
+        }
+      } else if (event.key.toLowerCase() === 'l' && event.ctrlKey) { event.preventDefault(); clearTerminal(); }
+    });
+    $('terminal').addEventListener('click',event => { if (!window.getSelection()?.toString() && event.target.tagName !== 'A') input.focus({preventScroll:true}); });
+    window.addEventListener('pagehide',save);
+    restore(); render(); refresh();
+    if (!STATIC) {
+      const events = new EventSource('/events');
+      events.onopen = () => { state.connected = true; renderStatus(); refresh(); };
+      events.onerror = () => { state.connected = false; renderStatus(); };
+      events.onmessage = event => {
+        try {
+          const update = JSON.parse(event.data);
+          if (state.preview) { state.preview.building = Boolean(update.building); state.preview.error = update.error || ''; }
+          renderStatus();
+          if (update.revision !== state.revision || !update.building) refresh();
+        } catch (error) { setStatus('invalid live update','failed'); console.error('Invalid playground update',error); }
+      };
+    }
+    input.focus({preventScroll:true});
+  </script>
+</body>
+</html>

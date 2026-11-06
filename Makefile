@@ -1,5 +1,5 @@
 .PHONY: build install clean test test-integration test-all lint fmt generate check setup help \
-        check-endpoints check-skills check-coverage docs
+        check-endpoints check-skills check-coverage docs ui-preview ui-export
 
 VERSION ?= dev
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -75,6 +75,12 @@ generate: ## Generate code (API client, etc.)
 
 docs: ## Write the docs.notte.cc CLI reference to DOCS_OUT (default: ./cli-reference)
 	go run ./scripts/gendocs -out "$(or $(DOCS_OUT),cli-reference)"
+
+ui-preview: ## Open the live CLI output playground at http://127.0.0.1:4173
+	go run ./scripts/ui-preview -addr "$(or $(UI_ADDR),127.0.0.1:4173)"
+
+ui-export: ## Export the playground as a static site (UI_EXPORT_DIR defaults to dist/ui-playground)
+	go run ./scripts/ui-preview -export "$(or $(UI_EXPORT_DIR),dist/ui-playground)"
 
 check-endpoints: ## Fail if an API endpoint is neither reachable from a command nor recorded as skipped
 	@go run ./scripts/checkcoverage -check endpoints -strict

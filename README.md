@@ -633,6 +633,18 @@ make setup
 
 This installs [lefthook](https://github.com/evilmartians/lefthook) pre-commit and pre-push hooks for linting and testing.
 
+### CLI output playground
+
+Run `make ui-preview` and open <http://127.0.0.1:4173>. Type `notte` and press
+Enter for the real CLI help, then try `notte sessions list` or `notte page scrape`.
+Commands run against synthetic fixtures without an API key or live account.
+
+Edit the Go formatter or command output code and save. The playground rebuilds
+the CLI and reruns your terminal history automatically, preserving your input.
+Build errors stay visible alongside the last successful output. See
+[the playground guide](internal/playground/README.md) for the iteration loop,
+supported commands, fixtures, and static exports.
+
 ### Releasing
 
 Releases follow the Notte API's production deployments in two steps:

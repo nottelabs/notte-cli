@@ -1,0 +1,310 @@
+[
+  {
+    "id": "help",
+    "group": "Help",
+    "title": "CLI help",
+    "description": "Run notte with no arguments to see its actual help output.",
+    "args": [],
+    "source": "internal/cmd/root.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "sessions-help",
+    "group": "Help",
+    "title": "Sessions help",
+    "description": "Discover available session commands and flags.",
+    "args": ["sessions"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "page-help",
+    "group": "Help",
+    "title": "Page help",
+    "description": "Discover page actions and their arguments.",
+    "args": ["page"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "version",
+    "group": "General",
+    "title": "CLI version",
+    "description": "The locally built CLI version in text and JSON.",
+    "args": ["version"],
+    "source": "internal/cmd/root.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "sessions-start",
+    "group": "Sessions",
+    "title": "Start a session",
+    "description": "A new session with browser settings and connection links.",
+    "args": ["sessions", "start", "--browser-type", "chromium", "--idle-timeout-minutes", "5"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/start",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "active",
+          "browser_type": "chromium",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:00:00Z",
+          "idle_timeout_minutes": 5,
+          "max_duration_minutes": 15,
+          "viewport_width": 1280,
+          "viewport_height": 720,
+          "viewer_url": "https://example.com/sessions/demo-session-001",
+          "cdp_url": "wss://example.com/cdp/demo-session-001"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-status",
+    "group": "Sessions",
+    "title": "Session details and steps",
+    "description": "Details with populated optional fields and a short action history.",
+    "args": ["sessions", "status", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "active",
+          "browser_type": "chromium",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:02:30Z",
+          "idle_timeout_minutes": 5,
+          "max_duration_minutes": 15,
+          "duration": "0:02:30",
+          "viewport_width": 1280,
+          "viewport_height": 720,
+          "viewer_url": "https://example.com/sessions/demo-session-001",
+          "network_request_bytes": 12048,
+          "network_response_bytes": 245760,
+          "steps": [
+            {"type": "execution_result", "value": {"action": {"type": "goto", "url": "https://example.com"}}},
+            {"type": "observation", "value": {}},
+            {"type": "execution_result", "value": {"action": {"type": "click", "id": "B1"}}}
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-list",
+    "group": "Sessions",
+    "title": "Multiple sessions",
+    "description": "Two sessions with different browser settings and optional fields.",
+    "args": ["sessions", "list"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-001",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:02:30Z",
+              "idle_timeout_minutes": 5,
+              "viewer_url": "https://example.com/sessions/demo-session-001"
+            },
+            {
+              "session_id": "demo-session-002",
+              "status": "active",
+              "browser_type": "firefox",
+              "created_at": "2026-01-15T10:01:00Z",
+              "last_accessed_at": "2026-01-15T10:02:00Z",
+              "idle_timeout_minutes": 3
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-empty",
+    "group": "Sessions",
+    "title": "No active sessions",
+    "description": "The empty state in text mode and its machine-readable JSON equivalent.",
+    "args": ["sessions", "list"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {"items": [], "page": 1, "page_size": 20, "has_next": false}
+      }
+    ]
+  },
+  {
+    "id": "sessions-long-values",
+    "group": "Sessions",
+    "title": "Long values and wrapping",
+    "description": "Long connection links and a user agent reveal how output fits narrow terminals.",
+    "args": ["sessions", "list"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-with-a-deliberately-long-identifier-001",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:02:30Z",
+              "idle_timeout_minutes": 5,
+              "viewer_url": "https://example.com/preview/sessions/demo-session-with-a-deliberately-long-identifier-001/viewer?display=full&tab=product-catalog",
+              "cdp_url": "wss://example.com/preview/sessions/demo-session-with-a-deliberately-long-identifier-001/browser/debugging",
+              "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-error",
+    "group": "Sessions",
+    "title": "Session not found",
+    "description": "A failed API request with its error message and nonzero exit code.",
+    "args": ["sessions", "status", "--session-id", "demo-session-missing"],
+    "source": "internal/output/text.go",
+    "expectedExit": 1,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-missing",
+        "status": 404,
+        "body": {"error": {"code": "SESSION_NOT_FOUND", "message": "Session demo-session-missing was not found. Start a new session with 'notte sessions start'."}}
+      }
+    ]
+  },
+  {
+    "id": "sessions-stop",
+    "group": "Sessions",
+    "title": "Stop confirmation",
+    "description": "A completed stop command, with confirmation supplied by --yes.",
+    "args": ["sessions", "stop", "--session-id", "demo-session-001", "--yes"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/stop",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "closed",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:02:30Z",
+          "closed_at": "2026-01-15T10:03:00Z",
+          "idle_timeout_minutes": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-observe",
+    "group": "Page",
+    "title": "Observe a page",
+    "description": "A page description, action references, and page metadata.",
+    "args": ["page", "observe", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/observe",
+        "status": 200,
+        "body": {
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z",
+          "metadata": {
+            "title": "Example Shop",
+            "url": "https://example.com/shop",
+            "tabs": [{"tab_id": 1, "title": "Example Shop", "url": "https://example.com/shop"}],
+            "viewport": {"scroll_x": 0, "scroll_y": 0, "total_height": 1600, "total_width": 1280, "viewport_height": 720, "viewport_width": 1280}
+          },
+          "screenshot": {"raw": ""},
+          "space": {
+            "category": "page",
+            "description": "# Example Shop\n\nBrowse the latest products.\n\n[I1] Search products\n[B1] Search\n[L1] View ceramic mug\n[L2] View cotton tote\n[B2] Open basket (0 items)",
+            "interaction_actions": []
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scrape",
+    "group": "Page",
+    "title": "Scrape markdown",
+    "description": "Multiline content with headings, links, prices, and Unicode text.",
+    "args": ["page", "scrape", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/scrape",
+        "status": 200,
+        "body": {
+          "markdown": "# Example Shop\n\nSimple objects for everyday use.\n\n## Ceramic mug\n\nHandmade in Lisbon. Available in café white and midnight blue.\n\n**Price:** $18.00\n\n[View product](https://example.com/products/ceramic-mug)\n\n## Cotton tote\n\nA reusable bag with enough room for a laptop and groceries.\n\n**Price:** $12.00\n\n[View product](https://example.com/products/cotton-tote)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scrape-structured",
+    "group": "Page",
+    "title": "Scrape structured data",
+    "description": "Nested objects and arrays extracted with instructions.",
+    "args": ["page", "scrape", "--session-id", "demo-session-001", "--instructions", "Extract product names, prices, and availability"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/scrape",
+        "status": 200,
+        "body": {
+          "markdown": "# Example Shop\n\nCeramic mug: $18.00\nCotton tote: $12.00",
+          "structured": {
+            "success": true,
+            "data": {
+              "shop": "Example Shop",
+              "currency": "USD",
+              "products": [
+                {"name": "Ceramic mug", "price": 18, "available": true, "variants": ["Café white", "Midnight blue"]},
+                {"name": "Cotton tote", "price": 12, "available": false, "variants": []}
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+]
