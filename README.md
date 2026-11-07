@@ -76,11 +76,12 @@ Specify the API key using one of three methods (checked in priority order):
 ```bash
 # 1. Via environment variable (recommended for CI/CD)
 export NOTTE_API_KEY="your-api-key"
-# 2. Via your system credential store (recommended for local development)
-notte auth login
+# 2. Via your system credential store (recommended for local development):
+#    prints a link and a code; approve it in the console from any device
+notte login
 # 3. Via config file (~/.notte/cli/config.json)
 # create ~/.notte/cli/config.json and add your API key
-notte auth status
+notte whoami
 ```
 
 ### 2. Start a Browser Session
@@ -96,10 +97,15 @@ Watch the session live through the `ViewerUrl` in the output.
 ### Authentication
 
 ```bash
-notte auth login                     # Store API key in the system credential store
-notte auth logout                    # Remove the stored API key
-notte auth status                    # Show authentication status
+notte login                          # Approve a code in the console; stores a new key for this machine
+notte login --with-token             # Store an existing API key read from standard input
+notte logout                         # Revoke this machine's key and remove it
+notte whoami                         # Show authentication status
 ```
+
+`notte auth login`, `notte auth logout` and `notte auth status` still work and do the same.
+
+`notte login` works without a browser on this machine: open the printed link on any device, check that the code matches the one in your terminal, choose a workspace and approve. The new key is named `CLI · <host> · <date>` on the console's API keys page. Logging in again on the same machine revokes the previous key.
 
 ### Web Search
 
@@ -569,7 +575,7 @@ For comprehensive documentation including templates and reference guides, see th
 
 ### Credential Storage
 
-`notte auth login` stores the API key (and `notte tunnel up` stores a Tailscale OAuth client secret) in your system's credential store:
+`notte login` stores the API key (and `notte tunnel up` stores a Tailscale OAuth client secret) in your system's credential store:
 
 - **macOS**: the login Keychain, service `notte-cli`. After upgrading `notte`, macOS may ask once to let the new binary read the item: choose **Always Allow**.
 - **Windows**: Credential Manager, generic credentials named `keyring:notte-cli:...`.

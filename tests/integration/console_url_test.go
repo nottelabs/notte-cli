@@ -16,7 +16,7 @@ import (
 //
 // The mapping is hostnames written down in the CLI. Unit tests only assert the
 // CLI returns the string it was told to; nothing there notices if a console is
-// renamed or retired, and the symptom would be `notte auth login` opening a
+// renamed or retired, and the symptom would be `notte login` linking to a
 // browser at a dead address with no error from the CLI itself.
 func TestConsoleURL_MappedConsolesExist(t *testing.T) {
 	// Representative API URLs for each environment the mapping covers. Driving
@@ -45,7 +45,7 @@ func TestConsoleURL_MappedConsolesExist(t *testing.T) {
 
 	for consoleURL := range seen {
 		t.Run(consoleURL, func(t *testing.T) {
-			target := consoleURL + "/auth/cli"
+			target := consoleURL + "/oauth/device"
 			resp, err := client.Get(target)
 			if err != nil {
 				t.Fatalf("GET %s: %v", target, err)
@@ -57,7 +57,7 @@ func TestConsoleURL_MappedConsolesExist(t *testing.T) {
 			// runs; a 404 is the one answer that means the CLI is pointing
 			// somewhere that no longer serves this flow.
 			if resp.StatusCode == http.StatusNotFound {
-				t.Errorf("GET %s returned 404, so this console no longer serves CLI sign-in", target)
+				t.Errorf("GET %s returned 404, so this console does not serve `notte login` approvals", target)
 			}
 			t.Logf("GET %s -> %d", target, resp.StatusCode)
 		})

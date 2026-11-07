@@ -20,7 +20,7 @@ const (
 	SourceConfig  Source = "config"
 )
 
-var ErrNoAPIKey = errors.New("no API key found. Run 'notte auth login' or set NOTTE_API_KEY")
+var ErrNoAPIKey = errors.New("no API key found. Run 'notte login' or set NOTTE_API_KEY")
 
 // GetAPIKey resolves API key from env → keyring → config
 // configPath can be empty to use default

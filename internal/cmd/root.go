@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 for browser automation and web scraping.
 
 Get started:
-  notte auth login        # Authenticate with your API key
+  notte login             # Log in (approve a code in the console)
   notte sessions start    # Start a browser session
   notte search <query>    # Search the web
   notte scrape <url>      # Quick scrape a webpage`,
