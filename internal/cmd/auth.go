@@ -120,7 +120,13 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("could not start the login: %w", err)
 	}
 
-	link := auth.VerificationURL(code.VerificationURIComplete)
+	// verification_uri_complete is optional in RFC 8628; without it the page
+	// asks for the code, which is printed either way.
+	link := code.VerificationURIComplete
+	if link == "" {
+		link = code.VerificationURI
+	}
+	link = auth.VerificationURL(link)
 	PrintInfo(fmt.Sprintf("\n  Visit %s\n  and check that it shows the code %s\n", link, code.UserCode))
 	if !loginNoBrowser {
 		_ = openBrowser(link) // Over SSH or in a container there is no browser to open; the link is printed.
@@ -134,12 +140,16 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 
 	// The key was just created for this API, but check it works where it is
 	// about to be saved, as for a pasted key.
+	// A key that is not saved here can never be revoked by `notte logout`, so
+	// revoke it now rather than leave it live.
 	if err := auth.ValidateAPIKey(ctx, token.AccessToken); err != nil {
+		revokeQuietly(ctx, flow, token.AccessToken)
 		return fmt.Errorf("the new API key could not be used: %w", err)
 	}
 
 	previous, _ := auth.GetKeyringAPIKey()
 	if err := auth.SetKeyringAPIKey(token.AccessToken); err != nil {
+		revokeQuietly(ctx, flow, token.AccessToken)
 		return fmt.Errorf("failed to save the API key: %w", err)
 	}
 	// Logging in again replaces this machine's key: revoke the old one if a
@@ -189,8 +199,14 @@ func loginWithStdinToken(ctx context.Context) error {
 	if err := auth.ValidateAPIKey(ctx, key); err != nil {
 		return fmt.Errorf("API key not accepted: %w", err)
 	}
+	previous, _ := auth.GetKeyringAPIKey()
 	if err := auth.SetKeyringAPIKey(key); err != nil {
 		return fmt.Errorf("failed to save the API key: %w", err)
+	}
+	// As for a device login: a key a CLI login created is no longer reachable
+	// once replaced, so revoke it. The API leaves any other key alone.
+	if previous != "" && previous != key {
+		revokeQuietly(ctx, newDeviceFlow(auth.GetCurrentAPIURL()), previous)
 	}
 	return PrintResult("API key stored successfully.", map[string]any{
 		"authenticated": true,
@@ -205,7 +221,7 @@ func revokeQuietly(ctx context.Context, flow *auth.DeviceFlow, key string) bool 
 	defer cancel()
 	revoked, err := flow.Revoke(ctx, key)
 	if err != nil {
-		PrintInfo(fmt.Sprintf("Could not revoke the previous key (%v). You can revoke it from the console's API keys page.", err))
+		PrintInfo(fmt.Sprintf("Could not revoke an API key on the server (%v). You can revoke it from the console's API keys page.", err))
 		return false
 	}
 	return revoked

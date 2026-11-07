@@ -236,3 +236,54 @@ func TestVerificationURL(t *testing.T) {
 		t.Errorf("with an unusable override = %q", got)
 	}
 }
+
+func TestDeviceFlowFailsFastOnPermanentErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		status int
+		want   string
+	}{
+		{"proxy 403", http.StatusForbidden, "unexpected status 403"},
+		{"missing route", http.StatusNotFound, "does not support `notte login` yet"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			api := &fakeDeviceAPI{responses: []func(http.ResponseWriter){
+				func(w http.ResponseWriter) { http.Error(w, "nope", tc.status) },
+			}}
+			flow, _ := newTestFlow(t, api)
+			code, _ := flow.RequestCode(context.Background(), DeviceClientInfo{})
+			_, err := flow.Poll(context.Background(), code)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("Poll error = %v, want %q", err, tc.want)
+			}
+			if api.polls != 1 {
+				t.Errorf("polled %d times, want 1", api.polls)
+			}
+		})
+	}
+}
+
+func TestDeviceFlowRetriesAPlainRateLimit(t *testing.T) {
+	api := &fakeDeviceAPI{responses: []func(http.ResponseWriter){
+		func(w http.ResponseWriter) { http.Error(w, "busy", http.StatusTooManyRequests) },
+		func(w http.ResponseWriter) { http.Error(w, "bad gateway", http.StatusBadGateway) },
+		issued,
+	}}
+	flow, _ := newTestFlow(t, api)
+	code, _ := flow.RequestCode(context.Background(), DeviceClientInfo{})
+	if _, err := flow.Poll(context.Background(), code); err != nil {
+		t.Fatalf("Poll: %v", err)
+	}
+}
+
+func TestDeviceFlowDoesNotRetryAnUnreadableKey(t *testing.T) {
+	api := &fakeDeviceAPI{responses: []func(http.ResponseWriter){
+		func(w http.ResponseWriter) { w.WriteHeader(http.StatusOK); _, _ = w.Write([]byte("not json")) },
+	}}
+	flow, _ := newTestFlow(t, api)
+	code, _ := flow.RequestCode(context.Background(), DeviceClientInfo{})
+	_, err := flow.Poll(context.Background(), code)
+	if err == nil || !strings.Contains(err.Error(), "unexpected token response") {
+		t.Fatalf("Poll error = %v", err)
+	}
+}

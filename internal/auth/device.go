@@ -182,7 +182,10 @@ func (f *DeviceFlow) Poll(ctx context.Context, code *DeviceCode) (*DeviceToken, 
 		}
 
 		token, oerr, err := f.pollOnce(ctx, code.DeviceCode)
+		var permanent *permanentPollError
 		switch {
+		case errors.As(err, &permanent):
+			return nil, fmt.Errorf("login failed: %w", permanent.err)
 		case err != nil:
 			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				return nil, ErrLoginExpired
@@ -209,7 +212,16 @@ func (f *DeviceFlow) Poll(ctx context.Context, code *DeviceCode) (*DeviceToken, 
 	}
 }
 
-// pollOnce returns the token, an OAuth error to act on, or a transient error.
+// permanentPollError is a poll failure that waiting will not fix: a 4xx that is
+// not an OAuth answer (a proxy's 403, a route that does not exist), or a 200
+// whose key could not be read. The latter cannot be retried either: the API
+// hands a key out once.
+type permanentPollError struct{ err error }
+
+func (e *permanentPollError) Error() string { return e.err.Error() }
+
+// pollOnce returns the token, an OAuth error to act on, a transient error
+// (connection failure, 5xx, 429), or a *permanentPollError.
 func (f *DeviceFlow) pollOnce(ctx context.Context, deviceCode string) (*DeviceToken, *oauthError, error) {
 	form := url.Values{"grant_type": {deviceCodeGrantType}, "device_code": {deviceCode}}
 	resp, err := f.post(ctx, deviceTokenPath, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
@@ -221,10 +233,10 @@ func (f *DeviceFlow) pollOnce(ctx context.Context, deviceCode string) (*DeviceTo
 	if resp.StatusCode == http.StatusOK {
 		var token DeviceToken
 		if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
-			return nil, nil, fmt.Errorf("unexpected token response: %w", err)
+			return nil, nil, &permanentPollError{fmt.Errorf("unexpected token response: %w", err)}
 		}
 		if token.AccessToken == "" {
-			return nil, nil, errors.New("unexpected token response: no key")
+			return nil, nil, &permanentPollError{errors.New("unexpected token response: no key")}
 		}
 		return &token, nil, nil
 	}
@@ -238,7 +250,14 @@ func (f *DeviceFlow) pollOnce(ctx context.Context, deviceCode string) (*DeviceTo
 		}
 		return nil, &oerr, nil
 	}
-	return nil, nil, fmt.Errorf("unexpected status %s", resp.Status)
+	switch {
+	case resp.StatusCode >= 500 || resp.StatusCode == http.StatusTooManyRequests:
+		return nil, nil, fmt.Errorf("unexpected status %s", resp.Status)
+	case resp.StatusCode == http.StatusNotFound:
+		return nil, nil, &permanentPollError{errors.New("this API does not support `notte login` yet (HTTP 404)")}
+	default:
+		return nil, nil, &permanentPollError{fmt.Errorf("unexpected status %s", resp.Status)}
+	}
 }
 
 // Revoke asks the API to revoke a key that a CLI login created. It reports
