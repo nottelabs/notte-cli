@@ -628,6 +628,12 @@ const (
 	GlobalScrapeRequestScreenshotTypeRaw        GlobalScrapeRequestScreenshotType = "raw"
 )
 
+// Defines values for HostPresetEntryEvidence.
+const (
+	Documented HostPresetEntryEvidence = "documented"
+	Observed   HostPresetEntryEvidence = "observed"
+)
+
 // Defines values for IntervalUnit.
 const (
 	Days    IntervalUnit = "days"
@@ -1954,13 +1960,15 @@ type CaptchaSolveAction struct {
 
 // CaptchaStatus defines model for CaptchaStatus.
 type CaptchaStatus struct {
-	CancelReason *string            `json:"cancel_reason,omitempty"`
-	CaptchaId    string             `json:"captcha_id"`
-	Generation   int                `json:"generation"`
-	Message      *string            `json:"message,omitempty"`
-	PageId       string             `json:"page_id"`
-	RetryAfterMs *int               `json:"retry_after_ms,omitempty"`
-	State        CaptchaStatusState `json:"state"`
+	CancelReason   *string            `json:"cancel_reason,omitempty"`
+	CaptchaId      string             `json:"captcha_id"`
+	ChallengeState *string            `json:"challenge_state,omitempty"`
+	ChallengeType  *string            `json:"challenge_type,omitempty"`
+	Generation     int                `json:"generation"`
+	Message        *string            `json:"message,omitempty"`
+	PageId         string             `json:"page_id"`
+	RetryAfterMs   *int               `json:"retry_after_ms,omitempty"`
+	State          CaptchaStatusState `json:"state"`
 }
 
 // CaptchaStatusState defines model for CaptchaStatus.State.
@@ -3465,6 +3473,17 @@ type HelpAction struct {
 	Type        *string `json:"type,omitempty"`
 }
 
+// HostPresetEntry defines model for HostPresetEntry.
+type HostPresetEntry struct {
+	Evidence HostPresetEntryEvidence `json:"evidence"`
+	Host     string                  `json:"host"`
+	Provider string                  `json:"provider"`
+	Source   string                  `json:"source"`
+}
+
+// HostPresetEntryEvidence defines model for HostPresetEntry.Evidence.
+type HostPresetEntryEvidence string
+
 // ImageResolution defines model for ImageResolution.
 type ImageResolution struct {
 	AspectRatio float32 `json:"aspect_ratio"`
@@ -4906,7 +4925,7 @@ type SecretProxy struct {
 	// CaCertificate PEM CA certificates the browser trusts for this session: for the secret proxy itself and for the certificates it presents for `hosts`. At most 16384 bytes; each must be a CA and not expired. Never include a private key.
 	CaCertificate *string `json:"ca_certificate,omitempty"`
 
-	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed. Required with `server`.
+	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed. Required with `server`. A host preset such as `@payments` stands for a list Notte maintains (common payment providers); `GET /secret-proxy/host-presets` returns each preset's current hosts.
 	Hosts *[]string `json:"hosts,omitempty"`
 
 	// Password Basic auth password for the secret proxy. Never stored or returned.
@@ -4918,6 +4937,21 @@ type SecretProxy struct {
 
 	// Username Basic auth username for the secret proxy.
 	Username *string `json:"username,omitempty"`
+}
+
+// SecretProxyHostPresetResponse defines model for SecretProxyHostPresetResponse.
+type SecretProxyHostPresetResponse struct {
+	Description string            `json:"description"`
+	Entries     []HostPresetEntry `json:"entries"`
+	Hosts       []string          `json:"hosts"`
+	Name        string            `json:"name"`
+	Token       string            `json:"token"`
+	Version     string            `json:"version"`
+}
+
+// SecretProxyHostPresetsResponse defines model for SecretProxyHostPresetsResponse.
+type SecretProxyHostPresetsResponse struct {
+	Presets []SecretProxyHostPresetResponse `json:"presets"`
 }
 
 // SecretProxySummary defines model for SecretProxySummary.
@@ -6736,6 +6770,12 @@ type ProfileStateSetParams struct {
 
 // SearchWebParams defines parameters for SearchWeb.
 type SearchWebParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// ListSecretProxyHostPresetsParams defines parameters for ListSecretProxyHostPresets.
+type ListSecretProxyHostPresetsParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -16604,6 +16644,9 @@ type ClientInterface interface {
 
 	SearchWeb(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListSecretProxyHostPresets request
+	ListSecretProxyHostPresets(ctx context.Context, params *ListSecretProxyHostPresetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListSecrets request
 	ListSecrets(ctx context.Context, params *ListSecretsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -18407,6 +18450,18 @@ func (c *Client) SearchWebWithBody(ctx context.Context, params *SearchWebParams,
 
 func (c *Client) SearchWeb(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchWebRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListSecretProxyHostPresets(ctx context.Context, params *ListSecretProxyHostPresetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSecretProxyHostPresetsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -28214,6 +28269,59 @@ func NewSearchWebRequestWithBody(server string, params *SearchWebParams, content
 	return req, nil
 }
 
+// NewListSecretProxyHostPresetsRequest generates requests for ListSecretProxyHostPresets
+func NewListSecretProxyHostPresetsRequest(server string, params *ListSecretProxyHostPresetsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/secret-proxy/host-presets")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewListSecretsRequest generates requests for ListSecrets
 func NewListSecretsRequest(server string, params *ListSecretsParams) (*http.Request, error) {
 	var err error
@@ -32193,6 +32301,9 @@ type ClientWithResponsesInterface interface {
 
 	SearchWebWithResponse(ctx context.Context, params *SearchWebParams, body SearchWebJSONRequestBody, reqEditors ...RequestEditorFn) (*SearchWebResult, error)
 
+	// ListSecretProxyHostPresetsWithResponse request
+	ListSecretProxyHostPresetsWithResponse(ctx context.Context, params *ListSecretProxyHostPresetsParams, reqEditors ...RequestEditorFn) (*ListSecretProxyHostPresetsResult, error)
+
 	// ListSecretsWithResponse request
 	ListSecretsWithResponse(ctx context.Context, params *ListSecretsParams, reqEditors ...RequestEditorFn) (*ListSecretsResult, error)
 
@@ -34649,6 +34760,29 @@ func (r SearchWebResult) StatusCode() int {
 	return 0
 }
 
+type ListSecretProxyHostPresetsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SecretProxyHostPresetsResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSecretProxyHostPresetsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSecretProxyHostPresetsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListSecretsResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -36817,6 +36951,15 @@ func (c *ClientWithResponses) SearchWebWithResponse(ctx context.Context, params 
 		return nil, err
 	}
 	return ParseSearchWebResult(rsp)
+}
+
+// ListSecretProxyHostPresetsWithResponse request returning *ListSecretProxyHostPresetsResult
+func (c *ClientWithResponses) ListSecretProxyHostPresetsWithResponse(ctx context.Context, params *ListSecretProxyHostPresetsParams, reqEditors ...RequestEditorFn) (*ListSecretProxyHostPresetsResult, error) {
+	rsp, err := c.ListSecretProxyHostPresets(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSecretProxyHostPresetsResult(rsp)
 }
 
 // ListSecretsWithResponse request returning *ListSecretsResult
@@ -40593,6 +40736,39 @@ func ParseSearchWebResult(rsp *http.Response) (*SearchWebResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSecretProxyHostPresetsResult parses an HTTP response from a ListSecretProxyHostPresetsWithResponse call
+func ParseListSecretProxyHostPresetsResult(rsp *http.Response) (*ListSecretProxyHostPresetsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSecretProxyHostPresetsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SecretProxyHostPresetsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
