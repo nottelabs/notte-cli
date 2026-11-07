@@ -181,12 +181,12 @@ Upgrade to the latest release with ` + "`notte upgrade`" + `. It uses Homebrew w
 
 ## Authentication
 
-The CLI reads your API key from, in order: the ` + "`NOTTE_API_KEY`" + ` environment variable, the system keyring (set by ` + "`notte auth login`" + `), then ` + "`~/.notte/cli/config.json`" + `. See [Authentication](/api-reference/authentication) to get a key.
+The CLI reads your API key from, in order: the ` + "`NOTTE_API_KEY`" + ` environment variable, the system keyring (set by ` + "`notte login`" + `), then ` + "`~/.notte/cli/config.json`" + `. See [Authentication](/api-reference/authentication) to get a key.
 
 ` + "```bash" + `
 export NOTTE_API_KEY=your_api_key_here
-# or, for local development
-notte auth login
+# or, for local development (prints a link you approve in the console)
+notte login
 ` + "```" + `
 
 ## Commands

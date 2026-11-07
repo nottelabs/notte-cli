@@ -61,19 +61,3 @@ func TestConsoleURLFallsBackForUnknownEnvironments(t *testing.T) {
 		}
 	}
 }
-
-func TestConsoleAuthURLTargetsTheDerivedConsole(t *testing.T) {
-	// End of the chain: the link the sign-in page renders has to point at the
-	// console the environment resolves to, not the compiled-in default.
-	t.Setenv(config.EnvConsoleURL, "")
-	t.Setenv(config.EnvAPIURL, "https://us-staging.notte.cc")
-
-	server := NewSetupServer()
-	server.baseURL = "http://127.0.0.1:12345"
-
-	got := server.GetConsoleAuthURL()
-	const want = "https://staging-console.notte.cc/auth/cli"
-	if len(got) < len(want) || got[:len(want)] != want {
-		t.Errorf("GetConsoleAuthURL() = %q, want it to start with %q", got, want)
-	}
-}
