@@ -4925,7 +4925,7 @@ type SecretProxy struct {
 	// CaCertificate PEM CA certificates the browser trusts for this session: for the secret proxy itself and for the certificates it presents for `hosts`. At most 16384 bytes; each must be a CA and not expired. Never include a private key.
 	CaCertificate *string `json:"ca_certificate,omitempty"`
 
-	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port. A bare '*' is not allowed. Required with `server`. A host preset such as `@payments` stands for a list Notte maintains (common payment providers); `GET /secret-proxy/host-presets` returns each preset's current hosts.
+	// Hosts Hosts routed through the secret proxy: exact hostnames or a leading '*.' wildcard, without scheme, path or port, or '*' to route every host (the secret proxy then decides where to swap; '*' replaces any other entry). Required with `server`. A host preset such as `@payments` stands for a list Notte maintains (common payment providers); `GET /secret-proxy/host-presets` returns each preset's current hosts.
 	Hosts *[]string `json:"hosts,omitempty"`
 
 	// Password Basic auth password for the secret proxy. Never stored or returned.
