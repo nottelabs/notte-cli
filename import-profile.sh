@@ -11,6 +11,7 @@
 # Environment variables:
 #   NOTTE_API_URL      API to use (default: production)
 #   NOTTE_INSTALL_DIR  where to install the CLI when needed (default: ~/.local/bin)
+#   NOTTE_TTY          terminal to read answers from (default: /dev/tty; for tests)
 
 set -eu
 
@@ -33,7 +34,8 @@ main() {
 
 	# Piped from curl, standard input is this script: questions are read from
 	# the terminal instead.
-	(: </dev/tty) 2>/dev/null || fail "run this in an interactive terminal"
+	tty="${NOTTE_TTY:-/dev/tty}"
+	(: <"$tty") 2>/dev/null || fail "run this in an interactive terminal"
 
 	# Any CLI that has `profiles sync` will do; otherwise install the latest
 	# one for this user only, so no sudo password is needed.
@@ -46,10 +48,10 @@ main() {
 	fi
 
 	if ! "$notte" whoami >/dev/null 2>&1; then
-		"$notte" login </dev/tty || fail "login failed"
+		"$notte" login <"$tty" || fail "login failed"
 	fi
 
-	if ! "$notte" profiles sync --profile-id "$profile_id" "$@" </dev/tty; then
+	if ! "$notte" profiles sync --profile-id "$profile_id" "$@" <"$tty"; then
 		echo "If the profile was not found, this CLI may be logged in to another workspace: run \`$notte login\` and try again." >&2
 		exit 1
 	fi
