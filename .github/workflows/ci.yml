@@ -170,7 +170,7 @@ jobs:
 
       - name: shellcheck
         if: runner.os == 'Linux'
-        run: shellcheck install.sh
+        run: shellcheck install.sh import-profile.sh
 
       - name: install.sh
         run: |
