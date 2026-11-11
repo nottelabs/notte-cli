@@ -535,8 +535,9 @@ const (
 
 // Defines values for FunctionListItemResponseSdkGeneration.
 const (
-	FunctionListItemResponseSdkGenerationV110 FunctionListItemResponseSdkGeneration = "v110"
-	FunctionListItemResponseSdkGenerationV19  FunctionListItemResponseSdkGeneration = "v19"
+	FunctionListItemResponseSdkGenerationNode110 FunctionListItemResponseSdkGeneration = "node110"
+	FunctionListItemResponseSdkGenerationV110    FunctionListItemResponseSdkGeneration = "v110"
+	FunctionListItemResponseSdkGenerationV19     FunctionListItemResponseSdkGeneration = "v19"
 )
 
 // Defines values for FunctionResponseDefaultRuntime.
@@ -547,8 +548,9 @@ const (
 
 // Defines values for FunctionResponseSdkGeneration.
 const (
-	FunctionResponseSdkGenerationV110 FunctionResponseSdkGeneration = "v110"
-	FunctionResponseSdkGenerationV19  FunctionResponseSdkGeneration = "v19"
+	FunctionResponseSdkGenerationNode110 FunctionResponseSdkGeneration = "node110"
+	FunctionResponseSdkGenerationV110    FunctionResponseSdkGeneration = "v110"
+	FunctionResponseSdkGenerationV19     FunctionResponseSdkGeneration = "v19"
 )
 
 // Defines values for FunctionRunListItemResponseStatus.
@@ -567,8 +569,9 @@ const (
 
 // Defines values for FunctionRuntimeHealthResponseSdkGeneration.
 const (
-	FunctionRuntimeHealthResponseSdkGenerationV110 FunctionRuntimeHealthResponseSdkGeneration = "v110"
-	FunctionRuntimeHealthResponseSdkGenerationV19  FunctionRuntimeHealthResponseSdkGeneration = "v19"
+	FunctionRuntimeHealthResponseSdkGenerationNode110 FunctionRuntimeHealthResponseSdkGeneration = "node110"
+	FunctionRuntimeHealthResponseSdkGenerationV110    FunctionRuntimeHealthResponseSdkGeneration = "v110"
+	FunctionRuntimeHealthResponseSdkGenerationV19     FunctionRuntimeHealthResponseSdkGeneration = "v19"
 )
 
 // Defines values for FunctionRuntimeHealthResponseStatus.
@@ -603,8 +606,9 @@ const (
 
 // Defines values for FunctionWithLinkResponseSdkGeneration.
 const (
-	FunctionWithLinkResponseSdkGenerationV110 FunctionWithLinkResponseSdkGeneration = "v110"
-	FunctionWithLinkResponseSdkGenerationV19  FunctionWithLinkResponseSdkGeneration = "v19"
+	FunctionWithLinkResponseSdkGenerationNode110 FunctionWithLinkResponseSdkGeneration = "node110"
+	FunctionWithLinkResponseSdkGenerationV110    FunctionWithLinkResponseSdkGeneration = "v110"
+	FunctionWithLinkResponseSdkGenerationV19     FunctionWithLinkResponseSdkGeneration = "v19"
 )
 
 // Defines values for GetFunctionRunResponseStatus.
@@ -1208,8 +1212,9 @@ const (
 
 // Defines values for FunctionRuntimeHealthParamsSdkGeneration.
 const (
-	FunctionRuntimeHealthParamsSdkGenerationV110 FunctionRuntimeHealthParamsSdkGeneration = "v110"
-	FunctionRuntimeHealthParamsSdkGenerationV19  FunctionRuntimeHealthParamsSdkGeneration = "v19"
+	FunctionRuntimeHealthParamsSdkGenerationNode110 FunctionRuntimeHealthParamsSdkGeneration = "node110"
+	FunctionRuntimeHealthParamsSdkGenerationV110    FunctionRuntimeHealthParamsSdkGeneration = "v110"
+	FunctionRuntimeHealthParamsSdkGenerationV19     FunctionRuntimeHealthParamsSdkGeneration = "v19"
 )
 
 // Defines values for FunctionRunGetMetadataParamsPayloadMode.
