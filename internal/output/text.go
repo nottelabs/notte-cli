@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
+	"regexp"
 	"strings"
 	"text/tabwriter"
+	"unicode/utf8"
 
 	"github.com/muesli/termenv"
 
@@ -20,177 +21,6 @@ type TextFormatter struct {
 }
 
 var output = termenv.NewOutput(os.Stdout)
-
-func (f *TextFormatter) Print(data any) error {
-	v := reflect.ValueOf(data)
-
-	// Handle pointers by dereferencing
-	if v.Kind() == reflect.Pointer {
-		if v.IsNil() {
-			_, err := fmt.Fprintln(f.Writer, "<nil>")
-			return err
-		}
-		v = v.Elem()
-	}
-
-	// Handle maps as key-value display
-	if v.Kind() == reflect.Map {
-		return f.printKeyValue(v.Interface())
-	}
-
-	// Handle slices as tables
-	if v.Kind() == reflect.Slice {
-		return f.printSlice(v.Interface())
-	}
-
-	// Handle structs as key-value
-	if v.Kind() == reflect.Struct {
-		return f.printStruct(v.Interface())
-	}
-
-	// Default: just print
-	_, err := fmt.Fprintln(f.Writer, data)
-	return err
-}
-
-func (f *TextFormatter) printKeyValue(data any) error {
-	v := reflect.ValueOf(data)
-	w := tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
-
-	for _, key := range v.MapKeys() {
-		val := v.MapIndex(key)
-		label := f.colorize(fmt.Sprintf("%v:", key.Interface()), termenv.ANSICyan)
-		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, val.Interface())
-	}
-
-	return w.Flush()
-}
-
-func (f *TextFormatter) printStruct(data any) error {
-	return f.printStructWithIndent(data, "")
-}
-
-func (f *TextFormatter) printStructWithIndent(data any, indent string) error {
-	v := reflect.ValueOf(data)
-	t := v.Type()
-	w := tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
-
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		if !field.IsExported() {
-			continue
-		}
-
-		fieldValue := v.Field(i)
-
-		// Skip nil pointers, nil slices, nil maps, and nil interfaces
-		switch fieldValue.Kind() {
-		case reflect.Pointer, reflect.Slice, reflect.Map, reflect.Interface:
-			if fieldValue.IsNil() {
-				continue
-			}
-		}
-
-		label := f.colorize(indent+field.Name+":", termenv.ANSICyan)
-
-		// Handle pointer fields by dereferencing
-		if fieldValue.Kind() == reflect.Pointer {
-			fieldValue = fieldValue.Elem()
-		}
-
-		// A struct that renders itself is a value, not a level of nesting.
-		// Timestamps are the case that matters: descending into time.Time
-		// reaches only unexported fields and prints a bare "CreatedAt:", and
-		// FlexibleTime adds an empty "Time:" underneath it, so every timestamp
-		// the CLI shows in text form came out blank.
-		if fieldValue.Kind() == reflect.Struct {
-			if s, ok := fieldValue.Interface().(fmt.Stringer); ok {
-				_, _ = fmt.Fprintf(w, "%s\t%v\n", label, s.String())
-				continue
-			}
-		}
-
-		// Handle nested structs recursively
-		if fieldValue.Kind() == reflect.Struct {
-			_, _ = fmt.Fprintln(w, label)
-			_ = w.Flush()
-			if err := f.printStructWithIndent(fieldValue.Interface(), indent+"  "); err != nil {
-				return err
-			}
-			w = tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
-			continue
-		}
-
-		// Handle slices of structs with readable formatting
-		if fieldValue.Kind() == reflect.Slice {
-			_ = w.Flush()
-			if err := f.printSliceField(fieldValue, label, indent); err != nil {
-				return err
-			}
-			w = tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
-			continue
-		}
-
-		_, _ = fmt.Fprintf(w, "%s\t%v\n", label, fieldValue.Interface())
-	}
-
-	return w.Flush()
-}
-
-func (f *TextFormatter) printSliceField(v reflect.Value, label string, indent string) error {
-	if v.Len() == 0 {
-		_, err := fmt.Fprintf(f.Writer, "%s\t[]\n", label)
-		return err
-	}
-
-	// Check if it's a slice of structs
-	elemType := v.Type().Elem()
-	if elemType.Kind() == reflect.Pointer {
-		elemType = elemType.Elem()
-	}
-	if elemType.Kind() == reflect.Struct {
-		if _, err := fmt.Fprintln(f.Writer, label); err != nil {
-			return err
-		}
-		for i := 0; i < v.Len(); i++ {
-			elem := v.Index(i)
-			if elem.Kind() == reflect.Pointer {
-				elem = elem.Elem()
-			}
-			if i > 0 {
-				if _, err := fmt.Fprintln(f.Writer); err != nil {
-					return err
-				}
-			}
-			if err := f.printStructWithIndent(elem.Interface(), indent+"  "); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	// For slices of primitives, join as comma-separated
-	items := make([]string, v.Len())
-	for i := 0; i < v.Len(); i++ {
-		items[i] = fmt.Sprintf("%v", v.Index(i).Interface())
-	}
-	_, err := fmt.Fprintf(f.Writer, "%s\t[%s]\n", label, strings.Join(items, ", "))
-	return err
-}
-
-func (f *TextFormatter) printSlice(data any) error {
-	// For slices, print each item
-	v := reflect.ValueOf(data)
-	for i := 0; i < v.Len(); i++ {
-		if err := f.Print(v.Index(i).Interface()); err != nil {
-			return err
-		}
-		if i < v.Len()-1 {
-			_, _ = fmt.Fprintln(f.Writer)
-		}
-	}
-	return nil
-}
 
 // PrintTable prints data as a table with headers
 func (f *TextFormatter) PrintTable(headers []string, data []map[string]any) error {
@@ -217,11 +47,28 @@ func (f *TextFormatter) PrintTable(headers []string, data []map[string]any) erro
 	return w.Flush()
 }
 
+// Faces add a little character to text output. JSON output never has them.
+const (
+	FaceEmpty  = "(◡︵◡)"          // nothing to show
+	FaceDenied = "( ｡ •̀ ᴖ •́ ｡)" // not signed in, or not allowed
+	FaceCool   = "( •̯́ ₃ •̯̀)"   // something good just happened
+)
+
 func (f *TextFormatter) PrintError(err error) {
+	f.PrintErrorWithFace(err, "")
+}
+
+// PrintErrorWithFace prints an error like PrintError, followed by face.
+func (f *TextFormatter) PrintErrorWithFace(err error, face string) {
+	suffix := ""
+	if face != "" {
+		suffix = " " + face
+	}
+
 	// For API errors, display "Error <status>: <message>"
 	if apiErr, ok := err.(*apierrors.APIError); ok && apiErr.Message != "" {
 		errText := f.colorize(fmt.Sprintf("Error %d:", apiErr.StatusCode), termenv.ANSIRed)
-		fmt.Fprintf(os.Stderr, "%s %s\n", errText, apiErr.Message)
+		fmt.Fprintf(os.Stderr, "%s %s%s\n", errText, apiErr.Message, suffix)
 		return
 	}
 
@@ -229,15 +76,20 @@ func (f *TextFormatter) PrintError(err error) {
 	if authErr, ok := err.(*apierrors.AuthError); ok {
 		errText := f.colorize(fmt.Sprintf("Error %d:", authErr.StatusCode), termenv.ANSIRed)
 		if authErr.Message != "" {
-			fmt.Fprintf(os.Stderr, "%s %s - %s\n", errText, authErr.Reason, authErr.Message)
+			fmt.Fprintf(os.Stderr, "%s %s - %s%s\n", errText, authErr.Reason, authErr.Message, suffix)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s %s\n", errText, authErr.Reason)
+			fmt.Fprintf(os.Stderr, "%s %s%s\n", errText, authErr.Reason, suffix)
 		}
 		return
 	}
 
 	errText := f.colorize("Error:", termenv.ANSIRed)
-	fmt.Fprintf(os.Stderr, "%s %s\n", errText, err.Error())
+	fmt.Fprintf(os.Stderr, "%s %s%s\n", errText, err.Error(), suffix)
+}
+
+// Label styles a field label the way the generic key-value output does.
+func (f *TextFormatter) Label(s string) string {
+	return f.colorize(s, termenv.ANSICyan)
 }
 
 func (f *TextFormatter) colorize(s string, color termenv.ANSIColor) string {
@@ -245,4 +97,60 @@ func (f *TextFormatter) colorize(s string, color termenv.ANSIColor) string {
 		return s
 	}
 	return output.String(s).Foreground(color).String()
+}
+
+// Table prints rows under a header with columns padded to the widest visible
+// cell. Unlike tabwriter it ignores escape sequences when measuring, so cells
+// may be colored or hold OSC 8 links. The last column is not padded.
+func (f *TextFormatter) Table(headers []string, rows [][]string) error {
+	widths := make([]int, len(headers))
+	for i, h := range headers {
+		widths[i] = VisibleWidth(h)
+	}
+	for _, row := range rows {
+		for i, cell := range row {
+			if w := VisibleWidth(cell); i < len(widths) && w > widths[i] {
+				widths[i] = w
+			}
+		}
+	}
+	var b strings.Builder
+	line := func(cells []string, style func(string) string) {
+		for i, cell := range cells {
+			if i > 0 {
+				b.WriteString("   ")
+			}
+			b.WriteString(style(cell))
+			if i < len(cells)-1 {
+				b.WriteString(strings.Repeat(" ", widths[i]-VisibleWidth(cell)))
+			}
+		}
+		b.WriteString("\n")
+	}
+	line(headers, f.Label)
+	for _, row := range rows {
+		line(row, func(s string) string { return s })
+	}
+	_, err := io.WriteString(f.Writer, b.String())
+	return err
+}
+
+// Colorize applies an ANSI color when color output is enabled.
+func (f *TextFormatter) Colorize(s string, color termenv.ANSIColor) string {
+	return f.colorize(s, color)
+}
+
+// Faint dims s when color output is enabled.
+func (f *TextFormatter) Faint(s string) string {
+	if f.NoColor {
+		return s
+	}
+	return output.String(s).Faint().String()
+}
+
+var escapePattern = regexp.MustCompile(`\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\[[0-9;]*[A-Za-z]`)
+
+// VisibleWidth is the number of characters s takes on screen.
+func VisibleWidth(s string) int {
+	return utf8.RuneCountInString(escapePattern.ReplaceAllString(s, ""))
 }

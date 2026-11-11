@@ -152,7 +152,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 			}
 			return fmt.Errorf("profile %s: %w", targetID, importErr)
 		}
-		return PrintResult(fmt.Sprintf("Synced browser state into profile %s (%d cookies, %d localStorage origins, %d sessionStorage origins).", targetID, response.CookiesCount, response.LocalStorageOrigins, response.SessionStorageOrigins), map[string]any{"profile_id": targetID, "created": created, "synced": len(cookies), "cookies_count": response.CookiesCount, "local_storage_origins": response.LocalStorageOrigins, "session_storage_origins": response.SessionStorageOrigins, "mode": syncMode})
+		return printDone(fmt.Sprintf("Synced browser state into profile %s (%d cookies, %d localStorage origins, %d sessionStorage origins)", targetID, response.CookiesCount, response.LocalStorageOrigins, response.SessionStorageOrigins), map[string]any{"profile_id": targetID, "created": created, "synced": len(cookies), "cookies_count": response.CookiesCount, "local_storage_origins": response.LocalStorageOrigins, "session_storage_origins": response.SessionStorageOrigins, "mode": syncMode}, "notte sessions start --profile-id "+targetID)
 	}
 	mode := api.ProfileCookiesImportRequestMode(syncMode)
 	// The cookies are already normalized to the Playwright shape (string
@@ -190,7 +190,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 			out["cookies_count"] = resp.JSON200.CookiesCount
 			out["mode"] = resp.JSON200.Mode
 		}
-		return GetFormatter().Print(out)
+		return render(out)
 	}
 
 	printSyncSuccess(targetID, len(cookies), resp.JSON200)
@@ -442,11 +442,9 @@ func printSyncSuccess(profileID string, synced int, resp *api.ProfileCookiesImpo
 	if resp != nil {
 		total = resp.CookiesCount
 	}
-	fmt.Printf("Synced %d cookies into profile %s (%d cookies total).\n", synced, profileID, total)
-	fmt.Println()
-	fmt.Println("Use it in a session:")
-	fmt.Printf("  notte sessions start --profile-id %s\n", profileID)
-	fmt.Println()
-	fmt.Println("Re-run this any time your local login changes:")
-	fmt.Printf("  notte profiles sync --profile-id %s\n", profileID)
+	fmt.Printf("Synced %d cookies into profile %s (%d cookies total)\n", synced, profileID, total)
+	fmt.Printf("Run notte profiles sync --profile-id %s again whenever your local login changes.\n", profileID)
+	if text := textFormatter(); text != nil {
+		printHint(text, "notte sessions start --profile-id "+profileID)
+	}
 }

@@ -35,5 +35,5 @@ func runHealth(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }

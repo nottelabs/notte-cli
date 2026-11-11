@@ -205,7 +205,7 @@ func TestRunFunctionSchedulesRemove(t *testing.T) {
 	if reqs := server.Requests(path); len(reqs) != 1 || reqs[0].Method != "DELETE" {
 		t.Fatalf("requests = %+v, want one DELETE", reqs)
 	}
-	if !strings.Contains(stdout, "Schedule s2 removed") {
+	if !strings.Contains(stdout, "Removed schedule s2 from function ") {
 		t.Errorf("expected removal message, got %q", stdout)
 	}
 }
@@ -270,7 +270,7 @@ func TestRunFunctionSchedulesListEmpty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No schedules found.") {
+	if !strings.Contains(stdout, "No schedules (◡︵◡)") {
 		t.Errorf("expected the empty message, got %q", stdout)
 	}
 }

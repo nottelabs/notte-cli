@@ -42,10 +42,10 @@ func runClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clear current session expiry: %w", err)
 	}
 
-	return PrintResult("Cleared all stored state (session, viewer URL, function, session expiry).", map[string]any{
+	return printDone("Cleared the pinned session, its viewer link and expiry, and the current function", map[string]any{
 		"cleared": []string{"session", "viewer_url", "function", "session_expiry"},
 		"success": true,
-	})
+	}, "notte sessions pin")
 }
 
 func clearLegacyCurrentAgent() error {

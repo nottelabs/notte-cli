@@ -161,10 +161,10 @@ func runFunctionSchedulesList(cmd *cobra.Command, args []string) error {
 	// JSON output is the whole response whether or not there are schedules,
 	// so `.schedules` and `.state` stay readable once the last one is removed.
 	if !IsJSONOutput() && len(list.Schedules) == 0 {
-		PrintInfo("No schedules found.")
-		return nil
+		_, err := PrintListOrEmpty(list.Schedules, "No schedules", "notte functions schedules add --function-id "+functionID+" --cron <expression>")
+		return err
 	}
-	return GetFormatter().Print(list)
+	return render(list)
 }
 
 func runFunctionSchedulesAdd(cmd *cobra.Command, args []string) error {
@@ -196,7 +196,10 @@ func runFunctionSchedulesAdd(cmd *cobra.Command, args []string) error {
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-	return GetFormatter().Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone(fmt.Sprintf("Added schedule %s to function %s", resp.JSON200.ScheduleId, functionID), resp.JSON200)
 }
 
 func runFunctionSchedulesUpdate(cmd *cobra.Command, args []string) error {
@@ -261,7 +264,7 @@ func runFunctionSchedulesUpdate(cmd *cobra.Command, args []string) error {
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Updated schedule "+scheduleID, resp.JSON200)
 }
 
 func runFunctionSchedulesRemove(cmd *cobra.Command, args []string) error {
@@ -283,11 +286,11 @@ func runFunctionSchedulesRemove(cmd *cobra.Command, args []string) error {
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-	return PrintResult(fmt.Sprintf("Schedule %s removed from function %s.", scheduleID, functionID), map[string]any{
+	return printDone(fmt.Sprintf("Removed schedule %s from function %s", scheduleID, functionID), map[string]any{
 		"id":          functionID,
 		"schedule_id": scheduleID,
 		"status":      "removed",
-	})
+	}, "notte functions schedules list --function-id "+functionID)
 }
 
 func runFunctionSchedulesResume(cmd *cobra.Command, args []string) error {
@@ -308,7 +311,7 @@ func runFunctionSchedulesResume(cmd *cobra.Command, args []string) error {
 	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
 	}
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Resumed the schedules of function "+functionID, resp.JSON200)
 }
 
 // scheduleInputProblem is how a schedule's inputs disagree with the function's

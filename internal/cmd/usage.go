@@ -67,8 +67,7 @@ func runUsageShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runUsageLogs(cmd *cobra.Command, args []string) error {
@@ -119,11 +118,15 @@ func runUsageLogs(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No usage logs found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No requests"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return GetFormatter().Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }

@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
+// registerPaginationFlags adds --page and --page-size, with -n as the short
+// form of the latter: "list -n 5" shows the five most recent items.
 func registerPaginationFlags(cmd *cobra.Command) {
 	cmd.Flags().Int("page", 0, "Page number (1-indexed)")
-	cmd.Flags().Int("page-size", 0, "Number of items per page")
+	cmd.Flags().IntP("page-size", "n", 0, "Number of items to show (per page)")
 }
 
 func getPageFlag(cmd *cobra.Command) (*int, error) {
@@ -31,6 +34,20 @@ func getPageSizeFlag(cmd *cobra.Command) (*int, error) {
 		return &v, nil
 	}
 	return nil, nil
+}
+
+// noteNextPage tells the caller, on stderr, that a list has more rows than
+// were printed and how to get them. Stdout stays the list alone: in JSON mode
+// it is an array, which has no place for a "there is more" field.
+func noteNextPage(cmd *cobra.Command, hasNext bool) {
+	if !hasNext {
+		return
+	}
+	page, _ := cmd.Flags().GetInt("page")
+	if page < 1 {
+		page = 1
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "More results: add --page %d\n", page+1)
 }
 
 // The API exposes a single `only_active` parameter, but it means a different

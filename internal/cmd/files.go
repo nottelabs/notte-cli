@@ -262,12 +262,12 @@ func runFilesList(cmd *cobra.Command, args []string) error {
 	if err := json.Unmarshal(body, &page); err != nil {
 		return fmt.Errorf("failed to parse files response: %w", err)
 	}
-	if printed, err := PrintListOrEmpty(page.Files, fmt.Sprintf("No files in session %s.", sessionID)); err != nil {
+	if printed, err := PrintListOrEmpty(page.Files, "No files in session "+sessionID, "notte files upload <file-path>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
-	return GetFormatter().Print(page.Files)
+	return render(page.Files)
 }
 
 func runFilesUpload(cmd *cobra.Command, args []string) error {
@@ -337,9 +337,9 @@ func runFilesUpload(cmd *cobra.Command, args []string) error {
 	if err := json.Unmarshal(body, &uploaded); err != nil {
 		return fmt.Errorf("failed to parse upload response: %w", err)
 	}
-	return PrintResult(fmt.Sprintf("File uploaded successfully: %s", filename), map[string]any{
+	return printDone(fmt.Sprintf("Uploaded %s as file %s", filename, uploaded.ID), map[string]any{
 		"file": uploaded,
-	})
+	}, "notte files list")
 }
 
 func runFilesDownload(cmd *cobra.Command, args []string) error {
@@ -403,9 +403,9 @@ func runFilesDownload(cmd *cobra.Command, args []string) error {
 	if err := os.Rename(temporaryPath, destinationPath); err != nil {
 		return err
 	}
-	return PrintResult(fmt.Sprintf("File downloaded successfully: %s", outputPath), map[string]any{
+	return printDone(fmt.Sprintf("Downloaded file %s to %s", fileID, outputPath), map[string]any{
 		"id":      fileID,
 		"path":    outputPath,
 		"success": true,
-	})
+	}, "notte files list")
 }

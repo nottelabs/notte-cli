@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/auth"
+	"github.com/nottelabs/notte-cli/internal/output"
 )
 
 var authCmd = &cobra.Command{
@@ -166,8 +167,9 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 	if who == "" {
 		who = "your account"
 	}
-	return PrintResult(
-		fmt.Sprintf("Logged in as %s (%s). API key %q stored.", who, workspace, token.KeyName),
+	// The face is for people; JSON keeps the plain message.
+	return printDone(
+		fmt.Sprintf("Logged in as %s (%s). API key %q stored. %s", who, workspace, token.KeyName, output.FaceCool),
 		map[string]any{
 			"authenticated": true,
 			"source":        "keychain",
@@ -175,6 +177,7 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 			"workspace":     token.WorkspaceName,
 			"key_name":      token.KeyName,
 		},
+		"notte sessions start",
 	)
 }
 
@@ -208,10 +211,11 @@ func loginWithStdinToken(ctx context.Context) error {
 	if previous != "" && previous != key {
 		revokeQuietly(ctx, newDeviceFlow(auth.GetCurrentAPIURL()), previous)
 	}
-	return PrintResult("API key stored successfully.", map[string]any{
+	return printDone("API key stored successfully. "+output.FaceCool, map[string]any{
 		"authenticated": true,
 		"source":        "keychain",
-	})
+		"message":       "API key stored successfully.",
+	}, "notte sessions start")
 }
 
 // revokeQuietly revokes a key a CLI login created, reporting failures without
@@ -237,6 +241,13 @@ func runAuthLogout(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := auth.DeleteKeyringAPIKey(); err != nil {
+		// Signing out twice is not a failure: the end state is the one asked for.
+		if auth.IsNoSavedKey(err) {
+			return printDone("Already signed out: there is no saved API key.", map[string]any{
+				"authenticated": false,
+				"revoked":       revoked,
+			}, "notte login")
+		}
 		return fmt.Errorf("failed to remove API key: %w", err)
 	}
 
@@ -244,10 +255,10 @@ func runAuthLogout(cmd *cobra.Command, args []string) error {
 	if revoked {
 		message = "API key revoked and removed."
 	}
-	return PrintResult(message, map[string]any{
+	return printDone(message, map[string]any{
 		"authenticated": false,
 		"revoked":       revoked,
-	})
+	}, "notte login")
 }
 
 func runAuthStatus(cmd *cobra.Command, args []string) error {
@@ -266,13 +277,23 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 
 	envLabel := auth.ResolveEnvLabel(auth.GetCurrentAPIURL())
 
-	formatter := GetFormatter()
-	data := map[string]any{
+	if text := textFormatter(); text != nil {
+		return printDetails(text, "Signed in", [][2]string{
+			{"API key", masked},
+			{"Stored in", string(source)},
+			{"Environment", envLabel},
+		})
+	}
+	// The capitalized keys are the original ones and stay for scripts that
+	// read them; the snake_case ones match every other command.
+	return GetFormatter().Print(map[string]any{
 		"Authenticated": "yes",
 		"Source":        string(source),
 		"API Key":       masked,
 		"Environment":   envLabel,
-	}
-
-	return formatter.Print(data)
+		"authenticated": true,
+		"source":        string(source),
+		"api_key":       masked,
+		"environment":   envLabel,
+	})
 }

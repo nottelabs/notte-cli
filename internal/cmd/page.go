@@ -51,7 +51,7 @@ var (
 func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 	// JSON mode: return full response
 	if IsJSONOutput() {
-		return GetFormatter().Print(resp)
+		return render(resp)
 	}
 
 	if !resp.Success {
@@ -63,7 +63,7 @@ func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 
 	// Print data if non-nil
 	if resp.Data != nil {
-		return GetFormatter().Print(resp.Data)
+		return render(resp.Data)
 	}
 	return nil
 }
@@ -309,8 +309,8 @@ func runPageDownload(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !IsJSONOutput() {
-		fmt.Println("List downloaded files with: notte files list")
+	if text := textFormatter(); text != nil {
+		printHint(text, "notte files list")
 	}
 	return nil
 }
@@ -755,7 +755,7 @@ func runPageEvalJs(cmd *cobra.Command, args []string) error {
 	// Custom output formatting for eval-js
 	result := resp.JSON200
 	if IsJSONOutput() {
-		return GetFormatter().Print(result)
+		return render(result)
 	}
 
 	if !result.Success {

@@ -39,5 +39,5 @@ func RunAPICommand[T any](cmd *cobra.Command, apiFn APIFunc[T]) error {
 		return err
 	}
 
-	return GetFormatter().Print(result)
+	return render(result)
 }

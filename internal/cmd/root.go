@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/nottelabs/notte-cli/internal/api"
 	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/config"
+	apierrors "github.com/nottelabs/notte-cli/internal/errors"
 	"github.com/nottelabs/notte-cli/internal/output"
 	"github.com/nottelabs/notte-cli/internal/update"
 )
@@ -38,7 +40,17 @@ Get started:
   notte login             # Log in (approve a code in the console)
   notte sessions start    # Start a browser session
   notte search <query>    # Search the web
-  notte scrape <url>      # Quick scrape a webpage`,
+  notte scrape <url>      # Quick scrape a webpage
+
+For scripts and agents:
+  -o json (or NOTTE_OUTPUT=json) prints JSON on stdout; errors are JSON on
+  stderr with a stable "code". Pass --yes to commands that delete.
+
+Exit codes:
+  0 success    1 failure           2 wrong flags or arguments
+  3 not signed in or key rejected  4 not found
+  5 needs --yes                    6 rate limited
+  7 the function run failed`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -63,21 +75,46 @@ func Execute() {
 	}
 
 	if err != nil {
-		formatter := GetFormatter()
-		formatter.PrintError(err)
-		os.Exit(1)
+		code, exit := classifyError(err)
+		switch formatter := GetFormatter().(type) {
+		case *output.TextFormatter:
+			if isUnauthorized(err) {
+				formatter.PrintErrorWithFace(err, output.FaceDenied)
+			} else {
+				formatter.PrintError(err)
+			}
+		case *output.JSONFormatter:
+			formatter.ErrorCode = code
+			formatter.PrintError(err)
+		}
+		os.Exit(exit)
 	}
+}
+
+// isUnauthorized reports errors about signing in: no saved key, or a key the
+// API rejected.
+func isUnauthorized(err error) bool {
+	if errors.Is(err, auth.ErrNoAPIKey) {
+		return true
+	}
+	var authErr *apierrors.AuthError
+	if errors.As(err, &authErr) {
+		return true
+	}
+	var apiErr *apierrors.APIError
+	return errors.As(err, &apiErr) && (apiErr.StatusCode == 401 || apiErr.StatusCode == 403)
 }
 
 func init() {
 	// Hide completion command from help output (still accessible via `notte completion`)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "text", "Output format (text, json)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", defaultOutputFormat(), "Output format (text, json); NOTTE_OUTPUT sets the default")
+	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return &usageError{err: err} })
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 	rootCmd.PersistentFlags().IntVar(&requestTimeout, "timeout", 60, "API request timeout in seconds")
-	rootCmd.PersistentFlags().BoolVarP(&yesFlag, "yes", "y", false, "Skip confirmation prompts")
+	rootCmd.PersistentFlags().BoolVarP(&yesFlag, "yes", "y", false, "Skip confirmation prompts (needed to delete without a terminal)")
 
 	// Set up confirmation state before each command
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
@@ -94,6 +131,15 @@ func init() {
 			})
 		},
 	})
+}
+
+// defaultOutputFormat lets a harness ask for JSON once, through NOTTE_OUTPUT,
+// instead of on every command. --output still wins.
+func defaultOutputFormat() string {
+	if os.Getenv(config.EnvOutput) == string(output.FormatJSON) {
+		return string(output.FormatJSON)
+	}
+	return string(output.FormatText)
 }
 
 // GetFormatter returns the appropriate formatter based on flags

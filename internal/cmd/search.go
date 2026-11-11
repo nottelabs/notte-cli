@@ -108,7 +108,7 @@ func printSearchResponse(body []byte, query string) error {
 	}
 
 	if IsJSONOutput() {
-		return GetFormatter().Print(parsed)
+		return render(parsed)
 	}
 
 	// sourcedAnswer shape: { "answer": "...", "sources": [...] }
@@ -132,7 +132,7 @@ func printSearchResponse(body []byte, query string) error {
 	}
 
 	// Unknown shape - fall back to formatter
-	return GetFormatter().Print(parsed)
+	return render(parsed)
 }
 
 func printAnswer(query, answer string) {

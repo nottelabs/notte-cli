@@ -65,7 +65,7 @@ func TestTextFormatter_SingleItem(t *testing.T) {
 	}
 
 	got := buf.String()
-	if !strings.Contains(got, "Name:") || !strings.Contains(got, "test-session") {
+	if !strings.Contains(got, "Name") || !strings.Contains(got, "test-session") {
 		t.Errorf("expected formatted key-value output, got: %s", got)
 	}
 }
@@ -104,10 +104,10 @@ func TestTextFormatter_Print_Struct(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "Name:") || !strings.Contains(output, "test") {
+	if !strings.Contains(output, "Name") || !strings.Contains(output, "test") {
 		t.Errorf("expected struct fields in output, got %q", output)
 	}
-	if !strings.Contains(output, "Value:") || !strings.Contains(output, "42") {
+	if !strings.Contains(output, "Value") || !strings.Contains(output, "42") {
 		t.Errorf("expected struct fields in output, got %q", output)
 	}
 }
@@ -143,7 +143,7 @@ func TestTextFormatter_Print_Map(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "key1:") || !strings.Contains(output, "value1") {
+	if !strings.Contains(output, "key1") || !strings.Contains(output, "value1") {
 		t.Errorf("expected map entries in output, got %q", output)
 	}
 }
@@ -164,7 +164,7 @@ func TestTextFormatter_Print_Pointer(t *testing.T) {
 		}
 
 		output := buf.String()
-		if !strings.Contains(output, "Name:") || !strings.Contains(output, "test") {
+		if !strings.Contains(output, "Name") || !strings.Contains(output, "test") {
 			t.Errorf("expected dereferenced struct in output, got %q", output)
 		}
 	})
@@ -179,9 +179,9 @@ func TestTextFormatter_Print_Pointer(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		output := buf.String()
-		if !strings.Contains(output, "<nil>") {
-			t.Errorf("expected <nil> for nil pointer, got %q", output)
+		// Nothing to show is no output, not a literal "<nil>".
+		if output := buf.String(); output != "" {
+			t.Errorf("expected no output for a nil pointer, got %q", output)
 		}
 	})
 }
@@ -223,13 +223,13 @@ func TestTextFormatter_Print_NestedStruct(t *testing.T) {
 			t.Errorf("expected nested struct to dereference pointers, got %q", output)
 		}
 		// Should contain the actual values
-		if !strings.Contains(output, "Credentials:") {
+		if !strings.Contains(output, "Credentials") {
 			t.Errorf("expected Credentials label, got %q", output)
 		}
-		if !strings.Contains(output, "Password:") || !strings.Contains(output, "secret") {
+		if !strings.Contains(output, "Password") || !strings.Contains(output, "secret") {
 			t.Errorf("expected Password value, got %q", output)
 		}
-		if !strings.Contains(output, "Username:") || !strings.Contains(output, "hello") {
+		if !strings.Contains(output, "Username") || !strings.Contains(output, "hello") {
 			t.Errorf("expected Username value, got %q", output)
 		}
 	})
@@ -253,7 +253,7 @@ func TestTextFormatter_Print_PointerField(t *testing.T) {
 
 		output := buf.String()
 		// Nil pointer fields should be skipped entirely
-		if strings.Contains(output, "Name:") || strings.Contains(output, "Value:") {
+		if strings.Contains(output, "Name") || strings.Contains(output, "Value") {
 			t.Errorf("expected nil fields to be hidden, got %q", output)
 		}
 	})
@@ -343,8 +343,8 @@ func TestTextFormatter_Print_StructWithSliceOfStructs(t *testing.T) {
 		}
 
 		// Must contain the Variables label
-		if !strings.Contains(output, "Variables:") {
-			t.Errorf("expected 'Variables:' label in output, got %q", output)
+		if !strings.Contains(output, "Variables\n") {
+			t.Errorf("expected 'Variables' label in output, got %q", output)
 		}
 	})
 
@@ -386,7 +386,7 @@ func TestTextFormatter_Print_StructWithSliceOfStructs(t *testing.T) {
 
 		output := buf.String()
 		// Nil slices should be skipped entirely
-		if strings.Contains(output, "Variables:") {
+		if strings.Contains(output, "Variables") {
 			t.Errorf("expected nil Variables to be hidden, got %q", output)
 		}
 	})
@@ -507,7 +507,10 @@ func TestNewFormatter(t *testing.T) {
 // underneath, so every timestamp the CLI showed in text form came out blank.
 func TestTextFormatter_Print_Timestamps(t *testing.T) {
 	var buf bytes.Buffer
-	f := &TextFormatter{Writer: &buf}
+	f := &TextFormatter{Writer: &buf, NoColor: true}
+	orig := now
+	now = func() time.Time { return time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC) }
+	t.Cleanup(func() { now = orig })
 
 	moment := time.Date(2026, 9, 9, 15, 4, 5, 0, time.UTC)
 	err := f.Print(struct {
@@ -524,17 +527,75 @@ func TestTextFormatter_Print_Timestamps(t *testing.T) {
 	}
 
 	got := buf.String()
-	if strings.Contains(got, "Time:") {
+	if strings.Contains(got, "Time") {
 		t.Errorf("descended into the timestamp instead of printing it:\n%s", got)
 	}
-	for _, field := range []string{"CreatedAt", "PlainAt"} {
-		for _, line := range strings.Split(got, "\n") {
-			if !strings.HasPrefix(strings.TrimSpace(line), field+":") {
-				continue
-			}
-			if !strings.Contains(line, "2026-09-09") {
-				t.Errorf("%s rendered as %q, want the timestamp", field, line)
-			}
+	// Timestamps drop the "At" of their name, print as a date and come last.
+	want := "Name      checkout\nCreated   Sep 9 15:04\nPlain     Sep 9 15:04\n"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestHumanize(t *testing.T) {
+	for name, want := range map[string]string{
+		"FunctionRunId":        "Function run ID",
+		"IsUsageLimitExceeded": "Is usage limit exceeded",
+		"CdpUrl":               "CDP URL",
+		"ID":                   "ID",
+		"LlmUsageCost":         "LLM usage cost",
+		"persisted_domains":    "Persisted domains",
+	} {
+		if got := Humanize(name, false); got != want {
+			t.Errorf("Humanize(%q) = %q, want %q", name, got, want)
+		}
+	}
+	if got := Humanize("LastAccessedAt", true); got != "Last accessed" {
+		t.Errorf("timestamp label = %q", got)
+	}
+}
+
+// The fallback output puts what identifies a thing first, hides empty fields,
+// prints numbers plainly and keeps map keys in a fixed order.
+func TestTextFormatter_Print_Generic(t *testing.T) {
+	type item struct {
+		Cost        float64
+		Description string
+		Domains     []string
+		Empty       string
+		Extra       map[string]any
+		ItemId      string
+		Name        string
+		Shared      bool
+		Status      string
+	}
+	var buf bytes.Buffer
+	f := &TextFormatter{Writer: &buf, NoColor: true}
+	if err := f.Print(item{Cost: 1768816800, Description: "d", Domains: []string{"a.com", "b.com"}, ItemId: "i1", Name: "n", Status: "active", Extra: map[string]any{"z": 1, "a": "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	want := "Name          n\nItem ID       i1\nStatus        active\nDescription   d\nCost          1768816800\nDomains       a.com, b.com\nExtra\n  a   x\n  z   1\nShared        false\n"
+	if got := buf.String(); got != want {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestRelativeTime(t *testing.T) {
+	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		t    time.Time
+		want string
+	}{
+		{time.Time{}, "-"},
+		{now.Add(-20 * time.Second), "just now"},
+		{now.Add(-5 * time.Minute), "5 min ago"},
+		{now.Add(-3 * time.Hour), "3 h ago"},
+		{now.Add(-72 * time.Hour), "Mar 7 12:00"},
+		{now.AddDate(-1, 0, 0), "Mar 10 2025"},
+		{now.Add(48 * time.Hour), "Mar 12 2026 12:00"},
+	} {
+		if got := RelativeTime(tc.t, now); got != tc.want {
+			t.Errorf("RelativeTime(%v) = %q, want %q", tc.t, got, tc.want)
 		}
 	}
 }

@@ -157,10 +157,9 @@ Approve it at https://login.tailscale.com/admin/machines (Edit route settings > 
 or add it to autoApprovers.exitNode in your tailnet policy. The policy must also let tag:notte
 reach autogroup:internet. Then run "notte tunnel up --name %s" again.`, t.Name, t.ExitNode, credentials, t.Name), data)
 	}
-	return PrintResult(fmt.Sprintf(`Tunnel %q is up: %s is offered as an exit node, using %s.
-Verify it end to end with "notte tunnel check --name %s", then start sessions
-through it with "notte sessions start --tunnel %s".
-Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, credentials, t.Name, t.Name), data)
+	return printDone(fmt.Sprintf(`Tunnel %q is up: %s is offered as an exit node, using %s.
+Start sessions through it with "notte sessions start --tunnel %s".
+Keep this machine awake and online while sessions use it.`, t.Name, t.ExitNode, credentials, t.Name), data, "notte tunnel check --name "+t.Name)
 }
 
 // tunnelCredentials resolves the OAuth client for a tunnel: flags and the
@@ -247,10 +246,10 @@ func runTunnelDown(cmd *cobra.Command, args []string) error {
 	if err := ts.SetAdvertiseExitNode(ctx, false); err != nil {
 		return err
 	}
-	return PrintResult(fmt.Sprintf("%s is no longer offered as an exit node. Sessions started with its tunnel will fail until you run \"notte tunnel up\" again.", st.MagicDNSName()), map[string]any{
+	return printDone(fmt.Sprintf("%s is no longer offered as an exit node. Sessions started with its tunnel will fail until you run \"notte tunnel up\" again.", st.MagicDNSName()), map[string]any{
 		"exit_node":   st.MagicDNSName(),
 		"advertising": false,
-	})
+	}, "notte tunnel up")
 }
 
 func runTunnelList(cmd *cobra.Command, args []string) error {
@@ -258,7 +257,7 @@ func runTunnelList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if handled, err := PrintListOrEmpty(tunnels, "No saved tunnels. Create one with \"notte tunnel up\"."); handled || err != nil {
+	if handled, err := PrintListOrEmpty(tunnels, "No saved tunnels", "notte tunnel up"); handled || err != nil {
 		return err
 	}
 
@@ -282,7 +281,7 @@ func runTunnelList(cmd *cobra.Command, args []string) error {
 		}
 		rows = append(rows, row)
 	}
-	return GetFormatter().Print(rows)
+	return render(rows)
 }
 
 // tunnelRow is one line of `tunnel list`. Approved is "-" for tunnels on other
@@ -300,10 +299,10 @@ func runTunnelRemove(cmd *cobra.Command, args []string) error {
 	if err := tunnel.Remove(name); err != nil {
 		return err
 	}
-	return PrintResult(fmt.Sprintf("Removed tunnel %q and its stored credentials. This does not change Tailscale; run \"notte tunnel down\" on that machine to stop offering it as an exit node.", name), map[string]any{
+	return printDone(fmt.Sprintf("Removed tunnel %q and its stored credentials. This does not change Tailscale; run \"notte tunnel down\" on that machine to stop offering it as an exit node.", name), map[string]any{
 		"name":    name,
 		"removed": true,
-	})
+	}, "notte tunnel list")
 }
 
 // tunnelProxyItem expands a saved tunnel into a tailnet proxy that exits

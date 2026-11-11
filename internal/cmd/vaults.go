@@ -173,19 +173,21 @@ func runVaultsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-
 	var items []api.Vault
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No vaults found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No vaults", "notte vaults create --name <name>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }
 
 func runVaultsCreate(cmd *cobra.Command, args []string) error {
@@ -213,8 +215,10 @@ func runVaultsCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone("Created vault "+resp.JSON200.VaultId, resp.JSON200)
 }
 
 func runVaultUpdate(cmd *cobra.Command, args []string) error {
@@ -241,7 +245,7 @@ func runVaultUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Updated vault "+vaultID, resp.JSON200)
 }
 
 func runVaultDelete(cmd *cobra.Command, args []string) error {
@@ -272,10 +276,10 @@ func runVaultDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Vault %s deleted.", vaultID), map[string]any{
+	return printDone("Deleted vault "+vaultID, map[string]any{
 		"id":     vaultID,
 		"status": "deleted",
-	})
+	}, "notte vaults list")
 }
 
 func runVaultCredentialsList(cmd *cobra.Command, args []string) error {
@@ -297,19 +301,17 @@ func runVaultCredentialsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-
 	var creds []api.Credential
 	if resp.JSON200 != nil {
 		creds = resp.JSON200.Credentials
 	}
-	if printed, err := PrintListOrEmpty(creds, "No credentials found."); err != nil {
+	if printed, err := PrintListOrEmpty(creds, "No credentials", "notte vaults credentials add --vault-id "+vaultID+" --url <url> --password <password>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(creds)
+	return render(creds)
 }
 
 func runVaultCredentialsAdd(cmd *cobra.Command, args []string) error {
@@ -354,7 +356,7 @@ func runVaultCredentialsAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone(fmt.Sprintf("Saved credentials for %s in vault %s", VaultCredentialsAddUrl, vaultID), resp.JSON200)
 }
 
 func runVaultCredentialsGet(cmd *cobra.Command, args []string) error {
@@ -379,7 +381,7 @@ func runVaultCredentialsGet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runVaultCredentialsDelete(cmd *cobra.Command, args []string) error {
@@ -412,8 +414,8 @@ func runVaultCredentialsDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Credentials for URL %s deleted from vault %s.", vaultCredentialsDeleteURL, vaultID), map[string]any{
+	return printDone(fmt.Sprintf("Deleted credentials for %s from vault %s", vaultCredentialsDeleteURL, vaultID), map[string]any{
 		"id":  vaultID,
 		"url": vaultCredentialsDeleteURL,
-	})
+	}, "notte vaults credentials list --vault-id "+vaultID)
 }

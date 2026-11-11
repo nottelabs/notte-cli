@@ -119,7 +119,7 @@ func TestRunFunctionsList_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No functions found.") {
+	if !strings.Contains(stdout, "No functions (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -524,7 +524,7 @@ func TestRunFunctionDelete(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "deleted") {
+	if !strings.Contains(stdout, "Deleted function "+functionIDTest) {
 		t.Errorf("expected delete message, got %q", stdout)
 	}
 }
@@ -605,7 +605,7 @@ func TestRunFunctionRuns_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No function runs found.") {
+	if !strings.Contains(stdout, "No function runs (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -728,7 +728,7 @@ func TestRunFunctionSchedule(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "scheduled") {
+	if !strings.Contains(stdout, "Scheduled function "+functionIDTest) {
 		t.Errorf("expected schedule message, got %q", stdout)
 	}
 }
@@ -751,7 +751,7 @@ func TestRunFunctionUnschedule(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "schedule removed") {
+	if !strings.Contains(stdout, "Removed the schedule of function "+functionIDTest) {
 		t.Errorf("expected unschedule message, got %q", stdout)
 	}
 }

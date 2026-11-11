@@ -42,7 +42,7 @@ func newPaymentCommand() *cobra.Command {
 		if result == nil || result.ID == "" || result.Status == "" {
 			return fmt.Errorf("invalid wallet connection response")
 		}
-		if err := GetFormatter().Print(result); err != nil {
+		if err := render(result); err != nil {
 			return err
 		}
 		if result.Status == "failed" || result.Status == "expired" {
@@ -73,7 +73,12 @@ func newPaymentCommand() *cobra.Command {
 		if result == nil || result.Status != "disconnected" || (result.Mode != "test" && result.Mode != "live") {
 			return fmt.Errorf("invalid wallet disconnect response")
 		}
-		return GetFormatter().Print(struct {
+		if text := textFormatter(); text != nil {
+			_, _ = fmt.Fprintf(text.Writer, "Disconnected the %s Link wallet\n", result.Mode)
+			printHint(text, paymentConnectCommand(result.Mode))
+			return nil
+		}
+		return render(struct {
 			Mode   string `json:"mode"`
 			Status string `json:"status"`
 		}{Mode: result.Mode, Status: result.Status})
@@ -134,7 +139,7 @@ func newPaymentCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		return GetFormatter().Print(result)
+		return render(result)
 	}}
 	f := request.Flags()
 	f.StringVar(&sessionID, "session-id", "", "Existing browser session ID")
@@ -158,7 +163,7 @@ func newPaymentCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		return GetFormatter().Print(result)
+		return render(result)
 	}}
 	var timeout time.Duration
 	wait := &cobra.Command{Use: "wait PAYMENT_ID", Short: "Wait until credentials are ready or the payment fails", Long: "Wait until the temporary card is installed in the session vault. Ready does not mean a purchase succeeded. Connection, approval, and verification instructions appear on stderr. Exiting does not cancel provisioning.", Args: paymentIDArg, RunE: func(cmd *cobra.Command, args []string) error {
@@ -253,7 +258,7 @@ func waitPayment(cmd *cobra.Command, ctx context.Context, client *api.NotteClien
 		}
 		switch result.Status {
 		case "ready":
-			return GetFormatter().Print(result)
+			return render(result)
 		case "declined", "expired", "failed", "closed":
 			return fmt.Errorf("payment %s ended with status %s (error_code: %s)", id, result.Status, paymentErrorCode(result))
 		case "requires_action":

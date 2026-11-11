@@ -414,34 +414,58 @@ notte version                        # Show CLI version
 
 ### Text
 
-Human-readable tables with colors and formatting:
+The default, written for people: tables for lists, a short labelled block for
+one item, relative times, and a hint at what to run next. IDs are always shown
+whole.
 
 ```bash
-$ notte sessions list
-ID                        STATUS    BROWSER     CREATED
-ses_abc123def456          ACTIVE    chromium    2024-01-15 10:30:00
-ses_xyz789uvw012          STOPPED   chrome      2024-01-15 09:15:00
+$ notte functions list
+    FUNCTION (2)        NAME                    STATUS   VERSION   UPDATED     CONSOLE
+    demo-function-001   Product price tracker   active   v3        2 h ago     open in console ↗
+    demo-function-002   Newsletter signup       active   v1        Jan 14      open in console ↗
+Run one with: notte functions run --function-id <id>
 ```
+
+Text output may change between releases. Do not parse it.
 
 ### JSON
 
-Machine-readable output:
+`--output json` (or `-o json`) prints the API's own data on stdout: an object
+for one item, an array for a list.
 
 ```bash
-$ notte sessions list --output json
-{
-  "sessions": [
-    {
-      "id": "ses_abc123def456",
-      "status": "ACTIVE",
-      "browser": "chromium",
-      "created_at": "2024-01-15T10:30:00Z"
-    }
-  ]
-}
+$ notte functions list -o json
+[{"function_id":"demo-function-001","name":"Product price tracker","status":"active","latest_version":"3", ...}]
 ```
 
-Data goes to stdout, errors and progress to stderr for clean piping.
+Fields are added over time and are not renamed or removed.
+
+### For scripts and agents
+
+- Set `NOTTE_OUTPUT=json` once instead of passing `-o json` to every command.
+- Data goes to stdout; errors, progress and notes go to stderr.
+- An error is one JSON object on stderr with a stable `code`:
+  `{"code":"not_found","error":"...","status_code":404}`.
+- The exit code says what kind of failure it was:
+
+  | Exit | `code` | Meaning |
+  | --- | --- | --- |
+  | 0 | | Success |
+  | 1 | `error`, `api_error` | Any other failure |
+  | 2 | `usage` | Wrong flags or arguments; nothing was sent |
+  | 3 | `unauthorized` | Not signed in, or the API rejected the key |
+  | 4 | `not_found` | The API has no such resource |
+  | 5 | `confirmation_required` | A command that deletes needs `--yes` |
+  | 6 | `rate_limited` | Too many requests; retry later |
+  | 7 | `run_failed` | The function run that was waited for failed; its data is still on stdout |
+
+- Commands that delete ask for confirmation in a terminal. Without one they
+  do not wait for input: pass `--yes` (or `-y`), or they exit with code 5.
+- When a list has more rows, stderr says `More results: add --page 2`.
+- `notte functions run` and `run-metadata --wait` print the run and then exit
+  with code 7 when it failed, so a failed run is never mistaken for success.
+- In text mode a command that changes something prints one line saying what
+  it did, and every view ends with a `Next:` line. Neither is in the JSON.
 
 ## Examples
 
@@ -475,7 +499,7 @@ notte functions run --function-id func_abc123
 
 ```bash
 # Create a vault for production credentials
-VAULT_ID=$(notte vaults create --name "Production Sites" -o json | jq -r '.id')
+VAULT_ID=$(notte vaults create --name "Production Sites" -o json | jq -r '.vault_id')
 
 # Add website credentials
 notte vaults credentials add --vault-id $VAULT_ID \
@@ -518,7 +542,7 @@ notte sessions list --all
 notte sessions list --page 2 --page-size 5
 
 # Extract session IDs with jq
-notte sessions list --output json | jq -r '.sessions[].id'
+notte sessions list --output json | jq -r '.[].session_id'
 ```
 
 ## Usage with AI Agents

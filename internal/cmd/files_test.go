@@ -325,7 +325,7 @@ func TestRunFilesUpload(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "File uploaded successfully") {
+	if !strings.Contains(stdout, "Uploaded ") {
 		t.Fatalf("expected upload message, got %q", stdout)
 	}
 }
@@ -387,7 +387,7 @@ func TestRunFilesDownload(t *testing.T) {
 	if string(got) != "filedata" {
 		t.Fatalf("unexpected file content: %q", string(got))
 	}
-	if !strings.Contains(stdout, "File downloaded successfully") {
+	if !strings.Contains(stdout, "Downloaded file file-id to ") {
 		t.Fatalf("expected download message, got %q", stdout)
 	}
 }

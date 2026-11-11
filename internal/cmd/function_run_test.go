@@ -209,7 +209,13 @@ func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
 				}
 				return
 			}
-			if runErr != nil || !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
+			// A failed run is printed like a finished one and then reported as
+			// an error, so that the exit code tells them apart.
+			var failed *runFailedError
+			if (status == "failed") != errors.As(runErr, &failed) || (status != "failed" && runErr != nil) {
+				t.Fatalf("status %s: err=%v", status, runErr)
+			}
+			if !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
 				t.Fatalf("stdout=%s stderr=%s err=%v", stdout, stderr, runErr)
 			}
 		})
