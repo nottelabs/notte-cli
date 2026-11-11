@@ -580,8 +580,9 @@ const (
 
 // Defines values for FunctionSdkGeneration.
 const (
-	FunctionSdkGenerationV110 FunctionSdkGeneration = "v110"
-	FunctionSdkGenerationV19  FunctionSdkGeneration = "v19"
+	FunctionSdkGenerationNode110 FunctionSdkGeneration = "node110"
+	FunctionSdkGenerationV110    FunctionSdkGeneration = "v110"
+	FunctionSdkGenerationV19     FunctionSdkGeneration = "v19"
 )
 
 // Defines values for FunctionSource.
