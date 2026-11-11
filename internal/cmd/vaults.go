@@ -330,7 +330,7 @@ func runVaultCredentialsAdd(cmd *cobra.Command, args []string) error {
 
 	// Validate password not empty
 	if strings.TrimSpace(VaultCredentialsAddCredentialsPassword) == "" {
-		return fmt.Errorf("password cannot be empty or whitespace")
+		return errUsage("password cannot be empty or whitespace")
 	}
 
 	// Validate email format if provided

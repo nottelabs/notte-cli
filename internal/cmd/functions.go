@@ -81,7 +81,7 @@ func clearCurrentFunction() error {
 func RequireFunctionID() error {
 	functionID = GetCurrentFunctionID()
 	if functionID == "" {
-		return errors.New("function ID required: use --function-id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
+		return errUsage("function ID required: use --function-id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
 	}
 	return nil
 }
@@ -499,7 +499,7 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 func runFunctionDownload(cmd *cobra.Command, args []string) error {
 	outputPath := args[0]
 	if !strings.HasSuffix(outputPath, ".py") {
-		return errors.New("file path must end with .py")
+		return errUsage("file path must end with .py")
 	}
 
 	if err := RequireFunctionID(); err != nil {
@@ -604,7 +604,7 @@ func validateRuntime(flagName, value string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid --%s %q: expected %s", flagName, value, strings.Join(runtimeValues, " or "))
+	return errUsage("invalid --%s %q: expected %s", flagName, value, strings.Join(runtimeValues, " or "))
 }
 
 func runFunctionConfigure(cmd *cobra.Command, args []string) error {
@@ -634,11 +634,11 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		// omits them, so they would otherwise travel as an empty PATCH:
 		// accepted, 200, nothing changed, and the caller told it worked.
 		if f.value == "" {
-			return fmt.Errorf("--%s cannot be empty", f.name)
+			return errUsage("--%s cannot be empty", f.name)
 		}
 	}
 	if !anyChanged {
-		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, --deletion-protected, and/or --shared")
+		return errUsage("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, --deletion-protected, and/or --shared")
 	}
 	if cmd.Flags().Changed("default-runtime") {
 		if err := validateRuntime("default-runtime", FunctionConfigureDefaultRuntime); err != nil {
@@ -1110,7 +1110,7 @@ func runFunctionSecretsSet(cmd *cobra.Command, args []string) error {
 		value = args[1]
 	}
 	if value == "" && !cmd.Flags().Changed("value") {
-		return fmt.Errorf("secret value required: pass it as an argument or with --value")
+		return errUsage("secret value required: pass it as an argument or with --value")
 	}
 
 	client, err := GetClient()

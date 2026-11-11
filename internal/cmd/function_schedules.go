@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -104,12 +103,12 @@ func parseVariables(variablesJSON string, pairs []string) (map[string]interface{
 		}
 	}
 	if variables == nil {
-		return nil, errors.New("--vars must be a JSON object")
+		return nil, errUsage("--vars must be a JSON object")
 	}
 	for _, kv := range pairs {
 		parts := strings.SplitN(kv, "=", 2)
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid variable format %q: expected key=value", kv)
+			return nil, errUsage("invalid variable format %q: expected key=value", kv)
 		}
 		variables[parts[0]] = parts[1]
 	}
@@ -208,7 +207,7 @@ func runFunctionSchedulesUpdate(cmd *cobra.Command, args []string) error {
 	}
 	scheduleID := args[0]
 	if !cmd.Flags().Changed("cron") && !scheduleVariablesGiven(cmd) {
-		return errors.New("nothing to update: pass --cron, --var or --vars")
+		return errUsage("nothing to update: pass --cron, --var or --vars")
 	}
 	body, err := BuildFunctionSchedulesUpdateRequest(cmd)
 	if err != nil {

@@ -21,10 +21,9 @@ func stopAllSessions(parent context.Context, in io.Reader, prompt io.Writer) err
 	if err != nil {
 		return err
 	}
-	ctx, cancel := GetContextWithTimeout(parent)
-	defer cancel()
-
-	ids, err := activeSessionIDs(ctx, client)
+	listCtx, cancelList := GetContextWithTimeout(parent)
+	ids, err := activeSessionIDs(listCtx, client)
+	cancelList()
 	if err != nil {
 		return err
 	}
@@ -52,6 +51,11 @@ func stopAllSessions(parent context.Context, in io.Reader, prompt io.Writer) err
 			return PrintResult("Cancelled.", map[string]any{"cancelled": true})
 		}
 	}
+
+	// The timeout starts here, not before the prompt: time spent answering
+	// must not leave the stop requests with an expired context.
+	ctx, cancel := GetContextWithTimeout(parent)
+	defer cancel()
 
 	failures := make([]error, len(ids))
 	var wg sync.WaitGroup
@@ -103,16 +107,23 @@ func stopAllSessions(parent context.Context, in io.Reader, prompt io.Writer) err
 		for _, err := range failed {
 			PrintInfo(fmt.Sprintf("Warning: could not stop session %v", err))
 		}
-		return fmt.Errorf("stopped %d of %d sessions", len(stopped), len(ids))
+		return &partialError{message: fmt.Sprintf("stopped %d of %d sessions", len(stopped), len(ids)), causes: failed}
 	}
 	return nil
 }
 
-// activeSessionIDs lists every active session, following pages.
-func activeSessionIDs(ctx context.Context, client *api.NotteClient) ([]string, error) {
-	var ids []string
+// maxSessionPages stops a server that keeps reporting another page from
+// looping forever. Reaching it is an error, never a silent truncation.
+const maxSessionPages = 1000
+
+// activeSessions lists every active session, following pages.
+func activeSessions(ctx context.Context, client *api.NotteClient) ([]api.SessionResponse, error) {
+	var sessions []api.SessionResponse
 	onlyActive, pageSize := true, 100
 	for page := 1; ; page++ {
+		if page > maxSessionPages {
+			return nil, fmt.Errorf("stopped listing sessions after %d pages; more remain", maxSessionPages)
+		}
 		resp, err := client.Client().ListSessionsWithResponse(ctx, &api.ListSessionsParams{OnlyActive: &onlyActive, Page: &page, PageSize: &pageSize})
 		if err != nil {
 			return nil, fmt.Errorf("API request failed: %w", err)
@@ -121,13 +132,24 @@ func activeSessionIDs(ctx context.Context, client *api.NotteClient) ([]string, e
 			return nil, err
 		}
 		if resp.JSON200 == nil {
-			return ids, nil
+			return sessions, nil
 		}
-		for _, session := range resp.JSON200.Items {
-			ids = append(ids, session.SessionId)
-		}
-		if !resp.JSON200.HasNext || len(resp.JSON200.Items) == 0 || page >= 50 {
-			return ids, nil
+		sessions = append(sessions, resp.JSON200.Items...)
+		if !resp.JSON200.HasNext || len(resp.JSON200.Items) == 0 {
+			return sessions, nil
 		}
 	}
+}
+
+// activeSessionIDs is activeSessions reduced to the IDs.
+func activeSessionIDs(ctx context.Context, client *api.NotteClient) ([]string, error) {
+	sessions, err := activeSessions(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, len(sessions))
+	for i, session := range sessions {
+		ids[i] = session.SessionId
+	}
+	return ids, nil
 }

@@ -1856,3 +1856,26 @@ func TestSessionsList_ShortLimitFlag(t *testing.T) {
 		t.Fatalf("-n on sessions list is %v, want --page-size", flag)
 	}
 }
+
+// A new session must not keep the previous session's viewer link: the viewer
+// command would open the old browser.
+func TestRememberCurrentSession_DropsPreviousViewer(t *testing.T) {
+	setupSessionFileTest(t)
+	if err := setCurrentSession("old"); err != nil {
+		t.Fatal(err)
+	}
+	if err := setCurrentViewerURL("https://viewer.example/old"); err != nil {
+		t.Fatal(err)
+	}
+
+	rememberCurrentSession(&api.SessionResponse{SessionId: "new"}) // no viewer URL in the response
+
+	if got := getCurrentViewerURL(); got != "" {
+		t.Errorf("viewer URL = %q, want it cleared", got)
+	}
+	viewer := "https://viewer.example/new"
+	rememberCurrentSession(&api.SessionResponse{SessionId: "newer", ViewerUrl: &viewer})
+	if got := getCurrentViewerURL(); got != viewer {
+		t.Errorf("viewer URL = %q, want %q", got, viewer)
+	}
+}

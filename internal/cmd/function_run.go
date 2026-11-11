@@ -26,7 +26,7 @@ func functionWaitContext(cmd *cobra.Command) (context.Context, context.CancelFun
 		timeout, _ = cmd.Flags().GetDuration("wait-timeout")
 	}
 	if timeout < 0 {
-		return nil, nil, errors.New("--wait-timeout must not be negative")
+		return nil, nil, errUsage("--wait-timeout must not be negative")
 	}
 	if timeout > 0 {
 		ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
@@ -60,7 +60,17 @@ func startAndWaitFunction(cmd *cobra.Command, client *api.NotteClient, variables
 	}
 	// Older servers can return a complete JSON response directly.
 	if result != nil {
-		return render(result)
+		if err := render(result); err != nil {
+			return err
+		}
+		// A failed run is printed like any other; the exit code says it failed.
+		if failed, ok := result.(map[string]any); ok && failed["status"] == string(api.GetFunctionRunResponseStatusFailed) {
+			if id, _ := failed["function_run_id"].(string); id != "" {
+				runID = id
+			}
+			return &runFailedError{runID: runID}
+		}
+		return nil
 	}
 	if functionRunNoWait {
 		if text := textFormatter(); text != nil {
@@ -151,7 +161,7 @@ func runFunctionRunWait(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if functionRunID == "" {
-		return errors.New("--run-id is required")
+		return errUsage("--run-id is required")
 	}
 	ctx, cancel, err := functionWaitContext(cmd)
 	if err != nil {

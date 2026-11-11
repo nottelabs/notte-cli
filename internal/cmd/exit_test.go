@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +23,11 @@ func TestClassifyError(t *testing.T) {
 		{errUsage("--count must be between 1 and 20"), "usage", ExitUsage},
 		{errors.New(`unknown command "x" for "notte"`), "usage", ExitUsage},
 		{errors.New(`required flag(s) "function-id" not set`), "usage", ExitUsage},
+		{errors.New("--file is required"), "usage", ExitUsage},
+		{errors.New("--cron cannot be empty"), "usage", ExitUsage},
+		{errors.New("profile requires --profile-id to be set"), "usage", ExitUsage},
+		{fmt.Errorf("failed to parse --vars: %w", errors.New("bad json")), "usage", ExitUsage},
+		{fmt.Errorf("invalid browser-type: %w", errors.New("bad")), "usage", ExitUsage},
 		{errors.New("accepts 1 arg(s), received 0"), "usage", ExitUsage},
 		{auth.ErrNoAPIKey, "unauthorized", ExitAuth},
 		{fmt.Errorf("wrapped: %w", &apierrors.AuthError{Reason: "invalid", StatusCode: 401}), "unauthorized", ExitAuth},
@@ -71,5 +78,31 @@ func TestConfirmWithoutTerminal(t *testing.T) {
 	skipConfirmation = true
 	if ok, err := ConfirmAction("vault", "v1"); !ok || err != nil {
 		t.Errorf("delete with --yes: got (%v, %v)", ok, err)
+	}
+}
+
+// Bad arguments must exit with the usage code through the real entry point,
+// whichever command found them.
+func TestExecute_BadArgumentsExitUsage(t *testing.T) {
+	if args := os.Getenv("NOTTE_EXECUTE_ARGS"); args != "" {
+		t.Setenv("NOTTE_API_KEY", "test-key")
+		rootCmd.SetArgs(strings.Fields(args))
+		Execute()
+		return
+	}
+	for _, args := range []string{
+		"sessions start --count 0",
+		"sessions list --page 0",
+		"sessions stop --all --session-id s1",
+		"search --depth nope hello",
+		"functions create",
+	} {
+		cmd := exec.Command(os.Args[0], "-test.run=TestExecute_BadArgumentsExitUsage")
+		cmd.Env = append(os.Environ(), "NOTTE_EXECUTE_ARGS="+args, "NOTTE_CONFIG_DIR="+t.TempDir())
+		err := cmd.Run()
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != ExitUsage {
+			t.Errorf("notte %s: got %v, want exit code %d", args, err, ExitUsage)
+		}
 	}
 }

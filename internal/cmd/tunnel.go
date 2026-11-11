@@ -191,13 +191,13 @@ func tunnelCredentials(ctx context.Context, cmd *cobra.Command, name string) (cl
 		return "", "", nil
 	}
 	if clientID == "" {
-		return "", "", fmt.Errorf("--oauth-client-id is required with --oauth-client-secret to save tunnel %q", name)
+		return "", "", errUsage("--oauth-client-id is required with --oauth-client-secret to save tunnel %q", name)
 	}
 	if secret != "" {
 		return clientID, secret, nil
 	}
 	if saved == nil || saved.OAuthClientID != clientID {
-		return "", "", fmt.Errorf("--oauth-client-secret (or %s) is required to save tunnel %q", tailnetSecretEnv, name)
+		return "", "", errUsage("--oauth-client-secret (or %s) is required to save tunnel %q", tailnetSecretEnv, name)
 	}
 	if _, err := tunnel.Secret(name); err != nil {
 		return "", "", err

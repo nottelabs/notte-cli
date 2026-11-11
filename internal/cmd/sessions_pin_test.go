@@ -3,6 +3,10 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -136,5 +140,86 @@ func TestRenderPinMenu(t *testing.T) {
 	}
 	if !strings.Contains(lines[2], "❯ aaa222-two") {
 		t.Errorf("the cursor row should be marked: %q", lines[2])
+	}
+}
+
+// A read can end inside an escape sequence or carry several key presses; the
+// menu must see whole keys either way.
+func TestKeyStream(t *testing.T) {
+	chunks := func(parts ...string) io.Reader {
+		pr, pw := io.Pipe()
+		go func() {
+			for _, p := range parts {
+				_, _ = pw.Write([]byte(p))
+			}
+			_ = pw.Close()
+		}()
+		return pr
+	}
+	for _, tc := range []struct {
+		name  string
+		input []string
+		ready bool // whether more input is waiting after a partial sequence
+		want  []string
+	}{
+		{"several keys in one read", []string{"jj\r"}, false, []string{"j", "j", "\r"}},
+		{"arrow with a key after it", []string{"\x1b[Bk"}, false, []string{"\x1b[B", "k"}},
+		{"arrow split across reads", []string{"\x1b", "[A"}, true, []string{"\x1b[A"}},
+		{"arrow split inside the sequence", []string{"\x1b[", "B"}, true, []string{"\x1b[B"}},
+		{"application-mode arrow", []string{"\x1bOA"}, false, []string{"\x1bOA"}},
+		{"lone escape", []string{"\x1b"}, false, []string{"\x1b"}},
+		{"escape then a key", []string{"\x1bq"}, false, []string{"\x1b", "q"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			keys := &keyStream{in: chunks(tc.input...), ready: func(time.Duration) bool { return tc.ready }}
+			var got []string
+			for range tc.want {
+				key, err := keys.next()
+				if err != nil {
+					t.Fatalf("after %q: %v", got, err)
+				}
+				got = append(got, string(key))
+			}
+			if strings.Join(got, "|") != strings.Join(tc.want, "|") {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// Sessions on later pages must be found, and a prefix is only unique when no
+// later page holds another match.
+func TestRunSessionsPin_SearchesEveryPage(t *testing.T) {
+	setupSessionFileTest(t)
+	pages := map[string]string{
+		"1": `{"items":[{"session_id":"aa1-first","status":"active"}],"has_next":true}`,
+		"2": `{"items":[{"session_id":"aa2-second","status":"active"},{"session_id":"zz9-late","status":"active"}],"has_next":false}`,
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, pages[r.URL.Query().Get("page")])
+	}))
+	defer server.Close()
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	env.SetEnv("NOTTE_API_URL", server.URL)
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	_, _ = testutil.CaptureOutput(func() {
+		if err := runSessionsPin(cmd, []string{"zz9"}); err != nil {
+			t.Fatalf("a session on page 2 was not found: %v", err)
+		}
+	})
+	if got := GetCurrentSessionID(); got != "zz9-late" {
+		t.Errorf("pinned %q, want zz9-late", got)
+	}
+	var err error
+	_, _ = testutil.CaptureOutput(func() { err = runSessionsPin(cmd, []string{"aa"}) })
+	if err == nil || !strings.Contains(err.Error(), "matches 2 sessions") {
+		t.Errorf("a prefix matching pages 1 and 2 must be ambiguous, got %v", err)
 	}
 }

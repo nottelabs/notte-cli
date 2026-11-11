@@ -3,8 +3,13 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
@@ -120,5 +125,64 @@ func TestSessionsStop_AllFlag(t *testing.T) {
 	flag := sessionsStopCmd.Flags().ShorthandLookup("a")
 	if flag == nil || flag.Name != "all" {
 		t.Fatalf("-a on sessions stop is %v, want --all", flag)
+	}
+}
+
+// The rate limit behind a partial failure must still reach the exit code.
+func TestStopAllSessions_KeepsFailureCode(t *testing.T) {
+	server := stopAllServer(t, `{"session_id": "s1", "status": "active"}`)
+	server.AddResponse("/sessions/s1/stop", 429, `{"detail": "slow down"}`)
+	SetSkipConfirmation(true)
+	t.Cleanup(func() { SetSkipConfirmation(false) })
+	var err error
+	_, _ = testutil.CaptureOutput(func() {
+		err = stopAllSessions(context.Background(), strings.NewReader(""), &bytes.Buffer{})
+	})
+	if code, exit := classifyError(err); code != "rate_limited" || exit != ExitRateLimited {
+		t.Errorf("got (%q, %d) for %v, want rate_limited", code, exit, err)
+	}
+}
+
+// Time spent answering the prompt must not count against the request timeout.
+func TestStopAllSessions_TimeoutStartsAfterPrompt(t *testing.T) {
+	server := stopAllServer(t, `{"session_id": "s1", "status": "active"}`)
+	server.AddResponse("/sessions/s1/stop", 200, `{}`)
+	origTimeout := requestTimeout
+	requestTimeout = 1
+	t.Cleanup(func() { requestTimeout = origTimeout })
+
+	slow := io.MultiReader(&delayReader{delay: 1200 * time.Millisecond}, strings.NewReader("y\n"))
+	var err error
+	_, _ = testutil.CaptureOutput(func() { err = stopAllSessions(context.Background(), slow, &bytes.Buffer{}) })
+	if err != nil {
+		t.Fatalf("a slow answer made the stop fail: %v", err)
+	}
+}
+
+type delayReader struct{ delay time.Duration }
+
+func (d *delayReader) Read([]byte) (int, error) { time.Sleep(d.delay); return 0, io.EOF }
+
+// Every page is followed, not just the first 50, and a runaway server is an
+// error rather than a quiet truncation.
+func TestActiveSessionIDs_FollowsEveryPage(t *testing.T) {
+	const pages = 60
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var page int
+		_, _ = fmt.Sscan(r.URL.Query().Get("page"), &page)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"items":[{"session_id":"s%d","status":"active"}],"has_next":%t}`, page, page < pages)
+	}))
+	defer server.Close()
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	env.SetEnv("NOTTE_API_URL", server.URL)
+	client, err := GetClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids, err := activeSessionIDs(context.Background(), client)
+	if err != nil || len(ids) != pages {
+		t.Fatalf("got %d ids, err %v; want %d", len(ids), err, pages)
 	}
 }

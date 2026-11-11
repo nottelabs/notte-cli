@@ -87,7 +87,7 @@ func runTunnelCheck(cmd *cobra.Command, args []string) error {
 	name := tunnelCheckName
 	if name == "" {
 		if self == nil {
-			return fmt.Errorf("pass --name: Tailscale is not running on this machine, so there is no default tunnel")
+			return errUsage("pass --name: Tailscale is not running on this machine, so there is no default tunnel")
 		}
 		name = strings.ToLower(strings.SplitN(self.MagicDNSName(), ".", 2)[0])
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -637,7 +636,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		count = 1
 	}
 	if count < 1 || count > maxSessionsStartCount {
-		return fmt.Errorf("--count must be between 1 and %d", maxSessionsStartCount)
+		return errUsage("--count must be between 1 and %d", maxSessionsStartCount)
 	}
 
 	// Resolve --tunnel first, so an unknown name or missing secret fails
@@ -837,7 +836,13 @@ func startSessions(ctx context.Context, client *api.NotteClient, body *api.Sessi
 				PrintInfo(fmt.Sprintf("Warning: a session failed to start: %v", err))
 			}
 		}
-		return fmt.Errorf("started %d of %d sessions", len(sessions), count)
+		var causes []error
+		for _, err := range failures {
+			if err != nil {
+				causes = append(causes, err)
+			}
+		}
+		return &partialError{message: fmt.Sprintf("started %d of %d sessions", len(sessions), count), causes: causes}
 	}
 	return nil
 }
@@ -849,6 +854,10 @@ func rememberCurrentSession(session *api.SessionResponse) {
 		if err := setCurrentSession(session.SessionId); err != nil {
 			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
 		}
+		// The previous session's viewer link and expiry belong to it, not to
+		// this one, whatever the new response leaves out.
+		_ = clearCurrentViewerURL()
+		_ = clearCurrentSessionExpiry()
 		// Store session expiry if max duration is set
 		if session.MaxDurationMinutes != nil && !session.CreatedAt.IsZero() {
 			expiry := session.CreatedAt.Add(time.Duration(*session.MaxDurationMinutes) * time.Minute)
@@ -952,7 +961,7 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 func runSessionStop(cmd *cobra.Command, args []string) error {
 	if sessionStopAll {
 		if cmd.Flags().Changed("session-id") {
-			return errors.New("use either --all or --session-id, not both")
+			return errUsage("use either --all or --session-id, not both")
 		}
 		return stopAllSessions(cmd.Context(), os.Stdin, os.Stderr)
 	}
@@ -1187,15 +1196,15 @@ func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if sessionSaveProfileID != "" && sessionSaveProfileName != "" {
-		return errors.New("--profile-id and --name are mutually exclusive")
+		return errUsage("--profile-id and --name are mutually exclusive")
 	}
 	// An explicitly passed but empty target (e.g. an unset shell variable) must
 	// not silently fall back to overwriting the session's start profile.
 	if cmd.Flags().Changed("profile-id") && strings.TrimSpace(sessionSaveProfileID) == "" {
-		return errors.New("--profile-id must not be empty")
+		return errUsage("--profile-id must not be empty")
 	}
 	if cmd.Flags().Changed("name") && strings.TrimSpace(sessionSaveProfileName) == "" {
-		return errors.New("--name must not be empty")
+		return errUsage("--name must not be empty")
 	}
 
 	client, err := GetClient()

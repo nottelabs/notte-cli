@@ -44,17 +44,9 @@ func runSessionsPin(cmd *cobra.Command, args []string) error {
 	ctx, cancel := GetContextWithTimeout(cmd.Context())
 	defer cancel()
 
-	onlyActive, pageSize := true, 100
-	resp, err := client.Client().ListSessionsWithResponse(ctx, &api.ListSessionsParams{OnlyActive: &onlyActive, PageSize: &pageSize})
+	sessions, err := activeSessions(ctx, client)
 	if err != nil {
-		return fmt.Errorf("API request failed: %w", err)
-	}
-	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 		return err
-	}
-	var sessions []api.SessionResponse
-	if resp.JSON200 != nil {
-		sessions = resp.JSON200.Items
 	}
 
 	var chosen *api.SessionResponse
@@ -165,7 +157,7 @@ func pickSession(in io.Reader, out io.Writer, sessions []api.SessionResponse, cu
 // canUseArrowMenu reports whether the menu can take single key presses: both
 // input and the screen are a terminal. Otherwise the numbered menu is used.
 // NOTTE_FORCE_INTERACTIVE=1 is for terminals that relay each key press over a
-// pipe instead of a TTY,.
+// pipe instead of a TTY.
 func canUseArrowMenu() bool {
 	if IsJSONOutput() {
 		return false
@@ -221,14 +213,14 @@ func pickSessionWithArrows(sessions []api.SessionResponse, current string, now t
 	}
 
 	draw()
-	buf := make([]byte, 8)
+	keys := &keyStream{in: os.Stdin, ready: func(wait time.Duration) bool { return inputReady(fd, wait) }}
 	for {
-		n, err := os.Stdin.Read(buf)
+		key, err := keys.next()
 		if err != nil {
 			erase()
 			return nil, errPinCancelled
 		}
-		next, done, cancel := pinMenuKey(cursor, len(sessions), buf[:n])
+		next, done, cancel := pinMenuKey(cursor, len(sessions), key)
 		switch {
 		case cancel:
 			erase()
@@ -240,6 +232,72 @@ func pickSessionWithArrows(sessions []api.SessionResponse, current string, now t
 		cursor = next
 		draw()
 	}
+}
+
+// escapeWait is how long a lone Esc waits for the rest of an escape sequence
+// that a slow connection may have split from it.
+const escapeWait = 50 * time.Millisecond
+
+// keyStream turns what a terminal sends into whole key presses. A read can
+// end inside an escape sequence or carry several key presses at once, so the
+// bytes are kept and cut into keys instead of treating each read as one key.
+type keyStream struct {
+	in      io.Reader
+	ready   func(time.Duration) bool // whether more input arrives within the wait
+	pending []byte
+}
+
+func (k *keyStream) next() ([]byte, error) {
+	buf := make([]byte, 64)
+	for {
+		if len(k.pending) > 0 {
+			key, rest, complete := splitKey(k.pending)
+			if !complete && k.ready != nil && k.ready(escapeWait) {
+				// The rest of the sequence is on its way.
+			} else {
+				if !complete {
+					// Nothing more came: a bare Esc, and whatever followed it.
+					key, rest = k.pending[:1], k.pending[1:]
+				}
+				k.pending = rest
+				return key, nil
+			}
+		}
+		n, err := k.in.Read(buf)
+		if n > 0 {
+			k.pending = append(k.pending, buf[:n]...)
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+}
+
+// splitKey cuts the first key press off buf. It reports incomplete when buf
+// ends inside an escape sequence.
+func splitKey(buf []byte) (key, rest []byte, complete bool) {
+	if buf[0] != 0x1b {
+		return buf[:1], buf[1:], true
+	}
+	if len(buf) == 1 {
+		return nil, nil, false
+	}
+	switch buf[1] {
+	case '[': // CSI: parameters, then a final byte in 0x40-0x7e
+		for i := 2; i < len(buf); i++ {
+			if buf[i] >= 0x40 && buf[i] <= 0x7e {
+				return buf[:i+1], buf[i+1:], true
+			}
+		}
+		return nil, nil, false
+	case 'O': // SS3: one more byte
+		if len(buf) < 3 {
+			return nil, nil, false
+		}
+		return buf[:3], buf[3:], true
+	}
+	return buf[:1], buf[1:], true // Esc, then an ordinary key
 }
 
 // pinMenuKey applies one key press to the menu.

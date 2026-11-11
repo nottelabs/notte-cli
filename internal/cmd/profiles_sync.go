@@ -62,7 +62,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("syncing cookies from a local browser is supported on macOS and Linux only")
 	}
 	if syncMode != "replace" && syncMode != "append" {
-		return fmt.Errorf("invalid --mode %q: expected \"replace\" or \"append\"", syncMode)
+		return errUsage("invalid --mode %q: expected \"replace\" or \"append\"", syncMode)
 	}
 	// An explicit --domain that normalizes to nothing (e.g. \".\" or a blank)
 	// must be rejected rather than silently treated as "all domains", which
@@ -244,7 +244,7 @@ func resolveLocalProfile() (browser.Profile, error) {
 	if syncBrowser != "" {
 		b, ok := browser.BrowserByID(syncBrowser)
 		if !ok {
-			return browser.Profile{}, fmt.Errorf("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
+			return browser.Profile{}, errUsage("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
 		}
 		// Check the platform first, so a macOS-only browser on Linux says so
 		// rather than claiming it is not installed.
@@ -275,7 +275,7 @@ func resolveLocalProfile() (browser.Profile, error) {
 		case 1:
 			return matched[0], nil
 		default:
-			return browser.Profile{}, fmt.Errorf("%q matches more than one profile; also pass --browser to disambiguate", syncChromeProfile)
+			return browser.Profile{}, errUsage("%q matches more than one profile; also pass --browser to disambiguate", syncChromeProfile)
 		}
 	}
 
@@ -301,7 +301,7 @@ func filterByProfileName(profiles []browser.Profile, query string) []browser.Pro
 // choose explicitly instead of guessing.
 func pickProfile(profiles []browser.Profile) (browser.Profile, error) {
 	if skipConfirmation || !term.IsTerminal(int(os.Stdin.Fd())) {
-		return browser.Profile{}, fmt.Errorf("more than one browser profile found; pass --browser and --local-profile to choose one")
+		return browser.Profile{}, errUsage("more than one browser profile found; pass --browser and --local-profile to choose one")
 	}
 	return pickProfileWithIO(os.Stdin, os.Stderr, profiles)
 }

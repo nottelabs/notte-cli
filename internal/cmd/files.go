@@ -103,10 +103,10 @@ func sessionFilesURL(clientBaseURL, id string) string {
 
 func resolveFilesSource(from string, uploads, downloads bool) (string, error) {
 	if uploads && downloads {
-		return "", fmt.Errorf("--uploads and --downloads cannot be used together")
+		return "", errUsage("--uploads and --downloads cannot be used together")
 	}
 	if from != "" && (uploads || downloads) {
-		return "", fmt.Errorf("--from cannot be combined with --uploads or --downloads")
+		return "", errUsage("--from cannot be combined with --uploads or --downloads")
 	}
 
 	if uploads {
@@ -124,7 +124,7 @@ func resolveFilesSource(from string, uploads, downloads bool) (string, error) {
 	case filesSourceUploads:
 		return filesSourceUploads, nil
 	default:
-		return "", fmt.Errorf("invalid --from value %q: must be uploads or session", from)
+		return "", errUsage("invalid --from value %q: must be uploads or session", from)
 	}
 }
 

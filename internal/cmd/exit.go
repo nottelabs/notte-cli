@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	apierrors "github.com/nottelabs/notte-cli/internal/errors"
@@ -47,6 +48,17 @@ func (e *runFailedError) Error() string {
 	return fmt.Sprintf("function run %s failed", e.runID)
 }
 
+// partialError reports that some of several requests failed. It keeps the
+// underlying errors, so the exit code still says why: rate limited, rejected
+// key and so on.
+type partialError struct {
+	message string
+	causes  []error
+}
+
+func (e *partialError) Error() string   { return e.message }
+func (e *partialError) Unwrap() []error { return e.causes }
+
 // cobraUsagePrefixes start the errors cobra returns for a bad command line
 // before any command code runs. Flag errors are wrapped where they are raised.
 var cobraUsagePrefixes = []string{
@@ -54,6 +66,13 @@ var cobraUsagePrefixes = []string{
 	"requires exactly", "invalid argument", "if any flags in the group", "at least one of the flags in the group",
 	"exactly one of the flags in the group", "only one of the flags in the group",
 }
+
+// generatedUsageMessage matches the flag errors in the generated *_flags.gen.go
+// files, which cannot call errUsage: "--file is required", "--cron cannot be
+// empty", "failed to parse --vars: ...", "invalid browser-type: ..." and
+// "profile requires --profile-id to be set".
+var generatedUsageMessage = regexp.MustCompile(
+	`^(--[a-z0-9-]+ (is required|cannot be empty)|failed to parse --[a-z0-9-]+:|invalid [a-z0-9-]+: |[a-z0-9-]+ requires --[a-z0-9-]+.* to be set$)`)
 
 // classifyError names err for machines: the "code" of a JSON error and the
 // process exit code.
@@ -84,6 +103,9 @@ func classifyError(err error) (string, int) {
 		if strings.HasPrefix(err.Error(), prefix) {
 			return "usage", ExitUsage
 		}
+	}
+	if generatedUsageMessage.MatchString(err.Error()) {
+		return "usage", ExitUsage
 	}
 	return "error", ExitFailure
 }

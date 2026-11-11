@@ -45,7 +45,7 @@ func readJSONDocumentFlag(cmd *cobra.Command, flagName, value string) (string, e
 	// update replaces a working schema with nothing, the exact outcome the
 	// "unset means send nothing" rule exists to prevent.
 	if document == nil {
-		return "", fmt.Errorf("--%s must be a JSON object, not null", flagName)
+		return "", errUsage("--%s must be a JSON object, not null", flagName)
 	}
 
 	var compact bytes.Buffer

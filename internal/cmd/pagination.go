@@ -18,7 +18,7 @@ func getPageFlag(cmd *cobra.Command) (*int, error) {
 	if cmd.Flags().Changed("page") {
 		v, _ := cmd.Flags().GetInt("page")
 		if v < 1 {
-			return nil, fmt.Errorf("--page must be >= 1 (got %d)", v)
+			return nil, errUsage("--page must be >= 1 (got %d)", v)
 		}
 		return &v, nil
 	}
@@ -29,7 +29,7 @@ func getPageSizeFlag(cmd *cobra.Command) (*int, error) {
 	if cmd.Flags().Changed("page-size") {
 		v, _ := cmd.Flags().GetInt("page-size")
 		if v < 1 {
-			return nil, fmt.Errorf("--page-size must be >= 1 (got %d)", v)
+			return nil, errUsage("--page-size must be >= 1 (got %d)", v)
 		}
 		return &v, nil
 	}

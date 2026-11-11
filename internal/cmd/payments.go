@@ -24,7 +24,7 @@ func newPaymentCommand() *cobra.Command {
 	var connectMode string
 	connect := &cobra.Command{Use: "connect", Short: "Connect your Link wallet before requesting spending", Long: "Return a Link wallet connection URL and phrase. Open the URL to authorize Notte. Completion is detected in the background; this command does not wait. Run it again to retrieve the pending link or confirm connected. No browser session is required.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if cmd.Flags().Changed("mode") && connectMode != "test" && connectMode != "live" {
-			return fmt.Errorf("--mode must be test or live")
+			return errUsage("--mode must be test or live")
 		}
 		client, err := GetClient()
 		if err != nil {
@@ -55,7 +55,7 @@ func newPaymentCommand() *cobra.Command {
 	var disconnectMode string
 	disconnect := &cobra.Command{Use: "disconnect", Short: "Disconnect your Link wallet for one mode", Long: "Revoke and forget the selected wallet connection, then use payment connect to choose another account. The other mode is unaffected. Active payments and card cleanup must finish first.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if cmd.Flags().Changed("mode") && disconnectMode != "test" && disconnectMode != "live" {
-			return fmt.Errorf("--mode must be test or live")
+			return errUsage("--mode must be test or live")
 		}
 		client, err := GetClient()
 		if err != nil {
@@ -95,30 +95,30 @@ func newPaymentCommand() *cobra.Command {
 			}
 		}
 		if len(amount) > 24 || !regexp.MustCompile(`^(0|[1-9][0-9]*)(\.[0-9]+)?$`).MatchString(amount) {
-			return fmt.Errorf("--amount must be a positive decimal in currency units (e.g. 100.91)")
+			return errUsage("--amount must be a positive decimal in currency units (e.g. 100.91)")
 		}
 		parsed, ok := new(big.Rat).SetString(amount)
 		if !ok || parsed.Sign() <= 0 || parsed.Cmp(paymentAmountLimit(body.Currency)) > 0 {
-			return fmt.Errorf("--amount must be positive and within the currency's spending limit")
+			return errUsage("--amount must be positive and within the currency's spending limit")
 		}
 		// Preserve the user's decimal text; the API validates currency precision
 		// and converts to Link minor units without floating-point arithmetic.
 		body.Amount = amount
 		if !regexp.MustCompile(`^[a-z]{3}$`).MatchString(body.Currency) {
-			return fmt.Errorf("--currency must be three lowercase letters")
+			return errUsage("--currency must be three lowercase letters")
 		}
 		u, err := url.Parse(body.MerchantURL)
 		if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || utf8.RuneCountInString(body.MerchantURL) > 2048 {
-			return fmt.Errorf("--merchant-url must be an HTTPS URL without credentials (maximum 2048 characters)")
+			return errUsage("--merchant-url must be an HTTPS URL without credentials (maximum 2048 characters)")
 		}
 		if strings.TrimSpace(body.MerchantName) == "" || utf8.RuneCountInString(body.MerchantName) > 200 {
-			return fmt.Errorf("--merchant-name must contain 1 to 200 characters")
+			return errUsage("--merchant-name must contain 1 to 200 characters")
 		}
 		if n := utf8.RuneCountInString(body.Description); n < 100 || n > 4000 {
-			return fmt.Errorf("--description must contain 100 to 4000 characters")
+			return errUsage("--description must contain 100 to 4000 characters")
 		}
 		if cmd.Flags().Changed("mode") && body.Mode != "test" && body.Mode != "live" {
-			return fmt.Errorf("--mode must be test or live")
+			return errUsage("--mode must be test or live")
 		}
 		if key == "" {
 			key, err = api.GenerateIdempotencyKey()
@@ -127,7 +127,7 @@ func newPaymentCommand() *cobra.Command {
 			}
 		}
 		if len(key) > 200 {
-			return fmt.Errorf("--idempotency-key must be at most 200 characters")
+			return errUsage("--idempotency-key must be at most 200 characters")
 		}
 		// stderr keeps JSON stdout a single document and lets users replay an uncertain request.
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Idempotency key: %s\n", key)
@@ -168,7 +168,7 @@ func newPaymentCommand() *cobra.Command {
 	var timeout time.Duration
 	wait := &cobra.Command{Use: "wait PAYMENT_ID", Short: "Wait until credentials are ready or the payment fails", Long: "Wait until the temporary card is installed in the session vault. Ready does not mean a purchase succeeded. Connection, approval, and verification instructions appear on stderr. Exiting does not cancel provisioning.", Args: paymentIDArg, RunE: func(cmd *cobra.Command, args []string) error {
 		if timeout < 0 {
-			return fmt.Errorf("--wait-timeout must not be negative")
+			return errUsage("--wait-timeout must not be negative")
 		}
 		client, err := GetClient()
 		if err != nil {
@@ -192,7 +192,7 @@ func paymentIDArg(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if _, err := uuid.Parse(args[0]); err != nil {
-		return fmt.Errorf("payment ID must be a UUID")
+		return errUsage("payment ID must be a UUID")
 	}
 	return nil
 }

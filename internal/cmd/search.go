@@ -52,13 +52,13 @@ func init() {
 func runSearch(cmd *cobra.Command, args []string) error {
 	query := strings.TrimSpace(strings.Join(args, " "))
 	if query == "" {
-		return fmt.Errorf("search query cannot be empty")
+		return errUsage("search query cannot be empty")
 	}
 	if searchDepth != "" && !validSearchDepths[searchDepth] {
-		return fmt.Errorf("invalid --depth %q: must be standard, fast, or deep", searchDepth)
+		return errUsage("invalid --depth %q: must be standard, fast, or deep", searchDepth)
 	}
 	if searchOutputType != "" && !validSearchOutputTypes[searchOutputType] {
-		return fmt.Errorf("invalid --output-type %q: must be searchResults, sourcedAnswer, or structured", searchOutputType)
+		return errUsage("invalid --output-type %q: must be searchResults, sourcedAnswer, or structured", searchOutputType)
 	}
 
 	client, err := GetClient()
