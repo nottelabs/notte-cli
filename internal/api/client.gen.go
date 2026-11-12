@@ -46,6 +46,12 @@ const (
 	ApiSessionStartRequestBrowserType0Firefox       ApiSessionStartRequestBrowserType0 = "firefox"
 )
 
+// Defines values for ApiSessionStartRequestDialogPolicy.
+const (
+	ApiSessionStartRequestDialogPolicyAuto   ApiSessionStartRequestDialogPolicy = "auto"
+	ApiSessionStartRequestDialogPolicyClient ApiSessionStartRequestDialogPolicy = "client"
+)
+
 // Defines values for ApiSessionStartRequestScreenshotType.
 const (
 	ApiSessionStartRequestScreenshotTypeFull       ApiSessionStartRequestScreenshotType = "full"
@@ -1518,6 +1524,9 @@ type ApiSessionStartRequest struct {
 	// Demonstrate Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
 	Demonstrate *bool `json:"demonstrate,omitempty"`
 
+	// DialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+	DialogPolicy *ApiSessionStartRequestDialogPolicy `json:"dialog_policy,omitempty"`
+
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
 
@@ -1573,6 +1582,9 @@ type ApiSessionStartRequestBrowserType1 = string
 type ApiSessionStartRequest_BrowserType struct {
 	union json.RawMessage
 }
+
+// ApiSessionStartRequestDialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+type ApiSessionStartRequestDialogPolicy string
 
 // ApiSessionStartRequestProxies0 defines model for .
 type ApiSessionStartRequestProxies0 = []ApiSessionStartRequest_Proxies_0_Item

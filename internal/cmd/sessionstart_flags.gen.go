@@ -37,6 +37,9 @@ var (
 	// Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
 	SessionStartDemonstrate bool
 
+	// Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+	SessionStartDialogPolicy string
+
 	// Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation).
 	SessionStartIdleTimeoutMinutes int
 
@@ -89,6 +92,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&SessionStartCdpUrl, "cdp-url", "", "The CDP URL of another remote session provider.")
 	cmd.Flags().StringSliceVar(&SessionStartChromeArgs, "chrome-args", []string{}, "Overwrite the chrome instance arguments (repeatable)")
 	cmd.Flags().BoolVar(&SessionStartDemonstrate, "demonstrate", false, "Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false. (API default: false)")
+	cmd.Flags().StringVar(&SessionStartDialogPolicy, "dialog-policy", "", "Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds. (API default: auto) (auto, client)")
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation). (API default: 3)")
 	cmd.Flags().BoolVar(&SessionStartLogSession, "log-session", false, "Save browser session logs. False permanently disables saved logs, without disabling metering. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
@@ -148,6 +152,11 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if cmd.Flags().Changed("demonstrate") {
 		body.Demonstrate = &SessionStartDemonstrate
+	}
+
+	if SessionStartDialogPolicy != "" {
+		val := api.ApiSessionStartRequestDialogPolicy(SessionStartDialogPolicy)
+		body.DialogPolicy = &val
 	}
 
 	if SessionStartIdleTimeoutMinutes > 0 {
