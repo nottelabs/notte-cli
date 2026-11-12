@@ -758,14 +758,24 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	}
 	t.Logf("Function run response with --vars: %+v", runResp)
 
-	// Test 3: Run with multiple --var flags
+	// Test 3: Run with multiple --var flags. The function only declares
+	// "test", so the run fails on "another" and the CLI exits 7 (run_failed);
+	// the run it prints must still carry both variables.
 	result = runCLI(t, "functions", "run", "--function-id", functionID, "--var", "test=first", "--var", "another=second")
-	requireSuccess(t, result)
+	if result.ExitCode != 7 {
+		t.Fatalf("expected exit code 7 for a failed run, got %d\nstdout: %s\nstderr: %s",
+			result.ExitCode, result.Stdout, result.Stderr)
+	}
 
-	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+	var multiResp struct {
+		Variables map[string]string `json:"variables"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &multiResp); err != nil {
 		t.Fatalf("Failed to parse run response: %v", err)
 	}
-	t.Logf("Function run response with multiple vars: %+v", runResp)
+	if multiResp.Variables["test"] != "first" || multiResp.Variables["another"] != "second" {
+		t.Errorf("expected both --var values to be sent, got %v", multiResp.Variables)
+	}
 
 	t.Log("Successfully ran function with variables")
 }
