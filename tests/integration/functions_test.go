@@ -759,11 +759,13 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	t.Logf("Function run response with --vars: %+v", runResp)
 
 	// Test 3: Run with multiple --var flags. The function only declares
-	// "test", so the run fails on "another" and the CLI exits 7 (run_failed);
-	// the run it prints must still carry both variables.
+	// "test", so the run fails on "another" and the CLI reports run_failed.
+	// runCLI goes through `go run`, which exits 1 whatever the child's code,
+	// so check the error code on stderr rather than the exit code. The run it
+	// prints must still carry both variables.
 	result = runCLI(t, "functions", "run", "--function-id", functionID, "--var", "test=first", "--var", "another=second")
-	if result.ExitCode != 7 {
-		t.Fatalf("expected exit code 7 for a failed run, got %d\nstdout: %s\nstderr: %s",
+	if result.ExitCode == 0 || !strings.Contains(result.Stderr, `"code":"run_failed"`) {
+		t.Fatalf("expected a run_failed error for an undeclared variable, got exit code %d\nstdout: %s\nstderr: %s",
 			result.ExitCode, result.Stdout, result.Stderr)
 	}
 
