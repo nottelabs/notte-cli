@@ -758,14 +758,26 @@ func TestFunctionRunWithVariables(t *testing.T) {
 	}
 	t.Logf("Function run response with --vars: %+v", runResp)
 
-	// Test 3: Run with multiple --var flags
+	// Test 3: Run with multiple --var flags. The function only declares
+	// "test", so the run fails on "another" and the CLI reports run_failed.
+	// runCLI goes through `go run`, which exits 1 whatever the child's code,
+	// so check the error code on stderr rather than the exit code. The run it
+	// prints must still carry both variables.
 	result = runCLI(t, "functions", "run", "--function-id", functionID, "--var", "test=first", "--var", "another=second")
-	requireSuccess(t, result)
+	if result.ExitCode == 0 || !strings.Contains(result.Stderr, `"code":"run_failed"`) {
+		t.Fatalf("expected a run_failed error for an undeclared variable, got exit code %d\nstdout: %s\nstderr: %s",
+			result.ExitCode, result.Stdout, result.Stderr)
+	}
 
-	if err := json.Unmarshal([]byte(result.Stdout), &runResp); err != nil {
+	var multiResp struct {
+		Variables map[string]string `json:"variables"`
+	}
+	if err := json.Unmarshal([]byte(result.Stdout), &multiResp); err != nil {
 		t.Fatalf("Failed to parse run response: %v", err)
 	}
-	t.Logf("Function run response with multiple vars: %+v", runResp)
+	if multiResp.Variables["test"] != "first" || multiResp.Variables["another"] != "second" {
+		t.Errorf("expected both --var values to be sent, got %v", multiResp.Variables)
+	}
 
 	t.Log("Successfully ran function with variables")
 }

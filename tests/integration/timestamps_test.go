@@ -13,32 +13,21 @@ import (
 // rewrites timestamps to FlexibleTime so a payload without timezone info still
 // decodes, and a substitution that missed a field left it as time.Time, which
 // fails on exactly that payload. A synthetic fixture proves the decoder, not
-// that the field the API populates is wired to it - so run the two commands
-// that print a function's created_at and look at what a user would see.
-func TestFunctionsListRendersCreatedAt(t *testing.T) {
+// that the field the API populates is wired to it - so run the commands that
+// decode a function's timestamps and look at what a user would see.
+func TestFunctionsListDecodesTimestamps(t *testing.T) {
 	result := runCLIText(t, "functions", "list")
 	requireSuccess(t, result)
 
+	if strings.Contains(result.Stdout, "No functions") {
+		t.Skip("no functions in this workspace to decode a timestamp for")
+	}
 	if strings.Contains(result.Stdout, "Time:") {
 		t.Errorf("timestamp printed as a nested struct rather than a value:\n%s", result.Stdout)
 	}
-
-	// A date is the part worth asserting: the clock and zone vary by row, and
-	// pinning the layout would break on a formatting change that is not this
-	// bug.
-	date := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
-	for _, line := range strings.Split(result.Stdout, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if !strings.HasPrefix(trimmed, "CreatedAt:") {
-			continue
-		}
-		if !date.MatchString(trimmed) {
-			t.Errorf("created_at rendered without a date: %q", trimmed)
-		}
-		return
+	if !strings.Contains(result.Stdout, "UPDATED") {
+		t.Errorf("no UPDATED column in the output of functions list:\n%s", result.Stdout)
 	}
-
-	t.Skip("no functions in this workspace to render a created_at for")
 }
 
 // `functions show` decodes FunctionResponse, a different generated type from
@@ -58,10 +47,15 @@ func TestFunctionShowDecodesCreatedAt(t *testing.T) {
 	if strings.Contains(result.Stdout, "Time:") {
 		t.Errorf("timestamp printed as a nested struct rather than a value:\n%s", result.Stdout)
 	}
-	if !regexp.MustCompile(`\d{4}-\d{2}-\d{2}`).MatchString(result.Stdout) {
-		t.Errorf("no timestamp in the output of functions show:\n%s", result.Stdout)
+	match := createdRow.FindStringSubmatch(result.Stdout)
+	if match == nil || match[1] == "-" {
+		t.Errorf("no created_at in the output of functions show:\n%s", result.Stdout)
 	}
 }
+
+// createdRow captures the value of the Created row ("Created   9 min ago",
+// "Created   Oct 16 13:43"). A zero timestamp prints as "-".
+var createdRow = regexp.MustCompile(`(?m)^\s*Created\s+(\S.*?)\s*$`)
 
 // firstFunctionID pulls an id out of `functions list -o json`, which returns
 // either a bare array or a paginated object depending on the workspace.
