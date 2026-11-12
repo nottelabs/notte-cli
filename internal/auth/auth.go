@@ -3,8 +3,11 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/nottelabs/notte-cli/internal/config"
 )
@@ -16,8 +19,9 @@ const (
 	// example a short-lived access token) without restarting the caller.
 	EnvAPIKeyFile = "NOTTE_API_KEY_FILE"
 
-	// AccessTokenPrefix starts short-lived access tokens, as opposed to API keys.
-	AccessTokenPrefix = "nat_"
+	// MaxAPIKeyFileSize caps how much of NOTTE_API_KEY_FILE is read. A
+	// credential is far smaller; a larger file is the wrong file.
+	MaxAPIKeyFileSize = 64 << 10
 )
 
 // Source indicates where the API key was found
@@ -35,11 +39,16 @@ var ErrNoAPIKey = errors.New("no API key found. Run 'notte login' or set NOTTE_A
 // APIKeyFileError means NOTTE_API_KEY_FILE is set but no credential could be
 // read from it. No other source is used in that case.
 type APIKeyFileError struct {
-	Path string
-	Err  error // nil when the file is empty
+	Path    string
+	Err     error // nil when the file is empty or too large
+	TooLong bool  // the file is larger than MaxAPIKeyFileSize
 }
 
 func (e *APIKeyFileError) Error() string {
+	if e.TooLong {
+		return fmt.Sprintf("%s is set to %s, but the file is larger than %d KiB, too large to hold a credential",
+			EnvAPIKeyFile, e.Path, MaxAPIKeyFileSize>>10)
+	}
 	if e.Err == nil {
 		return fmt.Sprintf("%s is set to %s, but the file is empty", EnvAPIKeyFile, e.Path)
 	}
@@ -53,9 +62,71 @@ func APIKeyFile() string {
 	return os.Getenv(EnvAPIKeyFile)
 }
 
-// IsAccessToken reports whether key is a short-lived access token.
-func IsAccessToken(key string) bool {
-	return strings.HasPrefix(key, AccessTokenPrefix)
+// warnings receives the notes GetAPIKey prints; each is printed once per
+// process, since a command may resolve the key more than once.
+var (
+	warnings   io.Writer = os.Stderr
+	warnedMu   sync.Mutex
+	warnedOnce = map[string]bool{}
+)
+
+// SetWarningOutput sends the notes GetAPIKey prints to w and forgets which
+// were printed. It returns a function that restores the previous writer.
+// For tests.
+func SetWarningOutput(w io.Writer) func() {
+	warnedMu.Lock()
+	defer warnedMu.Unlock()
+	prev := warnings
+	warnings = w
+	warnedOnce = map[string]bool{}
+	return func() {
+		warnedMu.Lock()
+		defer warnedMu.Unlock()
+		warnings = prev
+		warnedOnce = map[string]bool{}
+	}
+}
+
+func warn(msg string) {
+	warnedMu.Lock()
+	defer warnedMu.Unlock()
+	if warnedOnce[msg] {
+		return
+	}
+	warnedOnce[msg] = true
+	_, _ = fmt.Fprintln(warnings, msg)
+}
+
+// readKeyFile reads the credential from path, at most MaxAPIKeyFileSize
+// bytes of it, and warns when others can read the file.
+func readKeyFile(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", &APIKeyFileError{Path: path, Err: err}
+	}
+	defer func() { _ = f.Close() }()
+
+	data, err := io.ReadAll(io.LimitReader(f, MaxAPIKeyFileSize+1))
+	if err != nil {
+		return "", &APIKeyFileError{Path: path, Err: err}
+	}
+	if len(data) > MaxAPIKeyFileSize {
+		return "", &APIKeyFileError{Path: path, TooLong: true}
+	}
+	key := strings.TrimSpace(string(data))
+	if key == "" {
+		return "", &APIKeyFileError{Path: path}
+	}
+
+	// Like ssh's check on private keys, but only a warning. Windows has no
+	// such mode bits.
+	if runtime.GOOS != "windows" {
+		if info, err := f.Stat(); err == nil && info.Mode().Perm()&0o077 != 0 {
+			warn(fmt.Sprintf("warning: %s (%s) is accessible by group or others (mode %04o); restrict it with chmod 600",
+				EnvAPIKeyFile, path, info.Mode().Perm()))
+		}
+	}
+	return key, nil
 }
 
 // GetAPIKey resolves API key from NOTTE_API_KEY_FILE → env → keyring → config
@@ -64,13 +135,12 @@ func GetAPIKey(configPath string) (string, Source, error) {
 	// 1. Check the key file. When it is named, it is the only source: falling
 	// back could pick up a long-lived key the caller meant to keep out.
 	if path := APIKeyFile(); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return "", "", &APIKeyFileError{Path: path, Err: err}
+		if os.Getenv(EnvAPIKey) != "" {
+			warn(fmt.Sprintf("note: %s is ignored because %s is set", EnvAPIKey, EnvAPIKeyFile))
 		}
-		key := strings.TrimSpace(string(data))
-		if key == "" {
-			return "", "", &APIKeyFileError{Path: path}
+		key, err := readKeyFile(path)
+		if err != nil {
+			return "", "", err
 		}
 		return key, SourceFile, nil
 	}

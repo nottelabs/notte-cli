@@ -62,13 +62,18 @@ type AuthError struct {
 	Reason     string // "expired", "invalid", "missing", "forbidden"
 	Message    string // Detailed error message from the API
 	StatusCode int    // HTTP status code (401 or 403)
+	Hint       string // What to do about it, written by the CLI (optional)
 }
 
 func (e *AuthError) Error() string {
+	msg := "authentication error: " + e.Reason
 	if e.Message != "" {
-		return fmt.Sprintf("authentication error: %s - %s", e.Reason, e.Message)
+		msg += " - " + e.Message
 	}
-	return fmt.Sprintf("authentication error: %s", e.Reason)
+	if e.Hint != "" {
+		msg += " (" + e.Hint + ")"
+	}
+	return msg
 }
 
 // CircuitBreakerError indicates the circuit breaker is open

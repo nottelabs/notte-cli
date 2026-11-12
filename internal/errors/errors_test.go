@@ -91,13 +91,18 @@ func TestRateLimitError_Error(t *testing.T) {
 }
 
 func TestAuthError_Error(t *testing.T) {
-	err := &AuthError{Reason: "expired"}
-
-	got := err.Error()
-	want := "authentication error: expired"
-
-	if got != want {
-		t.Errorf("got %q, want %q", got, want)
+	for _, tc := range []struct {
+		err  *AuthError
+		want string
+	}{
+		{&AuthError{Reason: "expired"}, "authentication error: expired"},
+		{&AuthError{Reason: "invalid", Message: "bad key"}, "authentication error: invalid - bad key"},
+		{&AuthError{Reason: "expired", Message: "token expired", Hint: "mint a new one"}, "authentication error: expired - token expired (mint a new one)"},
+		{&AuthError{Reason: "expired", Hint: "mint a new one"}, "authentication error: expired (mint a new one)"},
+	} {
+		if got := tc.err.Error(); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
 	}
 }
 

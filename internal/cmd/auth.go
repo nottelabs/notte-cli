@@ -104,7 +104,7 @@ func init() {
 
 func runAuthLogin(cmd *cobra.Command, args []string) error {
 	if path := auth.APIKeyFile(); path != "" {
-		return keyFileInUse(path)
+		return keyFileInUse("login", path)
 	}
 
 	// The key is checked against this API and then saved for it, so it would
@@ -235,24 +235,18 @@ func revokeQuietly(ctx context.Context, flow *auth.DeviceFlow, key string) bool 
 	return revoked
 }
 
-// keyFileInUse reports that login and logout leave stored keys alone while
-// NOTTE_API_KEY_FILE is set: every command reads the credential from that
-// file, and whatever writes it manages the credential.
-func keyFileInUse(path string) error {
-	return printDone(
-		fmt.Sprintf("The credential comes from %s (%s); no stored API key was changed.", auth.EnvAPIKeyFile, path),
-		map[string]any{
-			"source":   string(auth.SourceFile),
-			"key_file": path,
-			"changed":  false,
-		},
-		"",
-	)
+// keyFileInUse refuses login and logout while NOTTE_API_KEY_FILE is set:
+// every command reads the credential from that file, so storing or removing
+// a key would change nothing. Failing, rather than reporting success, keeps a
+// script from assuming a key was stored or removed.
+func keyFileInUse(command, path string) error {
+	return fmt.Errorf("the credential comes from %s (%s); notte %s does not store or remove keys while it is set",
+		auth.EnvAPIKeyFile, path, command)
 }
 
 func runAuthLogout(cmd *cobra.Command, args []string) error {
 	if path := auth.APIKeyFile(); path != "" {
-		return keyFileInUse(path)
+		return keyFileInUse("logout", path)
 	}
 
 	key, _ := auth.GetKeyringAPIKey()

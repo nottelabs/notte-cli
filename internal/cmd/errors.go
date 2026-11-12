@@ -1,66 +1,65 @@
 package cmd
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/errors"
 )
 
-// HandleAPIResponse checks the response status and returns an appropriate error.
-// Returns nil for successful responses (2xx status codes).
+// The API names the class of an error in this response header. These three
+// classes are answers to an access token; other refusals (an invalid API key,
+// a plan limit) carry other classes.
+const (
+	errorClassHeader                = "X-Error-Class"
+	errorClassAccessTokenExpired    = "NotteApiAccessTokenExpiredError"
+	errorClassAccessTokenInvalid    = "NotteApiAccessTokenInvalidError"
+	errorClassAccessTokenNotAllowed = "NotteApiAccessTokenNotAllowedError"
+)
+
+// HandleAPIResponse checks if the response is successful and returns an appropriate error.
 // The body parameter should contain the already-read response body bytes
 // (from the generated client's resp.Body field).
+// Returns nil if status code is 2xx, otherwise returns a typed error.
 func HandleAPIResponse(resp *http.Response, body []byte) error {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return nil
 	}
 	err := errors.ParseAPIError(resp, body)
-	if sentAccessToken(resp) {
-		return accessTokenError(err)
-	}
-	return err
+	return withAccessTokenHint(err, resp.Header.Get(errorClassHeader))
 }
 
-// sentAccessToken reports whether the request behind resp carried an access
-// token rather than an API key. resp.Request is the request as sent, with the
-// Authorization header the client's transport set.
-func sentAccessToken(resp *http.Response) bool {
-	if resp.Request == nil {
-		return false
-	}
-	token, ok := strings.CutPrefix(resp.Request.Header.Get("Authorization"), "Bearer ")
-	return ok && auth.IsAccessToken(token)
-}
-
-// accessTokenError explains a 401 or 403 answered to an access token, which
-// call for a different fix than a rejected API key. Other errors are returned
-// unchanged.
-func accessTokenError(err error) error {
+// withAccessTokenHint adds what to do to an error the API classed as an
+// access-token refusal, which calls for a different fix than a rejected API
+// key. The API's message is kept as is. Errors without one of those classes,
+// including every error from a server that does not send the header, are
+// returned unchanged.
+func withAccessTokenHint(err error, class string) error {
 	authErr, ok := err.(*errors.AuthError)
 	if !ok {
 		return err
 	}
-	switch authErr.StatusCode {
-	case http.StatusUnauthorized:
-		const mint = "mint a new one"
-		msg := authErr.Message
-		switch {
-		case msg == "":
-			msg = "the access token is expired or revoked; " + mint
-		case !strings.Contains(msg, "mint a new"):
-			msg += "; the access token is expired or revoked, " + mint
-		}
-		return &errors.AuthError{Reason: authErr.Reason, Message: msg, StatusCode: authErr.StatusCode}
-	case http.StatusForbidden:
-		msg := "this command needs an API key: access tokens are not accepted on this route"
-		// A refusal for another reason (a plan limit, a missing permission)
-		// is kept, so the explanation does not hide it.
-		if authErr.Message != "" && !strings.Contains(authErr.Message, "access token") {
-			msg += " (" + authErr.Message + ")"
-		}
-		return &errors.AuthError{Reason: authErr.Reason, Message: msg, StatusCode: authErr.StatusCode}
+	hinted := *authErr
+	switch class {
+	case errorClassAccessTokenExpired:
+		hinted.Reason = "expired"
+		hinted.Hint = "the access token has expired; mint a new one" + keyFileSuffix()
+	case errorClassAccessTokenInvalid:
+		hinted.Hint = "the access token is unknown or revoked; mint a new one" + keyFileSuffix()
+	case errorClassAccessTokenNotAllowed:
+		hinted.Hint = "this command needs an API key; access tokens are not accepted on its route"
+	default:
+		return err
 	}
-	return err
+	return &hinted
+}
+
+// keyFileSuffix names NOTTE_API_KEY_FILE when the credential came from it, so
+// the hint says which file to refresh.
+func keyFileSuffix() string {
+	if path := auth.APIKeyFile(); path != "" {
+		return fmt.Sprintf(" and write it to %s (%s)", auth.EnvAPIKeyFile, path)
+	}
+	return ""
 }

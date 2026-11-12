@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -317,16 +319,126 @@ func TestGetAPIKey_EmptyKeyFileVariableIsUnset(t *testing.T) {
 	}
 }
 
-func TestIsAccessToken(t *testing.T) {
-	for key, want := range map[string]bool{
-		"nat_abc":     true,
-		"sk-notte-1":  false,
-		"NAT_abc":     false,
-		"":            false,
-		"api_nat_abc": false,
-	} {
-		if got := IsAccessToken(key); got != want {
-			t.Errorf("IsAccessToken(%q) = %v, want %v", key, got, want)
+// captureWarnings collects what GetAPIKey prints to stderr during the test.
+func captureWarnings(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	var buf bytes.Buffer
+	t.Cleanup(SetWarningOutput(&buf))
+	return &buf
+}
+
+func TestGetAPIKey_NotesIgnoredEnvKey(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+	warnings := captureWarnings(t)
+
+	writeKeyFile(t, env, "nat_file_token")
+	env.SetEnv(EnvAPIKey, "sk-env-secret")
+	for range 2 {
+		if key, source, err := GetAPIKey(""); err != nil || key != "nat_file_token" || source != SourceFile {
+			t.Fatalf("got %q from %q (%v), want the file's token", key, source, err)
 		}
+	}
+	want := "note: NOTTE_API_KEY is ignored because NOTTE_API_KEY_FILE is set\n"
+	if warnings.String() != want {
+		t.Fatalf("stderr %q, want exactly one line %q", warnings.String(), want)
+	}
+	for _, secret := range []string{"sk-env-secret", "nat_file_token"} {
+		if strings.Contains(warnings.String(), secret) {
+			t.Fatalf("stderr %q prints a credential", warnings.String())
+		}
+	}
+}
+
+func TestGetAPIKey_NoNoteWithOnlyKeyFile(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+	warnings := captureWarnings(t)
+
+	writeKeyFile(t, env, "nat_file_token")
+	if _, _, err := GetAPIKey(""); err != nil {
+		t.Fatal(err)
+	}
+	if warnings.Len() != 0 {
+		t.Fatalf("stderr %q, want nothing", warnings.String())
+	}
+}
+
+func TestGetAPIKey_KeyFileSizeCap(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+	captureWarnings(t)
+
+	// Exactly at the cap is read.
+	atCap := "nat_" + strings.Repeat("a", MaxAPIKeyFileSize-4)
+	writeKeyFile(t, env, atCap)
+	if key, _, err := GetAPIKey(""); err != nil || key != atCap {
+		t.Fatalf("file at the cap: got %d bytes, %v", len(key), err)
+	}
+
+	// One byte more is refused, without falling back.
+	env.SetEnv(EnvAPIKey, "env_key")
+	path := writeKeyFile(t, env, atCap+"a")
+	key, source, err := GetAPIKey("")
+	if err == nil || key != "" || source != "" {
+		t.Fatalf("got %d bytes from %q (%v), want an error", len(key), source, err)
+	}
+	var fileErr *APIKeyFileError
+	if !errors.As(err, &fileErr) || !fileErr.TooLong {
+		t.Fatalf("error %v is not a too-large APIKeyFileError", err)
+	}
+	for _, want := range []string{EnvAPIKeyFile, path, "larger than 64 KiB"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q should contain %q", err, want)
+		}
+	}
+}
+
+func TestGetAPIKey_WarnsOnOpenKeyFilePermissions(t *testing.T) {
+	cases := []struct {
+		mode os.FileMode
+		warn bool
+	}{
+		{0o600, false},
+		{0o400, false},
+		{0o640, true},
+		{0o644, true},
+		{0o604, true},
+	}
+	if runtime.GOOS == "windows" {
+		// Windows has no Unix mode bits, so nothing is checked there.
+		cases = cases[3:4]
+		cases[0].warn = false
+	}
+	for _, tc := range cases {
+		t.Run(tc.mode.String(), func(t *testing.T) {
+			env, cleanup := setupTestAuth(t)
+			defer cleanup()
+			warnings := captureWarnings(t)
+
+			path := writeKeyFile(t, env, "nat_file_token")
+			if err := os.Chmod(path, tc.mode); err != nil {
+				t.Fatal(err)
+			}
+			key, _, err := GetAPIKey("")
+			if err != nil || key != "nat_file_token" {
+				t.Fatalf("got %q, %v; a permission warning must not fail the read", key, err)
+			}
+			got := warnings.String()
+			if !tc.warn {
+				if got != "" {
+					t.Fatalf("stderr %q, want nothing for mode %v", got, tc.mode)
+				}
+				return
+			}
+			for _, want := range []string{"warning:", EnvAPIKeyFile, path, "chmod 600"} {
+				if !strings.Contains(got, want) {
+					t.Errorf("stderr %q should contain %q", got, want)
+				}
+			}
+			if strings.Contains(got, "nat_file_token") {
+				t.Fatalf("stderr %q prints the credential", got)
+			}
+		})
 	}
 }
