@@ -5180,6 +5180,9 @@ type SessionResponse struct {
 	// NetworkResponseBytes Total byte usage for network responses.
 	NetworkResponseBytes *int `json:"network_response_bytes,omitempty"`
 
+	// Pausable Whether the session can be paused now (POST /sessions/{session_id}/pause). Only in a status read.
+	Pausable *bool `json:"pausable,omitempty"`
+
 	// PlaywrightUrl The WebSocket URL for Playwright's chromium.connect(), when supported by the server. Requires a matching Playwright client version. This is a live browser connection, not a replay URL.
 	PlaywrightUrl *string `json:"playwright_url,omitempty"`
 
@@ -6975,6 +6978,12 @@ type PageScreenshotParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// SessionPauseParams defines parameters for SessionPause.
+type SessionPauseParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // CreatePaymentParams defines parameters for CreatePayment.
 type CreatePaymentParams struct {
 	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
@@ -7005,6 +7014,12 @@ type SessionReplayParams struct {
 // SessionMouseReplayParams defines parameters for SessionMouseReplay.
 type SessionMouseReplayParams struct {
 	Offset              *int    `form:"offset,omitempty" json:"offset,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SessionResumeParams defines parameters for SessionResume.
+type SessionResumeParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -7528,6 +7543,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "network_response_bytes")
 	}
 
+	if raw, found := object["pausable"]; found {
+		err = json.Unmarshal(raw, &a.Pausable)
+		if err != nil {
+			return fmt.Errorf("error reading 'pausable': %w", err)
+		}
+		delete(object, "pausable")
+	}
+
 	if raw, found := object["playwright_url"]; found {
 		err = json.Unmarshal(raw, &a.PlaywrightUrl)
 		if err != nil {
@@ -7756,6 +7779,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		object["network_response_bytes"], err = json.Marshal(a.NetworkResponseBytes)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'network_response_bytes': %w", err)
+		}
+	}
+
+	if a.Pausable != nil {
+		object["pausable"], err = json.Marshal(a.Pausable)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'pausable': %w", err)
 		}
 	}
 
@@ -16749,6 +16779,9 @@ type ClientInterface interface {
 	// PageScreenshot request
 	PageScreenshot(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionPause request
+	SessionPause(ctx context.Context, sessionId string, params *SessionPauseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreatePaymentWithBody request with any body
 	CreatePaymentWithBody(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16767,6 +16800,9 @@ type ClientInterface interface {
 
 	// SessionMouseReplay request
 	SessionMouseReplay(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SessionResume request
+	SessionResume(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SessionStop request
 	SessionStop(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -18899,6 +18935,18 @@ func (c *Client) PageScreenshot(ctx context.Context, sessionId string, params *P
 	return c.Client.Do(req)
 }
 
+func (c *Client) SessionPause(ctx context.Context, sessionId string, params *SessionPauseParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionPauseRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) CreatePaymentWithBody(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePaymentRequestWithBody(c.Server, sessionId, params, contentType, body)
 	if err != nil {
@@ -18973,6 +19021,18 @@ func (c *Client) SessionReplay(ctx context.Context, sessionId string, params *Se
 
 func (c *Client) SessionMouseReplay(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionMouseReplayRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionResume(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionResumeRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -30455,6 +30515,66 @@ func NewPageScreenshotRequest(server string, sessionId string, params *PageScree
 	return req, nil
 }
 
+// NewSessionPauseRequest generates requests for SessionPause
+func NewSessionPauseRequest(server string, sessionId string, params *SessionPauseParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewCreatePaymentRequest calls the generic CreatePayment builder with application/json body
 func NewCreatePaymentRequest(server string, sessionId string, params *CreatePaymentParams, body CreatePaymentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -30823,6 +30943,66 @@ func NewSessionMouseReplayRequest(server string, sessionId string, params *Sessi
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewSessionResumeRequest generates requests for SessionResume
+func NewSessionResumeRequest(server string, sessionId string, params *SessionResumeParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/resume", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32406,6 +32586,9 @@ type ClientWithResponsesInterface interface {
 	// PageScreenshotWithResponse request
 	PageScreenshotWithResponse(ctx context.Context, sessionId string, params *PageScreenshotParams, reqEditors ...RequestEditorFn) (*PageScreenshotResult, error)
 
+	// SessionPauseWithResponse request
+	SessionPauseWithResponse(ctx context.Context, sessionId string, params *SessionPauseParams, reqEditors ...RequestEditorFn) (*SessionPauseResult, error)
+
 	// CreatePaymentWithBodyWithResponse request with any body
 	CreatePaymentWithBodyWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error)
 
@@ -32424,6 +32607,9 @@ type ClientWithResponsesInterface interface {
 
 	// SessionMouseReplayWithResponse request
 	SessionMouseReplayWithResponse(ctx context.Context, sessionId string, params *SessionMouseReplayParams, reqEditors ...RequestEditorFn) (*SessionMouseReplayResult, error)
+
+	// SessionResumeWithResponse request
+	SessionResumeWithResponse(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*SessionResumeResult, error)
 
 	// SessionStopWithResponse request
 	SessionStopWithResponse(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*SessionStopResult, error)
@@ -35363,6 +35549,29 @@ func (r PageScreenshotResult) StatusCode() int {
 	return 0
 }
 
+type SessionPauseResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionPauseResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionPauseResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type CreatePaymentResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -35474,6 +35683,29 @@ func (r SessionMouseReplayResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SessionMouseReplayResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SessionResumeResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionResumeResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionResumeResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -37274,6 +37506,15 @@ func (c *ClientWithResponses) PageScreenshotWithResponse(ctx context.Context, se
 	return ParsePageScreenshotResult(rsp)
 }
 
+// SessionPauseWithResponse request returning *SessionPauseResult
+func (c *ClientWithResponses) SessionPauseWithResponse(ctx context.Context, sessionId string, params *SessionPauseParams, reqEditors ...RequestEditorFn) (*SessionPauseResult, error) {
+	rsp, err := c.SessionPause(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionPauseResult(rsp)
+}
+
 // CreatePaymentWithBodyWithResponse request with arbitrary body returning *CreatePaymentResult
 func (c *ClientWithResponses) CreatePaymentWithBodyWithResponse(ctx context.Context, sessionId string, params *CreatePaymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePaymentResult, error) {
 	rsp, err := c.CreatePaymentWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
@@ -37333,6 +37574,15 @@ func (c *ClientWithResponses) SessionMouseReplayWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSessionMouseReplayResult(rsp)
+}
+
+// SessionResumeWithResponse request returning *SessionResumeResult
+func (c *ClientWithResponses) SessionResumeWithResponse(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*SessionResumeResult, error) {
+	rsp, err := c.SessionResume(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionResumeResult(rsp)
 }
 
 // SessionStopWithResponse request returning *SessionStopResult
@@ -41607,6 +41857,39 @@ func ParsePageScreenshotResult(rsp *http.Response) (*PageScreenshotResult, error
 	return response, nil
 }
 
+// ParseSessionPauseResult parses an HTTP response from a SessionPauseWithResponse call
+func ParseSessionPauseResult(rsp *http.Response) (*SessionPauseResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionPauseResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseCreatePaymentResult parses an HTTP response from a CreatePaymentWithResponse call
 func ParseCreatePaymentResult(rsp *http.Response) (*CreatePaymentResult, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -41769,6 +42052,39 @@ func ParseSessionMouseReplayResult(rsp *http.Response) (*SessionMouseReplayResul
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest MouseReplayPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionResumeResult parses an HTTP response from a SessionResumeWithResponse call
+func ParseSessionResumeResult(rsp *http.Response) (*SessionResumeResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionResumeResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
