@@ -1124,6 +1124,7 @@ const (
 	SessionResponseStatusAuthenticating SessionResponseStatus = "authenticating"
 	SessionResponseStatusClosed         SessionResponseStatus = "closed"
 	SessionResponseStatusError          SessionResponseStatus = "error"
+	SessionResponseStatusPaused         SessionResponseStatus = "paused"
 	SessionResponseStatusTimedOut       SessionResponseStatus = "timed_out"
 )
 
