@@ -41,6 +41,23 @@ echo "Converting OpenAPI 3.1 to 3.0 format..."
 jq --arg excluded "$EXCLUDED_PATHS" '
   # Filter out excluded paths
   (if $excluded != "" then .paths |= with_entries(select(.key | test($excluded) | not)) else . end) |
+  # oapi-codegen names an enum constant after its value alone unless it
+  # collides with another enum or a schema, so the value "client" becomes a
+  # constant `Client` that collides with the generated client type. Name the
+  # constants of such enums after their schema and property instead, as
+  # oapi-codegen does for colliding enums (ApiSessionStartRequestDialogPolicyClient).
+  def pascal: split("_") | map((.[0:1] | ascii_upcase) + .[1:]) | join("");
+  (.components.schemas // {}) |= with_entries(
+    .key as $schema |
+    if (.value.properties | type) == "object" then
+      .value.properties |= with_entries(
+        .key as $prop |
+        if (.value.enum | type) == "array" and (.value.enum | index("client")) != null then
+          .value["x-enum-varnames"] = (.value.enum | map($schema + ($prop | pascal) + (. | pascal)))
+        else . end
+      )
+    else . end
+  ) |
   # First pass: fix schema types
   walk(
     if type == "object" then
