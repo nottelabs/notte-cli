@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nottelabs/notte-cli/internal/testutil"
@@ -179,5 +181,152 @@ func TestGetAPIKey_Priority(t *testing.T) {
 	key, source, _ = GetAPIKey(cfgPath)
 	if key != "config_key" || source != SourceConfig {
 		t.Errorf("config should be fallback: got %q from %q", key, source)
+	}
+}
+
+// writeKeyFile writes content to a file in the test's temp dir and names it in
+// NOTTE_API_KEY_FILE.
+func writeKeyFile(t *testing.T, env *testutil.TestEnv, content string) string {
+	t.Helper()
+	path := filepath.Join(env.TempDir, "token")
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	env.SetEnv(EnvAPIKeyFile, path)
+	return path
+}
+
+func TestGetAPIKey_KeyFileWinsOverEveryOtherSource(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+
+	env.SetEnv(EnvAPIKey, "env_key")
+	_ = env.MockStore.Set("api_key:prod", "keyring_key")
+	cfgPath := filepath.Join(env.TempDir, "config.json")
+	_ = os.WriteFile(cfgPath, []byte(`{"api_key": "config_key"}`), 0o600)
+	writeKeyFile(t, env, "  nat_file_token\n")
+
+	key, source, err := GetAPIKey(cfgPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if key != "nat_file_token" || source != SourceFile {
+		t.Errorf("got %q from %q, want the trimmed file content from %q", key, source, SourceFile)
+	}
+}
+
+func TestGetAPIKey_KeyFileIsReadOnEveryCall(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+
+	path := writeKeyFile(t, env, "nat_first")
+	if key, _, err := GetAPIKey(""); err != nil || key != "nat_first" {
+		t.Fatalf("first read: got %q, %v", key, err)
+	}
+	if err := os.WriteFile(path, []byte("nat_second\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if key, _, err := GetAPIKey(""); err != nil || key != "nat_second" {
+		t.Fatalf("after rotation: got %q, %v, want nat_second", key, err)
+	}
+}
+
+func TestGetAPIKey_KeyFileProblemsDoNotFallBack(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		setup   func(t *testing.T, env *testutil.TestEnv) string
+		wantMsg string
+	}{
+		{
+			name: "missing",
+			setup: func(t *testing.T, env *testutil.TestEnv) string {
+				path := filepath.Join(env.TempDir, "does-not-exist")
+				env.SetEnv(EnvAPIKeyFile, path)
+				return path
+			},
+			wantMsg: "could not be read",
+		},
+		{
+			name: "empty",
+			setup: func(t *testing.T, env *testutil.TestEnv) string {
+				return writeKeyFile(t, env, "")
+			},
+			wantMsg: "is empty",
+		},
+		{
+			name: "whitespace only",
+			setup: func(t *testing.T, env *testutil.TestEnv) string {
+				return writeKeyFile(t, env, " \n\t\n")
+			},
+			wantMsg: "is empty",
+		},
+		{
+			name: "unreadable",
+			setup: func(t *testing.T, env *testutil.TestEnv) string {
+				// A directory cannot be read as a file on any platform.
+				path := filepath.Join(env.TempDir, "a-directory")
+				if err := os.Mkdir(path, 0o700); err != nil {
+					t.Fatal(err)
+				}
+				env.SetEnv(EnvAPIKeyFile, path)
+				return path
+			},
+			wantMsg: "could not be read",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env, cleanup := setupTestAuth(t)
+			defer cleanup()
+
+			// Every other source holds a key that must not be used.
+			env.SetEnv(EnvAPIKey, "env_key")
+			_ = env.MockStore.Set("api_key:prod", "keyring_key")
+			cfgPath := filepath.Join(env.TempDir, "config.json")
+			_ = os.WriteFile(cfgPath, []byte(`{"api_key": "config_key"}`), 0o600)
+			path := tc.setup(t, env)
+
+			key, source, err := GetAPIKey(cfgPath)
+			if err == nil {
+				t.Fatalf("got %q from %q, want an error", key, source)
+			}
+			if key != "" || source != "" {
+				t.Errorf("got %q from %q alongside the error, want nothing", key, source)
+			}
+			var fileErr *APIKeyFileError
+			if !errors.As(err, &fileErr) {
+				t.Fatalf("error %v is not an APIKeyFileError", err)
+			}
+			for _, want := range []string{EnvAPIKeyFile, path, tc.wantMsg} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error %q should contain %q", err, want)
+				}
+			}
+		})
+	}
+}
+
+func TestGetAPIKey_EmptyKeyFileVariableIsUnset(t *testing.T) {
+	env, cleanup := setupTestAuth(t)
+	defer cleanup()
+
+	env.SetEnv(EnvAPIKeyFile, "")
+	env.SetEnv(EnvAPIKey, "env_key")
+	key, source, err := GetAPIKey("")
+	if err != nil || key != "env_key" || source != SourceEnv {
+		t.Fatalf("got %q from %q (%v), want env_key from the environment", key, source, err)
+	}
+}
+
+func TestIsAccessToken(t *testing.T) {
+	for key, want := range map[string]bool{
+		"nat_abc":     true,
+		"sk-notte-1":  false,
+		"NAT_abc":     false,
+		"":            false,
+		"api_nat_abc": false,
+	} {
+		if got := IsAccessToken(key); got != want {
+			t.Errorf("IsAccessToken(%q) = %v, want %v", key, got, want)
+		}
 	}
 }

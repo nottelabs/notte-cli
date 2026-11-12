@@ -91,10 +91,14 @@ func Execute() {
 	}
 }
 
-// isUnauthorized reports errors about signing in: no saved key, or a key the
-// API rejected.
+// isUnauthorized reports errors about signing in: no saved key, a key file
+// that could not be read, or a key the API rejected.
 func isUnauthorized(err error) bool {
 	if errors.Is(err, auth.ErrNoAPIKey) {
+		return true
+	}
+	var keyFileErr *auth.APIKeyFileError
+	if errors.As(err, &keyFileErr) {
 		return true
 	}
 	var authErr *apierrors.AuthError

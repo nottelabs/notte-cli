@@ -71,18 +71,24 @@ Upgrades with Homebrew when notte was installed with it, and otherwise re-runs t
 
 ### 1. Authenticate
 
-Specify the API key using one of three methods (checked in priority order):
+Specify the API key using one of four methods (checked in priority order):
 
 ```bash
-# 1. Via environment variable (recommended for CI/CD)
+# 1. Via a file named by NOTTE_API_KEY_FILE, read on every command
+export NOTTE_API_KEY_FILE=/run/secrets/notte-token
+# 2. Via environment variable (recommended for CI/CD)
 export NOTTE_API_KEY="your-api-key"
-# 2. Via your system credential store (recommended for local development):
+# 3. Via your system credential store (recommended for local development):
 #    prints a link and a code; approve it in the console from any device
 notte login
-# 3. Via config file (~/.notte/cli/config.json)
+# 4. Via config file (~/.notte/cli/config.json)
 # create ~/.notte/cli/config.json and add your API key
 notte whoami
 ```
+
+`NOTTE_API_KEY_FILE` suits a runtime that rotates a short-lived access token (`nat_...`) while the agent using the CLI keeps running: each command reads the file again, so the next one uses the new token. Surrounding whitespace is trimmed. When the variable is set, the file is the only source: if it is missing, unreadable or empty, the command fails instead of falling back to `NOTTE_API_KEY`, the credential store or the config file. `notte login` and `notte logout` then leave stored keys untouched, and `notte whoami` names the file.
+
+Access tokens work only on some routes. A command whose route refuses them fails with a message saying it needs an API key; an expired or revoked token fails with a message saying to mint a new one.
 
 ### 2. Start a Browser Session
 
@@ -612,7 +618,7 @@ When no system store is usable (headless Linux, containers, a locked Keychain ov
 
 Earlier versions used that file on macOS and Windows too. A key found there is copied into the system store the next time it is used, and the file copy is removed at the next `notte auth login` or `notte auth logout`. While a file copy exists, it is the one used.
 
-A saved key (from the credential store or the config file) is only sent to an `https://` API URL, or over plain HTTP to `localhost`, `127.0.0.1` or `::1`. `NOTTE_API_KEY` is not restricted.
+A saved key (from the credential store or the config file) or a key read from `NOTTE_API_KEY_FILE` is only sent to an `https://` API URL, or over plain HTTP to `localhost`, `127.0.0.1` or `::1`. `NOTTE_API_KEY` is not restricted.
 
 ### Best Practices
 
