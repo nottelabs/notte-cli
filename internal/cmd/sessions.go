@@ -389,6 +389,7 @@ func init() {
 	RegisterSessionStartFlags(sessionsStartCmd)
 	// Positive opt-outs for options that default to true server-side
 	registerSessionStartOptOutFlags(sessionsStartCmd)
+	registerSessionStartAacVaultFlag(sessionsStartCmd)
 	// Manual flags for proxies (union type: bool | array of proxy objects)
 	sessionsStartCmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "Use default proxies")
 	sessionsStartCmd.Flags().StringVar(&sessionsStartProxyCountry, "proxy-country", "", "Proxy country code (e.g. us, gb, fr). Selects a proxy on its own; do not combine with --proxy")
@@ -769,13 +770,14 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		body.ExtraHttpHeaders = &headers
 	}
 
+	editors := sessionStartEditors(cmd)
 	if count > 1 {
-		return startSessions(ctx, client, body, count)
+		return startSessions(ctx, client, body, count, editors)
 	}
 
 	params := &api.SessionStartParams{}
 	requested := time.Now()
-	resp, err := client.Client().SessionStartWithResponse(ctx, params, *body)
+	resp, err := client.Client().SessionStartWithResponse(ctx, params, *body, editors...)
 	spinUp := time.Since(requested)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
@@ -792,7 +794,7 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 // startSessions starts count sessions with the same settings in parallel. The
 // ones that started are shown even when others fail; the first becomes the
 // current session.
-func startSessions(ctx context.Context, client *api.NotteClient, body *api.SessionStartJSONRequestBody, count int) error {
+func startSessions(ctx context.Context, client *api.NotteClient, body *api.SessionStartJSONRequestBody, count int, editors []api.RequestEditorFn) error {
 	started := make([]*api.SessionResponse, count)
 	spinUps := make([]time.Duration, count)
 	failures := make([]error, count)
@@ -802,7 +804,7 @@ func startSessions(ctx context.Context, client *api.NotteClient, body *api.Sessi
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			resp, err := client.Client().SessionStartWithResponse(ctx, &api.SessionStartParams{}, *body)
+			resp, err := client.Client().SessionStartWithResponse(ctx, &api.SessionStartParams{}, *body, editors...)
 			spinUps[i] = time.Since(requested)
 			if err != nil {
 				failures[i] = fmt.Errorf("API request failed: %w", err)
