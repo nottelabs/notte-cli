@@ -1472,17 +1472,18 @@ type ApiAgentStartRequest_ReasoningModel struct {
 
 // ApiExecutionResponse defines model for ApiExecutionResponse.
 type ApiExecutionResponse struct {
-	Action          ApiExecutionResponse_Action `json:"action"`
-	ActionExecuted  *bool                       `json:"action_executed,omitempty"`
-	Captcha         *CaptchaStatus              `json:"captcha,omitempty"`
-	Code            *string                     `json:"code,omitempty"`
-	Data            *DataSpace                  `json:"data,omitempty"`
-	EndedAt         FlexibleTime                `json:"ended_at"`
-	Exception       *string                     `json:"exception,omitempty"`
-	ExceptionDetail *SerializedError            `json:"exception_detail,omitempty"`
-	Message         string                      `json:"message"`
-	StartedAt       FlexibleTime                `json:"started_at"`
-	Success         bool                        `json:"success"`
+	Action              ApiExecutionResponse_Action `json:"action"`
+	ActionExecuted      *bool                       `json:"action_executed,omitempty"`
+	Captcha             *CaptchaStatus              `json:"captcha,omitempty"`
+	Code                *string                     `json:"code,omitempty"`
+	Data                *DataSpace                  `json:"data,omitempty"`
+	EndedAt             FlexibleTime                `json:"ended_at"`
+	Exception           *string                     `json:"exception,omitempty"`
+	ExceptionDetail     *SerializedError            `json:"exception_detail,omitempty"`
+	FailedNavigationUrl *string                     `json:"failed_navigation_url,omitempty"`
+	Message             string                      `json:"message"`
+	StartedAt           FlexibleTime                `json:"started_at"`
+	Success             bool                        `json:"success"`
 }
 
 // ApiExecutionResponse_Action defines model for ApiExecutionResponse.Action.
