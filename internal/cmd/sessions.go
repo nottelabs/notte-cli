@@ -181,6 +181,20 @@ func clearCurrentSessionExpiry() error {
 	return nil
 }
 
+// sessionIDFromArgs accepts the session ID as a positional argument, the
+// form `notte sessions stop <id>` people and agents reach for, as well as
+// through --session-id. The two must not disagree.
+func sessionIDFromArgs(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
+	if cmd.Flags().Changed("session-id") && sessionID != args[0] {
+		return errUsage("pass the session ID once, either as an argument or with --session-id")
+	}
+	sessionID = args[0]
+	return nil
+}
+
 // RequireSessionID ensures a session ID is available from flag, env, or file
 func RequireSessionID() error {
 	sessionID = GetCurrentSessionID()
@@ -213,16 +227,16 @@ var sessionsStartCmd = &cobra.Command{
 }
 
 var sessionsStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   "status [session-id]",
 	Short: "Get session status",
-	Args:  cobra.NoArgs,
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runSessionStatus,
 }
 
 var sessionsStopCmd = &cobra.Command{
-	Use:   "stop",
+	Use:   "stop [session-id]",
 	Short: "Stop the session",
-	Args:  cobra.NoArgs,
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runSessionStop,
 }
 
@@ -923,6 +937,9 @@ func printSessionStarted(session *api.SessionResponse, spinUp time.Duration) err
 }
 
 func runSessionStatus(cmd *cobra.Command, args []string) error {
+	if err := sessionIDFromArgs(cmd, args); err != nil {
+		return err
+	}
 	if err := RequireSessionID(); err != nil {
 		return err
 	}
@@ -960,10 +977,13 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 
 func runSessionStop(cmd *cobra.Command, args []string) error {
 	if sessionStopAll {
-		if cmd.Flags().Changed("session-id") {
-			return errUsage("use either --all or --session-id, not both")
+		if cmd.Flags().Changed("session-id") || len(args) > 0 {
+			return errUsage("use either --all or a session ID, not both")
 		}
 		return stopAllSessions(cmd.Context(), os.Stdin, os.Stderr)
+	}
+	if err := sessionIDFromArgs(cmd, args); err != nil {
+		return err
 	}
 	if err := RequireSessionID(); err != nil {
 		return err

@@ -1879,3 +1879,42 @@ func TestRememberCurrentSession_DropsPreviousViewer(t *testing.T) {
 		t.Errorf("viewer URL = %q, want %q", got, viewer)
 	}
 }
+
+// `notte sessions stop <id>` is the form agents reach for first. Run it
+// through the command tree, so cobra's argument check is part of the test.
+func TestSessionStopAndStatus_PositionalSessionID(t *testing.T) {
+	const positional = "sess_positional"
+	server := setupSessionTest(t)
+	sessionID = ""
+	server.AddResponse("/sessions/"+positional+"/stop", 200,
+		`{"session_id":"`+positional+`","status":"closed","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":0}`)
+	server.AddResponse("/sessions/"+positional, 200,
+		`{"session_id":"`+positional+`","status":"active","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":0}`)
+
+	origFormat := outputFormat
+	t.Cleanup(func() {
+		outputFormat = origFormat
+		SetSkipConfirmation(false)
+		rootCmd.SetArgs(nil)
+	})
+
+	for _, args := range [][]string{
+		{"sessions", "status", positional, "-o", "json"},
+		{"sessions", "stop", positional, "--yes", "-o", "json"},
+	} {
+		rootCmd.SetArgs(args)
+		_, _ = testutil.CaptureOutput(func() {
+			if err := rootCmd.ExecuteContext(context.Background()); err != nil {
+				t.Fatalf("notte %s: %v", strings.Join(args, " "), err)
+			}
+		})
+		sessionID = ""
+	}
+
+	if n := len(server.Requests("/sessions/" + positional + "/stop")); n != 1 {
+		t.Errorf("stop requests for the positional session: got %d, want 1", n)
+	}
+	if n := len(server.Requests("/sessions/" + positional)); n != 1 {
+		t.Errorf("status requests for the positional session: got %d, want 1", n)
+	}
+}
