@@ -94,6 +94,10 @@ func TestExecute_BadArgumentsExitUsage(t *testing.T) {
 		"sessions start --count 0",
 		"sessions list --page 0",
 		"sessions stop --all --session-id s1",
+		"sessions stop --all s1",
+		"sessions stop s1 --session-id s2",
+		"sessions stop s1 s2",
+		"sessions status s1 --session-id s2",
 		"search --depth nope hello",
 		"functions create",
 	} {
