@@ -91,6 +91,9 @@ var openFileKeyring = func() (keyring.Keyring, error) {
 	return ring, nil
 }
 
+// IsNoSavedKey reports whether err means there was no saved key to act on.
+func IsNoSavedKey(err error) bool { return isNotFound(err) }
+
 func isNotFound(err error) bool {
 	return errors.Is(err, keyring.ErrKeyNotFound) || errors.Is(err, os.ErrNotExist)
 }

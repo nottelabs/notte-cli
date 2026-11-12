@@ -51,7 +51,7 @@ var (
 func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 	// JSON mode: return full response
 	if IsJSONOutput() {
-		return GetFormatter().Print(resp)
+		return render(resp)
 	}
 
 	if !resp.Success {
@@ -63,7 +63,7 @@ func printExecuteResponse(resp *api.ApiExecutionResponse) error {
 
 	// Print data if non-nil
 	if resp.Data != nil {
-		return GetFormatter().Print(resp.Data)
+		return render(resp.Data)
 	}
 	return nil
 }
@@ -77,14 +77,14 @@ var idPattern = regexp.MustCompile(`^[IBLMFO]\d+$`)
 // #btn or any other string -> CSS selector (selector: "#btn")
 func parseSelector(arg string) (string, string, error) {
 	if arg == "" {
-		return "", "", fmt.Errorf("selector cannot be empty")
+		return "", "", errUsage("selector cannot be empty")
 	}
 
 	// Support legacy @-prefix format for backwards compatibility
 	if strings.HasPrefix(arg, "@") {
 		id := strings.TrimPrefix(arg, "@")
 		if id == "" {
-			return "", "", fmt.Errorf("element ID cannot be empty (use @id format)")
+			return "", "", errUsage("element ID cannot be empty (use @id format)")
 		}
 		return id, "", nil
 	}
@@ -191,13 +191,13 @@ Use --vault-field instead of a value to keep credentials out of the command:
 
 func resolvePageFillValue(args []string) (string, error) {
 	if len(args) == 2 && pageFillVaultField != "" {
-		return "", fmt.Errorf("value and --vault-field are mutually exclusive")
+		return "", errUsage("value and --vault-field are mutually exclusive")
 	}
 	if len(args) == 2 {
 		return args[1], nil
 	}
 	if pageFillVaultField == "" {
-		return "", fmt.Errorf("requires a value or --vault-field")
+		return "", errUsage("requires a value or --vault-field")
 	}
 	return credentials.Sentinel(pageFillVaultField)
 }
@@ -309,8 +309,8 @@ func runPageDownload(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !IsJSONOutput() {
-		fmt.Println("List downloaded files with: notte files list")
+	if text := textFormatter(); text != nil {
+		printHint(text, "notte files list")
 	}
 	return nil
 }
@@ -755,7 +755,7 @@ func runPageEvalJs(cmd *cobra.Command, args []string) error {
 	// Custom output formatting for eval-js
 	result := resp.JSON200
 	if IsJSONOutput() {
-		return GetFormatter().Print(result)
+		return render(result)
 	}
 
 	if !result.Success {

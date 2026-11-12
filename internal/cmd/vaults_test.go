@@ -82,7 +82,7 @@ func TestRunVaultsList_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No vaults found.") {
+	if !strings.Contains(stdout, "No vaults (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -201,7 +201,7 @@ func TestRunVaultDelete(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "deleted") {
+	if !strings.Contains(stdout, "Deleted ") {
 		t.Errorf("expected delete message, got %q", stdout)
 	}
 }
@@ -224,6 +224,8 @@ func TestRunVaultDeleteCancelled(t *testing.T) {
 	_, _ = w.WriteString("n\n")
 	_ = w.Close()
 
+	// The answer comes through a pipe, as a front end relaying typed input does.
+	t.Setenv("NOTTE_FORCE_INTERACTIVE", "1")
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() {
@@ -287,7 +289,7 @@ func TestRunVaultCredentialsList_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No credentials found.") {
+	if !strings.Contains(stdout, "No credentials (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -470,7 +472,7 @@ func TestRunVaultCredentialsDelete(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "deleted") {
+	if !strings.Contains(stdout, "Deleted ") {
 		t.Errorf("expected delete message, got %q", stdout)
 	}
 }
@@ -497,6 +499,8 @@ func TestRunVaultCredentialsDeleteCancelled(t *testing.T) {
 	_, _ = w.WriteString("n\n")
 	_ = w.Close()
 
+	// The answer comes through a pipe, as a front end relaying typed input does.
+	t.Setenv("NOTTE_FORCE_INTERACTIVE", "1")
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() {

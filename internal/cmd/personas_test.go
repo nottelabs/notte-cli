@@ -94,7 +94,7 @@ func TestRunPersonasList_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No personas found.") {
+	if !strings.Contains(stdout, "No personas (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -185,7 +185,7 @@ func TestRunPersonaDelete(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "deleted") {
+	if !strings.Contains(stdout, "Deleted persona "+personaIDTest) {
 		t.Errorf("expected delete message, got %q", stdout)
 	}
 }
@@ -208,6 +208,8 @@ func TestRunPersonaDeleteCancelled(t *testing.T) {
 	_, _ = w.WriteString("n\n")
 	_ = w.Close()
 
+	// The answer comes through a pipe, as a front end relaying typed input does.
+	t.Setenv("NOTTE_FORCE_INTERACTIVE", "1")
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() {

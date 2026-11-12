@@ -72,8 +72,9 @@ func TestExecute_ErrorExit(t *testing.T) {
 		t.Fatal("expected non-zero exit")
 	}
 	if exitErr, ok := err.(*exec.ExitError); ok {
-		if exitErr.ExitCode() != 1 {
-			t.Fatalf("expected exit code 1, got %d", exitErr.ExitCode())
+		// An unknown command is a usage error.
+		if exitErr.ExitCode() != ExitUsage {
+			t.Fatalf("expected exit code %d, got %d", ExitUsage, exitErr.ExitCode())
 		}
 		return
 	}

@@ -87,7 +87,7 @@ func runTunnelCheck(cmd *cobra.Command, args []string) error {
 	name := tunnelCheckName
 	if name == "" {
 		if self == nil {
-			return fmt.Errorf("pass --name: Tailscale is not running on this machine, so there is no default tunnel")
+			return errUsage("pass --name: Tailscale is not running on this machine, so there is no default tunnel")
 		}
 		name = strings.ToLower(strings.SplitN(self.MagicDNSName(), ".", 2)[0])
 	}
@@ -145,7 +145,7 @@ Run the check on %s to compare that with the machine's own IP.`, t.Name, t.ExitN
 If this machine sends its own traffic through a VPN or another exit node, its IP differs from the tunnel's even when the tunnel works`, t.Name, sessionIP, machineIP)
 	}
 	data["status"] = "ok"
-	return PrintResult(fmt.Sprintf(`Tunnel %q works: sessions leave from %s, this machine's public IP.`, t.Name, sessionIP), data)
+	return printDone(fmt.Sprintf(`Tunnel %q works: sessions leave from %s, this machine's public IP.`, t.Name, sessionIP), data, "notte sessions start --tunnel "+t.Name)
 }
 
 // tunnelSessionIP starts a short session through the tunnel and returns the

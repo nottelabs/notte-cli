@@ -133,19 +133,21 @@ func runPersonasList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-
 	var items []api.PersonaResponse
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No personas found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No personas", "notte personas create"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }
 
 func runPersonasCreate(cmd *cobra.Command, args []string) error {
@@ -173,8 +175,10 @@ func runPersonasCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone("Created persona "+resp.JSON200.PersonaId, resp.JSON200)
 }
 
 func runPersonaShow(cmd *cobra.Command, args []string) error {
@@ -196,7 +200,7 @@ func runPersonaShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runPersonaDelete(cmd *cobra.Command, args []string) error {
@@ -226,10 +230,10 @@ func runPersonaDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Persona %s deleted.", personaID), map[string]any{
+	return printDone("Deleted persona "+personaID, map[string]any{
 		"id":     personaID,
 		"status": "deleted",
-	})
+	}, "notte personas list")
 }
 
 func runPersonaEmails(cmd *cobra.Command, args []string) error {
@@ -251,7 +255,7 @@ func runPersonaEmails(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runPersonaSms(cmd *cobra.Command, args []string) error {
@@ -273,7 +277,7 @@ func runPersonaSms(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runPersonaUpdate(cmd *cobra.Command, args []string) error {
@@ -300,5 +304,5 @@ func runPersonaUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Updated persona "+personaID, resp.JSON200)
 }

@@ -98,7 +98,7 @@ func validateSessionStartProxyFlags(cmd *cobra.Command) error {
 		}
 	}
 	if len(set) > 1 {
-		return fmt.Errorf("proxy flags are mutually exclusive, got: %s", strings.Join(set, ", "))
+		return errUsage("proxy flags are mutually exclusive, got: %s", strings.Join(set, ", "))
 	}
 	return nil
 }

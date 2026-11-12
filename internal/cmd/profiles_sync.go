@@ -62,7 +62,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("syncing cookies from a local browser is supported on macOS and Linux only")
 	}
 	if syncMode != "replace" && syncMode != "append" {
-		return fmt.Errorf("invalid --mode %q: expected \"replace\" or \"append\"", syncMode)
+		return errUsage("invalid --mode %q: expected \"replace\" or \"append\"", syncMode)
 	}
 	// An explicit --domain that normalizes to nothing (e.g. \".\" or a blank)
 	// must be rejected rather than silently treated as "all domains", which
@@ -152,7 +152,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 			}
 			return fmt.Errorf("profile %s: %w", targetID, importErr)
 		}
-		return PrintResult(fmt.Sprintf("Synced browser state into profile %s (%d cookies, %d localStorage origins, %d sessionStorage origins).", targetID, response.CookiesCount, response.LocalStorageOrigins, response.SessionStorageOrigins), map[string]any{"profile_id": targetID, "created": created, "synced": len(cookies), "cookies_count": response.CookiesCount, "local_storage_origins": response.LocalStorageOrigins, "session_storage_origins": response.SessionStorageOrigins, "mode": syncMode})
+		return printDone(fmt.Sprintf("Synced browser state into profile %s (%d cookies, %d localStorage origins, %d sessionStorage origins)", targetID, response.CookiesCount, response.LocalStorageOrigins, response.SessionStorageOrigins), map[string]any{"profile_id": targetID, "created": created, "synced": len(cookies), "cookies_count": response.CookiesCount, "local_storage_origins": response.LocalStorageOrigins, "session_storage_origins": response.SessionStorageOrigins, "mode": syncMode}, "notte sessions start --profile-id "+targetID)
 	}
 	mode := api.ProfileCookiesImportRequestMode(syncMode)
 	// The cookies are already normalized to the Playwright shape (string
@@ -190,7 +190,7 @@ func runProfilesSync(cmd *cobra.Command, args []string) error {
 			out["cookies_count"] = resp.JSON200.CookiesCount
 			out["mode"] = resp.JSON200.Mode
 		}
-		return GetFormatter().Print(out)
+		return render(out)
 	}
 
 	printSyncSuccess(targetID, len(cookies), resp.JSON200)
@@ -244,7 +244,7 @@ func resolveLocalProfile() (browser.Profile, error) {
 	if syncBrowser != "" {
 		b, ok := browser.BrowserByID(syncBrowser)
 		if !ok {
-			return browser.Profile{}, fmt.Errorf("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
+			return browser.Profile{}, errUsage("unknown browser %q: supported browsers are firefox, chrome, brave, edge, chromium, arc, helium", syncBrowser)
 		}
 		// Check the platform first, so a macOS-only browser on Linux says so
 		// rather than claiming it is not installed.
@@ -275,7 +275,7 @@ func resolveLocalProfile() (browser.Profile, error) {
 		case 1:
 			return matched[0], nil
 		default:
-			return browser.Profile{}, fmt.Errorf("%q matches more than one profile; also pass --browser to disambiguate", syncChromeProfile)
+			return browser.Profile{}, errUsage("%q matches more than one profile; also pass --browser to disambiguate", syncChromeProfile)
 		}
 	}
 
@@ -301,7 +301,7 @@ func filterByProfileName(profiles []browser.Profile, query string) []browser.Pro
 // choose explicitly instead of guessing.
 func pickProfile(profiles []browser.Profile) (browser.Profile, error) {
 	if skipConfirmation || !term.IsTerminal(int(os.Stdin.Fd())) {
-		return browser.Profile{}, fmt.Errorf("more than one browser profile found; pass --browser and --local-profile to choose one")
+		return browser.Profile{}, errUsage("more than one browser profile found; pass --browser and --local-profile to choose one")
 	}
 	return pickProfileWithIO(os.Stdin, os.Stderr, profiles)
 }
@@ -442,11 +442,9 @@ func printSyncSuccess(profileID string, synced int, resp *api.ProfileCookiesImpo
 	if resp != nil {
 		total = resp.CookiesCount
 	}
-	fmt.Printf("Synced %d cookies into profile %s (%d cookies total).\n", synced, profileID, total)
-	fmt.Println()
-	fmt.Println("Use it in a session:")
-	fmt.Printf("  notte sessions start --profile-id %s\n", profileID)
-	fmt.Println()
-	fmt.Println("Re-run this any time your local login changes:")
-	fmt.Printf("  notte profiles sync --profile-id %s\n", profileID)
+	fmt.Printf("Synced %d cookies into profile %s (%d cookies total)\n", synced, profileID, total)
+	fmt.Printf("Run notte profiles sync --profile-id %s again whenever your local login changes.\n", profileID)
+	if text := textFormatter(); text != nil {
+		printHint(text, "notte sessions start --profile-id "+profileID)
+	}
 }

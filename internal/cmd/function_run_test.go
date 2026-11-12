@@ -209,7 +209,13 @@ func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
 				}
 				return
 			}
-			if runErr != nil || !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
+			// A failed run is printed like a finished one and then reported as
+			// an error, so that the exit code tells them apart.
+			var failed *runFailedError
+			if (status == "failed") != errors.As(runErr, &failed) || (status != "failed" && runErr != nil) {
+				t.Fatalf("status %s: err=%v", status, runErr)
+			}
+			if !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
 				t.Fatalf("stdout=%s stderr=%s err=%v", stdout, stderr, runErr)
 			}
 		})
@@ -225,5 +231,27 @@ func TestGetClient_HonorsRequestTimeout(t *testing.T) {
 	}
 	if client.HTTPClient().Timeout != 30*time.Minute {
 		t.Fatalf("HTTP timeout = %s", client.HTTPClient().Timeout)
+	}
+}
+
+// An older server answers the start request with the finished run. A failed
+// one must still exit with the run-failed code, with its data on stdout.
+func TestFunctionRun_DirectFailedResultExitsRunFailed(t *testing.T) {
+	cmd := setupFunctionRunTest(t)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeRunMetadata(w, "failed")
+	}))
+	defer server.Close()
+	t.Setenv("NOTTE_API_URL", server.URL)
+
+	var runErr error
+	stdout, _ := testutil.CaptureOutput(func() { runErr = runFunctionRun(cmd, nil) })
+	var failed *runFailedError
+	if !errors.As(runErr, &failed) || failed.runID != "run_123" {
+		t.Fatalf("got %v, want a run-failed error for run_123", runErr)
+	}
+	if !strings.Contains(stdout, `"status": "failed"`) && !strings.Contains(stdout, `"status":"failed"`) {
+		t.Fatalf("the failed run must still be printed: %s", stdout)
 	}
 }

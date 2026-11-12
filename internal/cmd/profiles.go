@@ -138,19 +138,21 @@ func runProfilesList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-
 	var items []api.ProfileResponse
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No profiles found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No profiles", "notte profiles create --name <name>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }
 
 func runProfilesCreate(cmd *cobra.Command, args []string) error {
@@ -178,8 +180,10 @@ func runProfilesCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone("Created profile "+resp.JSON200.ProfileId, resp.JSON200)
 }
 
 func runProfileShow(cmd *cobra.Command, args []string) error {
@@ -201,7 +205,7 @@ func runProfileShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runProfileDelete(cmd *cobra.Command, args []string) error {
@@ -231,10 +235,10 @@ func runProfileDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Profile %s deleted.", profileID), map[string]any{
+	return printDone("Deleted profile "+profileID, map[string]any{
 		"id":     profileID,
 		"status": "deleted",
-	})
+	}, "notte profiles list")
 }
 
 func runProfileCookies(cmd *cobra.Command, args []string) error {
@@ -256,7 +260,7 @@ func runProfileCookies(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runProfileCookiesSet(cmd *cobra.Command, args []string) error {
@@ -296,7 +300,7 @@ func runProfileCookiesSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Set cookies in profile "+profileID, resp.JSON200)
 }
 
 // parseProfileCookies accepts either shape a cookies file comes in.

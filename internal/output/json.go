@@ -12,6 +12,9 @@ import (
 // JSONFormatter outputs data as JSON
 type JSONFormatter struct {
 	Writer io.Writer
+	// ErrorCode, when set, is added to printed errors as "code": a stable name
+	// for the kind of failure ("unauthorized", "not_found", "usage", ...).
+	ErrorCode string
 }
 
 func (f *JSONFormatter) Print(data any) error {
@@ -25,6 +28,9 @@ func (f *JSONFormatter) PrintError(err error) {
 		errObj := map[string]any{
 			"error":       apiErr.Message,
 			"status_code": apiErr.StatusCode,
+		}
+		if f.ErrorCode != "" {
+			errObj["code"] = f.ErrorCode
 		}
 		enc := json.NewEncoder(os.Stderr)
 		if encErr := enc.Encode(errObj); encErr != nil {
@@ -42,6 +48,9 @@ func (f *JSONFormatter) PrintError(err error) {
 		if authErr.Message != "" {
 			errObj["message"] = authErr.Message
 		}
+		if f.ErrorCode != "" {
+			errObj["code"] = f.ErrorCode
+		}
 		enc := json.NewEncoder(os.Stderr)
 		if encErr := enc.Encode(errObj); encErr != nil {
 			fmt.Fprintf(os.Stderr, "Error %d: %s\n", authErr.StatusCode, err.Error())
@@ -50,6 +59,9 @@ func (f *JSONFormatter) PrintError(err error) {
 	}
 
 	errObj := map[string]string{"error": err.Error()}
+	if f.ErrorCode != "" {
+		errObj["code"] = f.ErrorCode
+	}
 	enc := json.NewEncoder(os.Stderr)
 	if encErr := enc.Encode(errObj); encErr != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())

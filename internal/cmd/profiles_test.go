@@ -85,7 +85,7 @@ func TestRunProfilesList_Empty(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "No profiles found.") {
+	if !strings.Contains(stdout, "No profiles (◡︵◡)") {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -167,7 +167,7 @@ func TestRunProfileDelete(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "deleted") {
+	if !strings.Contains(stdout, "Deleted profile "+profileIDTest) {
 		t.Errorf("expected delete message, got %q", stdout)
 	}
 }

@@ -81,7 +81,7 @@ func clearCurrentFunction() error {
 func RequireFunctionID() error {
 	functionID = GetCurrentFunctionID()
 	if functionID == "" {
-		return errors.New("function ID required: use --function-id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
+		return errUsage("function ID required: use --function-id flag, set NOTTE_FUNCTION_ID env var, or create a function first")
 	}
 	return nil
 }
@@ -406,19 +406,21 @@ func runFunctionsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatter := GetFormatter()
-
 	var items []api.FunctionListItemResponse
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No functions found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No functions", "notte functions create --file <path>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }
 
 func runFunctionsCreate(cmd *cobra.Command, args []string) error {
@@ -457,8 +459,15 @@ func runFunctionsCreate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	return functionDone("Created", resp.JSON200)
+}
+
+// functionDone reports a change to a function and prints the function.
+func functionDone(verb string, function *api.FunctionResponse) error {
+	if function == nil {
+		return render(function)
+	}
+	return renderDone(verb+" function "+function.FunctionId, function)
 }
 
 func runFunctionShow(cmd *cobra.Command, args []string) error {
@@ -484,13 +493,13 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runFunctionDownload(cmd *cobra.Command, args []string) error {
 	outputPath := args[0]
 	if !strings.HasSuffix(outputPath, ".py") {
-		return errors.New("file path must end with .py")
+		return errUsage("file path must end with .py")
 	}
 
 	if err := RequireFunctionID(); err != nil {
@@ -528,12 +537,12 @@ func runFunctionDownload(cmd *cobra.Command, args []string) error {
 		downloadedVersion = resp.JSON200.LatestVersion
 	}
 
-	return PrintResult(fmt.Sprintf("Function downloaded successfully: %s", outputPath), map[string]any{
+	return printDone(fmt.Sprintf("Downloaded function %s (%s) to %s", functionID, versionLabel(downloadedVersion), outputPath), map[string]any{
 		"function_id": functionID,
 		"path":        outputPath,
 		"version":     downloadedVersion,
 		"success":     true,
-	})
+	}, fmt.Sprintf("notte functions update --function-id %s --file %s", functionID, outputPath))
 }
 
 func runFunctionUpdate(cmd *cobra.Command, args []string) error {
@@ -573,7 +582,7 @@ func runFunctionUpdate(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		warnAboutScheduleInputs(ctx, client, resp.JSON200.Variables)
 	}
-	return GetFormatter().Print(resp.JSON200)
+	return functionDone("Updated", resp.JSON200)
 }
 
 // runtimeValues are the runtimes a function can execute on. The request bodies
@@ -595,7 +604,7 @@ func validateRuntime(flagName, value string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid --%s %q: expected %s", flagName, value, strings.Join(runtimeValues, " or "))
+	return errUsage("invalid --%s %q: expected %s", flagName, value, strings.Join(runtimeValues, " or "))
 }
 
 func runFunctionConfigure(cmd *cobra.Command, args []string) error {
@@ -625,11 +634,11 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		// omits them, so they would otherwise travel as an empty PATCH:
 		// accepted, 200, nothing changed, and the caller told it worked.
 		if f.value == "" {
-			return fmt.Errorf("--%s cannot be empty", f.name)
+			return errUsage("--%s cannot be empty", f.name)
 		}
 	}
 	if !anyChanged {
-		return errors.New("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, --deletion-protected, and/or --shared")
+		return errUsage("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, --deletion-protected, and/or --shared")
 	}
 	if cmd.Flags().Changed("default-runtime") {
 		if err := validateRuntime("default-runtime", FunctionConfigureDefaultRuntime); err != nil {
@@ -660,7 +669,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return functionDone("Configured", resp.JSON200)
 }
 
 func runFunctionRollback(cmd *cobra.Command, args []string) error {
@@ -691,7 +700,10 @@ func runFunctionRollback(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone(fmt.Sprintf("Rolled back function %s to %s", resp.JSON200.FunctionId, versionLabel(resp.JSON200.LatestVersion)), resp.JSON200)
 }
 
 // runFunctionHealth reports on the runtime functions execute in: which Python
@@ -716,7 +728,7 @@ func runFunctionHealth(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runFunctionDelete(cmd *cobra.Command, args []string) error {
@@ -759,10 +771,10 @@ func runFunctionDelete(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return PrintResult(fmt.Sprintf("Function %s deleted.", functionID), map[string]any{
+	return printDone("Deleted function "+functionID, map[string]any{
 		"id":     functionID,
 		"status": "deleted",
-	})
+	}, "notte functions list")
 }
 
 func runFunctionRun(cmd *cobra.Command, args []string) error {
@@ -830,13 +842,17 @@ func runFunctionRuns(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No function runs found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No function runs", "notte functions run --function-id "+functionID); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return GetFormatter().Print(items)
+	if err := render(items); err != nil {
+		return err
+	}
+	noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+	return nil
 }
 
 func runFunctionFork(cmd *cobra.Command, args []string) error {
@@ -862,7 +878,10 @@ func runFunctionFork(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone(fmt.Sprintf("Forked function %s into %s", functionID, resp.JSON200.FunctionId), resp.JSON200)
 }
 
 func runFunctionRunStop(cmd *cobra.Command, args []string) error {
@@ -888,7 +907,7 @@ func runFunctionRunStop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Stopped run "+functionRunID, resp.JSON200)
 }
 
 func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
@@ -917,7 +936,7 @@ func runFunctionRunMetadata(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runFunctionRunMetadataUpdate(cmd *cobra.Command, args []string) error {
@@ -954,7 +973,7 @@ func runFunctionRunMetadataUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Updated run "+functionRunID, resp.JSON200)
 }
 
 func runFunctionSchedule(cmd *cobra.Command, args []string) error {
@@ -991,10 +1010,10 @@ func runFunctionSchedule(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Function %s scheduled with cron expression: %s", functionID, FunctionScheduleSetCron), map[string]any{
+	return printDone(fmt.Sprintf("Scheduled function %s: %s", functionID, FunctionScheduleSetCron), map[string]any{
 		"id":   functionID,
 		"cron": FunctionScheduleSetCron,
-	})
+	}, "notte functions schedules list --function-id "+functionID)
 }
 
 func runFunctionUnschedule(cmd *cobra.Command, args []string) error {
@@ -1020,10 +1039,10 @@ func runFunctionUnschedule(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Function %s schedule removed.", functionID), map[string]any{
+	return printDone("Removed the schedule of function "+functionID, map[string]any{
 		"id":     functionID,
 		"status": "unscheduled",
-	})
+	}, "notte functions schedules list --function-id "+functionID)
 }
 
 func functionSecretsNamespace() api.SecretNamespace {
@@ -1054,13 +1073,13 @@ func runFunctionSecretsList(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No function environment secrets found."); err != nil {
+	if printed, err := PrintListOrEmpty(items, "No secrets", "notte functions secrets set <name> <value>"); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return GetFormatter().Print(items)
+	return render(items)
 }
 
 func runFunctionSecretsGet(cmd *cobra.Command, args []string) error {
@@ -1082,7 +1101,7 @@ func runFunctionSecretsGet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runFunctionSecretsSet(cmd *cobra.Command, args []string) error {
@@ -1091,7 +1110,7 @@ func runFunctionSecretsSet(cmd *cobra.Command, args []string) error {
 		value = args[1]
 	}
 	if value == "" && !cmd.Flags().Changed("value") {
-		return fmt.Errorf("secret value required: pass it as an argument or with --value")
+		return errUsage("secret value required: pass it as an argument or with --value")
 	}
 
 	client, err := GetClient()
@@ -1117,7 +1136,7 @@ func runFunctionSecretsSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON201)
+	return renderDone("Saved secret "+args[0], resp.JSON201)
 }
 
 func runFunctionSecretsDelete(cmd *cobra.Command, args []string) error {
@@ -1149,8 +1168,8 @@ func runFunctionSecretsDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return PrintResult(fmt.Sprintf("Function environment secret %s deleted.", secretID), map[string]any{
+	return printDone("Deleted secret "+secretID, map[string]any{
 		"id":     secretID,
 		"status": "deleted",
-	})
+	}, "notte functions secrets list")
 }

@@ -2,23 +2,28 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 
 	"github.com/nottelabs/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/auth"
 	"github.com/nottelabs/notte-cli/internal/config"
+	"github.com/nottelabs/notte-cli/internal/output"
 )
 
 // Manual flags for proxies and extra headers (union types not auto-generated)
@@ -32,6 +37,8 @@ var (
 	sessionsStartProxyTailClientSecret string
 	sessionsStartTunnel                string
 	sessionsStartExtraHttpHeaders      string
+	sessionsStartCount                 int
+	sessionStopAll                     bool
 )
 
 var (
@@ -178,15 +185,16 @@ func clearCurrentSessionExpiry() error {
 func RequireSessionID() error {
 	sessionID = GetCurrentSessionID()
 	if sessionID == "" {
-		return errors.New("session ID required: use --session-id flag, set NOTTE_SESSION_ID env var, or start a session first")
+		return errUsage("session ID required: use --session-id flag, set NOTTE_SESSION_ID env var, or start a session first")
 	}
 	return nil
 }
 
 var sessionsCmd = &cobra.Command{
-	Use:   "sessions",
-	Short: "Manage browser sessions",
-	Long:  "List, create, and operate on browser sessions.",
+	Use:     "sessions",
+	Aliases: []string{"browser", "browsers"},
+	Short:   "Manage browser sessions",
+	Long:    "List, create, and operate on browser sessions.",
 }
 
 var sessionsListCmd = &cobra.Command{
@@ -373,6 +381,7 @@ func init() {
 	sessionsStartCmd.Flags().StringVar(&sessionsStartTunnel, "tunnel", "", "Route public traffic through a saved tunnel (see `notte tunnel up`)")
 	// Manual flag for extra HTTP headers (map type not auto-generated)
 	sessionsStartCmd.Flags().StringVar(&sessionsStartExtraHttpHeaders, "extra-http-headers", "", `Extra HTTP headers as JSON (e.g. '{"Authorization": "Bearer xxx"}')`)
+	sessionsStartCmd.Flags().IntVarP(&sessionsStartCount, "count", "n", 1, fmt.Sprintf("Number of sessions to start in parallel, with the same settings (at most %d)", maxSessionsStartCount))
 
 	// Status command flags
 	sessionsStatusCmd.Flags().BoolVar(&sessionStatusAuth, "auth", false, "Show managed authentication readiness and operations")
@@ -380,6 +389,7 @@ func init() {
 
 	// Stop command flags
 	sessionsStopCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsStopCmd.Flags().BoolVarP(&sessionStopAll, "all", "a", false, "Stop every active session")
 
 	// Observe command flags
 	sessionsObserveCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -397,7 +407,7 @@ func init() {
 
 	// Cookies-set command flags
 	sessionsCookiesSetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
-	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", "JSON file containing cookies array (required)")
+	sessionsCookiesSetCmd.Flags().StringVar(&sessionCookiesSetFile, "file", "", `JSON file with the cookies as {"cookies": [...]} (required)`)
 	_ = sessionsCookiesSetCmd.MarkFlagRequired("file")
 
 	// Save-profile command flags
@@ -468,18 +478,169 @@ func runSessionsList(cmd *cobra.Command, args []string) error {
 	if resp.JSON200 != nil {
 		items = resp.JSON200.Items
 	}
-	if printed, err := PrintListOrEmpty(items, "No active sessions."); err != nil {
+	activeOnly := params.OnlyActive != nil && *params.OnlyActive
+	empty, next := "No sessions", "notte sessions start"
+	if activeOnly {
+		// Closed sessions are one flag away.
+		empty, next = "No active sessions", "notte sessions list --all"
+	}
+	if printed, err := PrintListOrEmpty(items, empty, next); err != nil {
 		return err
 	} else if printed {
 		return nil
 	}
 
-	return formatter.Print(items)
+	text, ok := formatter.(*output.TextFormatter)
+	if !ok {
+		if err := render(items); err != nil {
+			return err
+		}
+		noteNextPage(cmd, resp.JSON200 != nil && resp.JSON200.HasNext)
+		return nil
+	}
+	fillViewerURLs(ctx, client, items)
+	more := resp.JSON200 != nil && resp.JSON200.HasNext
+	if err := printSessionList(text, items, more, GetCurrentSessionID(), time.Now()); err != nil {
+		return err
+	}
+	noteNextPage(cmd, more)
+	return nil
 }
 
+// fillViewerURLs adds the live viewer link to active sessions. The list
+// endpoint does not return it, the status endpoint does, so each active
+// session's status is fetched, a few at a time. A failed fetch leaves the
+// link out rather than failing the list.
+func fillViewerURLs(ctx context.Context, client *api.NotteClient, sessions []api.SessionResponse) {
+	var wg sync.WaitGroup
+	slots := make(chan struct{}, 8)
+	for i := range sessions {
+		session := &sessions[i]
+		if session.Status != api.SessionResponseStatusActive || (session.ViewerUrl != nil && *session.ViewerUrl != "") {
+			continue
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			slots <- struct{}{}
+			defer func() { <-slots }()
+			resp, err := client.Client().SessionStatusWithResponse(ctx, session.SessionId, &api.SessionStatusParams{})
+			if err == nil && resp.JSON200 != nil && resp.JSON200.ViewerUrl != nil {
+				session.ViewerUrl = resp.JSON200.ViewerUrl
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+// printSessionList shows one session per row. The current session, which
+// commands use when --session-id is omitted, is marked with "*".
+func printSessionList(text *output.TextFormatter, sessions []api.SessionResponse, more bool, current string, now time.Time) error {
+	headers := []string{" ", sessionsHeader(len(sessions), more), "STATUS", "LAST ACTIVE", "CREATED", "VIEWER"}
+	rows := make([][]string, 0, len(sessions))
+	for _, session := range sessions {
+		marker := " "
+		if session.SessionId == current {
+			marker = text.Colorize("*", termenv.ANSIGreen)
+		}
+		viewer := sessionViewer(session)
+		rows = append(rows, []string{
+			marker,
+			session.SessionId,
+			sessionStatus(text, string(session.Status)),
+			relativeTime(session.LastAccessedAt.Time, now),
+			relativeTime(session.CreatedAt.Time, now),
+			viewer,
+		})
+	}
+	if err := text.Table(headers, rows); err != nil {
+		return err
+	}
+	printHint(text, "notte sessions status --session-id <id>")
+	return nil
+}
+
+// printStartedSessions lists sessions that were just started, with how long
+// each took to start. The first one is the current session.
+// sessionViewer links a running session to its live viewer, and a stopped
+// one, or one without a viewer, to its page in the console (replay, logs).
+func sessionViewer(session api.SessionResponse) string {
+	if session.Status == api.SessionResponseStatusActive && session.ViewerUrl != nil && *session.ViewerUrl != "" {
+		return output.Link(*session.ViewerUrl, "open live viewer ↗")
+	}
+	console := strings.TrimSuffix(auth.ConsoleURL(), "/")
+	return output.Link(console+"/sessions/"+url.PathEscape(session.SessionId), "open in console ↗")
+}
+
+func printStartedSessions(text *output.TextFormatter, sessions []api.SessionResponse, spinUps []time.Duration) error {
+	headers := []string{" ", sessionsHeader(len(sessions), false), "STATUS", "SPIN-UP", "VIEWER"}
+	rows := make([][]string, 0, len(sessions))
+	for i, session := range sessions {
+		marker := " "
+		if i == 0 {
+			marker = text.Colorize("*", termenv.ANSIGreen)
+		}
+		rows = append(rows, []string{
+			marker,
+			session.SessionId,
+			sessionStatus(text, string(session.Status)),
+			formatSpinUp(spinUps[i]),
+			sessionViewer(session),
+		})
+	}
+	return text.Table(headers, rows)
+}
+
+// sessionsHeader names the session column with how many rows follow; "+"
+// means more are on the next page.
+func sessionsHeader(count int, more bool) string {
+	if more {
+		return fmt.Sprintf("BROWSER SESSION (%d+)", count)
+	}
+	return fmt.Sprintf("BROWSER SESSION (%d)", count)
+}
+
+// formatSpinUp shows a start time as "850ms" or "1.8s".
+func formatSpinUp(d time.Duration) string {
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	return fmt.Sprintf("%.1fs", d.Seconds())
+}
+
+func sessionStatus(text *output.TextFormatter, status string) string {
+	switch status {
+	case "active":
+		return text.Colorize(status, termenv.ANSIGreen)
+	case "error":
+		return text.Colorize(status, termenv.ANSIRed)
+	case "timed_out":
+		return text.Colorize("timed out", termenv.ANSIYellow)
+	case "":
+		return text.Faint("-")
+	}
+	return text.Faint(status)
+}
+
+// relativeTime describes a recent moment as "2 min ago" and an older one by
+// its date.
+func relativeTime(t, now time.Time) string { return output.RelativeTime(t, now) }
+
+// maxSessionsStartCount bounds --count, so a typo cannot start hundreds of
+// billed sessions.
+const maxSessionsStartCount = 20
+
 func runSessionsStart(cmd *cobra.Command, args []string) error {
-	// Resolve --tunnel first: an unknown name or missing secret must fail
-	// before the current session is stopped below.
+	count := sessionsStartCount
+	if !cmd.Flags().Changed("count") {
+		count = 1
+	}
+	if count < 1 || count > maxSessionsStartCount {
+		return errUsage("--count must be between 1 and %d", maxSessionsStartCount)
+	}
+
+	// Resolve --tunnel first, so an unknown name or missing secret fails
+	// before anything is sent.
 	var tunnelItem *api.ApiSessionStartRequest_Proxies_0_Item
 	if cmd.Flags().Changed("tunnel") {
 		item, err := tunnelProxyItem(sessionsStartTunnel)
@@ -489,51 +650,14 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		tunnelItem = &item
 	}
 
-	// Check if there's already a current session
-	existingSessionID := GetCurrentSessionID()
-	if existingSessionID != "" {
-		// Check if the session has expired based on stored max expiry
+	// Forget a pinned session whose maximum lifetime has passed.
+	if GetCurrentSessionID() != "" {
 		if expiry, err := getCurrentSessionExpiry(); err == nil && !expiry.IsZero() && time.Now().UTC().After(expiry) {
-			// Session has expired — silently clear stale state
-			_ = clearCurrentSession()
-			_ = clearCurrentViewerURL()
-			_ = clearCurrentSessionExpiry()
-			existingSessionID = "" // skip the confirmation prompt
-		}
-	}
-	if existingSessionID != "" {
-		confirmed, err := confirmReplaceSession(existingSessionID)
-		if err != nil {
-			return err
-		}
-		if confirmed {
-			// Stop the existing session
-			stopClient, err := GetClient()
-			if err != nil {
-				return err
-			}
-			ctx, cancel := GetContextWithTimeout(cmd.Context())
-			params := &api.SessionStopParams{}
-			stopResp, stopErr := stopClient.Client().SessionStopWithResponse(ctx, existingSessionID, params)
-			cancel()
-			// A rejected stop comes back as a non-2xx response with a nil error,
-			// so the status has to be checked before reporting success.
-			if stopErr == nil && stopResp != nil {
-				stopErr = HandleAPIResponse(stopResp.HTTPResponse, stopResp.Body)
-			}
-			if stopErr != nil {
-				PrintInfo(fmt.Sprintf("Warning: could not stop session %s: %v", existingSessionID, stopErr))
-			} else {
-				// Say so out loud: with --yes the prompt never appears, and an
-				// unannounced stop reads like the new session evicted the old one.
-				PrintInfo(fmt.Sprintf("Stopped session %s before starting the new one.", existingSessionID))
-			}
 			_ = clearCurrentSession()
 			_ = clearCurrentViewerURL()
 			_ = clearCurrentSessionExpiry()
 		}
 	}
-
 	client, err := GetClient()
 	if err != nil {
 		return err
@@ -626,8 +750,14 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		body.ExtraHttpHeaders = &headers
 	}
 
+	if count > 1 {
+		return startSessions(ctx, client, body, count)
+	}
+
 	params := &api.SessionStartParams{}
+	requested := time.Now()
 	resp, err := client.Client().SessionStartWithResponse(ctx, params, *body)
+	spinUp := time.Since(requested)
 	if err != nil {
 		return fmt.Errorf("API request failed: %w", err)
 	}
@@ -636,28 +766,160 @@ func runSessionsStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Save session ID as current session
-	if resp.JSON200 != nil {
-		if err := setCurrentSession(resp.JSON200.SessionId); err != nil {
+	rememberCurrentSession(resp.JSON200)
+	return printSessionStarted(resp.JSON200, spinUp)
+}
+
+// startSessions starts count sessions with the same settings in parallel. The
+// ones that started are shown even when others fail; the first becomes the
+// current session.
+func startSessions(ctx context.Context, client *api.NotteClient, body *api.SessionStartJSONRequestBody, count int) error {
+	started := make([]*api.SessionResponse, count)
+	spinUps := make([]time.Duration, count)
+	failures := make([]error, count)
+	requested := time.Now()
+	var wg sync.WaitGroup
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resp, err := client.Client().SessionStartWithResponse(ctx, &api.SessionStartParams{}, *body)
+			spinUps[i] = time.Since(requested)
+			if err != nil {
+				failures[i] = fmt.Errorf("API request failed: %w", err)
+				return
+			}
+			if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+				failures[i] = err
+				return
+			}
+			started[i] = resp.JSON200
+		}()
+	}
+	wg.Wait()
+	total := time.Since(requested)
+
+	var sessions []api.SessionResponse
+	var times []time.Duration
+	var firstErr error
+	failed := 0
+	for i := range started {
+		if failures[i] != nil {
+			failed++
+			if firstErr == nil {
+				firstErr = failures[i]
+			}
+			continue
+		}
+		if started[i] != nil {
+			sessions = append(sessions, *started[i])
+			times = append(times, spinUps[i])
+		}
+	}
+	if len(sessions) == 0 {
+		return firstErr
+	}
+	rememberCurrentSession(&sessions[0])
+
+	formatter := GetFormatter()
+	if text, ok := formatter.(*output.TextFormatter); ok {
+		_, _ = fmt.Fprintf(text.Writer, "Started %d sessions in %s\n", len(sessions), formatSpinUp(total))
+		if err := printStartedSessions(text, sessions, times); err != nil {
+			return err
+		}
+	} else if err := render(sessions); err != nil {
+		return err
+	}
+	if failed > 0 {
+		for _, err := range failures {
+			if err != nil {
+				PrintInfo(fmt.Sprintf("Warning: a session failed to start: %v", err))
+			}
+		}
+		var causes []error
+		for _, err := range failures {
+			if err != nil {
+				causes = append(causes, err)
+			}
+		}
+		return &partialError{message: fmt.Sprintf("started %d of %d sessions", len(sessions), count), causes: causes}
+	}
+	return nil
+}
+
+// rememberCurrentSession makes session the one commands use when
+// --session-id is omitted.
+func rememberCurrentSession(session *api.SessionResponse) {
+	if session != nil {
+		if err := setCurrentSession(session.SessionId); err != nil {
 			PrintInfo(fmt.Sprintf("Warning: could not save current session: %v", err))
 		}
+		// The previous session's viewer link and expiry belong to it, not to
+		// this one, whatever the new response leaves out.
+		_ = clearCurrentViewerURL()
+		_ = clearCurrentSessionExpiry()
 		// Store session expiry if max duration is set
-		if resp.JSON200.MaxDurationMinutes != nil && !resp.JSON200.CreatedAt.IsZero() {
-			expiry := resp.JSON200.CreatedAt.Add(time.Duration(*resp.JSON200.MaxDurationMinutes) * time.Minute)
+		if session.MaxDurationMinutes != nil && !session.CreatedAt.IsZero() {
+			expiry := session.CreatedAt.Add(time.Duration(*session.MaxDurationMinutes) * time.Minute)
 			if err := setCurrentSessionExpiry(expiry); err != nil {
 				PrintInfo(fmt.Sprintf("Warning: could not save session expiry: %v", err))
 			}
 		}
 		// Store viewer URL if available
-		if resp.JSON200.ViewerUrl != nil && *resp.JSON200.ViewerUrl != "" {
-			if err := setCurrentViewerURL(*resp.JSON200.ViewerUrl); err != nil {
+		if session.ViewerUrl != nil && *session.ViewerUrl != "" {
+			if err := setCurrentViewerURL(*session.ViewerUrl); err != nil {
 				PrintInfo(fmt.Sprintf("Warning: could not save viewer URL: %v", err))
 			}
 		}
 	}
+}
 
+// printSessionStarted shows what is needed right after a start: the ID, the
+// browser settings, when the session stops, and the live viewer. JSON output
+// keeps the full API response, including the CDP URL.
+func printSessionStarted(session *api.SessionResponse, spinUp time.Duration) error {
 	formatter := GetFormatter()
-	return formatter.Print(resp.JSON200)
+	text, ok := formatter.(*output.TextFormatter)
+	if !ok || session == nil {
+		return render(session)
+	}
+
+	var browser []string
+	first := "chromium"
+	if session.BrowserType != nil && *session.BrowserType != "" {
+		first = string(*session.BrowserType)
+	}
+	if headless, ok := session.AdditionalProperties["headless"].(bool); ok && headless {
+		first += ", headless"
+	}
+	browser = append(browser, first)
+	if session.Proxies != nil && *session.Proxies {
+		browser = append(browser, "proxies")
+	}
+	if session.SolveCaptchas != nil && *session.SolveCaptchas {
+		browser = append(browser, "captcha solving")
+	}
+
+	stops := fmt.Sprintf("after %d min idle", session.IdleTimeoutMinutes)
+	if session.MaxDurationMinutes != nil {
+		stops += fmt.Sprintf(", %d min max", *session.MaxDurationMinutes)
+	}
+
+	lines := [][2]string{
+		{"Browser", strings.Join(browser, " · ")},
+		{"Stops", stops},
+	}
+	if session.ViewerUrl != nil && *session.ViewerUrl != "" {
+		lines = append(lines, [2]string{"Viewer", output.Link(*session.ViewerUrl, "open live viewer ↗")})
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "Started session %s in %s\n", session.SessionId, formatSpinUp(spinUp))
+	for _, line := range lines {
+		fmt.Fprintf(&b, "  %s%s%s\n", text.Label(line[0]), strings.Repeat(" ", 10-len(line[0])), line[1])
+	}
+	_, err := io.WriteString(text.Writer, b.String())
+	return err
 }
 
 func runSessionStatus(cmd *cobra.Command, args []string) error {
@@ -680,7 +942,7 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 		if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
 			return err
 		}
-		return GetFormatter().Print(resp.JSON200)
+		return render(resp.JSON200)
 	}
 
 	params := &api.SessionStatusParams{}
@@ -697,6 +959,12 @@ func runSessionStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionStop(cmd *cobra.Command, args []string) error {
+	if sessionStopAll {
+		if cmd.Flags().Changed("session-id") {
+			return errUsage("use either --all or --session-id, not both")
+		}
+		return stopAllSessions(cmd.Context(), os.Stdin, os.Stderr)
+	}
 	if err := RequireSessionID(); err != nil {
 		return err
 	}
@@ -738,10 +1006,10 @@ func runSessionStop(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return PrintResult(fmt.Sprintf("Session %s stopped.", sessionID), map[string]any{
+	return printDone("Stopped session "+sessionID, map[string]any{
 		"id":     sessionID,
 		"status": "stopped",
-	})
+	}, "notte sessions status --session-id "+sessionID)
 }
 
 func runSessionObserve(cmd *cobra.Command, args []string) error {
@@ -779,7 +1047,7 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 				"description": resp.JSON200.Space.Description,
 			},
 		}
-		return GetFormatter().Print(filtered)
+		return render(filtered)
 	}
 
 	// Text mode: return only the page description
@@ -882,7 +1150,7 @@ func runSessionCookies(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
@@ -920,7 +1188,7 @@ func runSessionCookiesSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return renderDone("Set cookies in session "+sessionID, resp.JSON200)
 }
 
 func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
@@ -928,15 +1196,15 @@ func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if sessionSaveProfileID != "" && sessionSaveProfileName != "" {
-		return errors.New("--profile-id and --name are mutually exclusive")
+		return errUsage("--profile-id and --name are mutually exclusive")
 	}
 	// An explicitly passed but empty target (e.g. an unset shell variable) must
 	// not silently fall back to overwriting the session's start profile.
 	if cmd.Flags().Changed("profile-id") && strings.TrimSpace(sessionSaveProfileID) == "" {
-		return errors.New("--profile-id must not be empty")
+		return errUsage("--profile-id must not be empty")
 	}
 	if cmd.Flags().Changed("name") && strings.TrimSpace(sessionSaveProfileName) == "" {
-		return errors.New("--name must not be empty")
+		return errUsage("--name must not be empty")
 	}
 
 	client, err := GetClient()
@@ -965,7 +1233,10 @@ func runSessionSaveProfile(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	if resp.JSON200 == nil {
+		return render(resp.JSON200)
+	}
+	return renderDone(fmt.Sprintf("Saved session %s to profile %s", sessionID, resp.JSON200.ProfileId), resp.JSON200)
 }
 
 func runSessionDebug(cmd *cobra.Command, args []string) error {
@@ -991,7 +1262,7 @@ func runSessionDebug(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runSessionNetwork(cmd *cobra.Command, args []string) error {
@@ -1025,7 +1296,7 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 	if sessionNetworkURLsOnly {
 		// JSON mode: return full response
 		if IsJSONOutput() {
-			return GetFormatter().Print(resp.JSON200)
+			return render(resp.JSON200)
 		}
 		// Text mode: print nicely formatted list of URLs
 		return printNetworkURLs(resp.JSON200)
@@ -1036,7 +1307,7 @@ func runSessionNetwork(cmd *cobra.Command, args []string) error {
 		return downloadNetworkLogs(resp.JSON200, sessionNetworkPath)
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 // downloadNetworkLogs downloads all network log files in parallel to a folder
@@ -1077,7 +1348,7 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 	}
 
 	if len(tasks) == 0 {
-		return PrintResult(fmt.Sprintf("No network logs to download for session %s", logs.SessionId), map[string]any{
+		return PrintResult(withEmptyFace("No network logs for session "+logs.SessionId), map[string]any{
 			"session_id": logs.SessionId,
 			"path":       outDir,
 			"count":      0,
@@ -1122,12 +1393,12 @@ func downloadNetworkLogs(logs *api.NetworkLogsResponse, outputPath string) error
 		}
 	}
 
-	return PrintResult(fmt.Sprintf("Downloaded %d network logs to %s", successCount, outDir), map[string]any{
+	return printDone(fmt.Sprintf("Downloaded %d network logs of session %s to %s", successCount, logs.SessionId, outDir), map[string]any{
 		"session_id": logs.SessionId,
 		"path":       outDir,
 		"count":      successCount,
 		"batches":    len(logs.Batches),
-	})
+	}, "notte sessions status --session-id "+logs.SessionId)
 }
 
 // httpClient is a shared HTTP client with timeout for downloading files
@@ -1167,18 +1438,26 @@ func printNetworkURLs(logs *api.NetworkLogsResponse) error {
 		return nil
 	}
 
-	fmt.Printf("Session: %s\n", logs.SessionId)
-	fmt.Printf("Total:   %d files\n\n", logs.TotalBatchCount)
-
-	if len(logs.Batches) > 0 {
-		fmt.Printf("Batches (%d):\n", len(logs.Batches))
-		for _, batch := range logs.Batches {
-			if batch.DownloadUrl != nil && *batch.DownloadUrl != "" {
-				fmt.Printf("  %s\n", *batch.DownloadUrl)
-			}
+	text := textFormatter()
+	if text == nil {
+		return nil
+	}
+	var urls []string
+	for _, batch := range logs.Batches {
+		if batch.DownloadUrl != nil && *batch.DownloadUrl != "" {
+			urls = append(urls, *batch.DownloadUrl)
 		}
 	}
-
+	if err := printDetails(text, "Network logs", [][2]string{
+		{"Session", logs.SessionId},
+		{"Files", strconv.Itoa(logs.TotalBatchCount)},
+		{"Format", deref(logs.Format)},
+		{"Links", strings.Join(urls, "\n")},
+		{"Console", consoleLink("sessions", logs.SessionId)},
+	}); err != nil {
+		return err
+	}
+	printHint(text, "notte sessions network --session-id "+logs.SessionId+" --path <folder>")
 	return nil
 }
 
@@ -1213,7 +1492,7 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 
 	// If no mp4_url, return the raw response data
 	if replay.Mp4Url == nil || *replay.Mp4Url == "" {
-		return PrintResult("No replay video available for this session.", map[string]any{
+		return PrintResult(withEmptyFace("No replay video for session "+sessionID), map[string]any{
 			"session_id": sessionID,
 			"success":    false,
 		})
@@ -1264,11 +1543,11 @@ func runSessionReplay(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to write replay video: %w", err)
 	}
 
-	return PrintResult(fmt.Sprintf("Replay video saved: %s", outputPath), map[string]any{
+	return printDone(fmt.Sprintf("Saved the replay of session %s to %s", sessionID, outputPath), map[string]any{
 		"path":       outputPath,
 		"session_id": sessionID,
 		"success":    true,
-	})
+	}, "notte sessions status --session-id "+sessionID)
 }
 
 func runSessionOffset(cmd *cobra.Command, args []string) error {
@@ -1294,7 +1573,7 @@ func runSessionOffset(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return GetFormatter().Print(resp.JSON200)
+	return render(resp.JSON200)
 }
 
 func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
@@ -1325,7 +1604,7 @@ func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
 
 	// JSON mode: return full response
 	if IsJSONOutput() {
-		return GetFormatter().Print(resp.JSON200)
+		return render(resp.JSON200)
 	}
 
 	// Text mode: just print the Python script
@@ -1363,7 +1642,7 @@ func runSessionCode(cmd *cobra.Command, args []string) error {
 
 	// JSON mode: return full response
 	if IsJSONOutput() {
-		return GetFormatter().Print(resp.JSON200)
+		return render(resp.JSON200)
 	}
 
 	// Text mode: just print the Python script
@@ -1410,18 +1689,15 @@ func runSessionViewer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no viewer URL available for this session")
 	}
 
-	if !IsJSONOutput() {
-		PrintInfo(fmt.Sprintf("Opening viewer in browser: %s", viewerURL))
-	}
 	if err := openBrowser(viewerURL); err != nil {
 		return fmt.Errorf("failed to open browser: %w", err)
 	}
 
-	return PrintResult("Opened viewer in browser.", map[string]any{
+	return printDone(fmt.Sprintf("Opened the viewer of session %s: %s", sessionID, viewerURL), map[string]any{
 		"session_id": sessionID,
 		"viewer_url": viewerURL,
 		"success":    true,
-	})
+	}, "notte sessions status --session-id "+sessionID)
 }
 
 // openBrowser opens the specified URL in the default browser

@@ -46,7 +46,7 @@ func TestPrintListOrEmpty_Text(t *testing.T) {
 		}
 	})
 
-	if strings.TrimSpace(stdout) != "No files." {
+	if strings.TrimSpace(stdout) != "No files (◡︵◡)" {
 		t.Fatalf("unexpected stdout: %q", stdout)
 	}
 }

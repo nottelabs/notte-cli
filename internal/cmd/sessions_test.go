@@ -1,18 +1,22 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/nottelabs/notte-cli/internal/api"
 	"github.com/nottelabs/notte-cli/internal/config"
+	"github.com/nottelabs/notte-cli/internal/output"
 	"github.com/nottelabs/notte-cli/internal/testutil"
 )
 
@@ -91,7 +95,7 @@ func TestRunSessionsList_Empty(t *testing.T) {
 		}
 	})
 
-	if stdout == "" || !strings.Contains(stdout, "No active sessions.") {
+	if stdout != "No active sessions (◡︵◡)\nNext: notte sessions list --all\n" {
 		t.Errorf("expected empty message, got %q", stdout)
 	}
 }
@@ -260,7 +264,7 @@ func TestRunSessionStop(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(stdout, "stopped") {
+	if !strings.Contains(stdout, "Stopped session ") {
 		t.Errorf("expected stop message, got %q", stdout)
 	}
 }
@@ -283,6 +287,8 @@ func TestRunSessionStopCancelled(t *testing.T) {
 	_, _ = w.WriteString("n\n")
 	_ = w.Close()
 
+	// The answer comes through a pipe, as a front end relaying typed input does.
+	t.Setenv("NOTTE_FORCE_INTERACTIVE", "1")
 	origStdin := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() {
@@ -1179,6 +1185,50 @@ func TestSessionsStart_SetsCurrentSession(t *testing.T) {
 	}
 }
 
+func TestSessionsStart_TextOutput(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	setupSessionFileTest(t)
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new_123","status":"active","browser_type":"chromium","headless":true,"proxies":true,"solve_captchas":true,"idle_timeout_minutes":3,"max_duration_minutes":15,"created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":3,"user_agent":"Mozilla/5.0","viewer_url":"https://console.example.com/viewer?token=abc","cdp_url":"wss://cdp.example.com/s/token"}`)
+
+	origFormat, origNoColor := outputFormat, noColor
+	outputFormat, noColor = "text", true
+	t.Cleanup(func() { outputFormat, noColor = origFormat, origNoColor })
+
+	cmd := &cobra.Command{}
+	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
+	cmd.SetContext(context.Background())
+
+	for _, tc := range []struct {
+		force  string
+		viewer string
+	}{
+		// A terminal without clickable links gets the whole URL.
+		{"0", "https://console.example.com/viewer?token=abc"},
+		{"1", "\x1b]8;;https://console.example.com/viewer?token=abc\x1b\\open live viewer ↗\x1b]8;;\x1b\\"},
+	} {
+		env.SetEnv("FORCE_HYPERLINK", tc.force)
+		stdout, _ := testutil.CaptureOutput(func() {
+			if err := runSessionsStart(cmd, nil); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+		// The spin-up time varies; only its presence and format are checked.
+		stdout = spinUpPattern.ReplaceAllString(stdout, " in <time>\n")
+		want := "Started session sess_new_123 in <time>\n" +
+			"  Browser   chromium, headless · proxies · captcha solving\n" +
+			"  Stops     after 3 min idle, 15 min max\n" +
+			"  Viewer    " + tc.viewer + "\n"
+		if stdout != want {
+			t.Errorf("FORCE_HYPERLINK=%s:\n got: %q\nwant: %q", tc.force, stdout, want)
+		}
+	}
+}
+
 func TestSessionStop_ClearsCurrentSession(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
@@ -1590,7 +1640,7 @@ func TestRunSessionStatusAuth(t *testing.T) {
 	}
 }
 
-func TestSessionsStart_AnnouncesStoppingPreviousSession(t *testing.T) {
+func TestSessionsStart_KeepsPreviousSessionRunning(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
 
@@ -1609,85 +1659,223 @@ func TestSessionsStart_AnnouncesStoppingPreviousSession(t *testing.T) {
 		t.Fatalf("failed to write session file: %v", err)
 	}
 
-	server.AddResponse("/sessions/sess_old_123/stop", 200, sessionJSON())
 	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new_456","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
 
 	origID := sessionID
 	sessionID = ""
 	t.Cleanup(func() { sessionID = origID })
 
-	// --yes: the replace prompt never appears, so the stop must announce itself.
-	SetSkipConfirmation(true)
-	t.Cleanup(func() { SetSkipConfirmation(false) })
-
-	origFormat := outputFormat
-	outputFormat = "text"
-	t.Cleanup(func() { outputFormat = origFormat })
-
-	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
-	cmd.SetContext(context.Background())
-
-	stdout, _ := testutil.CaptureOutput(func() {
-		if err := runSessionsStart(cmd, nil); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+	// Neither a prompt nor --yes stops the previous session.
+	for _, skip := range []bool{false, true} {
+		SetSkipConfirmation(skip)
+		t.Cleanup(func() { SetSkipConfirmation(false) })
+		if err := os.WriteFile(sessionFile, []byte("sess_old_123"), 0o600); err != nil {
+			t.Fatal(err)
 		}
-	})
 
-	if !strings.Contains(stdout, "Stopped session sess_old_123") {
-		t.Errorf("expected the replaced session to be announced, got: %q", stdout)
+		origFormat := outputFormat
+		outputFormat = "text"
+		t.Cleanup(func() { outputFormat = origFormat })
+
+		cmd := &cobra.Command{}
+		cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
+		cmd.SetContext(context.Background())
+
+		stdout, _ := testutil.CaptureOutput(func() {
+			if err := runSessionsStart(cmd, nil); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		if requests := server.Requests("/sessions/sess_old_123/stop"); len(requests) != 0 {
+			t.Fatalf("--yes=%v: the previous session was stopped", skip)
+		}
+		if strings.Contains(stdout, "[y/N]") {
+			t.Errorf("--yes=%v: unexpected prompt: %q", skip, stdout)
+		}
+		if current := GetCurrentSessionID(); current != "sess_new_456" {
+			t.Errorf("--yes=%v: current session is %q, want the new one", skip, current)
+		}
 	}
 }
 
-func TestSessionsStart_DoesNotClaimSuccessWhenStopRejected(t *testing.T) {
+func TestPrintSessionList(t *testing.T) {
+	t.Setenv("FORCE_HYPERLINK", "0")
+	t.Setenv("NOTTE_CONSOLE_URL", "https://console.example.com")
+	now := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
+	at := func(s string) api.FlexibleTime {
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return api.FlexibleTime{Time: parsed}
+	}
+	viewer := "https://console.example.com/static/viewer?s=1"
+	sessions := []api.SessionResponse{
+		{SessionId: "sess_1", Status: "active", CreatedAt: at("2026-01-15T11:58:00Z"), LastAccessedAt: at("2026-01-15T11:59:40Z"), ViewerUrl: &viewer},
+		{SessionId: "sess_long_id_2", Status: "timed_out", CreatedAt: at("2026-01-12T09:00:00Z"), LastAccessedAt: at("2026-01-12T09:20:00Z")},
+		{SessionId: "sess_3", Status: "closed", CreatedAt: at("2026-01-15T09:00:00Z"), LastAccessedAt: at("2026-01-15T09:30:00Z"), ViewerUrl: &viewer},
+	}
+	var buf bytes.Buffer
+	text := &output.TextFormatter{Writer: &buf, NoColor: true}
+	if err := printSessionList(text, sessions, false, "sess_1", now); err != nil {
+		t.Fatal(err)
+	}
+	// Running sessions link to the live viewer, stopped ones to the console.
+	want := "    BROWSER SESSION (3)   STATUS      LAST ACTIVE    CREATED        VIEWER\n" +
+		"*   sess_1                active      just now       2 min ago      https://console.example.com/static/viewer?s=1\n" +
+		"    sess_long_id_2        timed out   Jan 12 09:20   Jan 12 09:00   https://console.example.com/sessions/sess_long_id_2\n" +
+		"    sess_3                closed      2 h ago        3 h ago        https://console.example.com/sessions/sess_3\n" +
+		"Next: notte sessions status --session-id <id>\n"
+	if buf.String() != want {
+		t.Errorf("got:\n%s\nwant:\n%s", buf.String(), want)
+	}
+}
+
+func TestSessionsAliases(t *testing.T) {
+	for _, alias := range []string{"browser", "browsers"} {
+		found, _, err := rootCmd.Find([]string{alias, "list"})
+		if err != nil || found != sessionsListCmd {
+			t.Errorf("notte %s list resolved to %v (%v), want sessions list", alias, found.CommandPath(), err)
+		}
+	}
+}
+
+func TestRunSessionsList_FetchesViewerLinks(t *testing.T) {
 	env := testutil.SetupTestEnv(t)
 	env.SetEnv("NOTTE_API_KEY", "test-key")
+	env.SetEnv("FORCE_HYPERLINK", "0")
+	setupSessionFileTest(t)
 
 	server := testutil.NewMockServer()
 	defer server.Close()
 	env.SetEnv("NOTTE_API_URL", server.URL())
 
-	tmpDir := setupSessionFileTest(t)
+	// The list has no viewer links; each active session's status has one.
+	server.AddResponse("/sessions", 200, `{"items": [
+		{"session_id": "sess_a", "status": "active", "created_at": "2026-01-15T10:00:00Z", "last_accessed_at": "2026-01-15T10:00:00Z", "idle_timeout_minutes": 3},
+		{"session_id": "sess_b", "status": "active", "created_at": "2026-01-15T10:00:00Z", "last_accessed_at": "2026-01-15T10:00:00Z", "idle_timeout_minutes": 3},
+		{"session_id": "sess_c", "status": "closed", "created_at": "2026-01-15T10:00:00Z", "last_accessed_at": "2026-01-15T10:00:00Z", "idle_timeout_minutes": 3}], "has_next": true}`)
+	server.AddResponse("/sessions/sess_a", 200, `{"session_id": "sess_a", "status": "active", "viewer_url": "https://console.example.com/viewer/a", "created_at": "2026-01-15T10:00:00Z", "last_accessed_at": "2026-01-15T10:00:00Z", "idle_timeout_minutes": 3}`)
+	server.AddResponse("/sessions/sess_b", 200, `{"session_id": "sess_b", "status": "active", "viewer_url": "https://console.example.com/viewer/b", "created_at": "2026-01-15T10:00:00Z", "last_accessed_at": "2026-01-15T10:00:00Z", "idle_timeout_minutes": 3}`)
 
-	configDir := filepath.Join(tmpDir, config.ConfigDirName)
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		t.Fatalf("failed to create config dir: %v", err)
-	}
-	sessionFile := filepath.Join(configDir, config.CurrentSessionFile)
-	if err := os.WriteFile(sessionFile, []byte("sess_old_123"), 0o600); err != nil {
-		t.Fatalf("failed to write session file: %v", err)
-	}
-
-	// The stop is refused. The transport succeeds, so the Go error is nil and
-	// only the status distinguishes this from a real stop.
-	server.AddResponse("/sessions/sess_old_123/stop", 500, `{"detail":"boom"}`)
-	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_new_456","status":"ACTIVE","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":5}`)
-
-	origID := sessionID
-	sessionID = ""
-	t.Cleanup(func() { sessionID = origID })
-
-	SetSkipConfirmation(true)
-	t.Cleanup(func() { SetSkipConfirmation(false) })
-
-	origFormat := outputFormat
-	outputFormat = "text"
-	t.Cleanup(func() { outputFormat = origFormat })
+	origFormat, origNoColor := outputFormat, noColor
+	outputFormat, noColor = "text", true
+	t.Cleanup(func() { outputFormat, noColor = origFormat, origNoColor })
 
 	cmd := &cobra.Command{}
-	cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
 	cmd.SetContext(context.Background())
-
 	stdout, _ := testutil.CaptureOutput(func() {
-		if err := runSessionsStart(cmd, nil); err != nil {
+		if err := runSessionsList(cmd, nil); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
 
-	if strings.Contains(stdout, "Stopped session sess_old_123") {
-		t.Errorf("a refused stop must not be reported as stopped, got: %q", stdout)
+	for _, want := range []string{"BROWSER SESSION (3+)", "https://console.example.com/viewer/a", "https://console.example.com/viewer/b"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("missing viewer link %s in:\n%s", want, stdout)
+		}
 	}
-	if !strings.Contains(stdout, "could not stop session sess_old_123") {
-		t.Errorf("expected a warning about the refused stop, got: %q", stdout)
+	if requests := server.Requests("/sessions/sess_c"); len(requests) != 0 {
+		t.Error("fetched the status of a closed session")
+	}
+}
+
+func TestSessionsStart_Count(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	env.SetEnv("NOTTE_API_KEY", "test-key")
+	env.SetEnv("FORCE_HYPERLINK", "0")
+	setupSessionFileTest(t)
+
+	server := testutil.NewMockServer()
+	defer server.Close()
+	env.SetEnv("NOTTE_API_URL", server.URL())
+	server.AddResponse("/sessions/start", 200, `{"session_id":"sess_many","status":"active","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","idle_timeout_minutes":3}`)
+
+	origFormat, origNoColor := outputFormat, noColor
+	outputFormat, noColor = "text", true
+	t.Cleanup(func() { outputFormat, noColor = origFormat, origNoColor })
+
+	newCmd := func(count string) *cobra.Command {
+		cmd := &cobra.Command{}
+		cmd.Flags().BoolVar(&sessionsStartProxy, "proxy", false, "")
+		cmd.Flags().IntVarP(&sessionsStartCount, "count", "n", 1, "")
+		if err := cmd.Flags().Set("count", count); err != nil {
+			t.Fatal(err)
+		}
+		cmd.SetContext(context.Background())
+		return cmd
+	}
+
+	stdout, _ := testutil.CaptureOutput(func() {
+		if err := runSessionsStart(newCmd("3"), nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+	if got := len(server.Requests("/sessions/start")); got != 3 {
+		t.Errorf("sent %d start requests, want 3", got)
+	}
+	if !spinUpPattern.MatchString(strings.SplitN(stdout, "\n", 2)[0]+"\n") || !strings.HasPrefix(stdout, "Started 3 sessions in ") || strings.Count(stdout, "\n") != 5 || !strings.Contains(stdout, "BROWSER SESSION (3)") || !strings.Contains(stdout, "SPIN-UP") { // title, header, 3 rows
+		t.Errorf("unexpected output:\n%s", stdout)
+	}
+	if current := GetCurrentSessionID(); current != "sess_many" {
+		t.Errorf("current session is %q", current)
+	}
+
+	for _, bad := range []string{"0", "21"} {
+		if err := runSessionsStart(newCmd(bad), nil); err == nil || !strings.Contains(err.Error(), "--count must be between 1 and 20") {
+			t.Errorf("--count %s: got %v", bad, err)
+		}
+	}
+
+	server.AddResponse("/sessions/start", 429, `{"detail":"too many concurrent sessions"}`)
+	testutil.CaptureOutput(func() {
+		if err := runSessionsStart(newCmd("2"), nil); err == nil {
+			t.Error("expected an error when every start fails")
+		}
+	})
+}
+
+var spinUpPattern = regexp.MustCompile(` in (\d+ms|\d+\.\ds)\n`)
+
+func TestFormatSpinUp(t *testing.T) {
+	for d, want := range map[time.Duration]string{
+		850 * time.Millisecond:  "850ms",
+		1840 * time.Millisecond: "1.8s",
+		12 * time.Second:        "12.0s",
+	} {
+		if got := formatSpinUp(d); got != want {
+			t.Errorf("formatSpinUp(%v) = %q, want %q", d, got, want)
+		}
+	}
+}
+
+func TestSessionsList_ShortLimitFlag(t *testing.T) {
+	flag := sessionsListCmd.Flags().ShorthandLookup("n")
+	if flag == nil || flag.Name != "page-size" {
+		t.Fatalf("-n on sessions list is %v, want --page-size", flag)
+	}
+}
+
+// A new session must not keep the previous session's viewer link: the viewer
+// command would open the old browser.
+func TestRememberCurrentSession_DropsPreviousViewer(t *testing.T) {
+	setupSessionFileTest(t)
+	if err := setCurrentSession("old"); err != nil {
+		t.Fatal(err)
+	}
+	if err := setCurrentViewerURL("https://viewer.example/old"); err != nil {
+		t.Fatal(err)
+	}
+
+	rememberCurrentSession(&api.SessionResponse{SessionId: "new"}) // no viewer URL in the response
+
+	if got := getCurrentViewerURL(); got != "" {
+		t.Errorf("viewer URL = %q, want it cleared", got)
+	}
+	viewer := "https://viewer.example/new"
+	rememberCurrentSession(&api.SessionResponse{SessionId: "newer", ViewerUrl: &viewer})
+	if got := getCurrentViewerURL(); got != viewer {
+		t.Errorf("viewer URL = %q, want %q", got, viewer)
 	}
 }

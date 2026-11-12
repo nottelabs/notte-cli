@@ -21,7 +21,7 @@ func readJSONInput(cmd *cobra.Command, value string, flagName string) ([]byte, e
 	if strings.HasPrefix(input, "@") {
 		path := strings.TrimPrefix(input, "@")
 		if path == "" {
-			return nil, fmt.Errorf("invalid %s value: missing file path after @", flagName)
+			return nil, errUsage("invalid %s value: missing file path after @", flagName)
 		}
 		if path == "-" {
 			return readFromStdin(cmd, flagName)
@@ -46,7 +46,7 @@ func readJSONInput(cmd *cobra.Command, value string, flagName string) ([]byte, e
 func readFromStdin(cmd *cobra.Command, flagName string) ([]byte, error) {
 	in := cmd.InOrStdin()
 	if !stdinHasData(in) {
-		return nil, fmt.Errorf("%s is required (use --%s, --%s @file, or pipe JSON via stdin)", flagName, flagName, flagName)
+		return nil, errUsage("%s is required (use --%s, --%s @file, or pipe JSON via stdin)", flagName, flagName, flagName)
 	}
 
 	data, err := io.ReadAll(in)

@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -113,5 +115,30 @@ func TestRunAuthLogout(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "API key removed") {
 		t.Fatalf("expected logout message, got %q", stdout)
+	}
+}
+
+// A keyring whose entry is already gone answers Delete with a missing-key
+// error. Signing out twice must succeed and say so.
+type goneKeyring struct{ stubKeyring }
+
+func (g *goneKeyring) Delete(_ string) error { return fmt.Errorf("delete: %w", os.ErrNotExist) }
+
+func TestRunAuthLogout_AlreadySignedOut(t *testing.T) {
+	auth.SetKeyring(&goneKeyring{})
+	t.Cleanup(func() { auth.ResetKeyring() })
+	origFormat := outputFormat
+	outputFormat = "text"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	var err error
+	stdout, _ := testutil.CaptureOutput(func() { err = runAuthLogout(cmd, nil) })
+	if err != nil {
+		t.Fatalf("logging out twice must not fail: %v", err)
+	}
+	if !strings.Contains(stdout, "Already signed out") {
+		t.Fatalf("expected an already-signed-out message, got %q", stdout)
 	}
 }

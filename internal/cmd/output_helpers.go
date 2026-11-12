@@ -6,8 +6,10 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/nottelabs/notte-cli/internal/api"
+	"github.com/nottelabs/notte-cli/internal/output"
 )
 
 // IsJSONOutput returns true if the global output format is set to JSON.
@@ -49,14 +51,30 @@ func PrintResult(message string, data map[string]any) error {
 // it prints an empty JSON array in JSON mode or the provided message in text mode.
 // Returns (true, nil) if output was handled, (false, nil) if the caller should handle
 // non-empty output, or (false, error) if items is not a slice type.
-func PrintListOrEmpty(items any, emptyMsg string) (bool, error) {
+// withEmptyFace ends an empty-state message with output.FaceEmpty in place of
+// its final period: "No active sessions (◡︵◡)".
+func withEmptyFace(message string) string {
+	return strings.TrimSuffix(message, ".") + " " + output.FaceEmpty
+}
+
+func PrintListOrEmpty(items any, emptyMsg string, next ...string) (bool, error) {
+	// In text mode an empty list is one "No ..." line, then, like every other
+	// view, the command to run from here.
+	printEmpty := func() {
+		if emptyMsg != "" {
+			_, _ = fmt.Fprintln(os.Stdout, withEmptyFace(emptyMsg))
+		}
+		if text := textFormatter(); text != nil {
+			for _, command := range next {
+				printHint(text, command)
+			}
+		}
+	}
 	if items == nil {
 		if IsJSONOutput() {
 			return true, GetFormatter().Print([]any{})
 		}
-		if emptyMsg != "" {
-			_, _ = fmt.Fprintln(os.Stdout, emptyMsg)
-		}
+		printEmpty()
 		return true, nil
 	}
 
@@ -70,9 +88,7 @@ func PrintListOrEmpty(items any, emptyMsg string) (bool, error) {
 			empty := reflect.MakeSlice(v.Type(), 0, 0).Interface()
 			return true, GetFormatter().Print(empty)
 		}
-		if emptyMsg != "" {
-			_, _ = fmt.Fprintln(os.Stdout, emptyMsg)
-		}
+		printEmpty()
 		return true, nil
 	}
 
@@ -155,76 +171,94 @@ func extractScrapeStructuredData(resp *api.DataSpace) (any, error) {
 	return data, nil
 }
 
-// printSessionStatus formats session status output with simplified Steps display.
-// In JSON mode, returns the full response. In text mode, formats Steps as a simple list.
+// printSessionStatus prints one session: its state, how it is set up, what it
+// has done so far and where to watch it. JSON mode prints the full response.
 func printSessionStatus(resp *api.SessionResponse) error {
-	if IsJSONOutput() {
+	text := textFormatter()
+	if text == nil || resp == nil {
 		return GetFormatter().Print(resp)
 	}
+	now := time.Now()
 
-	// Create a copy of the response data without Steps
-	v := reflect.ValueOf(resp).Elem()
-	t := v.Type()
-
-	// Print all fields except Steps using the standard formatter
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		if !field.IsExported() {
-			continue
-		}
-
-		// Skip Steps field - we'll handle it separately
-		if field.Name == "Steps" {
-			continue
-		}
-
-		fieldValue := v.Field(i)
-
-		// Skip nil pointers, nil slices, nil maps, and nil interfaces
-		switch fieldValue.Kind() {
-		case reflect.Pointer, reflect.Slice, reflect.Map, reflect.Interface:
-			if fieldValue.IsNil() {
-				continue
-			}
-		}
-
-		var displayValue any
-		if fieldValue.Kind() == reflect.Pointer {
-			displayValue = fieldValue.Elem().Interface()
-		} else {
-			displayValue = fieldValue.Interface()
-		}
-
-		fmt.Printf("%-23s %v\n", field.Name+":", displayValue)
+	browser := "chromium"
+	if resp.BrowserType != nil && *resp.BrowserType != "" {
+		browser = string(*resp.BrowserType)
+	}
+	if resp.ViewportWidth != nil && resp.ViewportHeight != nil {
+		browser += fmt.Sprintf(" · %d×%d", *resp.ViewportWidth, *resp.ViewportHeight)
+	}
+	if deref(resp.Proxies) {
+		browser += " · proxies"
+	}
+	if deref(resp.SolveCaptchas) {
+		browser += " · captcha solving"
 	}
 
-	// Now handle Steps specially
-	if resp.Steps != nil && len(*resp.Steps) > 0 {
-		fmt.Printf("%-23s ", "Steps:")
-		var stepSummaries []string
-		for _, step := range *resp.Steps {
-			stepType, _ := step["type"].(string)
-			switch stepType {
-			case "execution_result":
-				// For execution results, show only the action type
-				if value, ok := step["value"].(map[string]any); ok {
-					if action, ok := value["action"].(map[string]any); ok {
-						if actionType, ok := action["type"].(string); ok {
-							stepSummaries = append(stepSummaries, actionType)
-						}
+	stops := fmt.Sprintf("after %d min idle", resp.IdleTimeoutMinutes)
+	if resp.MaxDurationMinutes != nil {
+		stops += fmt.Sprintf(", %d min max", *resp.MaxDurationMinutes)
+	}
+	closed := deref(resp.CloseReason)
+	if t, err := time.Parse(time.RFC3339, deref(resp.ClosedAt)); err == nil {
+		closed = strings.TrimSpace(relativeTime(t, now) + "  " + closed)
+	}
+	if resp.Status != api.SessionResponseStatusActive {
+		stops = ""
+	}
+
+	network := ""
+	if resp.NetworkRequestBytes != nil || resp.NetworkResponseBytes != nil {
+		network = fmt.Sprintf("%s sent, %s received", formatBytes(int64(deref(resp.NetworkRequestBytes))), formatBytes(int64(deref(resp.NetworkResponseBytes))))
+	}
+
+	// Steps are summarized by what each one did, in order.
+	var steps []string
+	for _, step := range deref(resp.Steps) {
+		stepType, _ := step["type"].(string)
+		if stepType == "execution_result" {
+			if value, ok := step["value"].(map[string]any); ok {
+				if action, ok := value["action"].(map[string]any); ok {
+					if actionType, ok := action["type"].(string); ok {
+						stepType = actionType
 					}
 				}
-			case "observation":
-				// For observations, just say "observation"
-				stepSummaries = append(stepSummaries, "observation")
-			default:
-				// For other types, show the type
-				stepSummaries = append(stepSummaries, stepType)
 			}
 		}
-		fmt.Printf("[%s]\n", strings.Join(stepSummaries, " "))
+		if stepType != "" {
+			steps = append(steps, stepType)
+		}
+	}
+	stepSummary := ""
+	if len(steps) > 0 {
+		stepSummary = fmt.Sprintf("%d: %s", len(steps), strings.Join(steps, " → "))
 	}
 
+	// The live viewer exists only while the session runs.
+	viewer := ""
+	if resp.Status == api.SessionResponseStatusActive && deref(resp.ViewerUrl) != "" {
+		viewer = output.Link(*resp.ViewerUrl, "open live viewer ↗")
+	}
+	if err := printDetails(text, "Session "+resp.SessionId, [][2]string{
+		{"Status", sessionStatus(text, string(resp.Status))},
+		{"Error", deref(resp.Error)},
+		{"Browser", browser},
+		{"Running for", deref(resp.Duration)},
+		{"Stops", stops},
+		{"Closed", closed},
+		{"Network", network},
+		{"Steps", stepSummary},
+		{"Last active", relativeTime(resp.LastAccessedAt.Time, now)},
+		{"Created", relativeTime(resp.CreatedAt.Time, now)},
+		{"Viewer", viewer},
+		{"Console", consoleLink("sessions", resp.SessionId)},
+	}); err != nil {
+		return err
+	}
+	if resp.Status == api.SessionResponseStatusActive {
+		printHint(text, "notte page observe --session-id "+resp.SessionId)
+	} else {
+		printHint(text, "notte sessions start")
+	}
 	return nil
 }
 

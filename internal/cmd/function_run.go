@@ -26,7 +26,7 @@ func functionWaitContext(cmd *cobra.Command) (context.Context, context.CancelFun
 		timeout, _ = cmd.Flags().GetDuration("wait-timeout")
 	}
 	if timeout < 0 {
-		return nil, nil, errors.New("--wait-timeout must not be negative")
+		return nil, nil, errUsage("--wait-timeout must not be negative")
 	}
 	if timeout > 0 {
 		ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
@@ -60,10 +60,25 @@ func startAndWaitFunction(cmd *cobra.Command, client *api.NotteClient, variables
 	}
 	// Older servers can return a complete JSON response directly.
 	if result != nil {
-		return GetFormatter().Print(result)
+		if err := render(result); err != nil {
+			return err
+		}
+		// A failed run is printed like any other; the exit code says it failed.
+		if failed, ok := result.(map[string]any); ok && failed["status"] == string(api.GetFunctionRunResponseStatusFailed) {
+			if id, _ := failed["function_run_id"].(string); id != "" {
+				runID = id
+			}
+			return &runFailedError{runID: runID}
+		}
+		return nil
 	}
 	if functionRunNoWait {
-		return GetFormatter().Print(map[string]any{
+		if text := textFormatter(); text != nil {
+			_, _ = fmt.Fprintf(text.Writer, "Started run %s of function %s\n", runID, functionID)
+			printHint(text, functionRunHint(functionID, runID))
+			return nil
+		}
+		return render(map[string]any{
 			"function_id":     functionID,
 			"function_run_id": runID,
 			"status":          "active",
@@ -146,7 +161,7 @@ func runFunctionRunWait(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if functionRunID == "" {
-		return errors.New("--run-id is required")
+		return errUsage("--run-id is required")
 	}
 	ctx, cancel, err := functionWaitContext(cmd)
 	if err != nil {
@@ -183,8 +198,14 @@ func waitFunction(ctx context.Context, client *api.NotteClient, id, runID string
 			}
 		}
 		switch run.Status {
-		case api.GetFunctionRunResponseStatusClosed, api.GetFunctionRunResponseStatusFailed:
-			return GetFormatter().Print(run)
+		case api.GetFunctionRunResponseStatusClosed:
+			return render(run)
+		case api.GetFunctionRunResponseStatusFailed:
+			// The run is printed like any other; the exit code says it failed.
+			if err := render(run); err != nil {
+				return err
+			}
+			return &runFailedError{runID: runID}
 		case api.GetFunctionRunResponseStatusActive:
 		default:
 			return functionWaitError(id, runID, fmt.Errorf("unrecognized run status %q", run.Status))
