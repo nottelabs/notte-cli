@@ -191,6 +191,11 @@ func sessionIDFromArgs(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("session-id") && sessionID != args[0] {
 		return errUsage("pass the session ID once, either as an argument or with --session-id")
 	}
+	// An empty argument is an unset variable in a script, not a request for
+	// the current session: falling back would stop a session nobody named.
+	if args[0] == "" {
+		return errUsage("session ID must not be empty")
+	}
 	sessionID = args[0]
 	return nil
 }

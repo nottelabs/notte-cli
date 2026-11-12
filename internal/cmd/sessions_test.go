@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1891,9 +1892,9 @@ func TestSessionStopAndStatus_PositionalSessionID(t *testing.T) {
 	server.AddResponse("/sessions/"+positional, 200,
 		`{"session_id":"`+positional+`","status":"active","created_at":"2020-01-01T00:00:00Z","last_accessed_at":"2020-01-01T00:00:00Z","timeout_minutes":0}`)
 
-	origFormat := outputFormat
+	origFormat, origYes := outputFormat, yesFlag
 	t.Cleanup(func() {
-		outputFormat = origFormat
+		outputFormat, yesFlag = origFormat, origYes
 		SetSkipConfirmation(false)
 		rootCmd.SetArgs(nil)
 	})
@@ -1916,5 +1917,33 @@ func TestSessionStopAndStatus_PositionalSessionID(t *testing.T) {
 	}
 	if n := len(server.Requests("/sessions/" + positional)); n != 1 {
 		t.Errorf("status requests for the positional session: got %d, want 1", n)
+	}
+}
+
+// An empty argument is what `notte sessions stop "$ID"` passes when ID is
+// unset. It must not fall back to the current session and stop that one.
+func TestSessionStop_EmptyArgumentStopsNothing(t *testing.T) {
+	server := setupSessionTest(t)
+	sessionID = ""
+	t.Setenv("NOTTE_SESSION_ID", sessionIDTest)
+	server.AddResponse("/sessions/"+sessionIDTest+"/stop", 200, sessionJSON())
+
+	origFormat, origYes := outputFormat, yesFlag
+	t.Cleanup(func() {
+		outputFormat, yesFlag = origFormat, origYes
+		SetSkipConfirmation(false)
+		rootCmd.SetArgs(nil)
+	})
+
+	rootCmd.SetArgs([]string{"sessions", "stop", "", "--yes", "-o", "json"})
+	var err error
+	_, _ = testutil.CaptureOutput(func() { err = rootCmd.ExecuteContext(context.Background()) })
+
+	var usage *usageError
+	if !errors.As(err, &usage) {
+		t.Fatalf("got %v, want a usage error", err)
+	}
+	if n := len(server.Requests("/sessions/" + sessionIDTest + "/stop")); n != 0 {
+		t.Errorf("stop requests for the current session: got %d, want 0", n)
 	}
 }
