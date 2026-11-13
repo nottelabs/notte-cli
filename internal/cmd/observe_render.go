@@ -47,13 +47,13 @@ func renderObservation(obs *api.Observation) string {
 		b.WriteString(header + "\n")
 	}
 	if len(meta.Tabs) > 1 {
-		b.WriteString(fmt.Sprintf("Tabs (%d):\n", len(meta.Tabs)))
+		fmt.Fprintf(&b, "Tabs (%d):\n", len(meta.Tabs))
 		for _, tab := range meta.Tabs {
 			marker := " "
 			if tab.Url == meta.Url {
 				marker = "*"
 			}
-			b.WriteString(fmt.Sprintf("  %s %d %s - %s\n", marker, tab.TabId, strings.TrimSpace(tab.Title), tab.Url))
+			fmt.Fprintf(&b, "  %s %d %s - %s\n", marker, tab.TabId, strings.TrimSpace(tab.Title), tab.Url)
 		}
 	}
 	if line := viewportLine(meta.Viewport); line != "" {
