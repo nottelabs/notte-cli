@@ -189,6 +189,9 @@ def compare(page: dict[str, Any], sdk: ObserveResponse, text: str, as_json: dict
             continue
         if s.without_state() != c.without_state():
             problems.append(f"{where}: CLI changed more than state: SDK {s.raw!r} / CLI {c.raw!r}")
+        repeated = sorted({name for name in c.names() if name in FLAGS + STATE_ATTRS and c.names().count(name) > 1})
+        if repeated:
+            problems.append(f"{where}: repeats {', '.join(f'`{name}`' for name in repeated)}: {c.raw!r}")
         state = sdk_states.get(s.id)
         if state is None:
             if s.raw != c.raw:

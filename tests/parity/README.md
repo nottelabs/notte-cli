@@ -17,4 +17,4 @@ NOTTE_API_KEY=... NOTTE_API_URL=https://us-staging.notte.cc make test-parity
 python -I tests/parity/observe_parity.py --cli ./notte --only webform
 ```
 
-CI runs it in the `observe-parity` job of the Integration Tests workflow.
+`test_observe_parity.py` checks the checker offline: it must fail on missing, repeated or rewritten state, on other changes and on a leaked secret. CI runs both in the `observe-parity` job of the Integration Tests workflow.

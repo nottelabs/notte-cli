@@ -64,6 +64,7 @@ test-parity: build ## Compare page observe with the Python SDK on a few live pag
 		exit 1; \
 	fi
 	python3 -m venv .parity-venv && .parity-venv/bin/pip install -q -r tests/parity/requirements.txt
+	.parity-venv/bin/python -I -m unittest discover -s tests/parity
 	.parity-venv/bin/python -I tests/parity/observe_parity.py --cli ./notte
 
 test-all: test test-integration ## Run all tests (unit + integration)
