@@ -1283,95 +1283,6 @@ const (
 	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
 )
 
-// Defines values for GetUsageLogsParamsEndpoint.
-const (
-	AgentsDebugRecording      GetUsageLogsParamsEndpoint = "agents.debug.recording"
-	AgentsList                GetUsageLogsParamsEndpoint = "agents.list"
-	AgentsRepeat              GetUsageLogsParamsEndpoint = "agents.repeat"
-	AgentsReplay              GetUsageLogsParamsEndpoint = "agents.replay"
-	AgentsSave                GetUsageLogsParamsEndpoint = "agents.save"
-	AgentsScript              GetUsageLogsParamsEndpoint = "agents.script"
-	AgentsStart               GetUsageLogsParamsEndpoint = "agents.start"
-	AgentsStatus              GetUsageLogsParamsEndpoint = "agents.status"
-	AgentsStop                GetUsageLogsParamsEndpoint = "agents.stop"
-	MailboxesConnect          GetUsageLogsParamsEndpoint = "mailboxes.connect"
-	MailboxesDelete           GetUsageLogsParamsEndpoint = "mailboxes.delete"
-	MailboxesGet              GetUsageLogsParamsEndpoint = "mailboxes.get"
-	MailboxesList             GetUsageLogsParamsEndpoint = "mailboxes.list"
-	MailboxesSync             GetUsageLogsParamsEndpoint = "mailboxes.sync"
-	MailboxesUpdate           GetUsageLogsParamsEndpoint = "mailboxes.update"
-	PageExecute               GetUsageLogsParamsEndpoint = "page.execute"
-	PageObserve               GetUsageLogsParamsEndpoint = "page.observe"
-	PageScrape                GetUsageLogsParamsEndpoint = "page.scrape"
-	PersonasCreate            GetUsageLogsParamsEndpoint = "personas.create"
-	PersonasDelete            GetUsageLogsParamsEndpoint = "personas.delete"
-	PersonasEmails            GetUsageLogsParamsEndpoint = "personas.emails"
-	PersonasGet               GetUsageLogsParamsEndpoint = "personas.get"
-	PersonasList              GetUsageLogsParamsEndpoint = "personas.list"
-	PersonasNumberCreate      GetUsageLogsParamsEndpoint = "personas.number.create"
-	PersonasSms               GetUsageLogsParamsEndpoint = "personas.sms"
-	PersonasUpdate            GetUsageLogsParamsEndpoint = "personas.update"
-	ProfilesCookiesGet        GetUsageLogsParamsEndpoint = "profiles.cookies.get"
-	ProfilesCookiesSet        GetUsageLogsParamsEndpoint = "profiles.cookies.set"
-	ProfilesCreate            GetUsageLogsParamsEndpoint = "profiles.create"
-	ProfilesDelete            GetUsageLogsParamsEndpoint = "profiles.delete"
-	ProfilesDuplicate         GetUsageLogsParamsEndpoint = "profiles.duplicate"
-	ProfilesGet               GetUsageLogsParamsEndpoint = "profiles.get"
-	ProfilesList              GetUsageLogsParamsEndpoint = "profiles.list"
-	Scrape                    GetUsageLogsParamsEndpoint = "scrape"
-	ScrapeFromHtml            GetUsageLogsParamsEndpoint = "scrape_from_html"
-	Search                    GetUsageLogsParamsEndpoint = "search"
-	SessionsCookiesGet        GetUsageLogsParamsEndpoint = "sessions.cookies.get"
-	SessionsCookiesSet        GetUsageLogsParamsEndpoint = "sessions.cookies.set"
-	SessionsDebugBrowserWss   GetUsageLogsParamsEndpoint = "sessions.debug.browser.wss"
-	SessionsDebugInfo         GetUsageLogsParamsEndpoint = "sessions.debug.info"
-	SessionsDebugInfoTab      GetUsageLogsParamsEndpoint = "sessions.debug.info.tab"
-	SessionsDebugLogWss       GetUsageLogsParamsEndpoint = "sessions.debug.log.wss"
-	SessionsDebugRecordingWss GetUsageLogsParamsEndpoint = "sessions.debug.recording.wss"
-	SessionsDebugTabWss       GetUsageLogsParamsEndpoint = "sessions.debug.tab.wss"
-	SessionsFilesDelete       GetUsageLogsParamsEndpoint = "sessions.files.delete"
-	SessionsFilesDownload     GetUsageLogsParamsEndpoint = "sessions.files.download"
-	SessionsFilesList         GetUsageLogsParamsEndpoint = "sessions.files.list"
-	SessionsFilesUpload       GetUsageLogsParamsEndpoint = "sessions.files.upload"
-	SessionsList              GetUsageLogsParamsEndpoint = "sessions.list"
-	SessionsNetworkLogs       GetUsageLogsParamsEndpoint = "sessions.network.logs"
-	SessionsOffset            GetUsageLogsParamsEndpoint = "sessions.offset"
-	SessionsPause             GetUsageLogsParamsEndpoint = "sessions.pause"
-	SessionsReplay            GetUsageLogsParamsEndpoint = "sessions.replay"
-	SessionsResume            GetUsageLogsParamsEndpoint = "sessions.resume"
-	SessionsScript            GetUsageLogsParamsEndpoint = "sessions.script"
-	SessionsStart             GetUsageLogsParamsEndpoint = "sessions.start"
-	SessionsStatus            GetUsageLogsParamsEndpoint = "sessions.status"
-	SessionsStop              GetUsageLogsParamsEndpoint = "sessions.stop"
-	Usage                     GetUsageLogsParamsEndpoint = "usage"
-	VaultsCreate              GetUsageLogsParamsEndpoint = "vaults.create"
-	VaultsCredentialsAdd      GetUsageLogsParamsEndpoint = "vaults.credentials.add"
-	VaultsCredentialsDelete   GetUsageLogsParamsEndpoint = "vaults.credentials.delete"
-	VaultsCredentialsGet      GetUsageLogsParamsEndpoint = "vaults.credentials.get"
-	VaultsCredentialsList     GetUsageLogsParamsEndpoint = "vaults.credentials.list"
-	VaultsCreditCardDelete    GetUsageLogsParamsEndpoint = "vaults.credit_card.delete"
-	VaultsCreditCardGet       GetUsageLogsParamsEndpoint = "vaults.credit_card.get"
-	VaultsCreditCardSet       GetUsageLogsParamsEndpoint = "vaults.credit_card.set"
-	VaultsDelete              GetUsageLogsParamsEndpoint = "vaults.delete"
-	VaultsList                GetUsageLogsParamsEndpoint = "vaults.list"
-	VaultsUpdate              GetUsageLogsParamsEndpoint = "vaults.update"
-	WorkflowsDelete           GetUsageLogsParamsEndpoint = "workflows.delete"
-	WorkflowsDownload         GetUsageLogsParamsEndpoint = "workflows.download"
-	WorkflowsFork             GetUsageLogsParamsEndpoint = "workflows.fork"
-	WorkflowsList             GetUsageLogsParamsEndpoint = "workflows.list"
-	WorkflowsRollback         GetUsageLogsParamsEndpoint = "workflows.rollback"
-	WorkflowsRunsCreate       GetUsageLogsParamsEndpoint = "workflows.runs.create"
-	WorkflowsRunsGet          GetUsageLogsParamsEndpoint = "workflows.runs.get"
-	WorkflowsRunsList         GetUsageLogsParamsEndpoint = "workflows.runs.list"
-	WorkflowsRunsStart        GetUsageLogsParamsEndpoint = "workflows.runs.start"
-	WorkflowsRunsStop         GetUsageLogsParamsEndpoint = "workflows.runs.stop"
-	WorkflowsRunsUpdate       GetUsageLogsParamsEndpoint = "workflows.runs.update"
-	WorkflowsScheduleCreate   GetUsageLogsParamsEndpoint = "workflows.schedule.create"
-	WorkflowsScheduleDelete   GetUsageLogsParamsEndpoint = "workflows.schedule.delete"
-	WorkflowsUpdate           GetUsageLogsParamsEndpoint = "workflows.update"
-	WorkflowsUpload           GetUsageLogsParamsEndpoint = "workflows.upload"
-)
-
 // ActRequest defines model for ActRequest.
 type ActRequest struct {
 	// DryRun Choose the action without running it (`status="proposed"`).
@@ -7212,7 +7123,7 @@ type GetUsageParams struct {
 // GetUsageLogsParams defines parameters for GetUsageLogs.
 type GetUsageLogsParams struct {
 	// Endpoint The endpoint to filter logs by
-	Endpoint *GetUsageLogsParamsEndpoint `form:"endpoint,omitempty" json:"endpoint,omitempty"`
+	Endpoint *string `form:"endpoint,omitempty" json:"endpoint,omitempty"`
 
 	// Page Page number
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
@@ -7231,9 +7142,6 @@ type GetUsageLogsParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
-
-// GetUsageLogsParamsEndpoint defines parameters for GetUsageLogs.
-type GetUsageLogsParamsEndpoint string
 
 // ListVaultsParams defines parameters for ListVaults.
 type ListVaultsParams struct {
