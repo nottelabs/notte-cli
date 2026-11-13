@@ -48,9 +48,16 @@ func renderObservation(obs *api.Observation) string {
 	}
 	if len(meta.Tabs) > 1 {
 		fmt.Fprintf(&b, "Tabs (%d):\n", len(meta.Tabs))
+		// the metadata does not name the current tab: mark it only when one tab has the page's URL
+		matching := 0
+		for _, tab := range meta.Tabs {
+			if tab.Url == meta.Url {
+				matching++
+			}
+		}
 		for _, tab := range meta.Tabs {
 			marker := " "
-			if tab.Url == meta.Url {
+			if matching == 1 && tab.Url == meta.Url {
 				marker = "*"
 			}
 			fmt.Fprintf(&b, "  %s %d %s - %s\n", marker, tab.TabId, strings.TrimSpace(tab.Title), tab.Url)
@@ -136,50 +143,57 @@ func withState(line string, tagStart int, tag string, state api.ElementState) st
 
 	var add []string
 	for _, flag := range stateFlags {
-		on := false
+		// on: the element is in this state now; known: the state says so either way
+		on, known := false, false
 		switch flag {
 		case "checked":
-			on = isTrue(state.Checked) && !isTrue(state.Mixed)
+			on, known = isTrue(state.Checked) && !isTrue(state.Mixed), state.Checked != nil
 		case "mixed":
-			on = isTrue(state.Mixed)
+			on, known = isTrue(state.Mixed), state.Mixed != nil
 		case "pressed":
-			if pressed := pressedState(state.Pressed); pressed == "mixed" {
-				if !present("pressed") {
+			pressed := pressedState(state.Pressed)
+			if pressed == "mixed" {
+				if attributeValue(attrs, "pressed") != "mixed" {
+					attrs = removeAttribute(attrs, "pressed")
 					add = append(add, `pressed="mixed"`)
 				}
 				continue
-			} else {
-				on = pressed == "true"
 			}
+			on, known = pressed == "true", pressed != ""
 		case "selected":
-			on = isTrue(state.Selected)
+			on, known = isTrue(state.Selected), state.Selected != nil
 		case "expanded":
 			// aria_expanded is shown as an attribute already when the page sets it
-			on = isTrue(state.Expanded) && !present("aria_expanded")
+			on, known = isTrue(state.Expanded) && !present("aria_expanded"), state.Expanded != nil
 		case "filled":
 			// a password's value is never sent: say that it holds one
-			on = isTrue(state.Filled) && state.Value == nil
+			on, known = isTrue(state.Filled) && state.Value == nil, state.Filled != nil
 		case "invalid":
-			on = isTrue(state.Invalid)
+			on, known = isTrue(state.Invalid), state.Invalid != nil
 		}
-		if on && !present(flag) {
+		switch {
+		case on && !present(flag):
 			add = append(add, flag)
+		case !on && known && present(flag):
+			// unchecked, released or cleared since
+			attrs = removeAttribute(attrs, flag)
 		}
 	}
 	if s := deref(state.Sort); s != "" && !present("sort") && !present("aria_sort") {
 		add = append(add, fmt.Sprintf("sort=%q", s))
 	}
 
-	value, hasValue := liveValue(tag, inputType, state)
-	if hasValue {
-		current := attributeValue(attrs, "value")
-		switch {
-		case !present("value"):
-			add = append(add, "value="+quote(value))
-		case !sameValue(current, value):
-			// the served value, not what the field holds now
-			attrs = replaceAttribute(attrs, "value", quote(value))
-		}
+	value, known := liveValue(tag, inputType, state)
+	switch {
+	case !known:
+	case value == "":
+		// emptied since it was served
+		attrs = removeAttribute(attrs, "value")
+	case !present("value"):
+		add = append(add, "value="+quote(value))
+	case !sameValue(attributeValue(attrs, "value"), value):
+		// the served value, not what the field holds now
+		attrs = replaceAttribute(attrs, "value", quote(value))
 	}
 	if msg := deref(state.Error); msg != "" && !present("error") {
 		if isTrue(state.ErrorTruncated) {
@@ -195,8 +209,9 @@ func withState(line string, tagStart int, tag string, state api.ElementState) st
 }
 
 // liveValue is what a field holds now: the text of a text field, or the
-// labels of a select's chosen options. Checkboxes, radios and buttons have no
-// value worth showing (their `value` is what the form submits).
+// labels of a select's chosen options. known is false when the state does not
+// say: checkboxes, radios and buttons have no value worth showing (their
+// `value` is what the form submits). An empty value is a known, empty field.
 func liveValue(tag, inputType string, state api.ElementState) (string, bool) {
 	if tag == "select" || state.Options != nil {
 		var labels []string
@@ -222,11 +237,11 @@ func liveValue(tag, inputType string, state api.ElementState) (string, bool) {
 	if tag == "button" || tag == "a" {
 		return "", false
 	}
-	v := deref(state.Value)
-	if v == "" {
+	if state.Value == nil {
 		return "", false
 	}
-	if isTrue(state.ValueTruncated) {
+	v := *state.Value
+	if v != "" && isTrue(state.ValueTruncated) {
 		v += "..."
 	}
 	return v, true
@@ -255,6 +270,8 @@ func pressedState(p *api.ElementState_Pressed) string {
 	switch strings.TrimSpace(string(data)) {
 	case "true":
 		return "true"
+	case "false":
+		return "false"
 	case `"mixed"`:
 		return "mixed"
 	}
@@ -337,6 +354,19 @@ func attributeValue(attrs, name string) string {
 		}
 	}
 	return ""
+}
+
+func removeAttribute(attrs, name string) string {
+	var kept []string
+	for _, token := range attributeTokens(attrs) {
+		if attributeName(token) != name {
+			kept = append(kept, token)
+		}
+	}
+	if len(kept) == 0 {
+		return ""
+	}
+	return " " + strings.Join(kept, " ")
 }
 
 func replaceAttribute(attrs, name, quoted string) string {

@@ -143,3 +143,47 @@ func TestRenderObservationWithoutStatesOrScroll(t *testing.T) {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}
 }
+
+func TestMergeElementStatesClearsStateUndoneSince(t *testing.T) {
+	description := strings.Join([]string{
+		`B1[:]<input type="checkbox" checked></input>`,
+		`I1[:]<input type="text" name="q" value="served"></input>`,
+		`B2[:]<button pressed>Bold</button>`,
+		`I2[:]<input type="email" invalid></input>`,
+		`B3[:]<input type="checkbox" value="on" checked></input>`,
+		`I3[:]<input type="text" name="untouched" value="served"></input>`,
+	}, "\n")
+	states := `{
+		"B1": {"checked": false},
+		"I1": {"value": ""},
+		"B2": {"pressed": false},
+		"I2": {"invalid": false},
+		"B3": {"checked": false, "value": "on"},
+		"I3": {"checked": null}
+	}`
+	want := strings.Join([]string{
+		`B1[:]<input type="checkbox"></input>`,
+		`I1[:]<input type="text" name="q"></input>`,
+		`B2[:]<button>Bold</button>`,
+		`I2[:]<input type="email"></input>`,
+		`B3[:]<input type="checkbox" value="on"></input>`,
+		`I3[:]<input type="text" name="untouched" value="served"></input>`,
+	}, "\n")
+	if got := merged(t, description, states); got != want {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestRenderObservationMarksNoTabWhenTheURLIsAmbiguous(t *testing.T) {
+	obs := observation(t, `{
+		"metadata": {"title": "Home", "url": "https://example.com",
+			"tabs": [{"tab_id": 0, "title": "Home", "url": "https://example.com"}, {"tab_id": 1, "title": "Home", "url": "https://example.com"}],
+			"viewport": {"scroll_x": 0, "scroll_y": 0, "viewport_width": 1280, "viewport_height": 900, "total_width": 1280, "total_height": 900}},
+		"screenshot": {}, "started_at": "2026-11-13T10:00:00Z", "ended_at": "2026-11-13T10:00:01Z",
+		"space": {"description": "", "interaction_actions": []}
+	}`)
+	want := "Home - https://example.com\nTabs (2):\n    0 Home - https://example.com\n    1 Home - https://example.com"
+	if got := renderObservation(obs); got != want {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
