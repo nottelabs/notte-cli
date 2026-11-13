@@ -9,3 +9,5 @@ coverage.out
 coverage.html
 .env
 cli-reference/
+.parity-venv/
+__pycache__/

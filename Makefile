@@ -58,6 +58,15 @@ test-integration: ## Run integration tests (requires NOTTE_API_KEY)
 	fi
 	go test -v -tags=integration -timeout=20m ./tests/integration/...
 
+test-parity: build ## Compare page observe with the Python SDK on a few live pages (requires NOTTE_API_KEY, Python 3.11+)
+	@if [ -z "$(NOTTE_API_KEY)" ]; then \
+		echo "Error: NOTTE_API_KEY is required for the parity check"; \
+		exit 1; \
+	fi
+	python3 -m venv .parity-venv && .parity-venv/bin/pip install -q -r tests/parity/requirements.txt
+	.parity-venv/bin/python -I -m unittest discover -s tests/parity
+	.parity-venv/bin/python -I tests/parity/observe_parity.py --cli ./notte
+
 test-all: test test-integration ## Run all tests (unit + integration)
 
 lint: ## Run linters
