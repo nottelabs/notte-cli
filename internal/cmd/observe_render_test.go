@@ -61,7 +61,7 @@ func TestMergeElementStatesWritesLiveStateIntoTags(t *testing.T) {
 		`B3[:]<button aria_expanded="false">Menu</button>`,
 		`B4[:]<button pressed="mixed">Bold</button>`,
 		`B5[:]<input type="checkbox" mixed></input>`,
-		`I4[:]<textarea name="note" value="line one\nline two..."></textarea>`,
+		`I4[:]<textarea name="note" value="line one&#10;line two..."></textarea>`,
 	}, "\n")
 	if got := merged(t, description, states); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
@@ -185,5 +185,35 @@ func TestRenderObservationMarksNoTabWhenTheURLIsAmbiguous(t *testing.T) {
 	want := "Home - https://example.com\nTabs (2):\n    0 Home - https://example.com\n    1 Home - https://example.com"
 	if got := renderObservation(obs); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestMergeElementStatesMatchesTheAPIsOwnRendering(t *testing.T) {
+	// what the API writes itself for a control with an id: escaped, and cut at 60 characters
+	long := strings.Repeat("x", 70)
+	description := strings.Join([]string{
+		`I1[:]<textarea name="note" value="say &quot;hi&quot; &lt;b&gt; &amp;&#10;bye"></textarea>`,
+		`I2[:]<input type="text" name="long" value="` + strings.Repeat("x", 60) + `..."></input>`,
+	}, "\n")
+	states := `{"I1": {"value": "say \"hi\" <b> &\nbye"}, "I2": {"value": "` + long + `"}}`
+	if got := merged(t, description, states); got != description {
+		t.Errorf("got:\n%s\nwant it unchanged:\n%s", got, description)
+	}
+}
+
+func TestMergeElementStatesCutsALongValueLikeTheAPI(t *testing.T) {
+	got := merged(t, `I1[:]<input type="text" name="q"></input>`, `{"I1": {"value": "`+strings.Repeat("y", 61)+`"}}`)
+	want := `I1[:]<input type="text" name="q" value="` + strings.Repeat("y", 60) + `..."></input>`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}
+
+func TestMergeElementStatesCutsAValueEndingInLiteralDots(t *testing.T) {
+	value := strings.Repeat("x", 58) + "..."
+	got := merged(t, `I1[:]<input type="text" name="q"></input>`, `{"I1": {"value": "`+value+`"}}`)
+	want := `I1[:]<input type="text" name="q" value="` + strings.Repeat("x", 58) + `.....">` + `</input>`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
 	}
 }
