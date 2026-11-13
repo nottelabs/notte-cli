@@ -27,3 +27,34 @@ func TestVaultPasswordNoteIsAccurate(t *testing.T) {
 		t.Errorf("vault credentials add help overstates what an environment variable protects: %q", note)
 	}
 }
+
+// Every command shown under "Get started" in root help must exist: agents copy
+// these lines verbatim, and a stale one costs them an "unknown command" error.
+func TestRootHelpGetStartedCommandsExist(t *testing.T) {
+	inSection := false
+	for _, line := range strings.Split(rootCmd.Long, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "Get started:" {
+			inSection = true
+			continue
+		}
+		if !inSection {
+			continue
+		}
+		if trimmed == "" {
+			break
+		}
+		cmdPart := strings.TrimSpace(strings.SplitN(trimmed, "#", 2)[0])
+		var words []string
+		for _, w := range strings.Fields(cmdPart)[1:] {
+			if strings.HasPrefix(w, "<") || strings.HasPrefix(w, "-") {
+				break
+			}
+			words = append(words, w)
+		}
+		found, _, err := rootCmd.Find(words)
+		if err != nil || found == rootCmd || found.Name() != words[len(words)-1] {
+			t.Errorf("root help lists %q, which is not a command", cmdPart)
+		}
+	}
+}
