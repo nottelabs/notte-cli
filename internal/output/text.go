@@ -80,6 +80,9 @@ func (f *TextFormatter) PrintErrorWithFace(err error, face string) {
 		} else {
 			fmt.Fprintf(os.Stderr, "%s %s%s\n", errText, authErr.Reason, suffix)
 		}
+		if authErr.Hint != "" {
+			fmt.Fprintf(os.Stderr, "Hint: %s\n", authErr.Hint)
+		}
 		return
 	}
 

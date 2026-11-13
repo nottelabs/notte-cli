@@ -27,7 +27,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	}
 
 	// Clear auth-related env vars
-	for _, key := range []string{"NOTTE_API_KEY", "NOTTE_API_URL"} {
+	for _, key := range []string{"NOTTE_API_KEY", "NOTTE_API_KEY_FILE", "NOTTE_API_URL"} {
 		env.origEnv[key] = os.Getenv(key)
 		_ = os.Unsetenv(key)
 	}

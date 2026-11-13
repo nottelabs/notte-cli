@@ -48,6 +48,9 @@ func (f *JSONFormatter) PrintError(err error) {
 		if authErr.Message != "" {
 			errObj["message"] = authErr.Message
 		}
+		if authErr.Hint != "" {
+			errObj["hint"] = authErr.Hint
+		}
 		if f.ErrorCode != "" {
 			errObj["code"] = f.ErrorCode
 		}

@@ -103,6 +103,10 @@ func init() {
 }
 
 func runAuthLogin(cmd *cobra.Command, args []string) error {
+	if path := auth.APIKeyFile(); path != "" {
+		return keyFileInUse("login", path)
+	}
+
 	// The key is checked against this API and then saved for it, so it would
 	// be sent in clear now and on every later command.
 	apiURL := auth.GetCurrentAPIURL()
@@ -231,7 +235,20 @@ func revokeQuietly(ctx context.Context, flow *auth.DeviceFlow, key string) bool 
 	return revoked
 }
 
+// keyFileInUse refuses login and logout while NOTTE_API_KEY_FILE is set:
+// every command reads the credential from that file, so storing or removing
+// a key would change nothing. Failing, rather than reporting success, keeps a
+// script from assuming a key was stored or removed.
+func keyFileInUse(command, path string) error {
+	return fmt.Errorf("the credential comes from %s (%s); notte %s does not store or remove keys while it is set",
+		auth.EnvAPIKeyFile, path, command)
+}
+
 func runAuthLogout(cmd *cobra.Command, args []string) error {
+	if path := auth.APIKeyFile(); path != "" {
+		return keyFileInUse("logout", path)
+	}
+
 	key, _ := auth.GetKeyringAPIKey()
 	revoked := false
 	if key != "" {
@@ -277,16 +294,21 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 
 	envLabel := auth.ResolveEnvLabel(auth.GetCurrentAPIURL())
 
+	storedIn := string(source)
+	if source == auth.SourceFile {
+		storedIn = fmt.Sprintf("%s (%s)", auth.EnvAPIKeyFile, auth.APIKeyFile())
+	}
+
 	if text := textFormatter(); text != nil {
 		return printDetails(text, "Signed in", [][2]string{
 			{"API key", masked},
-			{"Stored in", string(source)},
+			{"Stored in", storedIn},
 			{"Environment", envLabel},
 		})
 	}
 	// The capitalized keys are the original ones and stay for scripts that
 	// read them; the snake_case ones match every other command.
-	return GetFormatter().Print(map[string]any{
+	result := map[string]any{
 		"Authenticated": "yes",
 		"Source":        string(source),
 		"API Key":       masked,
@@ -295,5 +317,9 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 		"source":        string(source),
 		"api_key":       masked,
 		"environment":   envLabel,
-	})
+	}
+	if source == auth.SourceFile {
+		result["key_file"] = auth.APIKeyFile()
+	}
+	return GetFormatter().Print(result)
 }
