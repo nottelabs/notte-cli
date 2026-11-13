@@ -1072,11 +1072,14 @@ func runSessionObserve(cmd *cobra.Command, args []string) error {
 				"description": resp.JSON200.Space.Description,
 			},
 		}
+		if resp.JSON200.ElementStates != nil {
+			filtered["element_states"] = resp.JSON200.ElementStates
+		}
 		return render(filtered)
 	}
 
-	// Text mode: return only the page description
-	fmt.Println(resp.JSON200.Space.Description)
+	// Text mode: the page, and its elements with their live state
+	fmt.Println(renderObservation(resp.JSON200))
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -314,7 +315,7 @@ func TestRunSessionStopCancelled(t *testing.T) {
 
 func TestRunSessionObserve(t *testing.T) {
 	server := setupSessionTest(t)
-	observeResp := fmt.Sprintf(`{"metadata":{"tabs":[{"tab_id":1,"title":"Tab","url":"https://example.com"}],"title":"Tab","url":"https://example.com"},"screenshot":{"raw":"aGVsbG8="},"session":%s,"space":{"category":"page","description":"desc","interaction_actions":[]}}`, sessionJSON())
+	observeResp := fmt.Sprintf(`{"metadata":{"tabs":[{"tab_id":1,"title":"Tab","url":"https://example.com"}],"title":"Tab","url":"https://example.com"},"screenshot":{"raw":"aGVsbG8="},"session":%s,"space":{"category":"page","description":"desc","interaction_actions":[]},"element_states":{"B1":{"checked":false},"I1":{"value":""},"I2":{"value":"typed","invalid":true}}}`, sessionJSON())
 	server.AddResponse("/sessions/"+sessionIDTest+"/page/observe", 200, observeResp)
 
 	origFormat := outputFormat
@@ -331,8 +332,19 @@ func TestRunSessionObserve(t *testing.T) {
 		}
 	})
 
-	if stdout == "" {
-		t.Error("expected output, got empty string")
+	var out struct {
+		ElementStates map[string]map[string]any `json:"element_states"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &out); err != nil {
+		t.Fatalf("observe JSON does not parse: %v\n%s", err, stdout)
+	}
+	want := map[string]map[string]any{
+		"B1": {"checked": false},
+		"I1": {"value": ""},
+		"I2": {"value": "typed", "invalid": true},
+	}
+	if !reflect.DeepEqual(out.ElementStates, want) {
+		t.Errorf("element_states = %v, want %v", out.ElementStates, want)
 	}
 }
 
