@@ -90,7 +90,7 @@ func runUsageLogs(cmd *cobra.Command, args []string) error {
 		PageSize: pageSize,
 	}
 	if usageLogsEndpoint != "" {
-		endpoint := api.GetUsageLogsParamsEndpoint(usageLogsEndpoint)
+		endpoint := usageLogsEndpoint
 		params.Endpoint = &endpoint
 	}
 	// Sent only when asked, like every other optional filter: the API owns the
