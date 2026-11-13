@@ -653,6 +653,12 @@ const (
 	GlobalScrapeRequestBrowserTypeChromium      GlobalScrapeRequestBrowserType = "chromium"
 )
 
+// Defines values for GlobalScrapeRequestDialogPolicy.
+const (
+	GlobalScrapeRequestDialogPolicyAuto   GlobalScrapeRequestDialogPolicy = "auto"
+	GlobalScrapeRequestDialogPolicyClient GlobalScrapeRequestDialogPolicy = "client"
+)
+
 // Defines values for GlobalScrapeRequestScreenshotType.
 const (
 	GlobalScrapeRequestScreenshotTypeFull       GlobalScrapeRequestScreenshotType = "full"
@@ -3465,6 +3471,9 @@ type GlobalScrapeRequest struct {
 	// ChromeArgs Overwrite the chrome instance arguments
 	ChromeArgs *[]string `json:"chrome_args,omitempty"`
 
+	// DialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+	DialogPolicy *GlobalScrapeRequestDialogPolicy `json:"dialog_policy,omitempty"`
+
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
 
@@ -3545,6 +3554,9 @@ type GlobalScrapeRequest struct {
 
 // GlobalScrapeRequestBrowserType The browser type to use. Supported values are chromium and chrome. chrome-nightly and chrome-turbo are legacy aliases for chrome.
 type GlobalScrapeRequestBrowserType string
+
+// GlobalScrapeRequestDialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+type GlobalScrapeRequestDialogPolicy string
 
 // GlobalScrapeRequestProxies0 defines model for .
 type GlobalScrapeRequestProxies0 = []GlobalScrapeRequest_Proxies_0_Item
