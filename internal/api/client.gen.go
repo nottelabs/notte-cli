@@ -46,11 +46,38 @@ const (
 	ApiSessionStartRequestBrowserType0Firefox       ApiSessionStartRequestBrowserType0 = "firefox"
 )
 
+// Defines values for ApiSessionStartRequestDialogPolicy.
+const (
+	ApiSessionStartRequestDialogPolicyAuto   ApiSessionStartRequestDialogPolicy = "auto"
+	ApiSessionStartRequestDialogPolicyClient ApiSessionStartRequestDialogPolicy = "client"
+)
+
 // Defines values for ApiSessionStartRequestScreenshotType.
 const (
 	ApiSessionStartRequestScreenshotTypeFull       ApiSessionStartRequestScreenshotType = "full"
 	ApiSessionStartRequestScreenshotTypeLastAction ApiSessionStartRequestScreenshotType = "last_action"
 	ApiSessionStartRequestScreenshotTypeRaw        ApiSessionStartRequestScreenshotType = "raw"
+)
+
+// Defines values for AuditEventMetadataChangesRoleNew.
+const (
+	AuditEventMetadataChangesRoleNewAdmin  AuditEventMetadataChangesRoleNew = "admin"
+	AuditEventMetadataChangesRoleNewMember AuditEventMetadataChangesRoleNew = "member"
+	AuditEventMetadataChangesRoleNewOwner  AuditEventMetadataChangesRoleNew = "owner"
+)
+
+// Defines values for AuditEventMetadataChangesRoleOld.
+const (
+	AuditEventMetadataChangesRoleOldAdmin  AuditEventMetadataChangesRoleOld = "admin"
+	AuditEventMetadataChangesRoleOldMember AuditEventMetadataChangesRoleOld = "member"
+	AuditEventMetadataChangesRoleOldOwner  AuditEventMetadataChangesRoleOld = "owner"
+)
+
+// Defines values for AuditEventMetadataRole.
+const (
+	AuditEventMetadataRoleAdmin  AuditEventMetadataRole = "admin"
+	AuditEventMetadataRoleMember AuditEventMetadataRole = "member"
+	AuditEventMetadataRoleOwner  AuditEventMetadataRole = "owner"
 )
 
 // Defines values for BrandByTickerTickerExchange.
@@ -1175,14 +1202,14 @@ const (
 
 // Defines values for SubscriptionType.
 const (
-	Admin      SubscriptionType = "admin"
-	Free       SubscriptionType = "free"
-	Growth     SubscriptionType = "growth"
-	Interview  SubscriptionType = "interview"
-	Minoan     SubscriptionType = "minoan"
-	Playground SubscriptionType = "playground"
-	Pro        SubscriptionType = "pro"
-	Proofs     SubscriptionType = "proofs"
+	SubscriptionTypeAdmin      SubscriptionType = "admin"
+	SubscriptionTypeFree       SubscriptionType = "free"
+	SubscriptionTypeGrowth     SubscriptionType = "growth"
+	SubscriptionTypeInterview  SubscriptionType = "interview"
+	SubscriptionTypeMinoan     SubscriptionType = "minoan"
+	SubscriptionTypePlayground SubscriptionType = "playground"
+	SubscriptionTypePro        SubscriptionType = "pro"
+	SubscriptionTypeProofs     SubscriptionType = "proofs"
 )
 
 // Defines values for UpdateFunctionRunResponseStatus.
@@ -1248,6 +1275,95 @@ const (
 const (
 	SessionStopParamsCloseReasonError  SessionStopParamsCloseReason = "error"
 	SessionStopParamsCloseReasonManual SessionStopParamsCloseReason = "manual"
+)
+
+// Defines values for GetUsageLogsParamsEndpoint.
+const (
+	AgentsDebugRecording      GetUsageLogsParamsEndpoint = "agents.debug.recording"
+	AgentsList                GetUsageLogsParamsEndpoint = "agents.list"
+	AgentsRepeat              GetUsageLogsParamsEndpoint = "agents.repeat"
+	AgentsReplay              GetUsageLogsParamsEndpoint = "agents.replay"
+	AgentsSave                GetUsageLogsParamsEndpoint = "agents.save"
+	AgentsScript              GetUsageLogsParamsEndpoint = "agents.script"
+	AgentsStart               GetUsageLogsParamsEndpoint = "agents.start"
+	AgentsStatus              GetUsageLogsParamsEndpoint = "agents.status"
+	AgentsStop                GetUsageLogsParamsEndpoint = "agents.stop"
+	MailboxesConnect          GetUsageLogsParamsEndpoint = "mailboxes.connect"
+	MailboxesDelete           GetUsageLogsParamsEndpoint = "mailboxes.delete"
+	MailboxesGet              GetUsageLogsParamsEndpoint = "mailboxes.get"
+	MailboxesList             GetUsageLogsParamsEndpoint = "mailboxes.list"
+	MailboxesSync             GetUsageLogsParamsEndpoint = "mailboxes.sync"
+	MailboxesUpdate           GetUsageLogsParamsEndpoint = "mailboxes.update"
+	PageExecute               GetUsageLogsParamsEndpoint = "page.execute"
+	PageObserve               GetUsageLogsParamsEndpoint = "page.observe"
+	PageScrape                GetUsageLogsParamsEndpoint = "page.scrape"
+	PersonasCreate            GetUsageLogsParamsEndpoint = "personas.create"
+	PersonasDelete            GetUsageLogsParamsEndpoint = "personas.delete"
+	PersonasEmails            GetUsageLogsParamsEndpoint = "personas.emails"
+	PersonasGet               GetUsageLogsParamsEndpoint = "personas.get"
+	PersonasList              GetUsageLogsParamsEndpoint = "personas.list"
+	PersonasNumberCreate      GetUsageLogsParamsEndpoint = "personas.number.create"
+	PersonasSms               GetUsageLogsParamsEndpoint = "personas.sms"
+	PersonasUpdate            GetUsageLogsParamsEndpoint = "personas.update"
+	ProfilesCookiesGet        GetUsageLogsParamsEndpoint = "profiles.cookies.get"
+	ProfilesCookiesSet        GetUsageLogsParamsEndpoint = "profiles.cookies.set"
+	ProfilesCreate            GetUsageLogsParamsEndpoint = "profiles.create"
+	ProfilesDelete            GetUsageLogsParamsEndpoint = "profiles.delete"
+	ProfilesDuplicate         GetUsageLogsParamsEndpoint = "profiles.duplicate"
+	ProfilesGet               GetUsageLogsParamsEndpoint = "profiles.get"
+	ProfilesList              GetUsageLogsParamsEndpoint = "profiles.list"
+	Scrape                    GetUsageLogsParamsEndpoint = "scrape"
+	ScrapeFromHtml            GetUsageLogsParamsEndpoint = "scrape_from_html"
+	Search                    GetUsageLogsParamsEndpoint = "search"
+	SessionsCookiesGet        GetUsageLogsParamsEndpoint = "sessions.cookies.get"
+	SessionsCookiesSet        GetUsageLogsParamsEndpoint = "sessions.cookies.set"
+	SessionsDebugBrowserWss   GetUsageLogsParamsEndpoint = "sessions.debug.browser.wss"
+	SessionsDebugInfo         GetUsageLogsParamsEndpoint = "sessions.debug.info"
+	SessionsDebugInfoTab      GetUsageLogsParamsEndpoint = "sessions.debug.info.tab"
+	SessionsDebugLogWss       GetUsageLogsParamsEndpoint = "sessions.debug.log.wss"
+	SessionsDebugRecordingWss GetUsageLogsParamsEndpoint = "sessions.debug.recording.wss"
+	SessionsDebugTabWss       GetUsageLogsParamsEndpoint = "sessions.debug.tab.wss"
+	SessionsFilesDelete       GetUsageLogsParamsEndpoint = "sessions.files.delete"
+	SessionsFilesDownload     GetUsageLogsParamsEndpoint = "sessions.files.download"
+	SessionsFilesList         GetUsageLogsParamsEndpoint = "sessions.files.list"
+	SessionsFilesUpload       GetUsageLogsParamsEndpoint = "sessions.files.upload"
+	SessionsList              GetUsageLogsParamsEndpoint = "sessions.list"
+	SessionsNetworkLogs       GetUsageLogsParamsEndpoint = "sessions.network.logs"
+	SessionsOffset            GetUsageLogsParamsEndpoint = "sessions.offset"
+	SessionsPause             GetUsageLogsParamsEndpoint = "sessions.pause"
+	SessionsReplay            GetUsageLogsParamsEndpoint = "sessions.replay"
+	SessionsResume            GetUsageLogsParamsEndpoint = "sessions.resume"
+	SessionsScript            GetUsageLogsParamsEndpoint = "sessions.script"
+	SessionsStart             GetUsageLogsParamsEndpoint = "sessions.start"
+	SessionsStatus            GetUsageLogsParamsEndpoint = "sessions.status"
+	SessionsStop              GetUsageLogsParamsEndpoint = "sessions.stop"
+	Usage                     GetUsageLogsParamsEndpoint = "usage"
+	VaultsCreate              GetUsageLogsParamsEndpoint = "vaults.create"
+	VaultsCredentialsAdd      GetUsageLogsParamsEndpoint = "vaults.credentials.add"
+	VaultsCredentialsDelete   GetUsageLogsParamsEndpoint = "vaults.credentials.delete"
+	VaultsCredentialsGet      GetUsageLogsParamsEndpoint = "vaults.credentials.get"
+	VaultsCredentialsList     GetUsageLogsParamsEndpoint = "vaults.credentials.list"
+	VaultsCreditCardDelete    GetUsageLogsParamsEndpoint = "vaults.credit_card.delete"
+	VaultsCreditCardGet       GetUsageLogsParamsEndpoint = "vaults.credit_card.get"
+	VaultsCreditCardSet       GetUsageLogsParamsEndpoint = "vaults.credit_card.set"
+	VaultsDelete              GetUsageLogsParamsEndpoint = "vaults.delete"
+	VaultsList                GetUsageLogsParamsEndpoint = "vaults.list"
+	VaultsUpdate              GetUsageLogsParamsEndpoint = "vaults.update"
+	WorkflowsDelete           GetUsageLogsParamsEndpoint = "workflows.delete"
+	WorkflowsDownload         GetUsageLogsParamsEndpoint = "workflows.download"
+	WorkflowsFork             GetUsageLogsParamsEndpoint = "workflows.fork"
+	WorkflowsList             GetUsageLogsParamsEndpoint = "workflows.list"
+	WorkflowsRollback         GetUsageLogsParamsEndpoint = "workflows.rollback"
+	WorkflowsRunsCreate       GetUsageLogsParamsEndpoint = "workflows.runs.create"
+	WorkflowsRunsGet          GetUsageLogsParamsEndpoint = "workflows.runs.get"
+	WorkflowsRunsList         GetUsageLogsParamsEndpoint = "workflows.runs.list"
+	WorkflowsRunsStart        GetUsageLogsParamsEndpoint = "workflows.runs.start"
+	WorkflowsRunsStop         GetUsageLogsParamsEndpoint = "workflows.runs.stop"
+	WorkflowsRunsUpdate       GetUsageLogsParamsEndpoint = "workflows.runs.update"
+	WorkflowsScheduleCreate   GetUsageLogsParamsEndpoint = "workflows.schedule.create"
+	WorkflowsScheduleDelete   GetUsageLogsParamsEndpoint = "workflows.schedule.delete"
+	WorkflowsUpdate           GetUsageLogsParamsEndpoint = "workflows.update"
+	WorkflowsUpload           GetUsageLogsParamsEndpoint = "workflows.upload"
 )
 
 // ActRequest defines model for ActRequest.
@@ -1518,6 +1634,9 @@ type ApiSessionStartRequest struct {
 	// Demonstrate Whether to enable the Notte recorder extension for this session. The extension is installed but remains inactive when this is false.
 	Demonstrate *bool `json:"demonstrate,omitempty"`
 
+	// DialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+	DialogPolicy *ApiSessionStartRequestDialogPolicy `json:"dialog_policy,omitempty"`
+
 	// ExtraHttpHeaders Extra HTTP headers to be sent with every request.
 	ExtraHttpHeaders *map[string]interface{} `json:"extra_http_headers,omitempty"`
 
@@ -1574,6 +1693,9 @@ type ApiSessionStartRequest_BrowserType struct {
 	union json.RawMessage
 }
 
+// ApiSessionStartRequestDialogPolicy Who answers JavaScript dialogs (alert, confirm, prompt, beforeunload). `auto` (default): Notte answers them, dismissing alert, confirm and prompt and accepting beforeunload. `client`: Notte leaves them for your CDP client to accept or dismiss, and dismisses one nobody answers within 10 seconds.
+type ApiSessionStartRequestDialogPolicy string
+
 // ApiSessionStartRequestProxies0 defines model for .
 type ApiSessionStartRequestProxies0 = []ApiSessionStartRequest_Proxies_0_Item
 
@@ -1598,22 +1720,43 @@ type AuditEvent struct {
 	Action string `json:"action"`
 
 	// ActorEmail Email of the actor when it is a workspace member the caller may see. Null for system actors.
-	ActorEmail *string                 `json:"actor_email,omitempty"`
-	ActorId    *string                 `json:"actor_id,omitempty"`
-	ActorName  *string                 `json:"actor_name,omitempty"`
-	ActorType  string                  `json:"actor_type"`
-	CreatedAt  FlexibleTime            `json:"created_at"`
-	EntityId   string                  `json:"entity_id"`
-	EntityType string                  `json:"entity_type"`
-	Id         int                     `json:"id"`
-	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
-	OrgId      *string                 `json:"org_id,omitempty"`
+	ActorEmail *string      `json:"actor_email,omitempty"`
+	ActorId    *string      `json:"actor_id,omitempty"`
+	ActorName  *string      `json:"actor_name,omitempty"`
+	ActorType  string       `json:"actor_type"`
+	CreatedAt  FlexibleTime `json:"created_at"`
+	EntityId   string       `json:"entity_id"`
+	EntityType string       `json:"entity_type"`
+	Id         int          `json:"id"`
+	Metadata   struct {
+		Changes *struct {
+			Role struct {
+				New AuditEventMetadataChangesRoleNew `json:"new"`
+				Old AuditEventMetadataChangesRoleOld `json:"old"`
+			} `json:"role"`
+		} `json:"changes,omitempty"`
+		DisplayName *string                 `json:"display_name,omitempty"`
+		Email       *string                 `json:"email,omitempty"`
+		Name        *string                 `json:"name,omitempty"`
+		Role        *AuditEventMetadataRole `json:"role,omitempty"`
+		TargetEmail *string                 `json:"target_email,omitempty"`
+	} `json:"metadata"`
+	OrgId *string `json:"org_id,omitempty"`
 
 	// ResourceName Human-readable name of the resource (an API key's label, a secret's name, a member's email) when one is known. Never a secret value.
 	ResourceName *string `json:"resource_name,omitempty"`
 	Source       string  `json:"source"`
 	UserId       *string `json:"user_id,omitempty"`
 }
+
+// AuditEventMetadataChangesRoleNew defines model for AuditEvent.Metadata.Changes.Role.New.
+type AuditEventMetadataChangesRoleNew string
+
+// AuditEventMetadataChangesRoleOld defines model for AuditEvent.Metadata.Changes.Role.Old.
+type AuditEventMetadataChangesRoleOld string
+
+// AuditEventMetadataRole defines model for AuditEvent.Metadata.Role.
+type AuditEventMetadataRole string
 
 // AuditEventListResponse defines model for AuditEventListResponse.
 type AuditEventListResponse struct {
@@ -5769,10 +5912,10 @@ type ListAuditEventsParams struct {
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Since Only events at or after this time (ISO-8601)
-	Since *string `form:"since,omitempty" json:"since,omitempty"`
+	Since *FlexibleTime `form:"since,omitempty" json:"since,omitempty"`
 
 	// Until Only events before this time (ISO-8601)
-	Until *string `form:"until,omitempty" json:"until,omitempty"`
+	Until *FlexibleTime `form:"until,omitempty" json:"until,omitempty"`
 
 	// Action Only events with this action, e.g. `created`
 	Action *string `form:"action,omitempty" json:"action,omitempty"`
@@ -7057,7 +7200,7 @@ type GetUsageParams struct {
 // GetUsageLogsParams defines parameters for GetUsageLogs.
 type GetUsageLogsParams struct {
 	// Endpoint The endpoint to filter logs by
-	Endpoint *string `form:"endpoint,omitempty" json:"endpoint,omitempty"`
+	Endpoint *GetUsageLogsParamsEndpoint `form:"endpoint,omitempty" json:"endpoint,omitempty"`
 
 	// Page Page number
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
@@ -7076,6 +7219,9 @@ type GetUsageLogsParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
+
+// GetUsageLogsParamsEndpoint defines parameters for GetUsageLogs.
+type GetUsageLogsParamsEndpoint string
 
 // ListVaultsParams defines parameters for ListVaults.
 type ListVaultsParams struct {

@@ -43,6 +43,42 @@ func TestBlockAdsMapping(t *testing.T) {
 	}
 }
 
+func TestDialogPolicyMapping(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want any
+	}{
+		{name: "omitted preserves server default"},
+		{name: "client", args: []string{"--dialog-policy", "client"}, want: "client"},
+		{name: "explicit auto", args: []string{"--dialog-policy=auto"}, want: "auto"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newSessionStartFlagsCmd()
+			cmd.SetArgs(tc.args)
+			if err := cmd.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			body, err := BuildSessionStartRequest(cmd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := json.Marshal(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]any
+			if err := json.Unmarshal(data, &payload); err != nil {
+				t.Fatal(err)
+			}
+			got, present := payload["dialog_policy"]
+			if got != tc.want || present != (tc.want != nil) {
+				t.Fatalf("dialog_policy = %v (present=%v), want %v", got, present, tc.want)
+			}
+		})
+	}
+}
+
 // newSessionStartFlagsCmd registers the real generated flag set, so these tests
 // exercise RegisterSessionStartFlags/BuildSessionStartRequest as a pair rather
 // than a hand-rolled duplicate that could drift from the generator.

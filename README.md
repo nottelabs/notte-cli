@@ -157,6 +157,9 @@ notte sessions start \
   --advanced-stealth                      # Highest-fidelity browser for sites with
                                           # sophisticated bot detection (approved workspaces)
   --cdp-url <url>                         # CDP URL of remote session provider
+  --dialog-policy auto|client             # Who answers JavaScript dialogs: Notte (auto,
+                                          # default) or your CDP client (client); one left
+                                          # unanswered for 10 seconds is dismissed
   --profile-id <id>                       # Profile ID to use for session
   --profile-persist                       # Save browser state to profile on close
   --vault-id <id>                         # Vault used to resolve credential fields
