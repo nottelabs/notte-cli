@@ -208,3 +208,12 @@ func TestMergeElementStatesCutsALongValueLikeTheAPI(t *testing.T) {
 		t.Errorf("got %s, want %s", got, want)
 	}
 }
+
+func TestMergeElementStatesCutsAValueEndingInLiteralDots(t *testing.T) {
+	value := strings.Repeat("x", 58) + "..."
+	got := merged(t, `I1[:]<input type="text" name="q"></input>`, `{"I1": {"value": "`+value+`"}}`)
+	want := `I1[:]<input type="text" name="q" value="` + strings.Repeat("x", 58) + `.....">` + `</input>`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}

@@ -6,7 +6,6 @@ import (
 	"html"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/nottelabs/notte-cli/internal/api"
 )
@@ -192,10 +191,10 @@ func withState(line string, tagStart int, tag string, state api.ElementState) st
 		// emptied since it was served
 		attrs = removeAttribute(attrs, "value")
 	case !present("value"):
-		add = append(add, "value="+quote(cutValue(value)))
+		add = append(add, "value="+quote(cutValue(value, isTrue(state.ValueTruncated))))
 	case !sameValue(attributeValue(attrs, "value"), value):
 		// the served value, not what the field holds now
-		attrs = replaceAttribute(attrs, "value", quote(cutValue(value)))
+		attrs = replaceAttribute(attrs, "value", quote(cutValue(value, isTrue(state.ValueTruncated))))
 	}
 	if msg := deref(state.Error); msg != "" && !present("error") {
 		if isTrue(state.ErrorTruncated) {
@@ -242,11 +241,7 @@ func liveValue(tag, inputType string, state api.ElementState) (string, bool) {
 	if state.Value == nil {
 		return "", false
 	}
-	v := *state.Value
-	if v != "" && isTrue(state.ValueTruncated) {
-		v += "..."
-	}
-	return v, true
+	return *state.Value, true
 }
 
 // sameValue says whether a value attribute already shows the live value. The
@@ -286,16 +281,15 @@ func isTrue(b *bool) bool { return b != nil && *b }
 const maxValueLen = 60
 
 // cutValue cuts a long value the way the API cuts attributes, ending it with
-// "...".
-func cutValue(v string) string {
-	if strings.HasSuffix(v, "...") && utf8.RuneCountInString(v) <= maxValueLen+3 {
-		return v
+// "...". browserCut says the browser already cut it (ElementState.valueTruncated).
+func cutValue(v string, browserCut bool) string {
+	if runes := []rune(v); len(runes) > maxValueLen {
+		return string(runes[:maxValueLen]) + "..."
 	}
-	runes := []rune(v)
-	if len(runes) <= maxValueLen {
-		return v
+	if browserCut {
+		return v + "..."
 	}
-	return string(runes[:maxValueLen]) + "..."
+	return v
 }
 
 // attributeEscaper escapes a value the way the API does, so that it stays one
