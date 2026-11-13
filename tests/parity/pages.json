@@ -1,0 +1,64 @@
+[
+  {
+    "name": "already-done",
+    "url": "https://the-internet.herokuapp.com/checkboxes",
+    "note": "box 2 is checked when served; box 1 is checked here, so the live state differs from the served HTML",
+    "setup_js": "document.querySelectorAll('input[type=checkbox]')[0].click()"
+  },
+  {
+    "name": "login",
+    "url": "https://the-internet.herokuapp.com/login",
+    "note": "a typed username with a quote, and a typed password that must never show",
+    "setup_js": "(() => { const set = (s, v) => { const e = document.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); }; set('#username', 'tom\"smith'); set('#password', 'ParityPassword-7f3c'); })()",
+    "secrets": [
+      "ParityPassword-7f3c"
+    ]
+  },
+  {
+    "name": "webform",
+    "url": "https://www.selenium.dev/selenium/web/web-form.html",
+    "note": "text, password, textarea with a line break, select, a served-checked box unchecked, a radio, a range",
+    "setup_js": "(() => { const set = (s, v) => { const e = document.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); e.dispatchEvent(new Event('change', {bubbles: true})); }; set('#my-text-id', 'notte bench'); set('input[name=my-password]', 'ParityPassword-7f3c'); set('textarea[name=my-textarea]', 'line one\\nsaid \"hi\" <b>'); set('select[name=my-select]', '2'); document.querySelector('#my-check-1').click(); document.querySelector('#my-check-2').click(); document.querySelector('#my-radio-2').click(); set('input[name=my-range]', '7'); })()",
+    "secrets": [
+      "ParityPassword-7f3c"
+    ]
+  },
+  {
+    "name": "dynamic",
+    "url": "https://the-internet.herokuapp.com/dynamic_controls",
+    "note": "a checkbox and a disabled field, untouched"
+  },
+  {
+    "name": "uitap-textinput",
+    "url": "http://uitestingplayground.com/textinput",
+    "setup_js": "(() => { const e = document.querySelector('#newButtonName'); e.value = 'Notte Button'; e.dispatchEvent(new Event('input', {bubbles: true})); })()"
+  },
+  {
+    "name": "apg-radio",
+    "url": "https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio-activedescendant/",
+    "note": "ARIA radios (aria-checked), scrolled into view and changed",
+    "setup_js": "(() => { const g = document.querySelector('[role=radiogroup]'); g.scrollIntoView({block: 'start'}); g.querySelectorAll('[role=radio]')[2].click(); })()"
+  },
+  {
+    "name": "apg-toolbar-bold",
+    "url": "https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/examples/toolbar/",
+    "note": "toggle buttons (aria-pressed) and a select, scrolled into view and changed",
+    "setup_js": "(() => { const t = document.querySelector('[role=toolbar]'); t.scrollIntoView({block: 'start'}); t.querySelector('.bold, [value=bold], button[aria-pressed]').click(); })()"
+  },
+  {
+    "name": "apg-combobox",
+    "url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/",
+    "note": "a combobox (aria-expanded), scrolled into view and changed",
+    "setup_js": "(() => { const c = document.querySelector('#cb1-input'); c.scrollIntoView({block: 'start'}); c.value = 'Or'; c.dispatchEvent(new Event('input', {bubbles: true})); c.dispatchEvent(new KeyboardEvent('keyup', {key: 'r', bubbles: true})); })()"
+  },
+  {
+    "name": "todomvc",
+    "url": "https://todomvc.com/examples/react/dist/",
+    "setup_js": "(() => { const e = document.querySelector('.new-todo'); e.value = 'buy milk'; e.dispatchEvent(new Event('input', {bubbles: true})); })()"
+  },
+  {
+    "name": "books",
+    "url": "https://books.toscrape.com/",
+    "note": "links only: the CLI must leave every line as the API wrote it"
+  }
+]
