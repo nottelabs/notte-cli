@@ -21,6 +21,7 @@ import (
 //	I1[:]<input type="email" name="email" value="a@b.co"></input>
 //	I2[:]<select name="country" value="France"></select>
 //	I3[:]<input type="password" filled></input>
+//	B4[:]<button mixed>Bold</button>
 //
 // State that the description already shows is not written twice.
 
@@ -150,16 +151,11 @@ func withState(line string, tagStart int, tag string, state api.ElementState) st
 		case "checked":
 			on, known = isTrue(state.Checked) && !isTrue(state.Mixed), state.Checked != nil
 		case "mixed":
-			on, known = isTrue(state.Mixed), state.Mixed != nil
+			// a partly checked box (aria-checked="mixed") or a partly pressed toggle (aria-pressed="mixed"), as the API writes both
+			pressedMixed := pressedState(state.Pressed) == "mixed"
+			on, known = isTrue(state.Mixed) || pressedMixed, state.Mixed != nil || pressedMixed
 		case "pressed":
 			pressed := pressedState(state.Pressed)
-			if pressed == "mixed" {
-				if attributeValue(attrs, "pressed") != "mixed" {
-					attrs = removeAttribute(attrs, "pressed")
-					add = append(add, `pressed="mixed"`)
-				}
-				continue
-			}
 			on, known = pressed == "true", pressed != ""
 		case "selected":
 			on, known = isTrue(state.Selected), state.Selected != nil

@@ -59,7 +59,7 @@ func TestMergeElementStatesWritesLiveStateIntoTags(t *testing.T) {
 		`I2[:]<select name="country" value="France"></select>`,
 		`I3[:]<input type="password" name="pw" filled></input>`,
 		`B3[:]<button aria_expanded="false">Menu</button>`,
-		`B4[:]<button pressed="mixed">Bold</button>`,
+		`B4[:]<button mixed>Bold</button>`,
 		`B5[:]<input type="checkbox" mixed></input>`,
 		`I4[:]<textarea name="note" value="line one&#10;line two..."></textarea>`,
 	}, "\n")
@@ -215,5 +215,13 @@ func TestMergeElementStatesCutsAValueEndingInLiteralDots(t *testing.T) {
 	want := `I1[:]<input type="text" name="q" value="` + strings.Repeat("x", 58) + `.....">` + `</input>`
 	if got != want {
 		t.Errorf("got %s, want %s", got, want)
+	}
+}
+
+func TestMergeElementStatesKeepsTheAPIsMixedToggle(t *testing.T) {
+	// the API writes aria-pressed="mixed" as a bare mixed
+	description := `B4[:]<button mixed>Bold</button>`
+	if got := merged(t, description, `{"B4": {"pressed": "mixed"}}`); got != description {
+		t.Errorf("got %s, want it unchanged", got)
 	}
 }
