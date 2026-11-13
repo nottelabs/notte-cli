@@ -3,8 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/nottelabs/notte-cli/internal/api"
 )
@@ -190,10 +192,10 @@ func withState(line string, tagStart int, tag string, state api.ElementState) st
 		// emptied since it was served
 		attrs = removeAttribute(attrs, "value")
 	case !present("value"):
-		add = append(add, "value="+quote(value))
+		add = append(add, "value="+quote(cutValue(value)))
 	case !sameValue(attributeValue(attrs, "value"), value):
 		// the served value, not what the field holds now
-		attrs = replaceAttribute(attrs, "value", quote(value))
+		attrs = replaceAttribute(attrs, "value", quote(cutValue(value)))
 	}
 	if msg := deref(state.Error); msg != "" && !present("error") {
 		if isTrue(state.ErrorTruncated) {
@@ -280,12 +282,31 @@ func pressedState(p *api.ElementState_Pressed) string {
 
 func isTrue(b *bool) bool { return b != nil && *b }
 
+// maxValueLen is where a rendered value is cut, as the API cuts attributes.
+const maxValueLen = 60
+
+// cutValue cuts a long value the way the API cuts attributes, ending it with
+// "...".
+func cutValue(v string) string {
+	if strings.HasSuffix(v, "...") && utf8.RuneCountInString(v) <= maxValueLen+3 {
+		return v
+	}
+	runes := []rune(v)
+	if len(runes) <= maxValueLen {
+		return v
+	}
+	return string(runes[:maxValueLen]) + "..."
+}
+
+// attributeEscaper escapes a value the way the API does, so that it stays one
+// attribute on one line.
+var attributeEscaper = strings.NewReplacer(
+	"&", "&amp;", `"`, "&quot;", "<", "&lt;", ">", "&gt;", "\n", "&#10;", "\r", "&#13;",
+)
+
 // quote writes an attribute value on one line, in double quotes.
 func quote(s string) string {
-	s = strings.ReplaceAll(s, `"`, "&quot;")
-	s = strings.ReplaceAll(s, "\r\n", `\n`)
-	s = strings.ReplaceAll(s, "\n", `\n`)
-	return `"` + s + `"`
+	return `"` + attributeEscaper.Replace(s) + `"`
 }
 
 // openingTagEnd is the index of the ">" that closes the opening tag started
@@ -350,7 +371,7 @@ func attributeValue(attrs, name string) string {
 	for _, token := range attributeTokens(attrs) {
 		if attributeName(token) == name {
 			_, value, _ := strings.Cut(token, "=")
-			return strings.Trim(value, `"`)
+			return html.UnescapeString(strings.Trim(value, `"`))
 		}
 	}
 	return ""
