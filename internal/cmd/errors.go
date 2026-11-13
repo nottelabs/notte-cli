@@ -44,9 +44,9 @@ func withAccessTokenHint(err error, class string) error {
 	switch class {
 	case errorClassAccessTokenExpired:
 		hinted.Reason = "expired"
-		hinted.Hint = "the access token has expired; mint a new one" + keyFileSuffix()
+		hinted.Hint = replaceTokenHint("has expired")
 	case errorClassAccessTokenInvalid:
-		hinted.Hint = "the access token is unknown or revoked; mint a new one" + keyFileSuffix()
+		hinted.Hint = replaceTokenHint("is unknown or revoked")
 	case errorClassAccessTokenNotAllowed:
 		hinted.Hint = "this command needs an API key; access tokens are not accepted on its route"
 	default:
@@ -55,11 +55,13 @@ func withAccessTokenHint(err error, class string) error {
 	return &hinted
 }
 
-// keyFileSuffix names NOTTE_API_KEY_FILE when the credential came from it, so
-// the hint says which file to refresh.
-func keyFileSuffix() string {
+// replaceTokenHint says the access token needs replacing. When it came from
+// NOTTE_API_KEY_FILE, the hint names the file and leaves the new token to
+// whatever writes it: the agent calling the CLI usually cannot mint one.
+func replaceTokenHint(state string) string {
 	if path := auth.APIKeyFile(); path != "" {
-		return fmt.Sprintf(" and write it to %s (%s)", auth.EnvAPIKeyFile, path)
+		return fmt.Sprintf("the access token in %s (%s) %s; whatever writes that file must replace it",
+			auth.EnvAPIKeyFile, path, state)
 	}
-	return ""
+	return "the access token " + state + "; use a new one"
 }

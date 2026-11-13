@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -98,7 +97,9 @@ func warn(msg string) {
 }
 
 // readKeyFile reads the credential from path, at most MaxAPIKeyFileSize
-// bytes of it, and warns when others can read the file.
+// bytes of it. Its permissions are not checked: Kubernetes and Docker mount
+// secrets readable by others (0644, 0444) by default, so a warning would be
+// printed on every command in the setups this file is meant for.
 func readKeyFile(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -116,15 +117,6 @@ func readKeyFile(path string) (string, error) {
 	key := strings.TrimSpace(string(data))
 	if key == "" {
 		return "", &APIKeyFileError{Path: path}
-	}
-
-	// Like ssh's check on private keys, but only a warning. Windows has no
-	// such mode bits.
-	if runtime.GOOS != "windows" {
-		if info, err := f.Stat(); err == nil && info.Mode().Perm()&0o077 != 0 {
-			warn(fmt.Sprintf("warning: %s (%s) is accessible by group or others (mode %04o); restrict it with chmod 600",
-				EnvAPIKeyFile, path, info.Mode().Perm()))
-		}
 	}
 	return key, nil
 }

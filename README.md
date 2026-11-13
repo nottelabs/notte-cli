@@ -88,9 +88,9 @@ notte whoami
 
 `NOTTE_API_KEY_FILE` suits a runtime that rotates a short-lived access token (`nat_...`) while the agent using the CLI keeps running: each new command reads the file again, so the next one uses the new token. A long-running command, such as `notte functions run` waiting for its run, keeps the credential it started with. Surrounding whitespace is trimmed, and the file may hold at most 64 KiB.
 
-When the variable is set, the file is the only source: if it is missing, unreadable, empty or too large, the command fails instead of falling back to `NOTTE_API_KEY`, the credential store or the config file. If `NOTTE_API_KEY` is also set, it is ignored and a one-line note on stderr says so. On macOS and Linux a file readable by group or others (for example mode `0644`) gets a warning on stderr; restrict it with `chmod 600`. `notte login` and `notte logout` exit with an error naming the file instead of storing or removing a key, and `notte whoami` names the file.
+When the variable is set, the file is the only source: if it is missing, unreadable, empty or too large, the command fails instead of falling back to `NOTTE_API_KEY`, the credential store or the config file. If `NOTTE_API_KEY` is also set, it is ignored and a one-line note on stderr says so. `notte login` and `notte logout` exit with an error naming the file instead of storing or removing a key, and `notte whoami` names the file.
 
-Access tokens work only on some routes. When the API classes a refusal as an access-token error (the `X-Error-Class` response header), the CLI keeps the API's message and adds a hint: a route that refuses tokens needs an API key; an expired, unknown or revoked token needs a new one. Every other error, including one from a server that does not send the header, is shown as the API sent it.
+Access tokens work only on some routes. When the API classes a refusal as an access-token error (the `X-Error-Class` response header), the CLI keeps the API's message and adds a hint: a route that refuses tokens needs an API key; an expired, unknown or revoked token needs replacing, and when it came from `NOTTE_API_KEY_FILE` the hint names the file and says that whatever writes it must replace the token. Every other error, including one from a server that does not send the header, is shown as the API sent it.
 
 ### 2. Start a Browser Session
 

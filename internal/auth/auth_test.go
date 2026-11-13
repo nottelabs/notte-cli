@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -394,50 +393,24 @@ func TestGetAPIKey_KeyFileSizeCap(t *testing.T) {
 	}
 }
 
-func TestGetAPIKey_WarnsOnOpenKeyFilePermissions(t *testing.T) {
-	cases := []struct {
-		mode os.FileMode
-		warn bool
-	}{
-		{0o600, false},
-		{0o400, false},
-		{0o640, true},
-		{0o644, true},
-		{0o604, true},
-	}
-	if runtime.GOOS == "windows" {
-		// Windows has no Unix mode bits, so nothing is checked there.
-		cases = cases[3:4]
-		cases[0].warn = false
-	}
-	for _, tc := range cases {
-		t.Run(tc.mode.String(), func(t *testing.T) {
+func TestGetAPIKey_NoWarningForSharedReadableKeyFile(t *testing.T) {
+	// Kubernetes and Docker mount secrets with modes like these by default.
+	for _, mode := range []os.FileMode{0o600, 0o644, 0o444} {
+		t.Run(mode.String(), func(t *testing.T) {
 			env, cleanup := setupTestAuth(t)
 			defer cleanup()
 			warnings := captureWarnings(t)
 
 			path := writeKeyFile(t, env, "nat_file_token")
-			if err := os.Chmod(path, tc.mode); err != nil {
+			if err := os.Chmod(path, mode); err != nil {
 				t.Fatal(err)
 			}
 			key, _, err := GetAPIKey("")
 			if err != nil || key != "nat_file_token" {
-				t.Fatalf("got %q, %v; a permission warning must not fail the read", key, err)
+				t.Fatalf("got %q, %v", key, err)
 			}
-			got := warnings.String()
-			if !tc.warn {
-				if got != "" {
-					t.Fatalf("stderr %q, want nothing for mode %v", got, tc.mode)
-				}
-				return
-			}
-			for _, want := range []string{"warning:", EnvAPIKeyFile, path, "chmod 600"} {
-				if !strings.Contains(got, want) {
-					t.Errorf("stderr %q should contain %q", got, want)
-				}
-			}
-			if strings.Contains(got, "nat_file_token") {
-				t.Fatalf("stderr %q prints the credential", got)
+			if warnings.Len() != 0 {
+				t.Fatalf("stderr %q, want nothing for mode %v", warnings.String(), mode)
 			}
 		})
 	}

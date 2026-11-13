@@ -289,21 +289,20 @@ func TestAccessTokenErrors(t *testing.T) {
 		class      string
 		detail     string
 		wantReason string
-		wantHint   string // the hint, before the key file suffix
-		fileSuffix bool   // the hint names NOTTE_API_KEY_FILE
+		wantHint   string // the hint; %s stands for the key file's path
 	}{
-		{"expired", "nat_abc", 401, classExpired, expired, "expired", "the access token has expired; mint a new one", true},
-		{"expired without a detail", "nat_abc", 401, classExpired, "", "expired", "the access token has expired; mint a new one", true},
-		{"invalid", "nat_abc", 401, classInvalid, revoked, "invalid", "the access token is unknown or revoked; mint a new one", true},
-		{"not allowed", "nat_abc", 403, classNotAllowed, route, "forbidden", "this command needs an API key; access tokens are not accepted on its route", false},
+		{"expired", "nat_abc", 401, classExpired, expired, "expired", "the access token in NOTTE_API_KEY_FILE (%s) has expired; whatever writes that file must replace it"},
+		{"expired without a detail", "nat_abc", 401, classExpired, "", "expired", "the access token in NOTTE_API_KEY_FILE (%s) has expired; whatever writes that file must replace it"},
+		{"invalid", "nat_abc", 401, classInvalid, revoked, "invalid", "the access token in NOTTE_API_KEY_FILE (%s) is unknown or revoked; whatever writes that file must replace it"},
+		{"not allowed", "nat_abc", 403, classNotAllowed, route, "forbidden", "this command needs an API key; access tokens are not accepted on its route"},
 		// Without one of the three classes the API's answer is shown as is,
 		// whatever its wording and whichever credential was sent.
-		{"plan limit 403 on a token", "nat_abc", 403, "NottePlanLimitError", planLimit, "forbidden", "", false},
-		{"route refusal without a class", "nat_abc", 403, "", route, "forbidden", "", false},
-		{"expired without a class", "nat_abc", 401, "", expired, "invalid", "", false},
-		{"401 without a class or detail", "nat_abc", 401, "", "", "invalid", "", false},
-		{"API key 401", "sk-key", 401, "NotteApiInvalidApiKeyError", "invalid API key", "invalid", "", false},
-		{"API key 403", "sk-key", 403, "", "forbidden", "forbidden", "", false},
+		{"plan limit 403 on a token", "nat_abc", 403, "NottePlanLimitError", planLimit, "forbidden", ""},
+		{"route refusal without a class", "nat_abc", 403, "", route, "forbidden", ""},
+		{"expired without a class", "nat_abc", 401, "", expired, "invalid", ""},
+		{"401 without a class or detail", "nat_abc", 401, "", "", "invalid", ""},
+		{"API key 401", "sk-key", 401, "NotteApiInvalidApiKeyError", "invalid API key", "invalid", ""},
+		{"API key 403", "sk-key", 403, "", "forbidden", "forbidden", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testutil.SetupTestEnv(t)
@@ -322,10 +321,7 @@ func TestAccessTokenErrors(t *testing.T) {
 			if authErr.Reason != tc.wantReason {
 				t.Errorf("reason %q, want %q", authErr.Reason, tc.wantReason)
 			}
-			wantHint := tc.wantHint
-			if tc.fileSuffix {
-				wantHint += " and write it to NOTTE_API_KEY_FILE (" + path + ")"
-			}
+			wantHint := strings.ReplaceAll(tc.wantHint, "%s", path)
 			if authErr.Hint != wantHint {
 				t.Errorf("hint %q, want %q", authErr.Hint, wantHint)
 			}
@@ -346,7 +342,7 @@ func TestAccessTokenErrors_HintWithoutKeyFile(t *testing.T) {
 	if err := callUsage(t); !errors.As(err, &authErr) {
 		t.Fatalf("error %v is not an AuthError", err)
 	}
-	if want := "the access token has expired; mint a new one"; authErr.Hint != want {
+	if want := "the access token has expired; use a new one"; authErr.Hint != want {
 		t.Fatalf("hint %q, want %q", authErr.Hint, want)
 	}
 }
