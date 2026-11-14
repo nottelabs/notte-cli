@@ -1142,6 +1142,18 @@ const (
 	Tailscale   SecretNamespace = "tailscale"
 )
 
+// Defines values for SessionPageDocumentRequestColorScheme.
+const (
+	SessionPageDocumentRequestColorSchemeDark  SessionPageDocumentRequestColorScheme = "dark"
+	SessionPageDocumentRequestColorSchemeLight SessionPageDocumentRequestColorScheme = "light"
+)
+
+// Defines values for SessionPageDocumentRequestTimeoutBehavior.
+const (
+	SessionPageDocumentRequestTimeoutBehaviorFail          SessionPageDocumentRequestTimeoutBehavior = "fail"
+	SessionPageDocumentRequestTimeoutBehaviorReturnPartial SessionPageDocumentRequestTimeoutBehavior = "return-partial"
+)
+
 // Defines values for SessionResponseBrowserType.
 const (
 	SessionResponseBrowserTypeChrome        SessionResponseBrowserType = "chrome"
@@ -1184,8 +1196,8 @@ const (
 
 // Defines values for StyleguideMode.
 const (
-	StyleguideModeDark  StyleguideMode = "dark"
-	StyleguideModeLight StyleguideMode = "light"
+	Dark  StyleguideMode = "dark"
+	Light StyleguideMode = "light"
 )
 
 // Defines values for StyleguideCacheMetadataStatus.
@@ -1202,8 +1214,8 @@ const (
 
 // Defines values for StyleguideTimeoutBehavior.
 const (
-	Fail          StyleguideTimeoutBehavior = "fail"
-	ReturnPartial StyleguideTimeoutBehavior = "return-partial"
+	StyleguideTimeoutBehaviorFail          StyleguideTimeoutBehavior = "fail"
+	StyleguideTimeoutBehaviorReturnPartial StyleguideTimeoutBehavior = "return-partial"
 )
 
 // Defines values for SubscriptionType.
@@ -4082,6 +4094,20 @@ type OrganizationClue struct {
 	Name   *string `json:"name,omitempty"`
 }
 
+// PageDocumentResponse defines model for PageDocumentResponse.
+type PageDocumentResponse struct {
+	Data       *map[string]interface{} `json:"data,omitempty"`
+	Html       *string                 `json:"html,omitempty"`
+	Links      *[]string               `json:"links,omitempty"`
+	Markdown   *string                 `json:"markdown,omitempty"`
+	ReadyState *string                 `json:"ready_state,omitempty"`
+	StatusCode *int                    `json:"status_code,omitempty"`
+	Text       *string                 `json:"text,omitempty"`
+	Timings    *map[string]float32     `json:"timings,omitempty"`
+	Title      *string                 `json:"title,omitempty"`
+	Url        string                  `json:"url"`
+}
+
 // PageTarget defines model for PageTarget.
 type PageTarget struct {
 	Actions             *[]PageTarget_Actions_Item `json:"actions,omitempty"`
@@ -5180,6 +5206,23 @@ type SessionOffsetResponse struct {
 	// Offset Current state of the session trajectory
 	Offset int `json:"offset"`
 }
+
+// SessionPageDocumentRequest defines model for SessionPageDocumentRequest.
+type SessionPageDocumentRequest struct {
+	Actions         *[]map[string]interface{}                  `json:"actions,omitempty"`
+	ColorScheme     *SessionPageDocumentRequestColorScheme     `json:"color_scheme,omitempty"`
+	Options         *map[string]interface{}                    `json:"options,omitempty"`
+	Script          *string                                    `json:"script,omitempty"`
+	TimeoutBehavior *SessionPageDocumentRequestTimeoutBehavior `json:"timeout_behavior,omitempty"`
+	TimeoutMs       *int                                       `json:"timeout_ms,omitempty"`
+	Url             string                                     `json:"url"`
+}
+
+// SessionPageDocumentRequestColorScheme defines model for SessionPageDocumentRequest.ColorScheme.
+type SessionPageDocumentRequestColorScheme string
+
+// SessionPageDocumentRequestTimeoutBehavior defines model for SessionPageDocumentRequest.TimeoutBehavior.
+type SessionPageDocumentRequestTimeoutBehavior string
 
 // SessionProfile defines model for SessionProfile.
 type SessionProfile struct {
@@ -7007,6 +7050,13 @@ type PageChooseParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// PageDocumentReadParams defines parameters for PageDocumentRead.
+type PageDocumentReadParams struct {
+	UpdateMetadata      *bool   `form:"update_metadata,omitempty" json:"update_metadata,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // PageExecuteParams defines parameters for PageExecute.
 type PageExecuteParams struct {
 	CaptchaId             *string  `form:"captcha_id,omitempty" json:"captcha_id,omitempty"`
@@ -7349,6 +7399,9 @@ type PageCheckJSONRequestBody = CheckRequest
 
 // PageChooseJSONRequestBody defines body for PageChoose for application/json ContentType.
 type PageChooseJSONRequestBody = ChooseRequest
+
+// PageDocumentReadJSONRequestBody defines body for PageDocumentRead for application/json ContentType.
+type PageDocumentReadJSONRequestBody = SessionPageDocumentRequest
 
 // PageExecuteJSONRequestBody defines body for PageExecute for application/json ContentType.
 type PageExecuteJSONRequestBody = PageExecuteRequestBody
@@ -16823,6 +16876,11 @@ type ClientInterface interface {
 
 	PageChoose(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PageDocumentReadWithBody request with any body
+	PageDocumentReadWithBody(ctx context.Context, sessionId string, params *PageDocumentReadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PageDocumentRead(ctx context.Context, sessionId string, params *PageDocumentReadParams, body PageDocumentReadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PageExecuteWithBody request with any body
 	PageExecuteWithBody(ctx context.Context, sessionId string, params *PageExecuteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -18884,6 +18942,30 @@ func (c *Client) PageChooseWithBody(ctx context.Context, sessionId string, param
 
 func (c *Client) PageChoose(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPageChooseRequest(c.Server, sessionId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageDocumentReadWithBody(ctx context.Context, sessionId string, params *PageDocumentReadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageDocumentReadRequestWithBody(c.Server, sessionId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PageDocumentRead(ctx context.Context, sessionId string, params *PageDocumentReadParams, body PageDocumentReadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPageDocumentReadRequest(c.Server, sessionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -30072,6 +30154,101 @@ func NewPageChooseRequestWithBody(server string, sessionId string, params *PageC
 	return req, nil
 }
 
+// NewPageDocumentReadRequest calls the generic PageDocumentRead builder with application/json body
+func NewPageDocumentReadRequest(server string, sessionId string, params *PageDocumentReadParams, body PageDocumentReadJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPageDocumentReadRequestWithBody(server, sessionId, params, "application/json", bodyReader)
+}
+
+// NewPageDocumentReadRequestWithBody generates requests for PageDocumentRead with any type of body
+func NewPageDocumentReadRequestWithBody(server string, sessionId string, params *PageDocumentReadParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/page/document", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.UpdateMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "update_metadata", runtime.ParamLocationQuery, *params.UpdateMetadata); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewPageExecuteRequest calls the generic PageExecute builder with application/json body
 func NewPageExecuteRequest(server string, sessionId string, params *PageExecuteParams, body PageExecuteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -32629,6 +32806,11 @@ type ClientWithResponsesInterface interface {
 	PageChooseWithBodyWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageChooseResult, error)
 
 	PageChooseWithResponse(ctx context.Context, sessionId string, params *PageChooseParams, body PageChooseJSONRequestBody, reqEditors ...RequestEditorFn) (*PageChooseResult, error)
+
+	// PageDocumentReadWithBodyWithResponse request with any body
+	PageDocumentReadWithBodyWithResponse(ctx context.Context, sessionId string, params *PageDocumentReadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageDocumentReadResult, error)
+
+	PageDocumentReadWithResponse(ctx context.Context, sessionId string, params *PageDocumentReadParams, body PageDocumentReadJSONRequestBody, reqEditors ...RequestEditorFn) (*PageDocumentReadResult, error)
 
 	// PageExecuteWithBodyWithResponse request with any body
 	PageExecuteWithBodyWithResponse(ctx context.Context, sessionId string, params *PageExecuteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageExecuteResult, error)
@@ -35501,6 +35683,29 @@ func (r PageChooseResult) StatusCode() int {
 	return 0
 }
 
+type PageDocumentReadResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PageDocumentResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r PageDocumentReadResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PageDocumentReadResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PageExecuteResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -37494,6 +37699,23 @@ func (c *ClientWithResponses) PageChooseWithResponse(ctx context.Context, sessio
 		return nil, err
 	}
 	return ParsePageChooseResult(rsp)
+}
+
+// PageDocumentReadWithBodyWithResponse request with arbitrary body returning *PageDocumentReadResult
+func (c *ClientWithResponses) PageDocumentReadWithBodyWithResponse(ctx context.Context, sessionId string, params *PageDocumentReadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PageDocumentReadResult, error) {
+	rsp, err := c.PageDocumentReadWithBody(ctx, sessionId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageDocumentReadResult(rsp)
+}
+
+func (c *ClientWithResponses) PageDocumentReadWithResponse(ctx context.Context, sessionId string, params *PageDocumentReadParams, body PageDocumentReadJSONRequestBody, reqEditors ...RequestEditorFn) (*PageDocumentReadResult, error) {
+	rsp, err := c.PageDocumentRead(ctx, sessionId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePageDocumentReadResult(rsp)
 }
 
 // PageExecuteWithBodyWithResponse request with arbitrary body returning *PageExecuteResult
@@ -41742,6 +41964,39 @@ func ParsePageChooseResult(rsp *http.Response) (*PageChooseResult, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Choice
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePageDocumentReadResult parses an HTTP response from a PageDocumentReadWithResponse call
+func ParsePageDocumentReadResult(rsp *http.Response) (*PageDocumentReadResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PageDocumentReadResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PageDocumentResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
