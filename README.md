@@ -335,7 +335,21 @@ notte vaults credentials list --vault-id <id>         # List all credentials
 notte vaults credentials add --vault-id <id>          # Add credentials
 notte vaults credentials get --vault-id <id>          # Get credentials for URL
 notte vaults credentials delete --vault-id <id>       # Delete credentials
+notte vaults connect --provider bitwarden             # Connect your Bitwarden vault (experimental)
+notte vaults disconnect --provider bitwarden          # Delete that connection
 ```
+
+`notte vaults connect --provider bitwarden` connects your Bitwarden Password Manager to your
+Notte account once, through [Agent Access](https://github.com/bitwarden/agent-access) (aac
+v0.11.0 and a logged-in `bw`; experimental while Agent Access is in alpha). Sessions started
+with `notte sessions start --aac-vault` then fill `--vault-field` logins from your vault first,
+then from the session's Notte vault. Notte never stores a password.
+
+The command runs `aac listen --reusable-psk` in your terminal: unlock your vault with `/unlock`
+and approve login requests there within 30 seconds. `[a]` approves that site for 10 minutes.
+Quitting aac keeps the connection; run `aac listen --reusable-psk` again whenever sessions fill
+logins. To run the listener yourself, pass its token in `AAC_TOKEN` (or `--token`, whose value
+`ps` can read); the command then connects it and returns.
 
 ### Personas
 
