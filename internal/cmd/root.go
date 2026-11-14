@@ -39,8 +39,10 @@ for browser automation and web scraping.
 Get started:
   notte login             # Log in (approve a code in the console)
   notte sessions start    # Start a browser session
+  notte page goto <url>   # Open a page in the current session
+  notte page scrape       # Scrape the open page
+  notte sessions stop     # Stop the session when done
   notte search <query>    # Search the web
-  notte scrape <url>      # Quick scrape a webpage
 
 For scripts and agents:
   -o json (or NOTTE_OUTPUT=json) prints JSON on stdout; errors are JSON on
