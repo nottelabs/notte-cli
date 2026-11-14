@@ -80,6 +80,7 @@ skip POST /functions/{function_id}/rollback/conditional # conditional rollback (
 skip POST /sessions/{session_id}/page/act # natural-language page act is not yet exposed by the CLI
 skip POST /sessions/{session_id}/page/check # natural-language page check is not yet exposed by the CLI
 skip POST /sessions/{session_id}/page/choose # natural-language page choose is not yet exposed by the CLI
+skip POST /sessions/{session_id}/page/document # reading a URL's document (html, markdown, text, links) in a session is not yet exposed by the CLI
 skip POST /sessions/{session_id}/pause # pausing a session is not yet exposed by the CLI
 skip POST /sessions/{session_id}/resume # resuming a paused session is not yet exposed by the CLI
 skip GET /secret-proxy/host-presets # the secret proxy is configured in the console; the CLI has no secret-proxy commands yet
