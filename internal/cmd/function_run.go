@@ -71,7 +71,12 @@ func startAndWaitFunction(cmd *cobra.Command, client *api.NotteClient, variables
 				if id, _ := failed["function_run_id"].(string); id != "" {
 					runID = id
 				}
-				return &runFailedError{runID: runID, rejected: status == string(api.GetFunctionRunResponseStatusRejected)}
+				runErr := &runFailedError{runID: runID, rejected: status == string(api.GetFunctionRunResponseStatusRejected)}
+				if typed, ok := failed["error"].(map[string]any); ok {
+					runErr.code, _ = typed["code"].(string)
+					runErr.reason, _ = typed["message"].(string)
+				}
+				return runErr
 			}
 		}
 		return nil
@@ -211,7 +216,11 @@ func waitFunction(ctx context.Context, client *api.NotteClient, id, runID string
 			if err := render(run); err != nil {
 				return err
 			}
-			return &runFailedError{runID: runID, rejected: run.Status == api.GetFunctionRunResponseStatusRejected}
+			runErr := &runFailedError{runID: runID, rejected: run.Status == api.GetFunctionRunResponseStatusRejected}
+			if run.Error != nil {
+				runErr.code, runErr.reason = run.Error.Code, run.Error.Message
+			}
+			return runErr
 		case api.GetFunctionRunResponseStatusActive:
 		default:
 			return functionWaitError(id, runID, fmt.Errorf("unrecognized run status %q", run.Status))

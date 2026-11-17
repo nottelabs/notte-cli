@@ -299,9 +299,14 @@ func viewFunctionRuns(text *output.TextFormatter, items []api.FunctionRunListIte
 }
 
 // runStatus names a run's state: the API calls a run that finished "closed".
+// A rejected run raised one of the function's expected errors: a deliberate
+// refusal, shown neutral as in the console rather than red like a failure.
 func runStatus(text *output.TextFormatter, status string) string {
-	if status == "closed" {
+	switch status {
+	case "closed":
 		return text.Colorize("finished", termenv.ANSIGreen)
+	case "rejected":
+		return text.Faint(status)
 	}
 	return statusText(text, status)
 }
