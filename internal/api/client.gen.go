@@ -580,18 +580,34 @@ const (
 	FunctionResponseSdkGenerationV19     FunctionResponseSdkGeneration = "v19"
 )
 
+// Defines values for FunctionRunErrorKind.
+const (
+	Expected   FunctionRunErrorKind = "expected"
+	Retryable  FunctionRunErrorKind = "retryable"
+	Unexpected FunctionRunErrorKind = "unexpected"
+)
+
+// Defines values for FunctionRunErrorSource.
+const (
+	Class   FunctionRunErrorSource = "class"
+	Config  FunctionRunErrorSource = "config"
+	Default FunctionRunErrorSource = "default"
+)
+
 // Defines values for FunctionRunListItemResponseStatus.
 const (
-	FunctionRunListItemResponseStatusActive FunctionRunListItemResponseStatus = "active"
-	FunctionRunListItemResponseStatusClosed FunctionRunListItemResponseStatus = "closed"
-	FunctionRunListItemResponseStatusFailed FunctionRunListItemResponseStatus = "failed"
+	FunctionRunListItemResponseStatusActive   FunctionRunListItemResponseStatus = "active"
+	FunctionRunListItemResponseStatusClosed   FunctionRunListItemResponseStatus = "closed"
+	FunctionRunListItemResponseStatusFailed   FunctionRunListItemResponseStatus = "failed"
+	FunctionRunListItemResponseStatusRejected FunctionRunListItemResponseStatus = "rejected"
 )
 
 // Defines values for FunctionRunUpdateRequestStatus.
 const (
-	FunctionRunUpdateRequestStatusActive FunctionRunUpdateRequestStatus = "active"
-	FunctionRunUpdateRequestStatusClosed FunctionRunUpdateRequestStatus = "closed"
-	FunctionRunUpdateRequestStatusFailed FunctionRunUpdateRequestStatus = "failed"
+	FunctionRunUpdateRequestStatusActive   FunctionRunUpdateRequestStatus = "active"
+	FunctionRunUpdateRequestStatusClosed   FunctionRunUpdateRequestStatus = "closed"
+	FunctionRunUpdateRequestStatusFailed   FunctionRunUpdateRequestStatus = "failed"
+	FunctionRunUpdateRequestStatusRejected FunctionRunUpdateRequestStatus = "rejected"
 )
 
 // Defines values for FunctionRuntimeHealthResponseSdkGeneration.
@@ -640,9 +656,10 @@ const (
 
 // Defines values for GetFunctionRunResponseStatus.
 const (
-	GetFunctionRunResponseStatusActive GetFunctionRunResponseStatus = "active"
-	GetFunctionRunResponseStatusClosed GetFunctionRunResponseStatus = "closed"
-	GetFunctionRunResponseStatusFailed GetFunctionRunResponseStatus = "failed"
+	GetFunctionRunResponseStatusActive   GetFunctionRunResponseStatus = "active"
+	GetFunctionRunResponseStatusClosed   GetFunctionRunResponseStatus = "closed"
+	GetFunctionRunResponseStatusFailed   GetFunctionRunResponseStatus = "failed"
+	GetFunctionRunResponseStatusRejected GetFunctionRunResponseStatus = "rejected"
 )
 
 // Defines values for GlobalScrapeRequestBrowserType.
@@ -2044,6 +2061,7 @@ type CaptchaStatus struct {
 	CaptchaId      string             `json:"captcha_id"`
 	ChallengeState *string            `json:"challenge_state,omitempty"`
 	ChallengeType  *string            `json:"challenge_type,omitempty"`
+	FailureReason  *string            `json:"failure_reason,omitempty"`
 	Generation     int                `json:"generation"`
 	Message        *string            `json:"message,omitempty"`
 	PageId         string             `json:"page_id"`
@@ -2671,6 +2689,9 @@ type EmailResponse struct {
 	// HtmlContent HTML body, can be uncorrelated with raw content
 	HtmlContent *string `json:"html_content,omitempty"`
 
+	// Read Whether the email was read before this request
+	Read bool `json:"read"`
+
 	// SenderEmail Email address of the sender
 	SenderEmail *string `json:"sender_email,omitempty"`
 
@@ -3029,8 +3050,11 @@ type FunctionMetadataUpdateRequest struct {
 	DeletionProtected *bool   `json:"deletion_protected,omitempty"`
 	Description       *string `json:"description,omitempty"`
 	Domain            *string `json:"domain,omitempty"`
-	Instructions      *string `json:"instructions,omitempty"`
-	Name              *string `json:"name,omitempty"`
+
+	// ExpectedErrors Exception class names the function raises on purpose. A failed run whose exception has one of these names in its class hierarchy ends rejected and is never self-healed. Replaces the stored list; send [] to clear it. Omit or send null to leave it unchanged.
+	ExpectedErrors *[]string `json:"expected_errors,omitempty"`
+	Instructions   *string   `json:"instructions,omitempty"`
+	Name           *string   `json:"name,omitempty"`
 
 	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
 	ResponseFormat *map[string]interface{} `json:"response_format,omitempty"`
@@ -3054,6 +3078,9 @@ type FunctionResponse struct {
 
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
 	Domain *string `json:"domain,omitempty"`
+
+	// ExpectedErrors Exception class names whose runs end rejected (an expected error) instead of failed.
+	ExpectedErrors *[]string `json:"expected_errors,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -3121,6 +3148,42 @@ type FunctionRollbackRequest struct {
 	Version string `json:"version"`
 }
 
+// FunctionRunError defines model for FunctionRunError.
+type FunctionRunError struct {
+	// Code A stable code, by default the class name in snake_case
+	Code string `json:"code"`
+
+	// Heal Whether self-healing may rewrite the function for this error
+	Heal bool `json:"heal"`
+
+	// Kind expected: the run was rejected on purpose; retryable: a new run may succeed
+	Kind FunctionRunErrorKind `json:"kind"`
+
+	// Message The exception message
+	Message string `json:"message"`
+
+	// Mro The exception's class names, most derived first
+	Mro []string `json:"mro"`
+
+	// Retry Whether the caller may retry with a new run
+	Retry bool `json:"retry"`
+
+	// Source class: from the exception class; config: the function's expected_errors; default: neither
+	Source FunctionRunErrorSource `json:"source"`
+
+	// StatusCode Informational HTTP status for the error
+	StatusCode int `json:"status_code"`
+
+	// Type The exception class name
+	Type string `json:"type"`
+}
+
+// FunctionRunErrorKind expected: the run was rejected on purpose; retryable: a new run may succeed
+type FunctionRunErrorKind string
+
+// FunctionRunErrorSource class: from the exception class; config: the function's expected_errors; default: neither
+type FunctionRunErrorSource string
+
 // FunctionRunListItemResponse defines model for FunctionRunListItemResponse.
 type FunctionRunListItemResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
@@ -3143,6 +3206,8 @@ type FunctionRunListItemResponseStatus string
 
 // FunctionRunUpdateRequest defines model for FunctionRunUpdateRequest.
 type FunctionRunUpdateRequest struct {
+	Error *FunctionRunError `json:"error,omitempty"`
+
 	// Logs The logs of the workflow run
 	Logs     *[]string                       `json:"logs,omitempty"`
 	Payloads *map[string]RunPayloadReference `json:"payloads,omitempty"`
@@ -3253,6 +3318,9 @@ type FunctionWithLinkResponse struct {
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
 	Domain *string `json:"domain,omitempty"`
 
+	// ExpectedErrors Exception class names whose runs end rejected (an expected error) instead of failed.
+	ExpectedErrors *[]string `json:"expected_errors,omitempty"`
+
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
@@ -3335,6 +3403,7 @@ type GetCreditCardResponse struct {
 type GetFunctionRunResponse struct {
 	ArtifactSdkGeneration *FunctionSdkGeneration `json:"artifact_sdk_generation,omitempty"`
 	CreatedAt             FlexibleTime           `json:"created_at"`
+	Error                 *FunctionRunError      `json:"error,omitempty"`
 
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
@@ -4779,6 +4848,9 @@ type SMSResponse struct {
 	// CreatedAt Creation date
 	CreatedAt FlexibleTime `json:"created_at"`
 
+	// Read Whether the message was read before this request
+	Read bool `json:"read"`
+
 	// Sender SMS sender phone number
 	Sender *string `json:"sender,omitempty"`
 
@@ -5541,6 +5613,8 @@ type TypographyStyle struct {
 
 // UpdateFunctionRunResponse defines model for UpdateFunctionRunResponse.
 type UpdateFunctionRunResponse struct {
+	Error *FunctionRunError `json:"error,omitempty"`
+
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
@@ -6807,7 +6881,10 @@ type PersonaEmailsListParams struct {
 	Timedelta *string `form:"timedelta,omitempty" json:"timedelta,omitempty"`
 
 	// OnlyUnread Whether to only return unread messages
-	OnlyUnread          *bool   `form:"only_unread,omitempty" json:"only_unread,omitempty"`
+	OnlyUnread *bool `form:"only_unread,omitempty" json:"only_unread,omitempty"`
+
+	// MarkRead Whether to mark the returned messages as read
+	MarkRead            *bool   `form:"mark_read,omitempty" json:"mark_read,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -6821,7 +6898,10 @@ type PersonaSmsListParams struct {
 	Timedelta *string `form:"timedelta,omitempty" json:"timedelta,omitempty"`
 
 	// OnlyUnread Whether to only return unread messages
-	OnlyUnread          *bool   `form:"only_unread,omitempty" json:"only_unread,omitempty"`
+	OnlyUnread *bool `form:"only_unread,omitempty" json:"only_unread,omitempty"`
+
+	// MarkRead Whether to mark the returned messages as read
+	MarkRead            *bool   `form:"mark_read,omitempty" json:"mark_read,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -27637,6 +27717,22 @@ func NewPersonaEmailsListRequest(server string, personaId string, params *Person
 
 		}
 
+		if params.MarkRead != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "mark_read", runtime.ParamLocationQuery, *params.MarkRead); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -27738,6 +27834,22 @@ func NewPersonaSmsListRequest(server string, personaId string, params *PersonaSm
 		if params.OnlyUnread != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "only_unread", runtime.ParamLocationQuery, *params.OnlyUnread); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MarkRead != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "mark_read", runtime.ParamLocationQuery, *params.MarkRead); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
