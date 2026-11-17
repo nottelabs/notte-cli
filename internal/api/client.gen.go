@@ -2997,6 +2997,9 @@ type FunctionListItemResponse struct {
 	// Domain The site this function drives, used to group endpoints in the console. Null when the function never named a site.
 	Domain *string `json:"domain,omitempty"`
 
+	// ExpectedErrors Exception class names whose runs end rejected (an expected error) instead of failed.
+	ExpectedErrors *[]string `json:"expected_errors,omitempty"`
+
 	// FunctionId The ID of the function
 	FunctionId string `json:"function_id"`
 
