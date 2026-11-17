@@ -97,6 +97,10 @@ func TestResilientTransport_AddsTrackingHeaders(t *testing.T) {
 		if version != "v1.2.3" {
 			t.Errorf("got x-notte-sdk-version %q, want %q", version, "v1.2.3")
 		}
+		// Without it the API shows a rejected function run as failed.
+		if statuses := r.Header.Get("x-notte-accept-run-statuses"); statuses != "rejected" {
+			t.Errorf("got x-notte-accept-run-statuses %q, want %q", statuses, "rejected")
+		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{}`))
 	}))

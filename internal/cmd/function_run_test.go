@@ -190,7 +190,7 @@ func TestFunctionRunWait_TimeoutDoesNotStopRun(t *testing.T) {
 }
 
 func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
-	for _, status := range []string{"closed", "failed", "unexpected"} {
+	for _, status := range []string{"closed", "failed", "rejected", "unexpected"} {
 		t.Run(status, func(t *testing.T) {
 			setupFunctionRunTest(t)
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeRunMetadata(w, status) }))
@@ -209,11 +209,15 @@ func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
 				}
 				return
 			}
-			// A failed run is printed like a finished one and then reported as
-			// an error, so that the exit code tells them apart.
+			// A failed or rejected run is printed like a finished one and then
+			// reported as an error, so that the exit code tells them apart.
 			var failed *runFailedError
-			if (status == "failed") != errors.As(runErr, &failed) || (status != "failed" && runErr != nil) {
+			unsuccessful := status == "failed" || status == "rejected"
+			if unsuccessful != errors.As(runErr, &failed) || (!unsuccessful && runErr != nil) {
 				t.Fatalf("status %s: err=%v", status, runErr)
+			}
+			if unsuccessful && failed.rejected != (status == "rejected") {
+				t.Fatalf("status %s: rejected=%v", status, failed.rejected)
 			}
 			if !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
 				t.Fatalf("stdout=%s stderr=%s err=%v", stdout, stderr, runErr)
@@ -254,4 +258,49 @@ func TestFunctionRun_DirectFailedResultExitsRunFailed(t *testing.T) {
 	if !strings.Contains(stdout, `"status": "failed"`) && !strings.Contains(stdout, `"status":"failed"`) {
 		t.Fatalf("the failed run must still be printed: %s", stdout)
 	}
+}
+
+const rejectedRunJSON = `{"function_id":"fn_123","function_run_id":"run_123","status":"rejected","logs":[],"result":"Traceback ...",` +
+	`"error":{"kind":"expected","type":"OutOfStock","mro":["OutOfStock","Exception","BaseException"],"code":"out_of_stock",` +
+	`"message":"item is out of stock","heal":false,"retry":false,"status_code":422,"source":"config"}}`
+
+// A rejected run names its error code and message, as the Python SDK's
+// FunctionRunRejectedError does, on both the polled and the direct answer.
+func TestFunctionRun_RejectedRunNamesItsError(t *testing.T) {
+	const want = "function run run_123 was rejected (out_of_stock): item is out of stock"
+	writeRejected := func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, rejectedRunJSON)
+	}
+
+	t.Run("wait", func(t *testing.T) {
+		setupFunctionRunTest(t)
+		server := httptest.NewServer(http.HandlerFunc(writeRejected))
+		defer server.Close()
+		client, err := api.NewClientWithURL("test-key", server.URL, "test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var runErr error
+		testutil.CaptureOutput(func() {
+			runErr = waitFunction(context.Background(), client, functionIDTest, functionRunIDTest, true, time.Millisecond)
+		})
+		var failed *runFailedError
+		if !errors.As(runErr, &failed) || runErr.Error() != want {
+			t.Fatalf("got %v, want %q", runErr, want)
+		}
+	})
+
+	t.Run("direct", func(t *testing.T) {
+		cmd := setupFunctionRunTest(t)
+		server := httptest.NewServer(http.HandlerFunc(writeRejected))
+		defer server.Close()
+		t.Setenv("NOTTE_API_URL", server.URL)
+		var runErr error
+		testutil.CaptureOutput(func() { runErr = runFunctionRun(cmd, nil) })
+		var failed *runFailedError
+		if !errors.As(runErr, &failed) || runErr.Error() != want {
+			t.Fatalf("got %v, want %q", runErr, want)
+		}
+	})
 }

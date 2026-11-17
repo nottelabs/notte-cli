@@ -23,6 +23,9 @@ var (
 
 	FunctionConfigureDomain string
 
+	// Exception class names the function raises on purpose. A failed run whose exception has one of these names in its class hierarchy ends rejected and is never self-healed. Replaces the stored list; send [] to clear it. Omit or send null to leave it unchanged.
+	FunctionConfigureExpectedErrors []string
+
 	// Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over
 	FunctionConfigureInstructions string
 
@@ -44,6 +47,7 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&FunctionConfigureDeletionProtected, "deletion-protected", false, "Turn deletion protection on or off. While it is on, the function cannot be deleted. Any workspace member's key can turn it on; turning it off takes the key of a workspace admin or owner. Omit or send null to leave it unchanged.")
 	cmd.Flags().StringVar(&FunctionConfigureDescription, "description", "", "description")
 	cmd.Flags().StringVar(&FunctionConfigureDomain, "domain", "", "domain")
+	cmd.Flags().StringSliceVar(&FunctionConfigureExpectedErrors, "expected-errors", []string{}, "Exception class names the function raises on purpose. A failed run whose exception has one of these names in its class hierarchy ends rejected and is never self-healed. Replaces the stored list; send [] to clear it. Omit or send null to leave it unchanged. (repeatable)")
 	cmd.Flags().StringVar(&FunctionConfigureInstructions, "run-instructions", "", "Notes for whoever calls this function: how long a run takes, what the variables mean, what it trips over")
 	cmd.Flags().StringVar(&FunctionConfigureName, "name", "", "name")
 	cmd.Flags().StringVar(&FunctionConfigureResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
@@ -69,6 +73,10 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 
 	if FunctionConfigureDomain != "" {
 		body.Domain = &FunctionConfigureDomain
+	}
+
+	if cmd.Flags().Changed("expected-errors") {
+		body.ExpectedErrors = &FunctionConfigureExpectedErrors
 	}
 
 	if FunctionConfigureInstructions != "" {

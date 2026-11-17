@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -25,6 +26,7 @@ func configureCmd(t *testing.T) *cobra.Command {
 		FunctionConfigureResponseFormat = ""
 		FunctionConfigureDefaultRuntime = ""
 		FunctionConfigureSelfHealing = false
+		FunctionConfigureExpectedErrors = []string{}
 		FunctionConfigureShared = false
 		FunctionConfigureDeletionProtected = false
 	})
@@ -513,6 +515,49 @@ func TestFunctionConfigure_SendsDefaultRuntimeAlone(t *testing.T) {
 	body := requestBody(t, requests[0])
 	if body["default_runtime"] != "extended" {
 		t.Errorf("default_runtime = %v, want extended", body["default_runtime"])
+	}
+}
+
+// --expected-errors alone is a change, and an explicitly empty value sends []
+// so the stored list is cleared rather than left unchanged.
+func TestFunctionConfigure_SendsExpectedErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		value string
+		want  []any
+	}{
+		{"set", "ValueError,LookupError", []any{"ValueError", "LookupError"}},
+		{"clear", "", []any{}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := setupFunctionTest(t)
+			server.AddResponse("/functions/"+functionIDTest, 200, functionJSON())
+
+			origFormat := outputFormat
+			outputFormat = "json"
+			t.Cleanup(func() { outputFormat = origFormat })
+
+			cmd := configureCmd(t)
+			if err := cmd.Flags().Set("expected-errors", tc.value); err != nil {
+				t.Fatalf("setting --expected-errors: %v", err)
+			}
+
+			testutil.CaptureOutput(func() {
+				if err := runFunctionConfigure(cmd, nil); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+
+			requests := server.Requests("/functions/" + functionIDTest)
+			if len(requests) != 1 {
+				t.Fatalf("got %d requests, want 1", len(requests))
+			}
+			body := requestBody(t, requests[0])
+			got, ok := body["expected_errors"].([]any)
+			if !ok || !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("expected_errors = %#v, want %#v", body["expected_errors"], tc.want)
+			}
+		})
 	}
 }
 

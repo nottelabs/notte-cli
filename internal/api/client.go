@@ -109,6 +109,10 @@ func NewClientWithURL(apiKey, baseURL, version string, opts ...NotteClientOption
 	return nc, nil
 }
 
+// AcceptRunStatusesHeader lists the function run statuses this client
+// understands beyond closed, active and failed.
+const AcceptRunStatusesHeader = "x-notte-accept-run-statuses"
+
 // resilientTransport wraps http.RoundTripper with auth, retry, and circuit breaker
 type resilientTransport struct {
 	apiOrigin      *url.URL
@@ -136,11 +140,16 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		req.Header.Set("Authorization", "Bearer "+t.apiKey)
 		req.Header.Set("x-notte-request-origin", t.requestOrigin)
 		req.Header.Set("x-notte-sdk-version", t.version)
+		// Opt in to the "rejected" function run status, as the Python SDK
+		// does. A caller that sends x-notte-sdk-version without it is shown
+		// rejected runs as "failed".
+		req.Header.Set(AcceptRunStatusesHeader, "rejected")
 		AddIdempotencyKey(req)
 	} else {
 		req.Header.Del("Authorization")
 		req.Header.Del("x-notte-request-origin")
 		req.Header.Del("x-notte-sdk-version")
+		req.Header.Del(AcceptRunStatusesHeader)
 		req.Header.Del(IdempotencyKeyHeader)
 	}
 

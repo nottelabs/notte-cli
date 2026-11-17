@@ -282,7 +282,7 @@ func generateBuildFunction(buf *bytes.Buffer, config *CommandConfig, schemas map
 		case CategoryFlattenedFlags:
 			generateFlattenedFieldMapping(buf, fc, config, schemas)
 		case CategoryRepeatedFlag:
-			generateRepeatedFieldMapping(buf, fc)
+			generateRepeatedFieldMapping(buf, fc, config)
 		case CategoryJSONDocument:
 			generateJSONDocumentBodyMapping(buf, fc)
 		case CategoryFileUpload:
@@ -632,13 +632,20 @@ func generateFlattenedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *C
 	buf.WriteString("\t}\n\n")
 }
 
-func generateRepeatedFieldMapping(buf *bytes.Buffer, fc *FieldConfig) {
+func generateRepeatedFieldMapping(buf *bytes.Buffer, fc *FieldConfig, config *CommandConfig) {
 	apiFieldName := toCamelCase(fc.Field.JSONName)
 	if apiFieldName == "" {
 		apiFieldName = toCamelCase(fc.Field.Name)
 	}
 
-	fmt.Fprintf(buf, "\tif len(%s) > 0 {\n", fc.VarName)
+	// A PATCH leaves an omitted field unchanged, so an explicitly empty flag
+	// (--flag "") must still be sent: [] is how the caller clears a stored
+	// list. Elsewhere an empty list is left out, as before.
+	if config.HTTPMethod == "PATCH" {
+		fmt.Fprintf(buf, "\tif cmd.Flags().Changed(%q) {\n", fc.FlagName)
+	} else {
+		fmt.Fprintf(buf, "\tif len(%s) > 0 {\n", fc.VarName)
+	}
 	// Pass the slice directly as a pointer - API expects *[]string or similar
 	fmt.Fprintf(buf, "\t\tbody.%s = &%s\n", apiFieldName, fc.VarName)
 

@@ -373,3 +373,59 @@ func TestInlineEnumStringUnionPreservesFlag(t *testing.T) {
 		t.Fatalf("string union lost its default or suggestions: %#v", field)
 	}
 }
+
+// listSpec has one optional string list, sent by a create (POST) and an update
+// (PATCH) operation.
+const listSpec = `{
+  "openapi": "3.0.3",
+  "paths": {
+    "/things": {
+      "post": {
+        "operationId": "thing_create",
+        "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/ThingRequest"}}}}
+      },
+      "patch": {
+        "operationId": "thing_update",
+        "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/ThingRequest"}}}}
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ThingRequest": {
+        "type": "object",
+        "properties": {
+          "tags": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}`
+
+// A PATCH leaves an omitted field unchanged, so `--tags ""` must still send []
+// to clear the stored list. A create keeps leaving an empty list out.
+func TestRepeatedFlagIsSentWhenPassedOnlyInPatch(t *testing.T) {
+	spec := parse(t, listSpec)
+	schemas := buildSchemaMap(spec)
+
+	for _, tc := range []struct {
+		method string
+		op     *Operation
+		want   string
+	}{
+		{"POST", spec.Paths["/things"].Post, "if len(ThingTags) > 0 {"},
+		{"PATCH", spec.Paths["/things"].Patch, `if cmd.Flags().Changed("tags") {`},
+	} {
+		config, err := extractCommandConfig("Thing", "/things", tc.method, tc.op, schemas)
+		if err != nil {
+			t.Fatalf("%s: extracting config: %v", tc.method, err)
+		}
+		code, errs, err := GenerateFlagsFile(config, schemas)
+		if err != nil || len(errs) != 0 {
+			t.Fatalf("%s: generating: %v %v", tc.method, err, errs)
+		}
+		if !strings.Contains(code, tc.want) {
+			t.Errorf("%s: generated code is missing %q:\n%s", tc.method, tc.want, code)
+		}
+	}
+}
