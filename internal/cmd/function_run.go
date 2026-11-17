@@ -63,12 +63,16 @@ func startAndWaitFunction(cmd *cobra.Command, client *api.NotteClient, variables
 		if err := render(result); err != nil {
 			return err
 		}
-		// A failed run is printed like any other; the exit code says it failed.
-		if failed, ok := result.(map[string]any); ok && failed["status"] == string(api.GetFunctionRunResponseStatusFailed) {
-			if id, _ := failed["function_run_id"].(string); id != "" {
-				runID = id
+		// A failed or rejected run is printed like any other; the exit code
+		// says it did not succeed.
+		if failed, ok := result.(map[string]any); ok {
+			status := failed["status"]
+			if status == string(api.GetFunctionRunResponseStatusFailed) || status == string(api.GetFunctionRunResponseStatusRejected) {
+				if id, _ := failed["function_run_id"].(string); id != "" {
+					runID = id
+				}
+				return &runFailedError{runID: runID, rejected: status == string(api.GetFunctionRunResponseStatusRejected)}
 			}
-			return &runFailedError{runID: runID}
 		}
 		return nil
 	}
@@ -200,12 +204,14 @@ func waitFunction(ctx context.Context, client *api.NotteClient, id, runID string
 		switch run.Status {
 		case api.GetFunctionRunResponseStatusClosed:
 			return render(run)
-		case api.GetFunctionRunResponseStatusFailed:
-			// The run is printed like any other; the exit code says it failed.
+		case api.GetFunctionRunResponseStatusFailed, api.GetFunctionRunResponseStatusRejected:
+			// The run is printed like any other; the exit code says it did not
+			// succeed. A rejected run ended on one of the function's expected
+			// errors.
 			if err := render(run); err != nil {
 				return err
 			}
-			return &runFailedError{runID: runID}
+			return &runFailedError{runID: runID, rejected: run.Status == api.GetFunctionRunResponseStatusRejected}
 		case api.GetFunctionRunResponseStatusActive:
 		default:
 			return functionWaitError(id, runID, fmt.Errorf("unrecognized run status %q", run.Status))

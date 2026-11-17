@@ -75,7 +75,7 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 		body.Domain = &FunctionConfigureDomain
 	}
 
-	if len(FunctionConfigureExpectedErrors) > 0 {
+	if cmd.Flags().Changed("expected-errors") {
 		body.ExpectedErrors = &FunctionConfigureExpectedErrors
 	}
 

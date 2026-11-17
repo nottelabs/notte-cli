@@ -468,13 +468,14 @@ Fields are added over time and are not renamed or removed.
   | 4 | `not_found` | The API has no such resource |
   | 5 | `confirmation_required` | A command that deletes needs `--yes` |
   | 6 | `rate_limited` | Too many requests; retry later |
-  | 7 | `run_failed` | The function run that was waited for failed; its data is still on stdout |
+  | 7 | `run_failed` | The function run that was waited for failed or was rejected; its data is still on stdout |
 
 - Commands that delete ask for confirmation in a terminal. Without one they
   do not wait for input: pass `--yes` (or `-y`), or they exit with code 5.
 - When a list has more rows, stderr says `More results: add --page 2`.
 - `notte functions run` and `run-metadata --wait` print the run and then exit
-  with code 7 when it failed, so a failed run is never mistaken for success.
+  with code 7 when it failed or was rejected (it raised one of the function's
+  `--expected-errors`), so such a run is never mistaken for success.
 - In text mode a command that changes something prints one line saying what
   it did, and every view ends with a `Next:` line. Neither is in the JSON.
 

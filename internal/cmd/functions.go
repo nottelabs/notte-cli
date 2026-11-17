@@ -624,7 +624,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		{"run-instructions", FunctionConfigureInstructions},
 		{"default-runtime", FunctionConfigureDefaultRuntime},
 	}
-	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format") || cmd.Flags().Changed("shared") || cmd.Flags().Changed("deletion-protected")
+	anyChanged := cmd.Flags().Changed("self-healing") || cmd.Flags().Changed("response-format") || cmd.Flags().Changed("shared") || cmd.Flags().Changed("deletion-protected") || cmd.Flags().Changed("expected-errors")
 	for _, f := range stringFlags {
 		if !cmd.Flags().Changed(f.name) {
 			continue
@@ -638,7 +638,7 @@ func runFunctionConfigure(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !anyChanged {
-		return errUsage("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --self-healing, --deletion-protected, and/or --shared")
+		return errUsage("nothing to configure: pass --name, --description, --domain, --run-instructions, --default-runtime, --response-format, --expected-errors, --self-healing, --deletion-protected, and/or --shared")
 	}
 	if cmd.Flags().Changed("default-runtime") {
 		if err := validateRuntime("default-runtime", FunctionConfigureDefaultRuntime); err != nil {

@@ -190,7 +190,7 @@ func TestFunctionRunWait_TimeoutDoesNotStopRun(t *testing.T) {
 }
 
 func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
-	for _, status := range []string{"closed", "failed", "unexpected"} {
+	for _, status := range []string{"closed", "failed", "rejected", "unexpected"} {
 		t.Run(status, func(t *testing.T) {
 			setupFunctionRunTest(t)
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeRunMetadata(w, status) }))
@@ -209,11 +209,15 @@ func TestFunctionRunWait_TerminalAndInvalidResponses(t *testing.T) {
 				}
 				return
 			}
-			// A failed run is printed like a finished one and then reported as
-			// an error, so that the exit code tells them apart.
+			// A failed or rejected run is printed like a finished one and then
+			// reported as an error, so that the exit code tells them apart.
 			var failed *runFailedError
-			if (status == "failed") != errors.As(runErr, &failed) || (status != "failed" && runErr != nil) {
+			unsuccessful := status == "failed" || status == "rejected"
+			if unsuccessful != errors.As(runErr, &failed) || (!unsuccessful && runErr != nil) {
 				t.Fatalf("status %s: err=%v", status, runErr)
+			}
+			if unsuccessful && failed.rejected != (status == "rejected") {
+				t.Fatalf("status %s: rejected=%v", status, failed.rejected)
 			}
 			if !strings.Contains(stdout, status) || strings.Count(stderr, "first log") != 1 {
 				t.Fatalf("stdout=%s stderr=%s err=%v", stdout, stderr, runErr)

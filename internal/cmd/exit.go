@@ -41,10 +41,17 @@ func (e *confirmationError) Error() string {
 }
 
 // runFailedError is returned once a function run that the command waited for
-// has failed. The run itself was already printed.
-type runFailedError struct{ runID string }
+// has failed, or was rejected by one of the function's expected errors. The run
+// itself was already printed.
+type runFailedError struct {
+	runID    string
+	rejected bool
+}
 
 func (e *runFailedError) Error() string {
+	if e.rejected {
+		return fmt.Sprintf("function run %s was rejected", e.runID)
+	}
 	return fmt.Sprintf("function run %s failed", e.runID)
 }
 
