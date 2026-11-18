@@ -62,6 +62,9 @@ var (
 	// Whether to try to automatically solve captchas
 	SessionStartSolveCaptchas bool
 
+	// An http(s) URL the session opens in its first tab before the start returns. A profile's saved session config can set it too.
+	SessionStartStartUrl string
+
 	// The user agent to use for the session
 	SessionStartUserAgent string
 
@@ -102,6 +105,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&SessionStartRecordSession, "record-session", false, "Save session replay. False permanently disables saved replay; Live View remains available. (API default: true)")
 	cmd.Flags().StringVar(&SessionStartScreenshotType, "screenshot-type", "", "Ignored since notte 1.10: screenshots are returned without highlighting. (API default: last_action) (raw, full, last_action)")
 	cmd.Flags().BoolVar(&SessionStartSolveCaptchas, "solve-captchas", false, "Whether to try to automatically solve captchas (API default: true)")
+	cmd.Flags().StringVar(&SessionStartStartUrl, "start-url", "", "An http(s) URL the session opens in its first tab before the start returns. A profile's saved session config can set it too.")
 	cmd.Flags().StringVar(&SessionStartUserAgent, "user-agent", "", "The user agent to use for the session")
 	cmd.Flags().StringVar(&SessionStartVaultId, "vault-id", "", "The vault to use for the session")
 	cmd.Flags().IntVar(&SessionStartViewportHeight, "viewport-height", 0, "Viewport height in pixels (minimum 500). Set together with viewport_width.")
@@ -198,6 +202,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if cmd.Flags().Changed("solve-captchas") {
 		body.SolveCaptchas = &SessionStartSolveCaptchas
+	}
+
+	if SessionStartStartUrl != "" {
+		body.StartUrl = &SessionStartStartUrl
 	}
 
 	if SessionStartUserAgent != "" {
