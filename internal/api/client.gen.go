@@ -1609,6 +1609,9 @@ type ApiSessionStartRequest struct {
 	// SolveCaptchas Whether to try to automatically solve captchas
 	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
 
+	// StartUrl An http(s) URL the session opens in its first tab before the start returns. A profile's saved session config can set it too.
+	StartUrl *string `json:"start_url,omitempty"`
+
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
 
@@ -4801,8 +4804,8 @@ type RunFunctionRequest struct {
 	// Version Run this saved version of the function instead of the latest. Only the function's owner can choose a version other than the latest.
 	Version *string `json:"version,omitempty"`
 
-	// WorkflowId The ID of the function to run
-	WorkflowId string `json:"workflow_id"`
+	// WorkflowId The ID of the function to run. Optional: the path already names it.
+	WorkflowId *string `json:"workflow_id,omitempty"`
 }
 
 // RunPayloadReference defines model for RunPayloadReference.
@@ -5382,8 +5385,11 @@ type SessionResponse struct {
 	SessionId string `json:"session_id"`
 
 	// SolveCaptchas Whether to solve captchas.
-	SolveCaptchas *bool                 `json:"solve_captchas,omitempty"`
-	Status        SessionResponseStatus `json:"status"`
+	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
+
+	// StartedWithoutProxy True when the session asked for the default managed proxy, none was available, and it started without a proxy instead (its traffic leaves from Notte's own IP addresses). A workspace turns this fallback off in Settings > Proxies; its starts then fail instead.
+	StartedWithoutProxy *bool                 `json:"started_without_proxy,omitempty"`
+	Status              SessionResponseStatus `json:"status"`
 
 	// Steps Steps of the session
 	Steps *[]map[string]interface{} `json:"steps,omitempty"`
@@ -5405,6 +5411,9 @@ type SessionResponse struct {
 	// ViewportWidth The width of the viewport
 	ViewportWidth *int `json:"viewport_width,omitempty"`
 
+	// Warnings Conditions the session started with that the caller should know about, such as `PROXY_UNAVAILABLE_NO_PROXY_FALLBACK` when no managed proxy was available and the session runs without one.
+	Warnings *[]SessionWarning `json:"warnings,omitempty"`
+
 	// WebBotAuth Whether to use web bot authentication.
 	WebBotAuth           *bool                  `json:"web_bot_auth,omitempty"`
 	AdditionalProperties map[string]interface{} `json:"-"`
@@ -5415,6 +5424,15 @@ type SessionResponseBrowserType string
 
 // SessionResponseStatus defines model for SessionResponse.Status.
 type SessionResponseStatus string
+
+// SessionWarning defines model for SessionWarning.
+type SessionWarning struct {
+	// Code Stable machine-readable warning code.
+	Code string `json:"code"`
+
+	// Message Human-readable explanation of the warning.
+	Message string `json:"message"`
+}
 
 // Shadows defines model for Shadows.
 type Shadows struct {
@@ -6614,7 +6632,7 @@ type ListFunctionRunsByFunctionIdParams struct {
 
 // FunctionRunStartParams defines parameters for FunctionRunStart.
 type FunctionRunStartParams struct {
-	XNotteApiKey        string  `json:"x-notte-api-key"`
+	XNotteApiKey        *string `json:"x-notte-api-key,omitempty"`
 	XDbPreview          *string `json:"x-db-preview,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
@@ -7802,6 +7820,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 		delete(object, "solve_captchas")
 	}
 
+	if raw, found := object["started_without_proxy"]; found {
+		err = json.Unmarshal(raw, &a.StartedWithoutProxy)
+		if err != nil {
+			return fmt.Errorf("error reading 'started_without_proxy': %w", err)
+		}
+		delete(object, "started_without_proxy")
+	}
+
 	if raw, found := object["status"]; found {
 		err = json.Unmarshal(raw, &a.Status)
 		if err != nil {
@@ -7864,6 +7890,14 @@ func (a *SessionResponse) UnmarshalJSON(b []byte) error {
 			return fmt.Errorf("error reading 'viewport_width': %w", err)
 		}
 		delete(object, "viewport_width")
+	}
+
+	if raw, found := object["warnings"]; found {
+		err = json.Unmarshal(raw, &a.Warnings)
+		if err != nil {
+			return fmt.Errorf("error reading 'warnings': %w", err)
+		}
+		delete(object, "warnings")
 	}
 
 	if raw, found := object["web_bot_auth"]; found {
@@ -8032,6 +8066,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if a.StartedWithoutProxy != nil {
+		object["started_without_proxy"], err = json.Marshal(a.StartedWithoutProxy)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'started_without_proxy': %w", err)
+		}
+	}
+
 	object["status"], err = json.Marshal(a.Status)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'status': %w", err)
@@ -8081,6 +8122,13 @@ func (a SessionResponse) MarshalJSON() ([]byte, error) {
 		object["viewport_width"], err = json.Marshal(a.ViewportWidth)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'viewport_width': %w", err)
+		}
+	}
+
+	if a.Warnings != nil {
+		object["warnings"], err = json.Marshal(a.Warnings)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'warnings': %w", err)
 		}
 	}
 
@@ -25156,14 +25204,16 @@ func NewFunctionRunStartRequestWithBody(server string, functionId string, params
 
 	if params != nil {
 
-		var headerParam0 string
+		if params.XNotteApiKey != nil {
+			var headerParam0 string
 
-		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-api-key", runtime.ParamLocationHeader, params.XNotteApiKey)
-		if err != nil {
-			return nil, err
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-api-key", runtime.ParamLocationHeader, *params.XNotteApiKey)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-api-key", headerParam0)
 		}
-
-		req.Header.Set("x-notte-api-key", headerParam0)
 
 		if params.XDbPreview != nil {
 			var headerParam1 string
