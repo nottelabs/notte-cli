@@ -1609,9 +1609,6 @@ type ApiSessionStartRequest struct {
 	// SolveCaptchas Whether to try to automatically solve captchas
 	SolveCaptchas *bool `json:"solve_captchas,omitempty"`
 
-	// StartUrl An http(s) URL the session opens in its first tab before the start returns. A profile's saved session config can set it too.
-	StartUrl *string `json:"start_url,omitempty"`
-
 	// UserAgent The user agent to use for the session
 	UserAgent *string `json:"user_agent,omitempty"`
 
