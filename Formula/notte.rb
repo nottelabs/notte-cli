@@ -5,21 +5,21 @@
 class Notte < Formula
   desc "Browser automation CLI for notte.cc"
   homepage "https://notte.cc"
-  version "0.0.75"
+  version "0.0.76"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.75/notte-cli_0.0.75_darwin_amd64.tar.gz"
-      sha256 "760fd6377efed39a8794ef7378a9088068904c81a11a3578f8b0b409ce4f4350"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.76/notte-cli_0.0.76_darwin_amd64.tar.gz"
+      sha256 "7dd02f4918864d06ec4f7cec83004627426d9fc3e4feb1773b05f75da0b9128d"
 
       define_method(:install) do
         bin.install "notte"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.75/notte-cli_0.0.75_darwin_arm64.tar.gz"
-      sha256 "55a9d3407903d015b3875ce34af918ca81465d8d7390327ff7102c5803be7208"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.76/notte-cli_0.0.76_darwin_arm64.tar.gz"
+      sha256 "2f2fdc227e7e56949dc292739e49e474e874033045322edf238a4d4d7f45b6c5"
 
       define_method(:install) do
         bin.install "notte"
@@ -29,15 +29,15 @@ class Notte < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.75/notte-cli_0.0.75_linux_amd64.tar.gz"
-      sha256 "6eec17187349d25e0559fe14a6738742313b3f5a1a3479599f979ef003f4c68a"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.76/notte-cli_0.0.76_linux_amd64.tar.gz"
+      sha256 "8f024b7a16338b9004eb3b618abeda82ae78deab2710e4ceba277f14edd75678"
       define_method(:install) do
         bin.install "notte"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.75/notte-cli_0.0.75_linux_arm64.tar.gz"
-      sha256 "ab8e62a87141e2594b26a201d2a316f1f6c1af2252f4312d61080636bf9006c6"
+      url "https://github.com/nottelabs/notte-cli/releases/download/v0.0.76/notte-cli_0.0.76_linux_arm64.tar.gz"
+      sha256 "b6bd7115835aac11dced7656c30b49fc7f317d641e92807a8ff529603a6edec2"
       define_method(:install) do
         bin.install "notte"
       end
