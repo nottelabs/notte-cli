@@ -1593,8 +1593,11 @@ type ApiSessionStartRequest struct {
 	LogSession *bool `json:"log_session,omitempty"`
 
 	// MaxDurationMinutes Maximum session lifetime in minutes (absolute maximum, not affected by activity).
-	MaxDurationMinutes *int            `json:"max_duration_minutes,omitempty"`
-	Profile            *SessionProfile `json:"profile,omitempty"`
+	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
+
+	// Os The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.
+	Os      *string         `json:"os,omitempty"`
+	Profile *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used. At most one `secret` entry routes its hosts through the caller's secret proxy; the other entry, if any, is the session's exit.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
@@ -3495,8 +3498,11 @@ type GlobalScrapeRequest struct {
 	OnlyImages *bool `json:"only_images,omitempty"`
 
 	// OnlyMainContent Whether to only scrape the main content of the page. If True, navbars, footers, etc. are excluded.
-	OnlyMainContent *bool           `json:"only_main_content,omitempty"`
-	Profile         *SessionProfile `json:"profile,omitempty"`
+	OnlyMainContent *bool `json:"only_main_content,omitempty"`
+
+	// Os The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.
+	Os      *string         `json:"os,omitempty"`
+	Profile *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used.
 	Proxies *GlobalScrapeRequest_Proxies `json:"proxies,omitempty"`
@@ -4125,7 +4131,7 @@ type NotteProxy struct {
 	Country *ProxyGeolocationCountry `json:"country,omitempty"`
 	Id      *string                  `json:"id,omitempty"`
 
-	// StickySession Keep the session's exit on one residential IP, shared with a proxy gateway credential minted with the same `sticky_session`. 1-64 letters, digits or hyphens.
+	// StickySession Keep the session's exit on one residential IP, shared with a proxy gateway credential minted with the same `sticky_session`. The IP holds while its residential device stays online and can change without notice; new connections with the same `sticky_session` then share a new IP. 1-64 letters, digits or hyphens.
 	StickySession *string `json:"sticky_session,omitempty"`
 	Type          *string `json:"type,omitempty"`
 }
