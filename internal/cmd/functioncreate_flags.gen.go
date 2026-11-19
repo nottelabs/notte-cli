@@ -27,6 +27,9 @@ var (
 	// JSON document: response-format
 	FunctionCreateResponseFormat string
 
+	// The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.
+	FunctionCreateSdkGeneration string
+
 	// Make function public
 	FunctionCreateShared bool
 )
@@ -38,6 +41,7 @@ func RegisterFunctionCreateFlags(cmd *cobra.Command) {
 	_ = cmd.MarkFlagRequired("file")
 	cmd.Flags().StringVar(&FunctionCreateName, "name", "", "Function name")
 	cmd.Flags().StringVar(&FunctionCreateResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
+	cmd.Flags().StringVar(&FunctionCreateSdkGeneration, "sdk-generation", "", "The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.")
 	cmd.Flags().BoolVar(&FunctionCreateShared, "shared", false, "Make function public (API default: false)")
 }
 
@@ -86,6 +90,13 @@ func BuildFunctionCreateBody(cmd *cobra.Command) (io.Reader, string, error) {
 	if responseFormat != "" {
 		if err := writer.WriteField("response_format", responseFormat); err != nil {
 			return nil, "", fmt.Errorf("failed to write response_format field: %w", err)
+		}
+	}
+
+	// sdk_generation
+	if FunctionCreateSdkGeneration != "" {
+		if err := writer.WriteField("sdk_generation", FunctionCreateSdkGeneration); err != nil {
+			return nil, "", fmt.Errorf("failed to write sdk_generation field: %w", err)
 		}
 	}
 

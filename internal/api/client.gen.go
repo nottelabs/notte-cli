@@ -1727,7 +1727,10 @@ type BodyFunctionCreateFunctionsPost struct {
 
 	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
 	ResponseFormat *string `json:"response_format,omitempty"`
-	Shared         *bool   `json:"shared,omitempty"`
+
+	// SdkGeneration The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.
+	SdkGeneration *string `json:"sdk_generation,omitempty"`
+	Shared        *bool   `json:"shared,omitempty"`
 }
 
 // BodyFunctionUpdateFunctionsFunctionIdPost defines model for Body_function_update_functions__function_id__post.
@@ -1736,6 +1739,9 @@ type BodyFunctionUpdateFunctionsFunctionIdPost struct {
 
 	// ResponseFormat JSON Schema of run()'s return value, computed by the caller from its pydantic model
 	ResponseFormat *string `json:"response_format,omitempty"`
+
+	// SdkGeneration The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.
+	SdkGeneration *string `json:"sdk_generation,omitempty"`
 }
 
 // BodySessionCookiesSetSessionsSessionIdCookiesPost defines model for Body_session_cookies_set_sessions__session_id__cookies_post.
