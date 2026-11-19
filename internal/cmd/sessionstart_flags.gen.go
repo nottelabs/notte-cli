@@ -49,6 +49,9 @@ var (
 	// Maximum session lifetime in minutes (absolute maximum, not affected by activity).
 	SessionStartMaxDurationMinutes int
 
+	// The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.
+	SessionStartOs string
+
 	// Flattened: profile object
 	SessionStartProfileId      string
 	SessionStartProfilePersist bool
@@ -96,6 +99,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVar(&SessionStartIdleTimeoutMinutes, "idle-timeout-minutes", 0, "Idle timeout in minutes. Session closes after this period of inactivity (resets on each operation). (API default: 3)")
 	cmd.Flags().BoolVar(&SessionStartLogSession, "log-session", false, "Save browser session logs. False permanently disables saved logs, without disabling metering. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
+	cmd.Flags().StringVar(&SessionStartOs, "os", "", "The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.")
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close (API default: false)")
@@ -169,6 +173,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartMaxDurationMinutes > 0 {
 		body.MaxDurationMinutes = &SessionStartMaxDurationMinutes
+	}
+
+	if SessionStartOs != "" {
+		body.Os = &SessionStartOs
 	}
 
 	// profile: validate required fields when optional fields are provided
