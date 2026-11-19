@@ -19,6 +19,9 @@ var (
 
 	// JSON document: response-format
 	FunctionUpdateResponseFormat string
+
+	// The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.
+	FunctionUpdateSdkGeneration string
 )
 
 // RegisterFunctionUpdateFlags registers all flags for FunctionUpdate command
@@ -26,6 +29,7 @@ func RegisterFunctionUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FunctionUpdateFile, "file", "", "Path to updated function file (required)")
 	_ = cmd.MarkFlagRequired("file")
 	cmd.Flags().StringVar(&FunctionUpdateResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
+	cmd.Flags().StringVar(&FunctionUpdateSdkGeneration, "sdk-generation", "", "The Notte SDK release the code runs with: `v19` (notte 1.9) or `v110` (notte 1.10). Python only. Without it, the uploading client's SDK version decides. `v110` code is checked for APIs notte 1.10 removed.")
 }
 
 // BuildFunctionUpdateBody encodes the multipart request body from CLI flags.
@@ -59,6 +63,13 @@ func BuildFunctionUpdateBody(cmd *cobra.Command) (io.Reader, string, error) {
 	if responseFormat != "" {
 		if err := writer.WriteField("response_format", responseFormat); err != nil {
 			return nil, "", fmt.Errorf("failed to write response_format field: %w", err)
+		}
+	}
+
+	// sdk_generation
+	if FunctionUpdateSdkGeneration != "" {
+		if err := writer.WriteField("sdk_generation", FunctionUpdateSdkGeneration); err != nil {
+			return nil, "", fmt.Errorf("failed to write sdk_generation field: %w", err)
 		}
 	}
 
