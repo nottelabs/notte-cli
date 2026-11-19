@@ -4561,7 +4561,15 @@ type PersonaCreateRequest struct {
 // PersonaEmailProvider defines model for PersonaEmailProvider.
 type PersonaEmailProvider string
 
-// PersonaResponse defines model for PersonaResponse.
+// PersonaResponse Local extension of the SDK's `PersonaResponse` for API-only fields.
+//
+// `email` is the public, human-readable address callers should use, while
+// `internal_email` is the stable UUID-backed mailbox address. Kept under the
+// same public name so callers (and generated clients) see one schema.
+//
+// Once the external notte-sdk publishes these fields this class can be
+// deleted and the direct SDK import restored. Mirrors the local
+// `VaultUpdateRequest` pattern in `notte_api.vault.service`.
 type PersonaResponse struct {
 	CreatedAt FlexibleTime `json:"created_at"`
 
@@ -5120,7 +5128,7 @@ type SecretProxy struct {
 	Username *string `json:"username,omitempty"`
 }
 
-// SecretProxyHostPresetResponse defines model for SecretProxyHostPresetResponse.
+// SecretProxyHostPresetResponse A host preset: the token `hosts` can name and the hosts it stands for.
 type SecretProxyHostPresetResponse struct {
 	Description string            `json:"description"`
 	Entries     []HostPresetEntry `json:"entries"`
@@ -5427,6 +5435,15 @@ type SessionResponseBrowserType string
 
 // SessionResponseStatus defines model for SessionResponse.Status.
 type SessionResponseStatus string
+
+// SessionStepsResponse defines model for SessionStepsResponse.
+type SessionStepsResponse struct {
+	// NextCursor Pass as `cursor` to read the next page. Null when the page ends with the session's latest step; an active session can add more later.
+	NextCursor *string `json:"next_cursor,omitempty"`
+
+	// Steps The session's steps on this page, oldest first, in the format of the session status `steps`.
+	Steps []map[string]interface{} `json:"steps"`
+}
 
 // SessionWarning defines model for SessionWarning.
 type SessionWarning struct {
@@ -7241,6 +7258,17 @@ type SessionMouseReplayParams struct {
 
 // SessionResumeParams defines parameters for SessionResume.
 type SessionResumeParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SessionStepsParams defines parameters for SessionSteps.
+type SessionStepsParams struct {
+	// Cursor The `next_cursor` of the previous page
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Maximum number of steps to return
+	Limit               *int    `form:"limit,omitempty" json:"limit,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -17063,6 +17091,9 @@ type ClientInterface interface {
 	// SessionResume request
 	SessionResume(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SessionSteps request
+	SessionSteps(ctx context.Context, sessionId string, params *SessionStepsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SessionStop request
 	SessionStop(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -19316,6 +19347,18 @@ func (c *Client) SessionMouseReplay(ctx context.Context, sessionId string, param
 
 func (c *Client) SessionResume(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSessionResumeRequest(c.Server, sessionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SessionSteps(ctx context.Context, sessionId string, params *SessionStepsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSessionStepsRequest(c.Server, sessionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -31448,6 +31491,104 @@ func NewSessionResumeRequest(server string, sessionId string, params *SessionRes
 	return req, nil
 }
 
+// NewSessionStepsRequest generates requests for SessionSteps
+func NewSessionStepsRequest(server string, sessionId string, params *SessionStepsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "session_id", runtime.ParamLocationPath, sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s/steps", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewSessionStopRequest generates requests for SessionStop
 func NewSessionStopRequest(server string, sessionId string, params *SessionStopParams) (*http.Request, error) {
 	var err error
@@ -33027,6 +33168,9 @@ type ClientWithResponsesInterface interface {
 
 	// SessionResumeWithResponse request
 	SessionResumeWithResponse(ctx context.Context, sessionId string, params *SessionResumeParams, reqEditors ...RequestEditorFn) (*SessionResumeResult, error)
+
+	// SessionStepsWithResponse request
+	SessionStepsWithResponse(ctx context.Context, sessionId string, params *SessionStepsParams, reqEditors ...RequestEditorFn) (*SessionStepsResult, error)
 
 	// SessionStopWithResponse request
 	SessionStopWithResponse(ctx context.Context, sessionId string, params *SessionStopParams, reqEditors ...RequestEditorFn) (*SessionStopResult, error)
@@ -36152,6 +36296,29 @@ func (r SessionResumeResult) StatusCode() int {
 	return 0
 }
 
+type SessionStepsResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionStepsResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SessionStepsResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SessionStepsResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SessionStopResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -38040,6 +38207,15 @@ func (c *ClientWithResponses) SessionResumeWithResponse(ctx context.Context, ses
 		return nil, err
 	}
 	return ParseSessionResumeResult(rsp)
+}
+
+// SessionStepsWithResponse request returning *SessionStepsResult
+func (c *ClientWithResponses) SessionStepsWithResponse(ctx context.Context, sessionId string, params *SessionStepsParams, reqEditors ...RequestEditorFn) (*SessionStepsResult, error) {
+	rsp, err := c.SessionSteps(ctx, sessionId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSessionStepsResult(rsp)
 }
 
 // SessionStopWithResponse request returning *SessionStopResult
@@ -42575,6 +42751,39 @@ func ParseSessionResumeResult(rsp *http.Response) (*SessionResumeResult, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSessionStepsResult parses an HTTP response from a SessionStepsWithResponse call
+func ParseSessionStepsResult(rsp *http.Response) (*SessionStepsResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SessionStepsResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionStepsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
