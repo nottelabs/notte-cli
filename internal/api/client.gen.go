@@ -3763,12 +3763,12 @@ type MailboxConnection struct {
 	AllowAllSenders      *bool                      `json:"allow_all_senders,omitempty"`
 	AllowedSenderDomains *[]string                  `json:"allowed_sender_domains,omitempty"`
 	AuthorizedScopes     *[]string                  `json:"authorized_scopes,omitempty"`
-	CreatedAt            *string                    `json:"created_at,omitempty"`
+	CreatedAt            *FlexibleTime              `json:"created_at,omitempty"`
 	EmailAddress         string                     `json:"email_address"`
 	Healthy              *bool                      `json:"healthy,omitempty"`
 	Id                   string                     `json:"id"`
 	Provider             *MailboxConnectionProvider `json:"provider,omitempty"`
-	UpdatedAt            *string                    `json:"updated_at,omitempty"`
+	UpdatedAt            *FlexibleTime              `json:"updated_at,omitempty"`
 }
 
 // MailboxConnectionProvider defines model for MailboxConnection.Provider.
@@ -3779,7 +3779,11 @@ type MailboxListResponse struct {
 	Items []MailboxConnection `json:"items"`
 }
 
-// MailboxSyncRequest defines model for MailboxSyncRequest.
+// MailboxSyncRequest Body for post-connect (and refresh) sync.
+//
+// Without `mailbox_id`, sync only refreshes rows already in this workspace.
+// With it (and `provider`), sync imports the Pipedream account minted for that
+// mailbox identity and inserts/updates the matching row.
 type MailboxSyncRequest struct {
 	MailboxId *string `json:"mailbox_id,omitempty"`
 	Provider  *string `json:"provider,omitempty"`
@@ -33383,7 +33387,6 @@ func (r GetScriptResult) StatusCode() int {
 type AnythingStartResult struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *interface{}
 	JSON422      *HTTPValidationError
 }
 
@@ -38579,13 +38582,6 @@ func ParseAnythingStartResult(rsp *http.Response) (*AnythingStartResult, error) 
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest HTTPValidationError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
