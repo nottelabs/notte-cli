@@ -846,6 +846,12 @@ const (
 	PaymentDisconnectResponseModeTest PaymentDisconnectResponseMode = "test"
 )
 
+// Defines values for PaymentListItemProvider.
+const (
+	PaymentListItemProviderAgentcard PaymentListItemProvider = "agentcard"
+	PaymentListItemProviderLink      PaymentListItemProvider = "link"
+)
+
 // Defines values for PaymentNextActionResolution.
 const (
 	AutoResume                           PaymentNextActionResolution = "auto_resume"
@@ -870,6 +876,18 @@ const (
 const (
 	PaymentRequestModeLive PaymentRequestMode = "live"
 	PaymentRequestModeTest PaymentRequestMode = "test"
+)
+
+// Defines values for PaymentRequestProvider.
+const (
+	PaymentRequestProviderAgentcard PaymentRequestProvider = "agentcard"
+	PaymentRequestProviderLink      PaymentRequestProvider = "link"
+)
+
+// Defines values for PaymentResponseProvider.
+const (
+	Agentcard PaymentResponseProvider = "agentcard"
+	Link      PaymentResponseProvider = "link"
 )
 
 // Defines values for PeopleTimeoutBehavior.
@@ -1481,6 +1499,59 @@ type AgentStatusResponse struct {
 
 	// Url The URL that the agent started on
 	Url *string `json:"url,omitempty"`
+}
+
+// AgentcardCredentialsRequest defines model for AgentcardCredentialsRequest.
+type AgentcardCredentialsRequest struct {
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+// AgentcardKycResponse defines model for AgentcardKycResponse.
+type AgentcardKycResponse struct {
+	// Status Agentcard's identity check status, read live.
+	Status string `json:"status"`
+
+	// VerificationUrl Agentcard's hosted verification page, only while the status asks for the user.
+	VerificationUrl *string `json:"verification_url,omitempty"`
+}
+
+// AgentcardProviderResponse defines model for AgentcardProviderResponse.
+type AgentcardProviderResponse struct {
+	ClientIdHint *string `json:"client_id_hint,omitempty"`
+	Configured   bool    `json:"configured"`
+
+	// Enabled Whether this environment takes Agentcard payments. When false, the account can only be read or removed.
+	Enabled        bool                   `json:"enabled"`
+	Kyc            *AgentcardKycResponse  `json:"kyc,omitempty"`
+	OrganizationId *string                `json:"organization_id,omitempty"`
+	TestMode       *bool                  `json:"test_mode,omitempty"`
+	UpdatedAt      *string                `json:"updated_at,omitempty"`
+	User           *AgentcardUserResponse `json:"user,omitempty"`
+}
+
+// AgentcardUserResponse defines model for AgentcardUserResponse.
+type AgentcardUserResponse struct {
+	Email string `json:"email"`
+
+	// Id The Agentcard user id cards are issued to.
+	Id string `json:"id"`
+}
+
+// AgentcardUserStartRequest defines model for AgentcardUserStartRequest.
+type AgentcardUserStartRequest struct {
+	Email string `json:"email"`
+}
+
+// AgentcardUserStartResponse defines model for AgentcardUserStartResponse.
+type AgentcardUserStartResponse struct {
+	ConnectId string `json:"connect_id"`
+}
+
+// AgentcardUserVerifyRequest defines model for AgentcardUserVerifyRequest.
+type AgentcardUserVerifyRequest struct {
+	Code      string `json:"code"`
+	ConnectId string `json:"connect_id"`
 }
 
 // AnythingStartRequest defines model for AnythingStartRequest.
@@ -4369,15 +4440,25 @@ type PaymentListItem struct {
 	MerchantUrl      string             `json:"merchant_url"`
 	Mode             string             `json:"mode"`
 	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
-	PurchaseStatus   *string            `json:"purchase_status,omitempty"`
-	SessionId        string             `json:"session_id"`
-	Status           string             `json:"status"`
-	UpdatedAt        FlexibleTime       `json:"updated_at"`
+
+	// Outcome What happened to an Agentcard card once the payment ended: `charged`, `declined` (only declined charges) or `unused` (closed without a charge). Null until known, and for Link.
+	Outcome *string `json:"outcome,omitempty"`
+
+	// OutcomeAmount The amount charged on the card, as an exact decimal string. Null until known.
+	OutcomeAmount  *string                  `json:"outcome_amount,omitempty"`
+	Provider       *PaymentListItemProvider `json:"provider,omitempty"`
+	PurchaseStatus *string                  `json:"purchase_status,omitempty"`
+	SessionId      string                   `json:"session_id"`
+	Status         string                   `json:"status"`
+	UpdatedAt      FlexibleTime             `json:"updated_at"`
 
 	// UserId The user who requested the payment.
 	UserId  string  `json:"user_id"`
 	VaultId *string `json:"vault_id,omitempty"`
 }
+
+// PaymentListItemProvider defines model for PaymentListItem.Provider.
+type PaymentListItemProvider string
 
 // PaymentNextAction defines model for PaymentNextAction.
 type PaymentNextAction struct {
@@ -4402,6 +4483,9 @@ type PaymentRequest struct {
 	MerchantName string                `json:"merchant_name"`
 	MerchantUrl  string                `json:"merchant_url"`
 	Mode         *PaymentRequestMode   `json:"mode,omitempty"`
+
+	// Provider `link` (the caller's Link wallet, approved per payment) or `agentcard` (the workspace's Agentcard account, no approval step, USD only).
+	Provider *PaymentRequestProvider `json:"provider,omitempty"`
 }
 
 // PaymentRequestAmount0 defines model for .
@@ -4418,6 +4502,9 @@ type PaymentRequest_Amount struct {
 // PaymentRequestMode defines model for PaymentRequest.Mode.
 type PaymentRequestMode string
 
+// PaymentRequestProvider `link` (the caller's Link wallet, approved per payment) or `agentcard` (the workspace's Agentcard account, no approval step, USD only).
+type PaymentRequestProvider string
+
 // PaymentResponse defines model for PaymentResponse.
 type PaymentResponse struct {
 	// Amount Amount in currency units, serialized as an exact decimal string.
@@ -4433,11 +4520,21 @@ type PaymentResponse struct {
 	MerchantUrl      string             `json:"merchant_url"`
 	Mode             string             `json:"mode"`
 	NextAction       *PaymentNextAction `json:"next_action,omitempty"`
-	PurchaseStatus   *string            `json:"purchase_status,omitempty"`
-	SessionId        string             `json:"session_id"`
-	Status           string             `json:"status"`
-	VaultId          *string            `json:"vault_id,omitempty"`
+
+	// Outcome What happened to an Agentcard card once the payment ended: `charged`, `declined` (only declined charges) or `unused` (closed without a charge). Null until known, and for Link.
+	Outcome *string `json:"outcome,omitempty"`
+
+	// OutcomeAmount The amount charged on the card, as an exact decimal string. Null until known.
+	OutcomeAmount  *string                  `json:"outcome_amount,omitempty"`
+	Provider       *PaymentResponseProvider `json:"provider,omitempty"`
+	PurchaseStatus *string                  `json:"purchase_status,omitempty"`
+	SessionId      string                   `json:"session_id"`
+	Status         string                   `json:"status"`
+	VaultId        *string                  `json:"vault_id,omitempty"`
 }
+
+// PaymentResponseProvider defines model for PaymentResponse.Provider.
+type PaymentResponseProvider string
 
 // PeopleEnrichRequest defines model for PeopleEnrichRequest.
 type PeopleEnrichRequest struct {
@@ -6869,6 +6966,36 @@ type DisconnectPaymentWalletParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// DeleteAgentcardProviderParams defines parameters for DeleteAgentcardProvider.
+type DeleteAgentcardProviderParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// GetAgentcardProviderParams defines parameters for GetAgentcardProvider.
+type GetAgentcardProviderParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// SaveAgentcardProviderParams defines parameters for SaveAgentcardProvider.
+type SaveAgentcardProviderParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// StartAgentcardUserParams defines parameters for StartAgentcardUser.
+type StartAgentcardUserParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
+// VerifyAgentcardUserParams defines parameters for VerifyAgentcardUser.
+type VerifyAgentcardUserParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // GetPaymentParams defines parameters for GetPayment.
 type GetPaymentParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -7495,6 +7622,15 @@ type ConnectPaymentWalletJSONRequestBody = PaymentConnectRequest
 
 // DisconnectPaymentWalletJSONRequestBody defines body for DisconnectPaymentWallet for application/json ContentType.
 type DisconnectPaymentWalletJSONRequestBody = PaymentConnectRequest
+
+// SaveAgentcardProviderJSONRequestBody defines body for SaveAgentcardProvider for application/json ContentType.
+type SaveAgentcardProviderJSONRequestBody = AgentcardCredentialsRequest
+
+// StartAgentcardUserJSONRequestBody defines body for StartAgentcardUser for application/json ContentType.
+type StartAgentcardUserJSONRequestBody = AgentcardUserStartRequest
+
+// VerifyAgentcardUserJSONRequestBody defines body for VerifyAgentcardUser for application/json ContentType.
+type VerifyAgentcardUserJSONRequestBody = AgentcardUserVerifyRequest
 
 // PersonaCreateJSONRequestBody defines body for PersonaCreate for application/json ContentType.
 type PersonaCreateJSONRequestBody = PersonaCreateRequest
@@ -16901,6 +17037,27 @@ type ClientInterface interface {
 
 	DisconnectPaymentWallet(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteAgentcardProvider request
+	DeleteAgentcardProvider(ctx context.Context, params *DeleteAgentcardProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAgentcardProvider request
+	GetAgentcardProvider(ctx context.Context, params *GetAgentcardProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SaveAgentcardProviderWithBody request with any body
+	SaveAgentcardProviderWithBody(ctx context.Context, params *SaveAgentcardProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SaveAgentcardProvider(ctx context.Context, params *SaveAgentcardProviderParams, body SaveAgentcardProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// StartAgentcardUserWithBody request with any body
+	StartAgentcardUserWithBody(ctx context.Context, params *StartAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	StartAgentcardUser(ctx context.Context, params *StartAgentcardUserParams, body StartAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VerifyAgentcardUserWithBody request with any body
+	VerifyAgentcardUserWithBody(ctx context.Context, params *VerifyAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	VerifyAgentcardUser(ctx context.Context, params *VerifyAgentcardUserParams, body VerifyAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPayment request
 	GetPayment(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -18489,6 +18646,102 @@ func (c *Client) DisconnectPaymentWalletWithBody(ctx context.Context, params *Di
 
 func (c *Client) DisconnectPaymentWallet(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDisconnectPaymentWalletRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteAgentcardProvider(ctx context.Context, params *DeleteAgentcardProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAgentcardProviderRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAgentcardProvider(ctx context.Context, params *GetAgentcardProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentcardProviderRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SaveAgentcardProviderWithBody(ctx context.Context, params *SaveAgentcardProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveAgentcardProviderRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SaveAgentcardProvider(ctx context.Context, params *SaveAgentcardProviderParams, body SaveAgentcardProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveAgentcardProviderRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartAgentcardUserWithBody(ctx context.Context, params *StartAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartAgentcardUserRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartAgentcardUser(ctx context.Context, params *StartAgentcardUserParams, body StartAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartAgentcardUserRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) VerifyAgentcardUserWithBody(ctx context.Context, params *VerifyAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyAgentcardUserRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) VerifyAgentcardUser(ctx context.Context, params *VerifyAgentcardUserParams, body VerifyAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyAgentcardUserRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -27287,6 +27540,310 @@ func NewDisconnectPaymentWalletRequestWithBody(server string, params *Disconnect
 	return req, nil
 }
 
+// NewDeleteAgentcardProviderRequest generates requests for DeleteAgentcardProvider
+func NewDeleteAgentcardProviderRequest(server string, params *DeleteAgentcardProviderParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/providers/agentcard")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetAgentcardProviderRequest generates requests for GetAgentcardProvider
+func NewGetAgentcardProviderRequest(server string, params *GetAgentcardProviderParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/providers/agentcard")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewSaveAgentcardProviderRequest calls the generic SaveAgentcardProvider builder with application/json body
+func NewSaveAgentcardProviderRequest(server string, params *SaveAgentcardProviderParams, body SaveAgentcardProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSaveAgentcardProviderRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewSaveAgentcardProviderRequestWithBody generates requests for SaveAgentcardProvider with any type of body
+func NewSaveAgentcardProviderRequestWithBody(server string, params *SaveAgentcardProviderParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/providers/agentcard")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewStartAgentcardUserRequest calls the generic StartAgentcardUser builder with application/json body
+func NewStartAgentcardUserRequest(server string, params *StartAgentcardUserParams, body StartAgentcardUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewStartAgentcardUserRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewStartAgentcardUserRequestWithBody generates requests for StartAgentcardUser with any type of body
+func NewStartAgentcardUserRequestWithBody(server string, params *StartAgentcardUserParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/providers/agentcard/user/start")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewVerifyAgentcardUserRequest calls the generic VerifyAgentcardUser builder with application/json body
+func NewVerifyAgentcardUserRequest(server string, params *VerifyAgentcardUserParams, body VerifyAgentcardUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewVerifyAgentcardUserRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewVerifyAgentcardUserRequestWithBody generates requests for VerifyAgentcardUser with any type of body
+func NewVerifyAgentcardUserRequestWithBody(server string, params *VerifyAgentcardUserParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/payments/providers/agentcard/user/verify")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewGetPaymentRequest generates requests for GetPayment
 func NewGetPaymentRequest(server string, paymentId openapi_types.UUID, params *GetPaymentParams) (*http.Request, error) {
 	var err error
@@ -32979,6 +33536,27 @@ type ClientWithResponsesInterface interface {
 
 	DisconnectPaymentWalletWithResponse(ctx context.Context, params *DisconnectPaymentWalletParams, body DisconnectPaymentWalletJSONRequestBody, reqEditors ...RequestEditorFn) (*DisconnectPaymentWalletResult, error)
 
+	// DeleteAgentcardProviderWithResponse request
+	DeleteAgentcardProviderWithResponse(ctx context.Context, params *DeleteAgentcardProviderParams, reqEditors ...RequestEditorFn) (*DeleteAgentcardProviderResult, error)
+
+	// GetAgentcardProviderWithResponse request
+	GetAgentcardProviderWithResponse(ctx context.Context, params *GetAgentcardProviderParams, reqEditors ...RequestEditorFn) (*GetAgentcardProviderResult, error)
+
+	// SaveAgentcardProviderWithBodyWithResponse request with any body
+	SaveAgentcardProviderWithBodyWithResponse(ctx context.Context, params *SaveAgentcardProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveAgentcardProviderResult, error)
+
+	SaveAgentcardProviderWithResponse(ctx context.Context, params *SaveAgentcardProviderParams, body SaveAgentcardProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveAgentcardProviderResult, error)
+
+	// StartAgentcardUserWithBodyWithResponse request with any body
+	StartAgentcardUserWithBodyWithResponse(ctx context.Context, params *StartAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartAgentcardUserResult, error)
+
+	StartAgentcardUserWithResponse(ctx context.Context, params *StartAgentcardUserParams, body StartAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*StartAgentcardUserResult, error)
+
+	// VerifyAgentcardUserWithBodyWithResponse request with any body
+	VerifyAgentcardUserWithBodyWithResponse(ctx context.Context, params *VerifyAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyAgentcardUserResult, error)
+
+	VerifyAgentcardUserWithResponse(ctx context.Context, params *VerifyAgentcardUserParams, body VerifyAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyAgentcardUserResult, error)
+
 	// GetPaymentWithResponse request
 	GetPaymentWithResponse(ctx context.Context, paymentId openapi_types.UUID, params *GetPaymentParams, reqEditors ...RequestEditorFn) (*GetPaymentResult, error)
 
@@ -35101,6 +35679,120 @@ func (r DisconnectPaymentWalletResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DisconnectPaymentWalletResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteAgentcardProviderResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAgentcardProviderResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAgentcardProviderResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAgentcardProviderResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentcardProviderResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentcardProviderResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentcardProviderResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SaveAgentcardProviderResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentcardProviderResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r SaveAgentcardProviderResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SaveAgentcardProviderResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type StartAgentcardUserResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentcardUserStartResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r StartAgentcardUserResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartAgentcardUserResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type VerifyAgentcardUserResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AgentcardProviderResponse
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r VerifyAgentcardUserResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VerifyAgentcardUserResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -37585,6 +38277,75 @@ func (c *ClientWithResponses) DisconnectPaymentWalletWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseDisconnectPaymentWalletResult(rsp)
+}
+
+// DeleteAgentcardProviderWithResponse request returning *DeleteAgentcardProviderResult
+func (c *ClientWithResponses) DeleteAgentcardProviderWithResponse(ctx context.Context, params *DeleteAgentcardProviderParams, reqEditors ...RequestEditorFn) (*DeleteAgentcardProviderResult, error) {
+	rsp, err := c.DeleteAgentcardProvider(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAgentcardProviderResult(rsp)
+}
+
+// GetAgentcardProviderWithResponse request returning *GetAgentcardProviderResult
+func (c *ClientWithResponses) GetAgentcardProviderWithResponse(ctx context.Context, params *GetAgentcardProviderParams, reqEditors ...RequestEditorFn) (*GetAgentcardProviderResult, error) {
+	rsp, err := c.GetAgentcardProvider(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentcardProviderResult(rsp)
+}
+
+// SaveAgentcardProviderWithBodyWithResponse request with arbitrary body returning *SaveAgentcardProviderResult
+func (c *ClientWithResponses) SaveAgentcardProviderWithBodyWithResponse(ctx context.Context, params *SaveAgentcardProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveAgentcardProviderResult, error) {
+	rsp, err := c.SaveAgentcardProviderWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveAgentcardProviderResult(rsp)
+}
+
+func (c *ClientWithResponses) SaveAgentcardProviderWithResponse(ctx context.Context, params *SaveAgentcardProviderParams, body SaveAgentcardProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveAgentcardProviderResult, error) {
+	rsp, err := c.SaveAgentcardProvider(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveAgentcardProviderResult(rsp)
+}
+
+// StartAgentcardUserWithBodyWithResponse request with arbitrary body returning *StartAgentcardUserResult
+func (c *ClientWithResponses) StartAgentcardUserWithBodyWithResponse(ctx context.Context, params *StartAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartAgentcardUserResult, error) {
+	rsp, err := c.StartAgentcardUserWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartAgentcardUserResult(rsp)
+}
+
+func (c *ClientWithResponses) StartAgentcardUserWithResponse(ctx context.Context, params *StartAgentcardUserParams, body StartAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*StartAgentcardUserResult, error) {
+	rsp, err := c.StartAgentcardUser(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartAgentcardUserResult(rsp)
+}
+
+// VerifyAgentcardUserWithBodyWithResponse request with arbitrary body returning *VerifyAgentcardUserResult
+func (c *ClientWithResponses) VerifyAgentcardUserWithBodyWithResponse(ctx context.Context, params *VerifyAgentcardUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyAgentcardUserResult, error) {
+	rsp, err := c.VerifyAgentcardUserWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifyAgentcardUserResult(rsp)
+}
+
+func (c *ClientWithResponses) VerifyAgentcardUserWithResponse(ctx context.Context, params *VerifyAgentcardUserParams, body VerifyAgentcardUserJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyAgentcardUserResult, error) {
+	rsp, err := c.VerifyAgentcardUser(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifyAgentcardUserResult(rsp)
 }
 
 // GetPaymentWithResponse request returning *GetPaymentResult
@@ -41056,6 +41817,164 @@ func ParseDisconnectPaymentWalletResult(rsp *http.Response) (*DisconnectPaymentW
 			return nil, err
 		}
 		response.JSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAgentcardProviderResult parses an HTTP response from a DeleteAgentcardProviderWithResponse call
+func ParseDeleteAgentcardProviderResult(rsp *http.Response) (*DeleteAgentcardProviderResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAgentcardProviderResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAgentcardProviderResult parses an HTTP response from a GetAgentcardProviderWithResponse call
+func ParseGetAgentcardProviderResult(rsp *http.Response) (*GetAgentcardProviderResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentcardProviderResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentcardProviderResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSaveAgentcardProviderResult parses an HTTP response from a SaveAgentcardProviderWithResponse call
+func ParseSaveAgentcardProviderResult(rsp *http.Response) (*SaveAgentcardProviderResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SaveAgentcardProviderResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentcardProviderResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseStartAgentcardUserResult parses an HTTP response from a StartAgentcardUserWithResponse call
+func ParseStartAgentcardUserResult(rsp *http.Response) (*StartAgentcardUserResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartAgentcardUserResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentcardUserStartResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseVerifyAgentcardUserResult parses an HTTP response from a VerifyAgentcardUserWithResponse call
+func ParseVerifyAgentcardUserResult(rsp *http.Response) (*VerifyAgentcardUserResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VerifyAgentcardUserResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentcardProviderResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	}
 
