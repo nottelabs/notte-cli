@@ -140,6 +140,7 @@ notte sessions cookies-set --file cookies.json  # Set cookies in current session
 notte sessions save-profile --name github  # Save current session's state into a new profile (or --profile-id <id>)
 notte sessions network                # View network activity logs
 notte sessions replay                 # Get session replay data
+notte sessions steps [--limit N] [--cursor C]  # List the steps taken in the session
 notte sessions workflow-code          # Export session steps as Python code
 notte sessions viewer                 # Open session viewer in browser
 notte sessions code                   # Get Python script for session steps

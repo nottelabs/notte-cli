@@ -53,6 +53,8 @@ var (
 	sessionNetworkURLsOnly    bool
 	sessionNetworkPath        string
 	sessionReplayOutput       string
+	sessionStepsCursor        string
+	sessionStepsLimit         int
 )
 
 // GetCurrentSessionID returns the session ID from flag, env var, or file (in priority order)
@@ -341,6 +343,20 @@ var sessionsOffsetCmd = &cobra.Command{
 	RunE:  runSessionOffset,
 }
 
+var sessionsStepsCmd = &cobra.Command{
+	Use:   "steps",
+	Short: "List the steps taken in the session",
+	Long: `List the session's steps, oldest first, one page at a time.
+
+When more steps follow, the next page's cursor is printed on stderr; pass it
+back with --cursor.`,
+	Example: `  notte sessions steps
+  notte sessions steps --limit 20
+  notte sessions steps --cursor <next-cursor>`,
+	Args: cobra.NoArgs,
+	RunE: runSessionSteps,
+}
+
 var sessionsWorkflowCodeCmd = &cobra.Command{
 	Use:   "workflow-code",
 	Short: "Export session steps as code",
@@ -381,6 +397,7 @@ func init() {
 	sessionsCmd.AddCommand(sessionsNetworkCmd)
 	sessionsCmd.AddCommand(sessionsReplayCmd)
 	sessionsCmd.AddCommand(sessionsOffsetCmd)
+	sessionsCmd.AddCommand(sessionsStepsCmd)
 	sessionsCmd.AddCommand(sessionsWorkflowCodeCmd)
 	sessionsCmd.AddCommand(sessionsCodeCmd)
 	sessionsCmd.AddCommand(sessionsViewerCmd)
@@ -449,6 +466,11 @@ func init() {
 
 	// Offset command flags
 	sessionsOffsetCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+
+	// Steps command flags
+	sessionsStepsCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
+	sessionsStepsCmd.Flags().StringVar(&sessionStepsCursor, "cursor", "", "Cursor of the page to read, from the previous page's next_cursor")
+	sessionsStepsCmd.Flags().IntVarP(&sessionStepsLimit, "limit", "n", 0, "Maximum number of steps to return")
 
 	// Workflow-code command flags
 	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
@@ -1602,6 +1624,49 @@ func runSessionOffset(cmd *cobra.Command, args []string) error {
 	}
 
 	return render(resp.JSON200)
+}
+
+func runSessionSteps(cmd *cobra.Command, args []string) error {
+	if err := RequireSessionID(); err != nil {
+		return err
+	}
+
+	params := &api.SessionStepsParams{}
+	if cmd.Flags().Changed("limit") {
+		if sessionStepsLimit < 1 {
+			return errUsage("--limit must be >= 1 (got %d)", sessionStepsLimit)
+		}
+		params.Limit = &sessionStepsLimit
+	}
+	if sessionStepsCursor != "" {
+		params.Cursor = &sessionStepsCursor
+	}
+
+	client, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := GetContextWithTimeout(cmd.Context())
+	defer cancel()
+
+	resp, err := client.Client().SessionStepsWithResponse(ctx, sessionID, params)
+	if err != nil {
+		return fmt.Errorf("API request failed: %w", err)
+	}
+
+	if err := HandleAPIResponse(resp.HTTPResponse, resp.Body); err != nil {
+		return err
+	}
+
+	if err := render(resp.JSON200); err != nil {
+		return err
+	}
+	// Stdout stays the API's page; how to read the next one goes to stderr.
+	if resp.JSON200 != nil && resp.JSON200.NextCursor != nil && *resp.JSON200.NextCursor != "" {
+		_, _ = fmt.Fprintf(os.Stderr, "More steps: add --cursor %s\n", *resp.JSON200.NextCursor)
+	}
+	return nil
 }
 
 func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
