@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -923,7 +922,9 @@ func TestRunSessionOffset(t *testing.T) {
 	}
 }
 
-func runSessionStepsForTest(t *testing.T, cursor string, limit int) (stdout, stderr string, err error) {
+// runSessionStepsForTest runs the command with --cursor and --limit set as on
+// the command line; an empty string leaves that flag unset.
+func runSessionStepsForTest(t *testing.T, cursor, limit string) (stdout, stderr string, err error) {
 	t.Helper()
 	origCursor, origLimit := sessionStepsCursor, sessionStepsLimit
 	t.Cleanup(func() { sessionStepsCursor, sessionStepsLimit = origCursor, origLimit })
@@ -935,8 +936,10 @@ func runSessionStepsForTest(t *testing.T, cursor string, limit int) (stdout, std
 	if cursor != "" {
 		_ = cmd.Flags().Set("cursor", cursor)
 	}
-	if limit != 0 {
-		_ = cmd.Flags().Set("limit", strconv.Itoa(limit))
+	if limit != "" {
+		if err := cmd.Flags().Set("limit", limit); err != nil {
+			t.Fatalf("setting --limit: %v", err)
+		}
 	}
 
 	stdout, stderr = testutil.CaptureOutput(func() {
@@ -954,7 +957,7 @@ func TestRunSessionSteps(t *testing.T) {
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
-	stdout, stderr, err := runSessionStepsForTest(t, "prev", 5)
+	stdout, stderr, err := runSessionStepsForTest(t, "prev", "5")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -989,7 +992,7 @@ func TestRunSessionSteps_LastPage(t *testing.T) {
 	outputFormat = "json"
 	t.Cleanup(func() { outputFormat = origFormat })
 
-	_, stderr, err := runSessionStepsForTest(t, "", 0)
+	_, stderr, err := runSessionStepsForTest(t, "", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1002,15 +1005,21 @@ func TestRunSessionSteps_LastPage(t *testing.T) {
 }
 
 func TestRunSessionSteps_InvalidLimit(t *testing.T) {
-	server := setupSessionTest(t)
-	path := "/sessions/" + sessionIDTest + "/steps"
+	// "0" matters on its own: it equals the flag's default, so only Changed
+	// tells an explicit --limit 0 apart from no --limit at all.
+	for _, limit := range []string{"0", "-1"} {
+		t.Run(limit, func(t *testing.T) {
+			server := setupSessionTest(t)
+			path := "/sessions/" + sessionIDTest + "/steps"
 
-	_, _, err := runSessionStepsForTest(t, "", -1)
-	if err == nil || !strings.Contains(err.Error(), "--limit") {
-		t.Fatalf("expected --limit usage error, got %v", err)
-	}
-	if n := len(server.Requests(path)); n != 0 {
-		t.Errorf("expected no request, got %d", n)
+			_, _, err := runSessionStepsForTest(t, "", limit)
+			if err == nil || !strings.Contains(err.Error(), "--limit") {
+				t.Fatalf("expected --limit usage error, got %v", err)
+			}
+			if n := len(server.Requests(path)); n != 0 {
+				t.Errorf("expected no request, got %d", n)
+			}
+		})
 	}
 }
 
