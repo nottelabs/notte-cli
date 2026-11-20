@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -918,6 +919,107 @@ func TestRunSessionOffset(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+}
+
+// runSessionStepsForTest runs the command with --cursor and --limit set as on
+// the command line; an empty string leaves that flag unset.
+func runSessionStepsForTest(t *testing.T, cursor, limit string) (stdout, stderr string, err error) {
+	t.Helper()
+	origCursor, origLimit := sessionStepsCursor, sessionStepsLimit
+	t.Cleanup(func() { sessionStepsCursor, sessionStepsLimit = origCursor, origLimit })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	cmd.Flags().StringVar(&sessionStepsCursor, "cursor", "", "")
+	cmd.Flags().IntVarP(&sessionStepsLimit, "limit", "n", 0, "")
+	if cursor != "" {
+		_ = cmd.Flags().Set("cursor", cursor)
+	}
+	if limit != "" {
+		if err := cmd.Flags().Set("limit", limit); err != nil {
+			t.Fatalf("setting --limit: %v", err)
+		}
+	}
+
+	stdout, stderr = testutil.CaptureOutput(func() {
+		err = runSessionSteps(cmd, nil)
+	})
+	return stdout, stderr, err
+}
+
+func TestRunSessionSteps(t *testing.T) {
+	server := setupSessionTest(t)
+	path := "/sessions/" + sessionIDTest + "/steps"
+	server.AddResponse(path, 200, `{"steps":[{"type":"goto","url":"https://example.com"}],"next_cursor":"abc"}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	stdout, stderr, err := runSessionStepsForTest(t, "prev", "5")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var page api.SessionStepsResponse
+	if err := json.Unmarshal([]byte(stdout), &page); err != nil {
+		t.Fatalf("stdout is not the API page: %v\n%s", err, stdout)
+	}
+	if len(page.Steps) != 1 || page.NextCursor == nil || *page.NextCursor != "abc" {
+		t.Errorf("unexpected page: %+v", page)
+	}
+	if !strings.Contains(stderr, "--cursor abc") {
+		t.Errorf("expected next-page hint on stderr, got %q", stderr)
+	}
+
+	reqs := server.Requests(path)
+	if len(reqs) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(reqs))
+	}
+	q, _ := url.ParseQuery(reqs[0].Query)
+	if q.Get("cursor") != "prev" || q.Get("limit") != "5" {
+		t.Errorf("unexpected query: %s", reqs[0].Query)
+	}
+}
+
+func TestRunSessionSteps_LastPage(t *testing.T) {
+	server := setupSessionTest(t)
+	path := "/sessions/" + sessionIDTest + "/steps"
+	server.AddResponse(path, 200, `{"steps":[],"next_cursor":null}`)
+
+	origFormat := outputFormat
+	outputFormat = "json"
+	t.Cleanup(func() { outputFormat = origFormat })
+
+	_, stderr, err := runSessionStepsForTest(t, "", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(stderr, "--cursor") {
+		t.Errorf("expected no next-page hint on the last page, got %q", stderr)
+	}
+	if q := server.Requests(path)[0].Query; q != "" {
+		t.Errorf("expected no query parameters by default, got %q", q)
+	}
+}
+
+func TestRunSessionSteps_InvalidLimit(t *testing.T) {
+	// "0" matters on its own: it equals the flag's default, so only Changed
+	// tells an explicit --limit 0 apart from no --limit at all.
+	for _, limit := range []string{"0", "-1"} {
+		t.Run(limit, func(t *testing.T) {
+			server := setupSessionTest(t)
+			path := "/sessions/" + sessionIDTest + "/steps"
+
+			_, _, err := runSessionStepsForTest(t, "", limit)
+			if err == nil || !strings.Contains(err.Error(), "--limit") {
+				t.Fatalf("expected --limit usage error, got %v", err)
+			}
+			if n := len(server.Requests(path)); n != 0 {
+				t.Errorf("expected no request, got %d", n)
+			}
+		})
 	}
 }
 
