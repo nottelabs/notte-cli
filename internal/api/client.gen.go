@@ -3905,7 +3905,7 @@ type MarkdownParams struct {
 	InlineImages  *string `json:"inlineImages,omitempty"`
 }
 
-// MouseReplayPage defines model for MouseReplayPage.
+// MouseReplayPage One page of presigned mouse telemetry URLs; every field is null when the manifest cannot be used.
 type MouseReplayPage struct {
 	MouseChunkUrls   *[]string `json:"mouse_chunk_urls,omitempty"`
 	MouseManifestUrl *string   `json:"mouse_manifest_url,omitempty"`
@@ -3991,7 +3991,7 @@ type NameClue struct {
 	Last  *string `json:"last,omitempty"`
 }
 
-// NetworkBatchFile defines model for NetworkBatchFile.
+// NetworkBatchFile Represents a batched network log file in S3
 type NetworkBatchFile struct {
 	DownloadUrl                 *string `json:"download_url,omitempty"`
 	DownloadUrlExpiresInSeconds *int    `json:"download_url_expires_in_seconds,omitempty"`
@@ -3999,7 +3999,7 @@ type NetworkBatchFile struct {
 	Size                        int     `json:"size"`
 }
 
-// NetworkLogsResponse defines model for NetworkLogsResponse.
+// NetworkLogsResponse Response containing network logs for a session
 type NetworkLogsResponse struct {
 	Batches         []NetworkBatchFile `json:"batches"`
 	Format          *string            `json:"format,omitempty"`
@@ -4827,7 +4827,7 @@ type ReplayMissingResponse struct {
 // ReplayMissingResponseReplayStatus defines model for ReplayMissingResponse.ReplayStatus.
 type ReplayMissingResponseReplayStatus string
 
-// ReplayResponse defines model for ReplayResponse.
+// ReplayResponse Response containing presigned URLs for session replay.
 type ReplayResponse struct {
 	ExpiresAt        string    `json:"expires_at"`
 	MouseChunkUrls   *[]string `json:"mouse_chunk_urls,omitempty"`
