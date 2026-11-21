@@ -7329,9 +7329,12 @@ type SessionStepsParams struct {
 
 // SessionStopParams defines parameters for SessionStop.
 type SessionStopParams struct {
-	CloseReason         *SessionStopParamsCloseReason `form:"close_reason,omitempty" json:"close_reason,omitempty"`
-	XNotteRequestOrigin *string                       `json:"x-notte-request-origin,omitempty"`
-	XNotteSdkVersion    *string                       `json:"x-notte-sdk-version,omitempty"`
+	CloseReason *SessionStopParamsCloseReason `form:"close_reason,omitempty" json:"close_reason,omitempty"`
+
+	// Wait Answer only once the session's close has finished its background work: its last CDP actions and steps are stored, its replay is finalized, its final network usage is written and its browser is released. The response's `steps` and network usage are then complete. Waits at most 30 seconds from the request, the close included, then answers what is stored. Defaults to false: the stop answers as soon as the session is closed, and that work finishes after the response.
+	Wait                *bool   `form:"wait,omitempty" json:"wait,omitempty"`
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
 // SessionStopParamsCloseReason defines parameters for SessionStop.
@@ -31675,6 +31678,22 @@ func NewSessionStopRequest(server string, sessionId string, params *SessionStopP
 		if params.CloseReason != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "close_reason", runtime.ParamLocationQuery, *params.CloseReason); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Wait != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wait", runtime.ParamLocationQuery, *params.Wait); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
