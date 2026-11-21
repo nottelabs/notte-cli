@@ -15,7 +15,7 @@ var (
 	// Whether to create a vault for the persona
 	PersonaCreateCreateVault bool
 
-	// Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain; other configured domains are listed by GET /personas/create/email-domains.
+	// Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain. Any other domain must be one Notte has enabled; other values are refused with the list of allowed domains.
 	PersonaCreateEmailDomain string
 
 	PersonaCreateEmailProvider string
@@ -27,7 +27,7 @@ var (
 func RegisterPersonaCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&PersonaCreateCreatePhoneNumber, "create-phone-number", false, "Whether to create a phone number for the persona (API default: false)")
 	cmd.Flags().BoolVar(&PersonaCreateCreateVault, "create-vault", false, "Whether to create a vault for the persona (API default: false)")
-	cmd.Flags().StringVar(&PersonaCreateEmailDomain, "email-domain", "", "Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain; other configured domains are listed by GET /personas/create/email-domains.")
+	cmd.Flags().StringVar(&PersonaCreateEmailDomain, "email-domain", "", "Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain. Any other domain must be one Notte has enabled; other values are refused with the list of allowed domains.")
 	cmd.Flags().StringVar(&PersonaCreateEmailProvider, "email-provider", "", "email-provider (API default: notte) (notte, agentmail, resend)")
 	cmd.Flags().StringVar(&PersonaCreateName, "name", "", "name")
 }

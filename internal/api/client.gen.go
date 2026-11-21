@@ -4606,7 +4606,7 @@ type PersonaCreateRequest struct {
 	// CreateVault Whether to create a vault for the persona
 	CreateVault *bool `json:"create_vault,omitempty"`
 
-	// EmailDomain Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain; other configured domains are listed by GET /personas/create/email-domains.
+	// EmailDomain Domain of the persona's email address, for the `notte` provider only. Defaults to the standard domain. Any other domain must be one Notte has enabled; other values are refused with the list of allowed domains.
 	EmailDomain   *string               `json:"email_domain,omitempty"`
 	EmailProvider *PersonaEmailProvider `json:"email_provider,omitempty"`
 	Name          *string               `json:"name,omitempty"`
