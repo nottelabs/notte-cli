@@ -1614,8 +1614,11 @@ type ApiSessionStartRequest struct {
 	MaxDurationMinutes *int `json:"max_duration_minutes,omitempty"`
 
 	// Os The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.
-	Os      *string         `json:"os,omitempty"`
-	Profile *SessionProfile `json:"profile,omitempty"`
+	Os *string `json:"os,omitempty"`
+
+	// PresetId Reusable launch preset revision from POST /launch-presets/recommend. Explicit request and saved profile settings take precedence. Does not navigate or restrict the session. During the pilot, starting with a preset returns 403 in production.
+	PresetId *string         `json:"preset_id,omitempty"`
+	Profile  *SessionProfile `json:"profile,omitempty"`
 
 	// Proxies List of custom proxies to use for the session. If True, the default proxies will be used. At most one `secret` entry routes its hosts through the caller's secret proxy; the other entry, if any, is the session's exit.
 	Proxies *ApiSessionStartRequest_Proxies `json:"proxies,omitempty"`
@@ -3688,6 +3691,18 @@ type Interval struct {
 
 // IntervalUnit defines model for Interval.Unit.
 type IntervalUnit string
+
+// LaunchPresetRecommendation defines model for LaunchPresetRecommendation.
+type LaunchPresetRecommendation struct {
+	// Id Opaque, reusable launch preset revision ID.
+	Id string `json:"id"`
+}
+
+// LaunchPresetRecommendationRequest defines model for LaunchPresetRecommendationRequest.
+type LaunchPresetRecommendationRequest struct {
+	// Domain Exact hostname, without a URL scheme, port, or path.
+	Domain string `json:"domain"`
+}
 
 // LegacyAgentStatusResponse This class is used to handle the legacy agent status response.
 // The rationale is that we are likely to change the `AgentStepResponse` in the future and we want to be able to handle the legacy response.
@@ -6794,6 +6809,12 @@ type FunctionSchedulesUpdateParams struct {
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
 
+// RecommendLaunchPresetParams defines parameters for RecommendLaunchPreset.
+type RecommendLaunchPresetParams struct {
+	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
+	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
+}
+
 // MailboxListParams defines parameters for MailboxList.
 type MailboxListParams struct {
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
@@ -7519,6 +7540,9 @@ type FunctionSchedulesAddJSONRequestBody = FunctionScheduleCreateRequest
 
 // FunctionSchedulesUpdateJSONRequestBody defines body for FunctionSchedulesUpdate for application/json ContentType.
 type FunctionSchedulesUpdateJSONRequestBody = FunctionScheduleCreateRequest
+
+// RecommendLaunchPresetJSONRequestBody defines body for RecommendLaunchPreset for application/json ContentType.
+type RecommendLaunchPresetJSONRequestBody = LaunchPresetRecommendationRequest
 
 // MailboxConnectTokenJSONRequestBody defines body for MailboxConnectToken for application/json ContentType.
 type MailboxConnectTokenJSONRequestBody = MailboxConnectRequest
@@ -16883,6 +16907,11 @@ type ClientInterface interface {
 	// HealthCheck request
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RecommendLaunchPresetWithBody request with any body
+	RecommendLaunchPresetWithBody(ctx context.Context, params *RecommendLaunchPresetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	RecommendLaunchPreset(ctx context.Context, params *RecommendLaunchPresetParams, body RecommendLaunchPresetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MailboxList request
 	MailboxList(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -18228,6 +18257,30 @@ func (c *Client) FunctionSchedulesUpdate(ctx context.Context, functionId string,
 
 func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewHealthCheckRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RecommendLaunchPresetWithBody(ctx context.Context, params *RecommendLaunchPresetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRecommendLaunchPresetRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RecommendLaunchPreset(ctx context.Context, params *RecommendLaunchPresetParams, body RecommendLaunchPresetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRecommendLaunchPresetRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -26253,6 +26306,72 @@ func NewHealthCheckRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewRecommendLaunchPresetRequest calls the generic RecommendLaunchPreset builder with application/json body
+func NewRecommendLaunchPresetRequest(server string, params *RecommendLaunchPresetParams, body RecommendLaunchPresetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRecommendLaunchPresetRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewRecommendLaunchPresetRequestWithBody generates requests for RecommendLaunchPreset with any type of body
+func NewRecommendLaunchPresetRequestWithBody(server string, params *RecommendLaunchPresetParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/launch-presets/recommend")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.XNotteRequestOrigin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "x-notte-request-origin", runtime.ParamLocationHeader, *params.XNotteRequestOrigin)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-request-origin", headerParam0)
+		}
+
+		if params.XNotteSdkVersion != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithLocation("simple", false, "x-notte-sdk-version", runtime.ParamLocationHeader, *params.XNotteSdkVersion)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("x-notte-sdk-version", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewMailboxListRequest generates requests for MailboxList
 func NewMailboxListRequest(server string, params *MailboxListParams) (*http.Request, error) {
 	var err error
@@ -32977,6 +33096,11 @@ type ClientWithResponsesInterface interface {
 	// HealthCheckWithResponse request
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResult, error)
 
+	// RecommendLaunchPresetWithBodyWithResponse request with any body
+	RecommendLaunchPresetWithBodyWithResponse(ctx context.Context, params *RecommendLaunchPresetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RecommendLaunchPresetResult, error)
+
+	RecommendLaunchPresetWithResponse(ctx context.Context, params *RecommendLaunchPresetParams, body RecommendLaunchPresetJSONRequestBody, reqEditors ...RequestEditorFn) (*RecommendLaunchPresetResult, error)
+
 	// MailboxListWithResponse request
 	MailboxListWithResponse(ctx context.Context, params *MailboxListParams, reqEditors ...RequestEditorFn) (*MailboxListResult, error)
 
@@ -34774,6 +34898,29 @@ func (r HealthCheckResult) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r HealthCheckResult) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RecommendLaunchPresetResult struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LaunchPresetRecommendation
+	JSON422      *HTTPValidationError
+}
+
+// Status returns HTTPResponse.Status
+func (r RecommendLaunchPresetResult) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RecommendLaunchPresetResult) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -37426,6 +37573,23 @@ func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseHealthCheckResult(rsp)
+}
+
+// RecommendLaunchPresetWithBodyWithResponse request with arbitrary body returning *RecommendLaunchPresetResult
+func (c *ClientWithResponses) RecommendLaunchPresetWithBodyWithResponse(ctx context.Context, params *RecommendLaunchPresetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RecommendLaunchPresetResult, error) {
+	rsp, err := c.RecommendLaunchPresetWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRecommendLaunchPresetResult(rsp)
+}
+
+func (c *ClientWithResponses) RecommendLaunchPresetWithResponse(ctx context.Context, params *RecommendLaunchPresetParams, body RecommendLaunchPresetJSONRequestBody, reqEditors ...RequestEditorFn) (*RecommendLaunchPresetResult, error) {
+	rsp, err := c.RecommendLaunchPreset(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRecommendLaunchPresetResult(rsp)
 }
 
 // MailboxListWithResponse request returning *MailboxListResult
@@ -40540,6 +40704,39 @@ func ParseHealthCheckResult(rsp *http.Response) (*HealthCheckResult, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRecommendLaunchPresetResult parses an HTTP response from a RecommendLaunchPresetWithResponse call
+func ParseRecommendLaunchPresetResult(rsp *http.Response) (*RecommendLaunchPresetResult, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RecommendLaunchPresetResult{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LaunchPresetRecommendation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	}
 

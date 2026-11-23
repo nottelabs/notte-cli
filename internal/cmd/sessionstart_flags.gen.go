@@ -52,6 +52,9 @@ var (
 	// The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.
 	SessionStartOs string
 
+	// Reusable launch preset revision from POST /launch-presets/recommend. Explicit request and saved profile settings take precedence. Does not navigate or restrict the session. During the pilot, starting with a preset returns 403 in production.
+	SessionStartPresetId string
+
 	// Flattened: profile object
 	SessionStartProfileId      string
 	SessionStartProfilePersist bool
@@ -100,6 +103,7 @@ func RegisterSessionStartFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&SessionStartLogSession, "log-session", false, "Save browser session logs. False permanently disables saved logs, without disabling metering. (API default: true)")
 	cmd.Flags().IntVar(&SessionStartMaxDurationMinutes, "max-duration-minutes", 0, "Maximum session lifetime in minutes (absolute maximum, not affected by activity). (API default: 15)")
 	cmd.Flags().StringVar(&SessionStartOs, "os", "", "The operating system the session's browser presents: windows or macos. When unset, each session gets one at random among those the environment offers.")
+	cmd.Flags().StringVar(&SessionStartPresetId, "preset-id", "", "Reusable launch preset revision from POST /launch-presets/recommend. Explicit request and saved profile settings take precedence. Does not navigate or restrict the session. During the pilot, starting with a preset returns 403 in production.")
 	// profile (flattened object)
 	cmd.Flags().StringVar(&SessionStartProfileId, "profile-id", "", "Profile ID to use for this session")
 	cmd.Flags().BoolVar(&SessionStartProfilePersist, "profile-persist", false, "Whether to save browser state to profile on session close (API default: false)")
@@ -177,6 +181,10 @@ func BuildSessionStartRequest(cmd *cobra.Command) (*api.ApiSessionStartRequest, 
 
 	if SessionStartOs != "" {
 		body.Os = &SessionStartOs
+	}
+
+	if SessionStartPresetId != "" {
+		body.PresetId = &SessionStartPresetId
 	}
 
 	// profile: validate required fields when optional fields are provided
