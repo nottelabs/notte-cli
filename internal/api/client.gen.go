@@ -633,12 +633,25 @@ const (
 
 // Defines values for FunctionSource.
 const (
-	Anything  FunctionSource = "anything"
-	Cli       FunctionSource = "cli"
-	Console   FunctionSource = "console"
-	NodeSdk   FunctionSource = "node-sdk"
-	PythonSdk FunctionSource = "python-sdk"
-	RestApi   FunctionSource = "rest-api"
+	FunctionSourceAnything  FunctionSource = "anything"
+	FunctionSourceCli       FunctionSource = "cli"
+	FunctionSourceConsole   FunctionSource = "console"
+	FunctionSourceNodeSdk   FunctionSource = "node-sdk"
+	FunctionSourcePythonSdk FunctionSource = "python-sdk"
+	FunctionSourceRestApi   FunctionSource = "rest-api"
+)
+
+// Defines values for FunctionVersionOrigin.
+const (
+	FunctionVersionOriginAnything  FunctionVersionOrigin = "anything"
+	FunctionVersionOriginCli       FunctionVersionOrigin = "cli"
+	FunctionVersionOriginConsole   FunctionVersionOrigin = "console"
+	FunctionVersionOriginFork      FunctionVersionOrigin = "fork"
+	FunctionVersionOriginNodeSdk   FunctionVersionOrigin = "node-sdk"
+	FunctionVersionOriginPythonSdk FunctionVersionOrigin = "python-sdk"
+	FunctionVersionOriginRestApi   FunctionVersionOrigin = "rest-api"
+	FunctionVersionOriginRollback  FunctionVersionOrigin = "rollback"
+	FunctionVersionOriginSelfHeal  FunctionVersionOrigin = "self-heal"
 )
 
 // Defines values for FunctionWithLinkResponseDefaultRuntime.
@@ -3336,6 +3349,22 @@ type FunctionSdkGeneration string
 // FunctionSource defines model for FunctionSource.
 type FunctionSource string
 
+// FunctionVersionOrigin defines model for FunctionVersionOrigin.
+type FunctionVersionOrigin string
+
+// FunctionVersionOriginInfo defines model for FunctionVersionOriginInfo.
+type FunctionVersionOriginInfo struct {
+	// HealAttemptId The Anything self-heal attempt the version was deployed under, when it was one.
+	HealAttemptId *string                `json:"heal_attempt_id,omitempty"`
+	Origin        *FunctionVersionOrigin `json:"origin,omitempty"`
+
+	// RestoredFrom For a rollback, the version whose code it redeployed.
+	RestoredFrom *string `json:"restored_from,omitempty"`
+
+	// Version A version from the function's `versions` history
+	Version string `json:"version"`
+}
+
 // FunctionWithLinkResponse defines model for FunctionWithLinkResponse.
 type FunctionWithLinkResponse struct {
 	// CreatedAt The creation time of the function
@@ -3405,6 +3434,9 @@ type FunctionWithLinkResponse struct {
 
 	// Variables The variables to run the function with
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
+
+	// VersionOrigins Where each version in `versions` came from, in the same order. Owner reads only: null for a published function read by someone else and on a run's code fetch (`function_run_id`).
+	VersionOrigins *[]FunctionVersionOriginInfo `json:"version_origins,omitempty"`
 
 	// Versions The versions of the function
 	Versions   []string `json:"versions"`
