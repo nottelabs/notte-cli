@@ -4706,6 +4706,20 @@ type PersonaUpdateRequest struct {
 	Name string `json:"name"`
 }
 
+// PlaywrightStorageItem defines model for PlaywrightStorageItem.
+type PlaywrightStorageItem struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// PlaywrightStorageOrigin defines model for PlaywrightStorageOrigin.
+type PlaywrightStorageOrigin struct {
+	// IndexedDB Accepted but not imported: profiles do not store IndexedDB. Origins that carried any are listed in the response's indexed_db_origins_not_imported.
+	IndexedDB    *[]interface{}          `json:"indexedDB,omitempty"`
+	LocalStorage []PlaywrightStorageItem `json:"localStorage"`
+	Origin       string                  `json:"origin"`
+}
+
 // PressKeyAction defines model for PressKeyAction.
 type PressKeyAction struct {
 	Category    *string `json:"category,omitempty"`
@@ -4826,11 +4840,14 @@ type ProfileResponse struct {
 
 // ProfileStateImportRequest defines model for ProfileStateImportRequest.
 type ProfileStateImportRequest struct {
-	Cookies        *[]Cookie                      `json:"cookies,omitempty"`
-	Domains        *[]string                      `json:"domains,omitempty"`
-	LocalStorage   *map[string]map[string]string  `json:"local_storage,omitempty"`
-	Mode           *ProfileStateImportRequestMode `json:"mode,omitempty"`
-	SessionStorage *map[string]map[string]string  `json:"session_storage,omitempty"`
+	Cookies      *[]Cookie                      `json:"cookies,omitempty"`
+	Domains      *[]string                      `json:"domains,omitempty"`
+	LocalStorage *map[string]map[string]string  `json:"local_storage,omitempty"`
+	Mode         *ProfileStateImportRequestMode `json:"mode,omitempty"`
+
+	// Origins localStorage in the format of Playwright's context.storage_state(), so its export can be sent as is with its cookies. Imported as local_storage; cannot be combined with local_storage.
+	Origins        *[]PlaywrightStorageOrigin    `json:"origins,omitempty"`
+	SessionStorage *map[string]map[string]string `json:"session_storage,omitempty"`
 
 	// StorageScope Use origins for partial live-tab snapshots: replace only origins present in each storage map.
 	StorageScope *ProfileStateImportRequestStorageScope `json:"storage_scope,omitempty"`
@@ -4844,10 +4861,13 @@ type ProfileStateImportRequestStorageScope string
 
 // ProfileStateImportResponse defines model for ProfileStateImportResponse.
 type ProfileStateImportResponse struct {
-	CookiesCount          int  `json:"cookies_count"`
-	LocalStorageOrigins   int  `json:"local_storage_origins"`
-	SessionStorageOrigins int  `json:"session_storage_origins"`
-	Success               bool `json:"success"`
+	CookiesCount int `json:"cookies_count"`
+
+	// IndexedDbOriginsNotImported Origins whose IndexedDB data in a Playwright export was not imported: profiles store cookies, localStorage and sessionStorage only.
+	IndexedDbOriginsNotImported *[]string `json:"indexed_db_origins_not_imported,omitempty"`
+	LocalStorageOrigins         int       `json:"local_storage_origins"`
+	SessionStorageOrigins       int       `json:"session_storage_origins"`
+	Success                     bool      `json:"success"`
 }
 
 // ProxyGeolocationCountry defines model for ProxyGeolocationCountry.
