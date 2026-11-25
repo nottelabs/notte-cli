@@ -83,6 +83,7 @@ skip POST /sessions/{session_id}/page/choose # natural-language page choose is n
 skip POST /sessions/{session_id}/page/document # reading a URL's document (html, markdown, text, links) in a session is not yet exposed by the CLI
 skip POST /sessions/{session_id}/pause # pausing a session is not yet exposed by the CLI
 skip POST /sessions/{session_id}/resume # resuming a paused session is not yet exposed by the CLI
+skip POST /launch-presets/recommend # launch presets are in a pilot; starting a session with one is not yet available in production
 skip GET /secret-proxy/host-presets # the secret proxy is configured in the console; the CLI has no secret-proxy commands yet
 
 # --- Data APIs not yet exposed by the CLI ------------------------------------
