@@ -6676,7 +6676,7 @@ type ListFunctionsParams struct {
 
 // FunctionCreateParams defines parameters for FunctionCreate.
 type FunctionCreateParams struct {
-	// Restricted Whether to restrict the function code
+	// Restricted Ignored: every upload, update and rollback is checked with the strict code policy. Kept for compatibility.
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
@@ -6720,7 +6720,7 @@ type FunctionUpdateParams struct {
 	// Version The version of the function to upload
 	Version *string `form:"version,omitempty" json:"version,omitempty"`
 
-	// Restricted Whether to restrict the function code
+	// Restricted Ignored: every upload, update and rollback is checked with the strict code policy. Kept for compatibility.
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
@@ -6734,7 +6734,7 @@ type FunctionForkParams struct {
 
 // FunctionRollbackParams defines parameters for FunctionRollback.
 type FunctionRollbackParams struct {
-	// Restricted Whether to restrict the function code
+	// Restricted Ignored: every upload, update and rollback is checked with the strict code policy. Kept for compatibility.
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
@@ -6742,7 +6742,7 @@ type FunctionRollbackParams struct {
 
 // FunctionConditionalRollbackParams defines parameters for FunctionConditionalRollback.
 type FunctionConditionalRollbackParams struct {
-	// Restricted Whether to restrict the function code
+	// Restricted Ignored: every upload, update and rollback is checked with the strict code policy. Kept for compatibility.
 	Restricted          *bool   `form:"restricted,omitempty" json:"restricted,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
