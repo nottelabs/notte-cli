@@ -4714,7 +4714,7 @@ type PlaywrightStorageItem struct {
 
 // PlaywrightStorageOrigin defines model for PlaywrightStorageOrigin.
 type PlaywrightStorageOrigin struct {
-	// IndexedDB Accepted but not imported: profiles do not store IndexedDB. Origins that carried any are listed in the response's indexed_db_origins_not_imported.
+	// IndexedDB Accepted but not imported: this endpoint does not import IndexedDB. Origins that carried any are listed in the response's indexed_db_origins_not_imported.
 	IndexedDB    *[]interface{}          `json:"indexedDB,omitempty"`
 	LocalStorage []PlaywrightStorageItem `json:"localStorage"`
 	Origin       string                  `json:"origin"`
@@ -4863,7 +4863,7 @@ type ProfileStateImportRequestStorageScope string
 type ProfileStateImportResponse struct {
 	CookiesCount int `json:"cookies_count"`
 
-	// IndexedDbOriginsNotImported Origins whose IndexedDB data in a Playwright export was not imported: profiles store cookies, localStorage and sessionStorage only.
+	// IndexedDbOriginsNotImported Origins whose IndexedDB data in a Playwright export was not imported: this endpoint imports cookies, localStorage and sessionStorage only.
 	IndexedDbOriginsNotImported *[]string `json:"indexed_db_origins_not_imported,omitempty"`
 	LocalStorageOrigins         int       `json:"local_storage_origins"`
 	SessionStorageOrigins       int       `json:"session_storage_origins"`
