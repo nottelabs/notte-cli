@@ -5392,15 +5392,17 @@ type SessionDebugResponse struct {
 
 // SessionFile defines model for SessionFile.
 type SessionFile struct {
-	Checksum  string       `json:"checksum"`
-	CreatedAt FlexibleTime `json:"created_at"`
-	ExpiresAt FlexibleTime `json:"expires_at"`
-	Filename  string       `json:"filename"`
-	Id        string       `json:"id"`
-	MimeType  string       `json:"mime_type"`
-	SessionId string       `json:"session_id"`
-	Size      int          `json:"size"`
-	Source    FileSource   `json:"source"`
+	// BrowserDownloadId The browser's id for the download this file came from: Chrome's download guid, which a CDP client reads from `Browser.downloadWillBegin`. Null for files that did not come from a browser download.
+	BrowserDownloadId *string      `json:"browser_download_id,omitempty"`
+	Checksum          string       `json:"checksum"`
+	CreatedAt         FlexibleTime `json:"created_at"`
+	ExpiresAt         FlexibleTime `json:"expires_at"`
+	Filename          string       `json:"filename"`
+	Id                string       `json:"id"`
+	MimeType          string       `json:"mime_type"`
+	SessionId         string       `json:"session_id"`
+	Size              int          `json:"size"`
+	Source            FileSource   `json:"source"`
 }
 
 // SessionFilesPage defines model for SessionFilesPage.
