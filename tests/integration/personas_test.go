@@ -4,8 +4,19 @@ package integration
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
+
+// testPersonaNamePrefix marks personas created by these tests. The cleanup
+// test only deletes personas whose name starts with it, so personas owned by
+// anything else in the same workspace are left alone.
+const testPersonaNamePrefix = "notte-cli-integration-test-"
+
+// testPersonaName returns a persona name that carries testPersonaNamePrefix.
+func testPersonaName(t *testing.T) string {
+	return testPersonaNamePrefix + t.Name()
+}
 
 func TestPersonasList(t *testing.T) {
 	// List personas - should work even if empty
@@ -16,7 +27,7 @@ func TestPersonasList(t *testing.T) {
 
 func TestPersonasCreateAndDelete(t *testing.T) {
 	// Create a new persona
-	result := runCLI(t, "personas", "create")
+	result := runCLI(t, "personas", "create", "--name", testPersonaName(t))
 	requireSuccess(t, result)
 
 	// Parse the response to get persona ID
@@ -53,7 +64,7 @@ func TestPersonasCreateAndDelete(t *testing.T) {
 
 func TestPersonasCreateWithVault(t *testing.T) {
 	// Create a persona with a vault
-	result := runCLI(t, "personas", "create", "--create-vault")
+	result := runCLI(t, "personas", "create", "--name", testPersonaName(t), "--create-vault")
 	requireSuccess(t, result)
 
 	var createResp struct {
@@ -79,7 +90,7 @@ func TestPersonasCreateWithVault(t *testing.T) {
 
 func TestPersonasEmails(t *testing.T) {
 	// Create a persona first
-	result := runCLI(t, "personas", "create")
+	result := runCLI(t, "personas", "create", "--name", testPersonaName(t))
 	requireSuccess(t, result)
 
 	var createResp struct {
@@ -122,37 +133,26 @@ func TestPersonasDeleteNonexistent(t *testing.T) {
 }
 
 func TestZZZ_CleanupPersonas(t *testing.T) {
-	// Important personas that should never be deleted
-	importantPersonas := map[string]bool{
-		// Front end tests
-		"f2e2834b-a054-4a96-a388-a447c37756ff": true,
-		"131a21e1-8c8e-4016-80b9-765c0ce4fb5c": true,
-		"ee3da1f5-e53c-4159-839d-e8db16bbe2e7": true,
-		"46d0649e-1d13-47be-a21f-703ce4cf02ea": true,
-		// Monorepo
-		"7abb4f37-25a1-4409-98d9-c4c916918254": true,
-		// Others
-		"23ae78af-93b4-4aeb-ba21-d18e1496bdd9": true,
-		"4e9faffa-ae3e-4a86-a87f-584bf77794e0": true,
-	}
-
+	// Only delete personas created by these tests, identified by their name
+	// prefix. The workspace may hold personas used by other systems.
 	result := runCLI(t, "personas", "list", "--page-size", "100")
 	requireSuccess(t, result)
 
 	var personas []struct {
 		PersonaID string `json:"persona_id"`
+		Name      string `json:"name"`
 	}
 	if err := json.Unmarshal([]byte(result.Stdout), &personas); err != nil {
 		t.Fatalf("Failed to parse personas list: %v", err)
 	}
 
+	matched := 0
 	deleted := 0
-	skipped := 0
 	for _, p := range personas {
-		if importantPersonas[p.PersonaID] {
-			skipped++
+		if !strings.HasPrefix(p.Name, testPersonaNamePrefix) {
 			continue
 		}
+		matched++
 		r := runCLI(t, "personas", "delete", "--persona-id", p.PersonaID)
 		if r.ExitCode == 0 {
 			deleted++
@@ -160,5 +160,5 @@ func TestZZZ_CleanupPersonas(t *testing.T) {
 			t.Logf("Warning: failed to delete persona %s: %s", p.PersonaID, r.Stderr)
 		}
 	}
-	t.Logf("Cleanup complete: deleted %d, skipped %d important, %d failures", deleted, skipped, len(personas)-deleted-skipped)
+	t.Logf("Cleanup complete: deleted %d of %d test personas, %d failures", deleted, matched, matched-deleted)
 }
