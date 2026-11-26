@@ -357,11 +357,21 @@ back with --cursor.`,
 	RunE: runSessionSteps,
 }
 
-var sessionsWorkflowCodeCmd = &cobra.Command{
-	Use:   "workflow-code",
+var sessionsFunctionCodeCmd = &cobra.Command{
+	Use:   "function-code",
 	Short: "Export session steps as code",
 	Args:  cobra.NoArgs,
-	RunE:  runSessionWorkflowCode,
+	RunE:  runSessionFunctionCode,
+}
+
+// sessionsWorkflowCodeCmd keeps the old name working for existing scripts.
+var sessionsWorkflowCodeCmd = &cobra.Command{
+	Use:        "workflow-code",
+	Short:      "Export session steps as code",
+	Hidden:     true,
+	Deprecated: "use 'notte sessions function-code' instead",
+	Args:       cobra.NoArgs,
+	RunE:       runSessionFunctionCode,
 }
 
 var sessionsCodeCmd = &cobra.Command{
@@ -398,6 +408,7 @@ func init() {
 	sessionsCmd.AddCommand(sessionsReplayCmd)
 	sessionsCmd.AddCommand(sessionsOffsetCmd)
 	sessionsCmd.AddCommand(sessionsStepsCmd)
+	sessionsCmd.AddCommand(sessionsFunctionCodeCmd)
 	sessionsCmd.AddCommand(sessionsWorkflowCodeCmd)
 	sessionsCmd.AddCommand(sessionsCodeCmd)
 	sessionsCmd.AddCommand(sessionsViewerCmd)
@@ -473,6 +484,7 @@ func init() {
 	sessionsStepsCmd.Flags().IntVarP(&sessionStepsLimit, "limit", "n", 0, "Maximum number of steps to return")
 
 	// Workflow-code command flags
+	sessionsFunctionCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 	sessionsWorkflowCodeCmd.Flags().StringVar(&sessionID, "session-id", "", "Session ID (uses current session if not specified)")
 
 	// Code command flags
@@ -1669,7 +1681,7 @@ func runSessionSteps(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runSessionWorkflowCode(cmd *cobra.Command, args []string) error {
+func runSessionFunctionCode(cmd *cobra.Command, args []string) error {
 	if err := RequireSessionID(); err != nil {
 		return err
 	}

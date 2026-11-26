@@ -1023,7 +1023,7 @@ func TestRunSessionSteps_InvalidLimit(t *testing.T) {
 	}
 }
 
-func TestRunSessionWorkflowCode(t *testing.T) {
+func TestRunSessionFunctionCode(t *testing.T) {
 	server := setupSessionTest(t)
 	server.AddResponse("/sessions/"+sessionIDTest+"/workflow/code", 200, `{"json_actions":[{"type":"noop"}],"python_script":"print('hi')"}`)
 
@@ -1035,7 +1035,7 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runSessionWorkflowCode(cmd, nil)
+		err := runSessionFunctionCode(cmd, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -1043,6 +1043,20 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+}
+
+// The old workflow-code name still runs the same export, but stays out of help
+// and tells the user to switch.
+func TestSessionsWorkflowCodeIsDeprecatedAlias(t *testing.T) {
+	if !sessionsWorkflowCodeCmd.Hidden {
+		t.Error("workflow-code should be hidden")
+	}
+	if !strings.Contains(sessionsWorkflowCodeCmd.Deprecated, "function-code") {
+		t.Errorf("deprecation notice should point to function-code, got %q", sessionsWorkflowCodeCmd.Deprecated)
+	}
+	if sessionsWorkflowCodeCmd.RunE == nil || sessionsWorkflowCodeCmd.Flags().Lookup("session-id") == nil {
+		t.Error("workflow-code should keep running the export with --session-id")
 	}
 }
 

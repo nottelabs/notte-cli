@@ -141,7 +141,7 @@ notte sessions save-profile --name github  # Save current session's state into a
 notte sessions network                # View network activity logs
 notte sessions replay                 # Get session replay data
 notte sessions steps [--limit N] [--cursor C]  # List the steps taken in the session
-notte sessions workflow-code          # Export session steps as Python code
+notte sessions function-code          # Export session steps as Python code
 notte sessions viewer                 # Open session viewer in browser
 notte sessions code                   # Get Python script for session steps
 ```
@@ -237,13 +237,13 @@ execution result instead of the bare value.
 
 ```bash
 notte functions list [--page N] [--page-size N] [--include-deleted]  # List functions
-notte functions create --file workflow.py  # Create a new function
+notte functions create --file function.py  # Create a new function
 notte functions show                  # View current function details
 notte functions show --function-id <id>  # View specific function details (different from current function)
-notte functions download workflow.py [--version <version>]  # Download current function code to disk
-notte functions create --file workflow.py --response-format @schema.json  # ... with its response documented
-notte functions update --file workflow.py  # Update current function code
-notte functions update --file workflow.py --response-format @schema.json  # ... and re-document its response
+notte functions download function.py [--version <version>]  # Download current function code to disk
+notte functions create --file function.py --response-format @schema.json  # ... with its response documented
+notte functions update --file function.py  # Update current function code
+notte functions update --file function.py --response-format @schema.json  # ... and re-document its response
 notte functions configure --run-instructions "..." --self-healing  # Set usage notes and self-healing
 notte functions configure --shared  # Enable the public code/fork link
 notte functions configure --shared=false  # Disable new forks
@@ -498,13 +498,13 @@ notte page scrape --instructions "Extract top 10 stories with title and URL"
 notte sessions stop
 ```
 
-### Running a Workflow
+### Running a Function
 
 ```bash
 # List functions to find ID
 notte functions list
 
-# Run workflow
+# Run function
 notte functions run --function-id func_abc123
 ```
 
