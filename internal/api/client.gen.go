@@ -5392,15 +5392,17 @@ type SessionDebugResponse struct {
 
 // SessionFile defines model for SessionFile.
 type SessionFile struct {
-	Checksum  string       `json:"checksum"`
-	CreatedAt FlexibleTime `json:"created_at"`
-	ExpiresAt FlexibleTime `json:"expires_at"`
-	Filename  string       `json:"filename"`
-	Id        string       `json:"id"`
-	MimeType  string       `json:"mime_type"`
-	SessionId string       `json:"session_id"`
-	Size      int          `json:"size"`
-	Source    FileSource   `json:"source"`
+	// BrowserDownloadId The browser's id for the download this file came from: Chrome's download guid, which a CDP client reads from `Browser.downloadWillBegin`. Null for files that did not come from a browser download.
+	BrowserDownloadId *string      `json:"browser_download_id,omitempty"`
+	Checksum          string       `json:"checksum"`
+	CreatedAt         FlexibleTime `json:"created_at"`
+	ExpiresAt         FlexibleTime `json:"expires_at"`
+	Filename          string       `json:"filename"`
+	Id                string       `json:"id"`
+	MimeType          string       `json:"mime_type"`
+	SessionId         string       `json:"session_id"`
+	Size              int          `json:"size"`
+	Source            FileSource   `json:"source"`
 }
 
 // SessionFilesPage defines model for SessionFilesPage.
@@ -7405,7 +7407,10 @@ type SessionStopParams struct {
 	CloseReason *SessionStopParamsCloseReason `form:"close_reason,omitempty" json:"close_reason,omitempty"`
 
 	// Wait Answer only once the session's close has finished its background work: its last CDP actions and steps are stored, its replay is finalized, its final network usage is written and its browser is released. The response's `steps` and network usage are then complete. Waits at most 30 seconds from the request, the close included, then answers what is stored. Defaults to false: the stop answers as soon as the session is closed, and that work finishes after the response. With `wait`, a session already stopped answers what is stored for it instead of 400: if its close is still finishing elsewhere, its last steps may not be stored yet.
-	Wait                *bool   `form:"wait,omitempty" json:"wait,omitempty"`
+	Wait *bool `form:"wait,omitempty" json:"wait,omitempty"`
+
+	// CloseError What failed on the client when it stops a session with `close_reason=error`, such as the type and message of the exception that ended it. Kept with the stop's usage log for debugging (at most 500 characters, longer is cut); it changes nothing about the close.
+	CloseError          *string `form:"close_error,omitempty" json:"close_error,omitempty"`
 	XNotteRequestOrigin *string `json:"x-notte-request-origin,omitempty"`
 	XNotteSdkVersion    *string `json:"x-notte-sdk-version,omitempty"`
 }
@@ -31865,6 +31870,22 @@ func NewSessionStopRequest(server string, sessionId string, params *SessionStopP
 		if params.Wait != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wait", runtime.ParamLocationQuery, *params.Wait); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CloseError != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "close_error", runtime.ParamLocationQuery, *params.CloseError); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
