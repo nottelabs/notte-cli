@@ -5,10 +5,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
 	DefaultAPIURL            = "https://api.notte.cc"
+	DefaultEUAPIURL          = "https://eu-api.notte.cc"
+	RegionEU                 = "eu"
 	DefaultConsoleURL        = "https://console.notte.cc"
 	ConfigDirName            = ".notte/cli"
 	ConfigFileName           = "config.json"
@@ -41,6 +44,43 @@ func SetTestConfigDir(dir string) {
 type Config struct {
 	APIKey string `json:"api_key,omitempty"`
 	APIURL string `json:"api_url,omitempty"`
+
+	// apiURLSet records that APIURL came from the file rather than the default
+	// Load fills in.
+	apiURLSet bool
+}
+
+// HasAPIURL reports whether the config file sets api_url itself. When it does
+// not, APIURL holds DefaultAPIURL, and the API to use depends on the
+// credential's region (DefaultAPIURLFor).
+func (c *Config) HasAPIURL() bool {
+	return c.apiURLSet
+}
+
+// CredentialRegion returns the data region an API key or access token belongs
+// to, or "" for the default region. The region is part of the prefix:
+// sk-notte-eu-..., sk-notte-org-eu-... and nat_eu_... are EU credentials.
+func CredentialRegion(credential string) string {
+	if rest, ok := strings.CutPrefix(credential, "sk-notte-"); ok {
+		rest = strings.TrimPrefix(rest, "org-")
+		if strings.HasPrefix(rest, RegionEU+"-") {
+			return RegionEU
+		}
+		return ""
+	}
+	if strings.HasPrefix(credential, "nat_"+RegionEU+"_") {
+		return RegionEU
+	}
+	return ""
+}
+
+// DefaultAPIURLFor returns the API that serves credential's region, for when
+// no API URL is set explicitly.
+func DefaultAPIURLFor(credential string) string {
+	if CredentialRegion(credential) == RegionEU {
+		return DefaultEUAPIURL
+	}
+	return DefaultAPIURL
 }
 
 // Dir returns the notte config directory path (~/.notte/cli)
@@ -78,24 +118,21 @@ func Load() (*Config, error) {
 
 // LoadFromPath loads config from specific path
 func LoadFromPath(path string) (*Config, error) {
-	cfg := &Config{
-		APIURL: DefaultAPIURL,
-	}
+	cfg := &Config{}
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return cfg, nil // Return defaults if no config
-		}
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
-
-	if err := json.Unmarshal(data, cfg); err != nil {
-		return nil, err
+	if err == nil {
+		if err := json.Unmarshal(data, cfg); err != nil {
+			return nil, err
+		}
 	}
 
 	// Ensure default URL if not set
-	if cfg.APIURL == "" {
+	cfg.apiURLSet = cfg.APIURL != ""
+	if !cfg.apiURLSet {
 		cfg.APIURL = DefaultAPIURL
 	}
 

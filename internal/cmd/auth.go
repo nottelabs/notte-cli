@@ -118,6 +118,10 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		return loginWithStdinToken(cmd.Context())
 	}
 
+	// The login starts against the configured API, or the default one: there is
+	// no key yet to name a region. The key it returns may belong to another
+	// region; from then on it is sent to that region's API (auth.APIURLForKey).
+
 	ctx := cmd.Context()
 	flow := newDeviceFlow(apiURL)
 	code, err := flow.RequestCode(ctx, deviceClientInfo())
@@ -148,19 +152,19 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 	// A key that is not saved here can never be revoked by `notte logout`, so
 	// revoke it now rather than leave it live.
 	if err := auth.ValidateAPIKey(ctx, token.AccessToken); err != nil {
-		revokeQuietly(ctx, flow, token.AccessToken)
+		revokeQuietly(ctx, token.AccessToken)
 		return fmt.Errorf("the new API key could not be used: %w", err)
 	}
 
 	previous, _ := auth.GetKeyringAPIKey()
 	if err := auth.SetKeyringAPIKey(token.AccessToken); err != nil {
-		revokeQuietly(ctx, flow, token.AccessToken)
+		revokeQuietly(ctx, token.AccessToken)
 		return fmt.Errorf("failed to save the API key: %w", err)
 	}
 	// Logging in again replaces this machine's key: revoke the old one if a
 	// CLI login created it, so keys do not pile up on the API keys page.
 	if previous != "" && previous != token.AccessToken {
-		revokeQuietly(ctx, flow, previous)
+		revokeQuietly(ctx, previous)
 	}
 
 	workspace := token.WorkspaceName
@@ -213,7 +217,7 @@ func loginWithStdinToken(ctx context.Context) error {
 	// As for a device login: a key a CLI login created is no longer reachable
 	// once replaced, so revoke it. The API leaves any other key alone.
 	if previous != "" && previous != key {
-		revokeQuietly(ctx, newDeviceFlow(auth.GetCurrentAPIURL()), previous)
+		revokeQuietly(ctx, previous)
 	}
 	return printDone("API key stored successfully. "+output.FaceCool, map[string]any{
 		"authenticated": true,
@@ -224,7 +228,11 @@ func loginWithStdinToken(ctx context.Context) error {
 
 // revokeQuietly revokes a key a CLI login created, reporting failures without
 // failing the command: the local key is what the user asked to change.
-func revokeQuietly(ctx context.Context, flow *auth.DeviceFlow, key string) bool {
+//
+// The request goes where the key is used: the configured API, or the default
+// API of the key's region.
+func revokeQuietly(ctx context.Context, key string) bool {
+	flow := newDeviceFlow(auth.APIURLForKey(key))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	revoked, err := flow.Revoke(ctx, key)
@@ -252,8 +260,8 @@ func runAuthLogout(cmd *cobra.Command, args []string) error {
 	key, _ := auth.GetKeyringAPIKey()
 	revoked := false
 	if key != "" {
-		if apiURL := auth.GetCurrentAPIURL(); auth.IsSecureAPIURL(apiURL) {
-			revoked = revokeQuietly(cmd.Context(), newDeviceFlow(apiURL), key)
+		if auth.IsSecureAPIURL(auth.APIURLForKey(key)) {
+			revoked = revokeQuietly(cmd.Context(), key)
 		}
 	}
 

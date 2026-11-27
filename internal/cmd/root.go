@@ -170,17 +170,10 @@ func GetClient() (*api.NotteClient, error) {
 		return nil, err
 	}
 
-	baseURL := os.Getenv(config.EnvAPIURL)
-	if baseURL == "" {
-		cfg, err := config.Load()
-		if err != nil {
-			return nil, err
-		}
-		baseURL = cfg.APIURL
-	}
-
-	if baseURL == "" {
-		baseURL = api.DefaultBaseURL
+	// An explicit API URL wins; otherwise the key's region picks the API.
+	baseURL, err := auth.ResolveAPIURL(apiKey)
+	if err != nil {
+		return nil, err
 	}
 	if source != auth.SourceEnv {
 		if err := auth.CheckSavedKeyURL(baseURL); err != nil {

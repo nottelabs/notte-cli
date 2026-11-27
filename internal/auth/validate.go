@@ -26,12 +26,14 @@ const validateTimeout = 10 * time.Second
 //
 // The request goes to the configured API, not the default one. Login stores the
 // key under the environment named by NOTTE_API_URL, so validating somewhere else
-// can accept a key that does not work where it is about to be saved.
+// can accept a key that does not work where it is about to be saved. With no
+// API URL set, it goes to the API of the key's region, as GetClient's requests
+// will.
 //
 // Client options are accepted so callers (and tests) can adjust the retry
 // policy; production call sites pass none and get the default.
 func ValidateAPIKey(ctx context.Context, apiKey string, opts ...api.NotteClientOption) error {
-	client, err := api.NewClientWithURL(apiKey, GetCurrentAPIURL(), "", opts...)
+	client, err := api.NewClientWithURL(apiKey, APIURLForKey(apiKey), "", opts...)
 	if err != nil {
 		// Only returned for a malformed or empty key, which is a bad
 		// credential rather than a transport problem.

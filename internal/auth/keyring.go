@@ -226,9 +226,14 @@ func deleteFromSystemKeyring(key string) error {
 	return nil
 }
 
+// legacyEUKeyringKey is where versions that did not map the EU host to "prod"
+// saved a key while NOTTE_API_URL named it: the hostname was the label.
+var legacyEUKeyringKey = KeyringKeyForEnv("eu-api.notte.cc")
+
 // GetKeyringAPIKey retrieves API key from OS keychain for the current environment.
 // On first read after upgrade, it falls back to the legacy "api_key" entry and
-// auto-migrates it to the env-qualified key.
+// auto-migrates it to the env-qualified key. In prod it first falls back to,
+// and migrates, a key saved under the EU host's name.
 func GetKeyringAPIKey() (string, error) {
 	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
 	envKey := KeyringKeyForEnv(envLabel)
@@ -237,6 +242,15 @@ func GetKeyringAPIKey() (string, error) {
 	val, envErr := defaultKeyring.Get(envKey)
 	if envErr == nil {
 		return val, nil
+	}
+
+	if envLabel == "prod" {
+		if val, err := defaultKeyring.Get(legacyEUKeyringKey); err == nil {
+			if err := defaultKeyring.Set(envKey, val); err == nil {
+				_ = defaultKeyring.Delete(legacyEUKeyringKey)
+			}
+			return val, nil
+		}
 	}
 
 	// Fall back to legacy key and auto-migrate to prod.
@@ -274,10 +288,34 @@ func SetKeyringAPIKey(apiKey string) error {
 	return defaultKeyring.Set(KeyringKeyForEnv(envLabel), apiKey)
 }
 
-// DeleteKeyringAPIKey removes API key from OS keychain for the current environment.
+// DeleteKeyringAPIKey removes API key from OS keychain for the current
+// environment. In prod it also removes a key saved under the EU host's name.
+// It reports a not-found error only when neither entry was saved, and any
+// other failure to remove either one.
 func DeleteKeyringAPIKey() error {
 	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
-	return defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
+	err := defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
+	if envLabel != "prod" {
+		return err
+	}
+	legacyErr := defaultKeyring.Delete(legacyEUKeyringKey)
+
+	// Not-found errors are left out: joined in, they would make a failure
+	// read as "nothing saved".
+	var failures []error
+	for _, e := range []error{err, legacyErr} {
+		if e != nil && !isNotFound(e) {
+			failures = append(failures, e)
+		}
+	}
+	switch {
+	case len(failures) > 0:
+		return errors.Join(failures...)
+	case err != nil && legacyErr != nil:
+		return err // neither entry was saved
+	default:
+		return nil
+	}
 }
 
 // GetKeyringSecret retrieves a named secret, such as a tunnel's OAuth client

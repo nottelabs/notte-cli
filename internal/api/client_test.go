@@ -38,6 +38,18 @@ func TestNewClient_Success(t *testing.T) {
 	}
 }
 
+func TestNewClient_EUKeyUsesTheEUAPI(t *testing.T) {
+	for _, key := range []string{"sk-notte-eu-abc", "sk-notte-org-eu-abc", "nat_eu_abc"} {
+		client, err := NewClient(key)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if client.baseURL != "https://eu-api.notte.cc" {
+			t.Errorf("NewClient(%q) baseURL = %q, want the EU API", key, client.baseURL)
+		}
+	}
+}
+
 func TestNewClientWithURL_CustomURL(t *testing.T) {
 	client, err := NewClientWithURL("test-key", "https://custom.api.com", "v1.0.0")
 	if err != nil {
