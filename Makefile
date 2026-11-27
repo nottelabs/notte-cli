@@ -1,5 +1,5 @@
 .PHONY: build install clean test test-integration test-all lint fmt generate check setup help \
-        check-endpoints check-skills check-coverage docs
+        check-endpoints check-skills check-coverage docs playground playground-export
 
 VERSION ?= dev
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -84,6 +84,12 @@ generate: ## Generate code (API client, etc.)
 
 docs: ## Write the docs.notte.cc CLI reference to DOCS_OUT (default: ./cli-reference)
 	go run ./scripts/gendocs -out "$(or $(DOCS_OUT),cli-reference)"
+
+playground: ## Run the CLI playground at http://127.0.0.1:4173, rebuilding on save
+	go run ./playground -addr "$(or $(PLAYGROUND_ADDR),127.0.0.1:4173)"
+
+playground-export: ## Export the playground as a static site, with the CLI built for the browser (PLAYGROUND_DIR defaults to dist/playground)
+	go run ./playground -export "$(or $(PLAYGROUND_DIR),dist/playground)"
 
 check-endpoints: ## Fail if an API endpoint is neither reachable from a command nor recorded as skipped
 	@go run ./scripts/checkcoverage -check endpoints -strict
