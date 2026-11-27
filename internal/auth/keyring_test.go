@@ -323,3 +323,73 @@ func TestKeyring_ExistingProdKeyKeepsTheDefaultAPI(t *testing.T) {
 		t.Errorf("APIURLForKey() = %q, want the default API", got)
 	}
 }
+
+func TestKeyring_MigratesKeySavedUnderTheEUHostName(t *testing.T) {
+	// Before the EU host mapped to "prod", NOTTE_API_URL=https://eu-api.notte.cc
+	// saved the key under the hostname. It must still be found, with or without
+	// the URL set, and logout must remove it.
+	for _, apiURL := range []string{"", "https://eu-api.notte.cc"} {
+		t.Run("NOTTE_API_URL="+apiURL, func(t *testing.T) {
+			env := testutil.SetupTestEnv(t)
+			SetKeyring(env.MockStore)
+			defer ResetKeyring()
+			withConfigDir(t, env, "")
+			if apiURL != "" {
+				env.SetEnv("NOTTE_API_URL", apiURL)
+			}
+
+			const euKey = "sk-notte-eu-saved"
+			_ = env.MockStore.Set("api_key:eu-api.notte.cc", euKey)
+
+			key, err := GetKeyringAPIKey()
+			if err != nil || key != euKey {
+				t.Fatalf("GetKeyringAPIKey() = %q, %v, want the key saved under the EU host", key, err)
+			}
+			if got, err := env.MockStore.Get("api_key:prod"); err != nil || got != euKey {
+				t.Errorf("api_key:prod = %q, %v, want the migrated key", got, err)
+			}
+			if _, err := env.MockStore.Get("api_key:eu-api.notte.cc"); err == nil {
+				t.Error("legacy EU entry still present after migration")
+			}
+		})
+	}
+}
+
+func TestKeyring_DeleteRemovesKeySavedUnderTheEUHostName(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+	withConfigDir(t, env, "")
+
+	// Only the legacy entry: deleting succeeds and removes it.
+	_ = env.MockStore.Set("api_key:eu-api.notte.cc", "sk-notte-eu-saved")
+	if err := DeleteKeyringAPIKey(); err != nil {
+		t.Fatalf("DeleteKeyringAPIKey() = %v, want nil", err)
+	}
+	if _, err := env.MockStore.Get("api_key:eu-api.notte.cc"); err == nil {
+		t.Error("legacy EU entry still present after delete")
+	}
+
+	// Both entries: both go.
+	_ = env.MockStore.Set("api_key:prod", "sk-notte-prod")
+	_ = env.MockStore.Set("api_key:eu-api.notte.cc", "sk-notte-eu-saved")
+	if err := DeleteKeyringAPIKey(); err != nil {
+		t.Fatalf("DeleteKeyringAPIKey() = %v, want nil", err)
+	}
+	for _, k := range []string{"api_key:prod", "api_key:eu-api.notte.cc"} {
+		if _, err := env.MockStore.Get(k); err == nil {
+			t.Errorf("%s still present after delete", k)
+		}
+	}
+}
+
+func TestDeleteKeyringAPIKey_NothingSavedIsNotFound(t *testing.T) {
+	// Checking the EU host's entry too must not turn "nothing saved" into success.
+	env := testutil.SetupTestEnv(t)
+	withConfigDir(t, env, "")
+	SetKeyring(missingKeyring{})
+	t.Cleanup(ResetKeyring)
+	if err := DeleteKeyringAPIKey(); !IsNoSavedKey(err) {
+		t.Errorf("DeleteKeyringAPIKey() with nothing saved = %v, want a not-found error", err)
+	}
+}
