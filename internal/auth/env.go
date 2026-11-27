@@ -8,8 +8,14 @@ import (
 )
 
 // hostToEnvLabel maps known API hostnames to canonical environment labels.
+//
+// The EU API is part of production, not an environment of its own: the same
+// console issues keys for both regions, and the region is in the key. Mapping
+// it to "prod" keeps one saved key per environment, found whichever of the two
+// hosts NOTTE_API_URL names, or neither.
 var hostToEnvLabel = map[string]string{
 	"api.notte.cc":         "prod",
+	"eu-api.notte.cc":      "prod",
 	"us-prod.notte.cc":     "prod",
 	"us-staging.notte.cc":  "staging",
 	"us-dev.notte.cc":      "dev",
@@ -73,15 +79,40 @@ func KeyringKeyForEnv(envLabel string) string {
 	return KeyringKey + ":" + envLabel
 }
 
-// GetCurrentAPIURL resolves the current API URL using the same logic as GetClient():
+// GetCurrentAPIURL resolves the API URL before any credential is known:
 // NOTTE_API_URL env var -> config file -> DefaultAPIURL.
+//
+// It names the environment keys are saved under and the API a login starts
+// against. Requests made with a key go to APIURLForKey instead, which picks the
+// key's region when no URL is set.
 func GetCurrentAPIURL() string {
+	return APIURLForKey("")
+}
+
+// APIURLForKey resolves the API URL to send apiKey to, using the same logic as
+// GetClient(): NOTTE_API_URL env var -> config file -> the default API of the
+// key's region (config.DefaultAPIURLFor). An unreadable config file counts as
+// unset.
+func APIURLForKey(apiKey string) string {
+	u, err := ResolveAPIURL(apiKey)
+	if err != nil {
+		return config.DefaultAPIURLFor(apiKey)
+	}
+	return u
+}
+
+// ResolveAPIURL is APIURLForKey for making requests: an unreadable config
+// file is an error rather than silently ignored.
+func ResolveAPIURL(apiKey string) (string, error) {
 	if u := os.Getenv(config.EnvAPIURL); u != "" {
-		return u
+		return u, nil
 	}
 	cfg, err := config.Load()
-	if err == nil && cfg.APIURL != "" {
-		return cfg.APIURL
+	if err != nil {
+		return "", err
 	}
-	return config.DefaultAPIURL
+	if cfg.HasAPIURL() {
+		return cfg.APIURL, nil
+	}
+	return config.DefaultAPIURLFor(apiKey), nil
 }

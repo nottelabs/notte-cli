@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/nottelabs/notte-cli/internal/config"
 	notteErrors "github.com/nottelabs/notte-cli/internal/errors"
 )
 
@@ -48,9 +49,10 @@ func WithRequestOrigin(origin string) NotteClientOption {
 	}
 }
 
-// NewClient creates a new Notte API client
+// NewClient creates a new Notte API client for the default API of the key's
+// region.
 func NewClient(apiKey string, opts ...NotteClientOption) (*NotteClient, error) {
-	return NewClientWithURL(apiKey, DefaultBaseURL, "", opts...)
+	return NewClientWithURL(apiKey, config.DefaultAPIURLFor(apiKey), "", opts...)
 }
 
 // NewClientWithURL creates a client with custom base URL

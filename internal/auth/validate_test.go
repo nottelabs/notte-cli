@@ -143,3 +143,16 @@ func TestValidateAPIKeyRejectsEmptyKey(t *testing.T) {
 		t.Errorf("empty key still reached the API %d times", stub.hits)
 	}
 }
+
+func TestValidateAPIKeyEUKeyUsesConfiguredAPI(t *testing.T) {
+	// An explicit API URL wins over the key's region.
+	stub := newAPIStub(t, http.StatusOK, `{}`)
+	t.Setenv(config.EnvAPIURL, stub.server.URL)
+
+	if err := ValidateAPIKey(context.Background(), "sk-notte-eu-test"); err != nil {
+		t.Fatalf("ValidateAPIKey() = %v, want nil", err)
+	}
+	if stub.hits != 1 || stub.auth != "Bearer sk-notte-eu-test" {
+		t.Fatalf("configured API received %d requests (auth %q), want 1 with the EU key", stub.hits, stub.auth)
+	}
+}

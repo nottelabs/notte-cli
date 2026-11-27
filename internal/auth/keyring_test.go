@@ -262,3 +262,64 @@ func TestDeleteKeyringSecret_MissingSecretIsRemoved(t *testing.T) {
 		t.Errorf("DeleteKeyringSecret() on a missing key = %v, want nil", err)
 	}
 }
+
+func TestKeyring_EUKeyWithDefaultAPI(t *testing.T) {
+	// An EU key is sent to the EU API when no API URL is set, but it is saved
+	// and found under the same production entry as any other production key,
+	// so keys saved before regions existed are still found, and naming either
+	// production host explicitly finds the same key.
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+	withConfigDir(t, env, "")
+
+	const euKey = "sk-notte-org-eu-abc123"
+	if err := SetKeyringAPIKey(euKey); err != nil {
+		t.Fatalf("SetKeyringAPIKey failed: %v", err)
+	}
+	if stored, err := env.MockStore.Get("api_key:prod"); err != nil || stored != euKey {
+		t.Fatalf("api_key:prod = %q, %v, want the EU key", stored, err)
+	}
+
+	key, source, err := GetAPIKey("")
+	if err != nil || key != euKey || source != SourceKeyring {
+		t.Fatalf("GetAPIKey() = %q, %q, %v, want the EU key from the keyring", key, source, err)
+	}
+	if got := APIURLForKey(key); got != "https://eu-api.notte.cc" {
+		t.Errorf("APIURLForKey() = %q, want the EU API", got)
+	}
+
+	for _, explicit := range []string{"https://eu-api.notte.cc", "https://api.notte.cc"} {
+		env.SetEnv("NOTTE_API_URL", explicit)
+		if got, err := GetKeyringAPIKey(); err != nil || got != euKey {
+			t.Errorf("NOTTE_API_URL=%s: GetKeyringAPIKey() = %q, %v, want the EU key", explicit, got, err)
+		}
+		if got := APIURLForKey(euKey); got != explicit {
+			t.Errorf("NOTTE_API_URL=%s: APIURLForKey() = %q, want the explicit URL", explicit, got)
+		}
+	}
+
+	_ = os.Unsetenv("NOTTE_API_URL")
+	if err := DeleteKeyringAPIKey(); err != nil {
+		t.Fatalf("DeleteKeyringAPIKey failed: %v", err)
+	}
+	if _, err := env.MockStore.Get("api_key:prod"); err == nil {
+		t.Error("api_key:prod still set after delete")
+	}
+}
+
+func TestKeyring_ExistingProdKeyKeepsTheDefaultAPI(t *testing.T) {
+	env := testutil.SetupTestEnv(t)
+	SetKeyring(env.MockStore)
+	defer ResetKeyring()
+	withConfigDir(t, env, "")
+
+	_ = env.MockStore.Set("api_key:prod", "sk-notte-existing")
+	key, err := GetKeyringAPIKey()
+	if err != nil || key != "sk-notte-existing" {
+		t.Fatalf("GetKeyringAPIKey() = %q, %v", key, err)
+	}
+	if got := APIURLForKey(key); got != "https://api.notte.cc" {
+		t.Errorf("APIURLForKey() = %q, want the default API", got)
+	}
+}
