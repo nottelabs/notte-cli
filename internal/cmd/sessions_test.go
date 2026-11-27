@@ -1023,7 +1023,7 @@ func TestRunSessionSteps_InvalidLimit(t *testing.T) {
 	}
 }
 
-func TestRunSessionWorkflowCode(t *testing.T) {
+func TestRunSessionFunctionCode(t *testing.T) {
 	server := setupSessionTest(t)
 	server.AddResponse("/sessions/"+sessionIDTest+"/workflow/code", 200, `{"json_actions":[{"type":"noop"}],"python_script":"print('hi')"}`)
 
@@ -1035,7 +1035,7 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 	cmd.SetContext(context.Background())
 
 	stdout, _ := testutil.CaptureOutput(func() {
-		err := runSessionWorkflowCode(cmd, nil)
+		err := runSessionFunctionCode(cmd, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -1043,6 +1043,48 @@ func TestRunSessionWorkflowCode(t *testing.T) {
 
 	if stdout == "" {
 		t.Error("expected output, got empty string")
+	}
+}
+
+// The old workflow-code name still runs the same export through the real
+// command tree, stays out of help, and keeps its notice off stdout so the
+// exported JSON can still be piped.
+func TestSessionsWorkflowCodeIsDeprecatedAlias(t *testing.T) {
+	if !sessionsWorkflowCodeCmd.Hidden {
+		t.Error("workflow-code should be hidden")
+	}
+
+	server := setupSessionTest(t)
+	sessionID = ""
+	server.AddResponse("/sessions/"+sessionIDTest+"/workflow/code", 200, `{"json_actions":[{"type":"noop"}],"python_script":"print('hi')"}`)
+
+	origFormat := outputFormat
+	t.Cleanup(func() {
+		outputFormat = origFormat
+		rootCmd.SetArgs(nil)
+	})
+
+	rootCmd.SetArgs([]string{"sessions", "workflow-code", "--session-id", sessionIDTest, "--output", "json"})
+	var runErr error
+	stdout, stderr := testutil.CaptureOutput(func() {
+		runErr = rootCmd.Execute()
+	})
+	if runErr != nil {
+		t.Fatalf("workflow-code failed: %v", runErr)
+	}
+
+	if !strings.Contains(stderr, "deprecated") || !strings.Contains(stderr, "function-code") {
+		t.Errorf("stderr should carry the deprecation notice, got %q", stderr)
+	}
+	var exported map[string]any
+	if err := json.Unmarshal([]byte(stdout), &exported); err != nil {
+		t.Fatalf("stdout should be the exported JSON alone, got %q: %v", stdout, err)
+	}
+	if exported["python_script"] != "print('hi')" {
+		t.Errorf("unexpected export: %v", exported)
+	}
+	if n := len(server.Requests("/sessions/" + sessionIDTest + "/workflow/code")); n != 1 {
+		t.Errorf("expected one export request for the selected session, got %d", n)
 	}
 }
 
