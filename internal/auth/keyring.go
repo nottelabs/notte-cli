@@ -290,6 +290,8 @@ func SetKeyringAPIKey(apiKey string) error {
 
 // DeleteKeyringAPIKey removes API key from OS keychain for the current
 // environment. In prod it also removes a key saved under the EU host's name.
+// It reports a not-found error only when neither entry was saved, and any
+// other failure to remove either one.
 func DeleteKeyringAPIKey() error {
 	envLabel := ResolveEnvLabel(GetCurrentAPIURL())
 	err := defaultKeyring.Delete(KeyringKeyForEnv(envLabel))
@@ -297,10 +299,23 @@ func DeleteKeyringAPIKey() error {
 		return err
 	}
 	legacyErr := defaultKeyring.Delete(legacyEUKeyringKey)
-	if isNotFound(err) && legacyErr == nil {
+
+	// Not-found errors are left out: joined in, they would make a failure
+	// read as "nothing saved".
+	var failures []error
+	for _, e := range []error{err, legacyErr} {
+		if e != nil && !isNotFound(e) {
+			failures = append(failures, e)
+		}
+	}
+	switch {
+	case len(failures) > 0:
+		return errors.Join(failures...)
+	case err != nil && legacyErr != nil:
+		return err // neither entry was saved
+	default:
 		return nil
 	}
-	return err
 }
 
 // GetKeyringSecret retrieves a named secret, such as a tunnel's OAuth client

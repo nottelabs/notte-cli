@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/99designs/keyring"
@@ -391,5 +393,45 @@ func TestDeleteKeyringAPIKey_NothingSavedIsNotFound(t *testing.T) {
 	t.Cleanup(ResetKeyring)
 	if err := DeleteKeyringAPIKey(); !IsNoSavedKey(err) {
 		t.Errorf("DeleteKeyringAPIKey() with nothing saved = %v, want a not-found error", err)
+	}
+}
+
+// failingDeleteKeyring is a mock keyring whose Delete fails for one key.
+type failingDeleteKeyring struct {
+	*testutil.MockKeyring
+	failKey string
+}
+
+func (k failingDeleteKeyring) Delete(key string) error {
+	if key == k.failKey {
+		return errors.New("keychain is locked")
+	}
+	return k.MockKeyring.Delete(key)
+}
+
+func TestDeleteKeyringAPIKey_ReportsAFailedLegacyEUDelete(t *testing.T) {
+	// A key left behind under the EU host's name must not read as signed out.
+	for _, prodSaved := range []bool{true, false} {
+		t.Run(fmt.Sprintf("prod saved=%v", prodSaved), func(t *testing.T) {
+			env := testutil.SetupTestEnv(t)
+			withConfigDir(t, env, "")
+			_ = env.MockStore.Set("api_key:eu-api.notte.cc", "sk-notte-eu-saved")
+			if prodSaved {
+				_ = env.MockStore.Set("api_key:prod", "sk-notte-prod")
+			}
+			SetKeyring(failingDeleteKeyring{env.MockStore, "api_key:eu-api.notte.cc"})
+			t.Cleanup(ResetKeyring)
+
+			err := DeleteKeyringAPIKey()
+			if err == nil || IsNoSavedKey(err) {
+				t.Fatalf("DeleteKeyringAPIKey() = %v, want the legacy delete failure", err)
+			}
+			if !strings.Contains(err.Error(), "keychain is locked") {
+				t.Errorf("DeleteKeyringAPIKey() = %v, want it to name the failure", err)
+			}
+			if _, err := env.MockStore.Get("api_key:prod"); err == nil {
+				t.Error("api_key:prod still present: the prod entry should be removed regardless")
+			}
+		})
 	}
 }
