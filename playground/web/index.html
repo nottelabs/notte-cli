@@ -216,7 +216,7 @@ function tokenize(line) {
   const push = () => { if (has) tokens.push({word: cur}); cur = ''; has = false; };
   const variable = () => {
     let name = '';
-    if (line[i + 1] === '{') { const end = line.indexOf('}', i); name = line.slice(i + 2, end); i = end; }
+    if (line[i + 1] === '{') { const end = line.indexOf('}', i); if (end < 0) throw new Error('bad substitution'); name = line.slice(i + 2, end); i = end; }
     else if (line[i + 1] === '?') { name = '?'; i++; }
     else { while (/[A-Za-z0-9_]/.test(line[i + 1] || '')) name += line[++i]; }
     if (!name) return '$';
@@ -368,6 +368,7 @@ Run "reset" to wipe the playground and start over.
       }
       const {dir, name} = parentOf(abs);
       if (!dir) return fail(`mkdir: ${a}: No such file or directory`);
+      if (dir.type !== 'dir') return fail(`mkdir: ${a}: Not a directory`);
       if (dir.children[name]) return fail(`mkdir: ${a}: File exists`);
       dir.children[name] = {type: 'dir', children: {}};
     }
@@ -490,6 +491,8 @@ function copy(args, move, name) {
     if (!node) return fail(`${name}: ${source}: No such file or directory`);
     let dest = resolve(target);
     if (lookup(dest)?.type === 'dir') dest += '/' + base;
+    if (dest === abs) return fail(`${name}: ${source} and ${target} are the same file`);
+    if (node.type === 'dir' && dest.startsWith(abs + '/')) return fail(`${name}: cannot ${move ? 'move' : 'copy'} ${source} into itself`);
     const to = parentOf(dest);
     if (!to.dir || to.dir.type !== 'dir') return fail(`${name}: ${target}: No such file or directory`);
     to.dir.children[to.name] = move ? node : JSON.parse(JSON.stringify(node));
@@ -693,7 +696,13 @@ let mode = localStorage.getItem(STORAGE + '-mode') === 'fixtures' ? 'fixtures' :
 let lastRunLine = '', lastRunSafe = false, refreshEntry = () => {};
 // Commands that only read. Against the real API only these re-run on save;
 // re-running one that starts, changes or deletes something would repeat it.
-const READ_ONLY = new Set(['list', 'status', 'show', 'runs', 'logs', 'cookies', 'offset', 'code', 'function-code', 'workflow-code', 'observe', 'health', 'usage', 'version', 'schedules', 'emails', 'sms', 'run-metadata', 'check']);
+const READ_ONLY = new Set([
+  'files list', 'functions list', 'functions show', 'functions runs', 'functions run-metadata', 'functions schedules list',
+  'health', 'page observe', 'payment status', 'personas list', 'personas show', 'personas emails', 'personas sms',
+  'profiles list', 'profiles show', 'profiles cookies', 'sessions list', 'sessions status', 'sessions steps', 'sessions code',
+  'sessions function-code', 'sessions workflow-code', 'sessions cookies', 'sessions network', 'sessions offset',
+  'tunnel list', 'usage', 'usage logs', 'vaults list', 'vaults credentials list', 'version', 'whoami',
+]);
 function readOnlyLine(line) {
   let list;
   try { list = parse(line); } catch { return false; }
@@ -705,22 +714,26 @@ function readOnlyLine(line) {
     for (const a of args) { if (!a.startsWith('-') && child(path, a)) path.push(child(path, a)); }
     if (!path.length || childrenOf(path).length) continue; // help pages
     if (path.join(' ') === 'auth status') continue;
-    if (!READ_ONLY.has(path[path.length - 1])) return false;
+    if (!READ_ONLY.has(path.join(' '))) return false;
   }
   return true;
 }
 let running = null;
+// The files of the current directory, for the command to read: text as is,
+// anything else as base64.
 function workspaceFiles() {
-  const files = {};
+  const files = {}, binary = {};
   let total = 0;
   const walk = (node, prefix, depth) => {
     for (const [name, child] of Object.entries(node.children)) {
-      if (child.type === 'dir') { if (depth < 4) walk(child, prefix + name + '/', depth + 1); }
-      else if (!child.binary && total + child.content.length < 5e6) { files[prefix + name] = child.content; total += child.content.length; }
+      if (child.type === 'dir') { if (depth < 4) walk(child, prefix + name + '/', depth + 1); continue; }
+      const data = child.binary ? child.base64 || '' : child.content;
+      if (total + data.length >= 5e6) continue;
+      (child.binary ? binary : files)[prefix + name] = data; total += data.length;
     }
   };
   walk(lookup(state.cwd), '', 0);
-  return files;
+  return {files, binary};
 }
 function saveReturnedFile(file) {
   const parts = file.name.split('/');
@@ -740,7 +753,7 @@ async function liveNotte(args, stdin, tty, emit, scenario) {
   try {
     const response = await fetch('/api/run', {
       method: 'POST', signal: controller.signal, headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({args, env: scenario ? {NOTTE_SESSION_ID: state.env.NOTTE_SESSION_ID || ''} : state.env, pinned: scenario ? state.session : '', files: workspaceFiles(), stdin, tty, scenario}),
+      body: JSON.stringify({args, env: scenario ? {NOTTE_SESSION_ID: state.env.NOTTE_SESSION_ID || ''} : state.env, pinned: scenario ? state.session : '', ...workspaceFiles(), stdin, tty, scenario}),
     });
     if (!response.ok) return fail('playground: ' + (await response.text()).trim());
     const reader = response.body.getReader(), decoder = new TextDecoder();
@@ -1122,8 +1135,9 @@ async function submit(line, rerun) {
     refreshEntry();
   };
   busy = true; $('prompt').hidden = true;
-  await execute(trimmed ? line : '', show);
-  busy = false; $('prompt').hidden = false;
+  try { await execute(trimmed ? line : '', show); }
+  catch (e) { show(`playground: ${e.message}\n`); }
+  finally { busy = false; $('prompt').hidden = false; }
   if (state.reset) { localStorage.removeItem(STORAGE); location.reload(); return; }
   $('prompt').replaceChildren(...promptNode(promptText()).childNodes);
   save(); scrollDown();
@@ -1292,6 +1306,8 @@ function rerunLast() {
   submit(lastRunLine, true);
 }
 function setMode(next) {
+  // A command tried against fixtures must not re-run against the real API.
+  if (next !== mode) { lastRunLine = ''; lastRunSafe = false; }
   mode = next;
   try { localStorage.setItem(STORAGE + '-mode', mode); } catch { /* not remembered */ }
   for (const b of $('mode').querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === mode);

@@ -79,10 +79,7 @@ func (r *Runner) Close() error { return os.RemoveAll(r.dir) }
 func (r *Runner) Render(ctx context.Context, scenarios []Scenario, record bool) (Recording, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	binary := filepath.Join(r.dir, "notte")
-	if runtime.GOOS == "windows" {
-		binary += ".exe"
-	}
+	binary := filepath.Join(r.dir, binaryName())
 	buildCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	overlay, err := r.credentialOverlay()
@@ -118,6 +115,15 @@ func (r *Runner) Render(ctx context.Context, scenarios []Scenario, record bool) 
 		return Recording{}, err
 	}
 	return Recording{Version: version, Scenarios: examples, Help: help}, nil
+}
+
+// binaryName is the file name of the CLI build, which Windows only runs with
+// its extension.
+func binaryName() string {
+	if runtime.GOOS == "windows" {
+		return "notte.exe"
+	}
+	return "notte"
 }
 
 // gitVersion names the build like a release, relative to the latest tag:

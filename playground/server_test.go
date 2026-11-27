@@ -173,3 +173,35 @@ func TestHostForwardsThePagesAPIPath(t *testing.T) {
 	}
 	t.Fatalf("vercel.json does not forward %s to the API: %+v", match[1], host.Rewrites)
 }
+
+// A live command gets the page's files, binary ones decoded, and never a path
+// outside its working directory.
+func TestLivePrepareWritesPageFiles(t *testing.T) {
+	runner, err := NewRunner(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = runner.Close() })
+	if err := os.WriteFile(filepath.Join(runner.dir, binaryName()), []byte("build"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	live := &Live{runner: runner}
+	work, binary, err := live.prepare(context.Background(),
+		map[string]string{"notes/a.txt": "text", "../escape.txt": "no"},
+		map[string]string{"shot.png": "iVBORw0KGgo="})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data, err := os.ReadFile(binary); err != nil || string(data) != "build" {
+		t.Fatalf("binary not copied: %q, %v", data, err)
+	}
+	if data, err := os.ReadFile(filepath.Join(work, "notes", "a.txt")); err != nil || string(data) != "text" {
+		t.Fatalf("text file: %q, %v", data, err)
+	}
+	if data, err := os.ReadFile(filepath.Join(work, "shot.png")); err != nil || string(data) != "\x89PNG\r\n\x1a\n" {
+		t.Fatalf("binary file: %q, %v", data, err)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(work), "escape.txt")); !os.IsNotExist(err) {
+		t.Fatalf("a file escaped the working directory: %v", err)
+	}
+}

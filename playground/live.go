@@ -56,8 +56,10 @@ type liveRequest struct {
 	Args  []string          `json:"args"`
 	Env   map[string]string `json:"env"`
 	Files map[string]string `json:"files"`
-	Stdin string            `json:"stdin"`
-	TTY   bool              `json:"tty"`
+	// Binary holds the files that are not text, base64-encoded.
+	Binary map[string]string `json:"binary"`
+	Stdin  string            `json:"stdin"`
+	TTY    bool              `json:"tty"`
 	// Scenario runs against that fixture's fake API instead of the real one.
 	Scenario string `json:"scenario"`
 	// Pinned is the fixture run's current session, kept by the page between
@@ -107,7 +109,7 @@ func (l *Live) Run(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "streaming is unavailable", http.StatusInternalServerError)
 		return
 	}
-	work, binary, err := l.prepare(r.Context(), request.Files)
+	work, binary, err := l.prepare(r.Context(), request.Files, request.Binary)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
@@ -230,28 +232,36 @@ func (l *Live) Input(w http.ResponseWriter, r *http.Request) {
 // prepare copies the current build into a fresh working directory, so a
 // rebuild or "notte upgrade" never replaces a binary that is running, and
 // writes the page's files for the command to read.
-func (l *Live) prepare(ctx context.Context, files map[string]string) (string, string, error) {
+func (l *Live) prepare(ctx context.Context, files, binary map[string]string) (string, string, error) {
 	work, err := os.MkdirTemp(l.runner.dir, "live-*")
 	if err != nil {
 		return "", "", err
 	}
-	binary, err := l.runner.copyBinary(ctx, filepath.Join(work, ".notte-bin"))
+	executable, err := l.runner.copyBinary(ctx, filepath.Join(work, ".notte-bin"))
 	if err != nil {
 		_ = os.RemoveAll(work)
 		return "", "", err
 	}
-	for name, content := range files {
+	write := func(name string, data []byte) {
 		clean := filepath.Clean(name)
 		if !filepath.IsLocal(clean) || strings.HasPrefix(clean, ".notte-bin") {
-			continue
+			return
 		}
 		path := filepath.Join(work, clean)
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-			continue
+			return
 		}
-		_ = os.WriteFile(path, []byte(content), 0o600)
+		_ = os.WriteFile(path, data, 0o600)
 	}
-	return work, binary, nil
+	for name, content := range files {
+		write(name, []byte(content))
+	}
+	for name, content := range binary {
+		if data, err := base64.StdEncoding.DecodeString(content); err == nil {
+			write(name, data)
+		}
+	}
+	return work, executable, nil
 }
 
 func (l *Live) env(request liveRequest) []string {
@@ -409,14 +419,13 @@ func randomID() string {
 func (r *Runner) copyBinary(_ context.Context, dir string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	source := filepath.Join(r.dir, "notte")
-	data, err := os.ReadFile(source)
+	data, err := os.ReadFile(filepath.Join(r.dir, binaryName()))
 	if err != nil {
 		return "", fmt.Errorf("the CLI has not been built yet")
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
-	target := filepath.Join(dir, "notte")
+	target := filepath.Join(dir, binaryName())
 	return target, os.WriteFile(target, data, 0o700)
 }
