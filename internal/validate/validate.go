@@ -112,10 +112,9 @@ func NonEmpty(s, name string) error {
 }
 
 var (
-	sessionIDPattern  = regexp.MustCompile(`^sess_[a-zA-Z0-9]{1,64}$`)
-	workflowIDPattern = regexp.MustCompile(`^wf_[a-zA-Z0-9]{1,64}$`)
-	vaultIDPattern    = regexp.MustCompile(`^vault_[a-zA-Z0-9]{1,64}$`)
-	personaIDPattern  = regexp.MustCompile(`^persona_[a-zA-Z0-9]{1,64}$`)
+	sessionIDPattern = regexp.MustCompile(`^sess_[a-zA-Z0-9]{1,64}$`)
+	vaultIDPattern   = regexp.MustCompile(`^vault_[a-zA-Z0-9]{1,64}$`)
+	personaIDPattern = regexp.MustCompile(`^persona_[a-zA-Z0-9]{1,64}$`)
 )
 
 // SessionID validates that a string is a valid Notte session ID
@@ -125,17 +124,6 @@ func SessionID(s string) error {
 	}
 	if !sessionIDPattern.MatchString(s) {
 		return fmt.Errorf("invalid session ID: expected sess_<alphanumeric 1-64 chars>, got %q", s)
-	}
-	return nil
-}
-
-// WorkflowID validates that a string is a valid Notte workflow ID
-func WorkflowID(s string) error {
-	if s == "" {
-		return fmt.Errorf("workflow ID cannot be empty")
-	}
-	if !workflowIDPattern.MatchString(s) {
-		return fmt.Errorf("invalid workflow ID: expected wf_<alphanumeric 1-64 chars>, got %q", s)
 	}
 	return nil
 }

@@ -54,7 +54,7 @@ func TestJSONOutputValidity(t *testing.T) {
 		{"sessions scrape", []string{"sessions", "scrape", "--session-id", sessionID}, ""},
 		{"sessions replay", []string{"sessions", "replay", "--session-id", sessionID}, ""},
 		{"sessions offset", []string{"sessions", "offset", "--session-id", sessionID}, ""},
-		{"sessions workflow-code", []string{"sessions", "workflow-code", "--session-id", sessionID}, ""},
+		{"sessions function-code", []string{"sessions", "function-code", "--session-id", sessionID}, ""},
 
 		// Page commands
 		{"page observe", []string{"page", "observe", "--session-id", sessionID}, ""},
