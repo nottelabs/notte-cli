@@ -132,3 +132,6 @@ UPDATE_JSON_SHAPES=1 go test ./playground -run TestRunnerRendersFixtures
 ```sh
 go test ./playground
 ```
+
+The shell checks in `page_test.mjs` load the page's script in Node; without
+Node they are skipped.
