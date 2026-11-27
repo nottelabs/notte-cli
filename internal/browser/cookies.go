@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	_ "modernc.org/sqlite" // pure-Go SQLite driver, no cgo
 )
 
 // Cookie is a single decrypted cookie in a browser-neutral shape. The command

@@ -38,6 +38,11 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      # The playground runs the CLI in the browser; a dependency that does not
+      # compile there has to stay behind a build tag (see playground/README.md).
+      - name: Build for the browser
+        run: GOOS=js GOARCH=wasm go build -o /dev/null ./cmd/notte
+
       - name: Check generated code is up to date
         env:
           # The staging schema requires an API key.

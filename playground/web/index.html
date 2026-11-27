@@ -1,0 +1,1362 @@
+<!doctype html>
+<html lang="en" data-app="notte-cli-playground">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>notte CLI playground</title>
+  <style>
+    :root{font-family:Monaco,Menlo,Consolas,monospace;font-size:12px;line-height:1.3;color:#c0caf5;background:#101116;color-scheme:dark}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{display:grid;place-items:center}input{font:inherit}[hidden]{display:none!important}::selection{background:#414868;color:#c0caf5}
+    .terminal{position:relative;display:flex;flex-direction:column;flex:0 1 1100px;min-width:0;height:78vh;overflow:hidden;border:1px solid #65646c;border-radius:9px;background:#1a1b26;box-shadow:0 20px 65px #0006}
+    .titlebar{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;height:29px;background:#3b3b3d;border-bottom:1px solid #15151c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#b6b6b8;font-size:12px;font-weight:600;user-select:none}
+    .lights{position:absolute;left:10px;display:flex;gap:7px}.light{width:11px;height:11px;border-radius:50%}.red{background:#ff5f57}.yellow{background:#febc2e}.green{background:#28c840}
+    .version{font:500 11px Monaco,Menlo,Consolas,monospace;color:#8f8f95}
+    .screen{flex:1;min-height:0;overflow:auto;padding:8px 8px 14px;scrollbar-color:#666779 #1a1b26;scrollbar-width:thin}
+    .line{display:flex;gap:6px;align-items:baseline;min-width:0}.prompt{color:#7aa2f7;flex-shrink:0;user-select:none;white-space:nowrap}.prompt b{color:#c0caf5;font-weight:400}
+    .command,.output{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;min-width:0;tab-size:4}.output:empty{display:none}.note{color:#737caa}
+    .input-wrap{position:relative;flex:1;min-width:0;overflow:hidden}
+    .input{font:inherit;line-height:1.3;display:block;width:100%;border:0;padding:0;margin:0;background:transparent;color:#c0caf5;outline:none;caret-color:transparent}
+    .caret{position:absolute;top:0;width:1ch;height:1.3em;background:#c0caf5;color:#15161e;pointer-events:none;white-space:pre}
+    .layout{display:flex;justify-content:center;width:92vw;height:78vh}
+    .sidebar{width:220px;margin-right:28px;flex-shrink:0;overflow-x:hidden;overflow-y:auto;transition:width .32s cubic-bezier(.4,0,.2,1),margin-right .32s cubic-bezier(.4,0,.2,1),opacity .2s ease;padding:4px 4px 16px 0;font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;scrollbar-width:thin;scrollbar-color:#3b3d52 transparent}
+    .sidebar-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}.sidebar h2{margin:0;font-size:15px;font-weight:600;color:#e6e8f2}
+    .sidebar h3{margin:22px 0 8px;font-size:12px;font-weight:600;color:#8b90ab;text-transform:uppercase;letter-spacing:.04em}
+    .nav{border-left:1px solid #2a2e42;margin:0;padding:0;list-style:none}
+    .nav button{display:block;width:100%;margin-left:-1px;padding:6px 0 6px 16px;border:0;border-left:1px solid transparent;background:none;color:#a9b1d6;font:inherit;text-align:left;cursor:pointer}
+    .nav button:hover{color:#e6e8f2;border-left-color:#565f89}
+    .nav button.active{color:#4ade80;border-left-color:#4ade80}
+    .nav .sub{list-style:none;margin:2px 0 6px;padding:0}
+    .nav .sub button{padding:4px 0 4px 30px;font-size:13px;font-family:Monaco,Menlo,Consolas,monospace;color:#8b90ab}
+    .nav .sub button:hover{color:#e6e8f2}
+    .toggle{display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:6px;background:none;color:#8b90ab;cursor:pointer}
+    .toggle:hover{color:#e6e8f2;background:#1f2233;border-color:#2a2e42}
+    .open-sidebar{position:fixed;top:20px;left:20px;z-index:1}
+    .sidebar>*{width:216px}
+    body.collapsed .sidebar{width:0;margin-right:0;padding-right:0;opacity:0;pointer-events:none}
+    .open-sidebar{transition:opacity .2s ease .15s}
+    body:not(.collapsed) .open-sidebar{opacity:0;pointer-events:none;transition-delay:0s}
+    @media(prefers-reduced-motion:reduce){.sidebar,.open-sidebar{transition:none}}
+    body.preload .sidebar,body.preload .open-sidebar{transition:none}
+    @media(max-width:900px){.sidebar,.open-sidebar{display:none!important}}
+    .output a{color:inherit;text-decoration:underline;text-decoration-color:#565f89;text-underline-offset:2px;cursor:pointer}.output a:hover{color:#7dcfff;text-decoration-color:currentColor}
+    .stale{opacity:.38}
+    .build-badge{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid #3b4261;border-radius:999px;background:#24283bf2;color:#c0caf5;font:500 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 6px 24px #0007;pointer-events:none}
+    .spinner{width:11px;height:11px;border:2px solid #565f89;border-top-color:#7aa2f7;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    body.building #form{opacity:.35}
+    @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+    .modes{position:absolute;right:12px;display:flex;align-items:center;gap:10px}
+    .mode{display:flex;padding:2px;border-radius:6px;background:#2a2a2c}
+    .mode button{padding:2px 8px;border:0;border-radius:4px;background:none;color:#9a9aa0;font:500 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
+    .mode button.on{background:#4a4a4e;color:#f0f0f2}
+    .notice{margin:4px 0;color:#e0af68;white-space:pre-wrap;font:inherit}.notice.failed{color:#f7768e}
+    @media(max-width:650px){.terminal{width:96vw;height:88dvh}}
+  </style>
+</head>
+<body>
+  <button id="open-sidebar" class="toggle open-sidebar" type="button" title="Show commands" aria-label="Show commands"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M6 2.5v11"/></svg></button>
+  <div class="layout">
+  <nav id="sidebar" class="sidebar" aria-label="CLI commands"></nav>
+  <main class="terminal" aria-label="notte CLI playground">
+    <div class="titlebar"><div class="lights" aria-hidden="true"><span class="light red"></span><span class="light yellow"></span><span class="light green"></span></div><div class="modes"><div id="mode" class="mode" role="group" aria-label="Where notte commands go" hidden><button type="button" data-mode="live" title="Run against the real Notte API with the playground's login. Read-only commands re-run on every rebuild.">Live API</button><button type="button" data-mode="fixtures" title="Run against the fake API answers in scenarios.json, re-run on every rebuild">Fixtures</button></div><span id="version" class="version" title="CLI version: latest release tag, commits since it, and -dirty for uncommitted changes"></span></div></div>
+    <div id="screen" class="screen">
+      <div id="transcript" role="log" aria-live="polite"></div>
+      <pre id="notice" class="notice" role="status" hidden></pre>
+      <form id="form" class="line" autocomplete="off" spellcheck="false">
+        <span id="prompt" class="prompt" aria-hidden="true"></span>
+        <div class="input-wrap"><input id="input" class="input" aria-label="Command" autocomplete="off" autocapitalize="off" spellcheck="false"><span id="caret" class="caret" aria-hidden="true"></span></div>
+      </form>
+    </div>
+    <div id="build-badge" class="build-badge" role="status" hidden><span class="spinner" aria-hidden="true"></span>Rebuilding CLI…</div>
+  </main>
+  </div>
+  <script>
+'use strict';
+// Everything below runs in the visitor's browser. The shell is a small
+// emulator over an in-memory filesystem. In a static export, notte is the
+// real CLI compiled to WebAssembly (see "the real CLI in the browser").
+const STATIC = document.documentElement.dataset.mode === 'static';
+const STORAGE = 'notte-playground-v1';
+const HOME = '/home/user';
+const $ = id => document.getElementById(id);
+const input = $('input');
+
+// ---------- ANSI rendering ----------
+const COLORS = ['#15161e','#f7768e','#9ece6a','#e0af68','#7aa2f7','#bb9af7','#7dcfff','#a9b1d6','#414868','#f7768e','#9ece6a','#e0af68','#7aa2f7','#bb9af7','#7dcfff','#c0caf5'];
+const strip = v => String(v || '').replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g,'').replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'');
+function palette(i) {
+  if (i < 16) return COLORS[i];
+  if (i >= 232) { const g = 8 + (i - 232) * 10; return `rgb(${g},${g},${g})`; }
+  const n = i - 16;
+  return 'rgb(' + [Math.floor(n / 36), Math.floor(n / 6) % 6, n % 6].map(v => v ? 55 + v * 40 : 0).join(',') + ')';
+}
+// URLs in output are clickable, like in iTerm or VS Code's terminal. Text
+// inside an OSC 8 hyperlink escape links to its target instead.
+const URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]*[^\s<>"'`.,;:!?)\]}]/g;
+function link(href, text, style) {
+  const a = document.createElement('a');
+  a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  a.textContent = text; Object.assign(a.style, style);
+  return a;
+}
+function renderANSI(target, text) {
+  // Keep OSC 8 hyperlinks, drop other OSC sequences (titles and the like).
+  text = String(text || '').replace(/\x1b\](?!8;)[^\x07\x1b]*(?:\x07|\x1b\\)/g, '');
+  const re = /\x1b\[([0-9;]*)m|\x1b\]8;[^;\x07\x1b]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
+  let cursor = 0, m, style = {}, href = '';
+  const add = part => {
+    part = part.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '');
+    if (!part) return;
+    if (href && /^https?:\/\//.test(href)) { target.appendChild(link(href, part, style)); return; }
+    let last = 0;
+    for (const match of part.matchAll(URL_PATTERN)) {
+      if (match.index > last) { const span = document.createElement('span'); span.textContent = part.slice(last, match.index); Object.assign(span.style, style); target.appendChild(span); }
+      target.appendChild(link(match[0], match[0], style));
+      last = match.index + match[0].length;
+    }
+    if (last < part.length) { const span = document.createElement('span'); span.textContent = part.slice(last); Object.assign(span.style, style); target.appendChild(span); }
+  };
+  while ((m = re.exec(text))) {
+    add(text.slice(cursor, m.index)); cursor = re.lastIndex;
+    if (m[1] === undefined) { href = m[2] || ''; continue; }
+    const c = (m[1] || '0').split(';').map(Number);
+    for (let i = 0; i < c.length; i++) {
+      const k = c[i];
+      if (k === 0) style = {};
+      else if (k === 1) style.fontWeight = '700';
+      else if (k === 2) style.opacity = '.65';
+      else if (k === 3) style.fontStyle = 'italic';
+      else if (k === 4) style.textDecoration = 'underline';
+      else if (k === 22) { delete style.fontWeight; delete style.opacity; }
+      else if (k === 23) delete style.fontStyle;
+      else if (k === 24) delete style.textDecoration;
+      else if (k >= 30 && k <= 37) style.color = COLORS[k - 30];
+      else if (k >= 90 && k <= 97) style.color = COLORS[k - 82];
+      else if (k === 39) delete style.color;
+      else if (k >= 40 && k <= 47) style.backgroundColor = COLORS[k - 40];
+      else if (k === 49) delete style.backgroundColor;
+      else if ((k === 38 || k === 48) && c[i + 1] === 5) { style[k === 38 ? 'color' : 'backgroundColor'] = palette(c[i + 2]); i += 2; }
+      else if ((k === 38 || k === 48) && c[i + 1] === 2) { style[k === 38 ? 'color' : 'backgroundColor'] = `rgb(${c[i + 2]},${c[i + 3]},${c[i + 4]})`; i += 4; }
+    }
+  }
+  add(text.slice(cursor));
+}
+
+// ---------- persistent state ----------
+const welcome = document.documentElement.dataset.mode === 'static' ? `notte CLI playground
+The real notte CLI, running in this tab. Shell commands (ls, cat, jq, ...) work on a pretend filesystem.
+Try typing: notte auth login
+` : `notte CLI playground (live)
+Shell commands (ls, cat, jq, ...) work on a pretend filesystem in this tab.
+Try typing: notte auth login
+`;
+function freshFS() {
+  return {type: 'dir', children: {home: {type: 'dir', children: {user: {type: 'dir', children: {}}}}, tmp: {type: 'dir', children: {}}}};
+}
+const state = {fs: freshFS(), cwd: HOME, env: {USER: 'user', HOME, SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin'}, history: [], session: '', auth: 'saved', entries: []};
+let preview = null, historyIndex = 0, draft = '';
+function save() {
+  try { localStorage.setItem(STORAGE, JSON.stringify({...state, entries: state.entries.slice(-80)})); } catch { /* storage full or disabled */ }
+}
+function restore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE));
+    if (saved && saved.fs && saved.fs.type === 'dir') Object.assign(state, saved);
+  } catch { /* start fresh */ }
+  historyIndex = state.history.length;
+}
+
+// ---------- filesystem ----------
+function resolve(path) {
+  path = String(path || '');
+  if (path === '~' || path.startsWith('~/')) path = HOME + path.slice(1);
+  const parts = (path.startsWith('/') ? path : state.cwd + '/' + path).split('/');
+  const out = [];
+  for (const p of parts) { if (!p || p === '.') continue; if (p === '..') out.pop(); else out.push(p); }
+  return '/' + out.join('/');
+}
+function lookup(abs) {
+  let node = state.fs;
+  for (const part of abs.split('/').filter(Boolean)) {
+    if (node.type !== 'dir' || !node.children[part]) return null;
+    node = node.children[part];
+  }
+  return node;
+}
+function parentOf(abs) {
+  const i = abs.lastIndexOf('/');
+  return {dir: lookup(abs.slice(0, i) || '/'), name: abs.slice(i + 1)};
+}
+function pretty(abs) { return abs === HOME ? '~' : abs.startsWith(HOME + '/') ? '~' + abs.slice(HOME.length) : abs; }
+function writeFile(path, content, append) {
+  const abs = resolve(path);
+  if (abs === '/dev/null') return '';
+  const {dir, name} = parentOf(abs);
+  if (!dir || dir.type !== 'dir') return `${path}: No such file or directory`;
+  const existing = dir.children[name];
+  if (existing && existing.type === 'dir') return `${path}: Is a directory`;
+  dir.children[name] = {type: 'file', content: (append && existing ? existing.content : '') + content};
+  return '';
+}
+function readFile(path) {
+  const node = lookup(resolve(path));
+  if (!node) return {err: `${path}: No such file or directory`};
+  if (node.type === 'dir') return {err: `${path}: Is a directory`};
+  if (node.binary) return {err: `${path}: binary file (${node.size} bytes); run "open ${path}" to view it`};
+  return {content: node.content};
+}
+
+// ---------- tokenizer and parser ----------
+// Produces a list of {op, pipeline} where pipeline is a list of commands with
+// argv and redirections. Supports quotes, $VAR, ~, |, >, >>, 2>, 2>&1, &&, ||, ;.
+function tokenize(line) {
+  const tokens = [];
+  let cur = '', has = false, i = 0;
+  const push = () => { if (has) tokens.push({word: cur}); cur = ''; has = false; };
+  const variable = () => {
+    let name = '';
+    if (line[i + 1] === '{') { const end = line.indexOf('}', i); if (end < 0) throw new Error('bad substitution'); name = line.slice(i + 2, end); i = end; }
+    else if (line[i + 1] === '?') { name = '?'; i++; }
+    else { while (/[A-Za-z0-9_]/.test(line[i + 1] || '')) name += line[++i]; }
+    if (!name) return '$';
+    return name === '?' ? String(state.lastCode || 0) : (state.env[name] ?? '');
+  };
+  for (; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '\\') { cur += line[++i] ?? ''; has = true; }
+    else if (ch === "'") { const end = line.indexOf("'", i + 1); if (end < 0) throw new Error('unexpected EOF while looking for matching `\''); cur += line.slice(i + 1, end); i = end; has = true; }
+    else if (ch === '"') {
+      has = true;
+      for (i++; i < line.length && line[i] !== '"'; i++) {
+        if (line[i] === '\\' && /["\\$`]/.test(line[i + 1])) cur += line[++i];
+        else if (line[i] === '$') cur += variable();
+        else cur += line[i];
+      }
+      if (i >= line.length) throw new Error('unexpected EOF while looking for matching `"\'');
+    }
+    else if (ch === '$') { cur += variable(); has = true; }
+    else if (ch === '~' && !has && (line[i + 1] === undefined || line[i + 1] === '/' || /\s/.test(line[i + 1]))) { cur += HOME; has = true; }
+    else if (/\s/.test(ch)) push();
+    else if (ch === '#' && !has) break;
+    else if (ch === '2' && !has && line[i + 1] === '>') {
+      push();
+      if (line.slice(i, i + 4) === '2>&1') { tokens.push({op: '2>&1'}); i += 3; }
+      else { tokens.push({op: '2>'}); i++; }
+    }
+    else if ('|&;><'.includes(ch)) {
+      push();
+      const two = line.slice(i, i + 2);
+      if (['&&', '||', '>>'].includes(two)) { tokens.push({op: two}); i++; }
+      else if (ch === '&') throw new Error('background jobs are not supported in the playground');
+      else tokens.push({op: ch});
+    }
+    else { cur += ch; has = true; }
+  }
+  push();
+  return tokens;
+}
+function parse(line) {
+  const tokens = tokenize(line);
+  const list = [];
+  let op = ';', pipeline = [], cmd = {argv: [], out: null, err: null, errToOut: false, in: null};
+  const endCmd = () => {
+    if (!cmd.argv.length) throw new Error('syntax error near unexpected token');
+    pipeline.push(cmd); cmd = {argv: [], out: null, err: null, errToOut: false, in: null};
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.word !== undefined) { cmd.argv.push(t.word); continue; }
+    if (['>', '>>', '2>', '<'].includes(t.op)) {
+      const target = tokens[++i];
+      if (!target || target.word === undefined) throw new Error('syntax error near unexpected token `newline\'');
+      if (t.op === '<') cmd.in = target.word;
+      else if (t.op === '2>') cmd.err = {path: target.word, append: false};
+      else cmd.out = {path: target.word, append: t.op === '>>'};
+    } else if (t.op === '2>&1') cmd.errToOut = true;
+    else if (t.op === '|') endCmd();
+    else { endCmd(); list.push({op, pipeline}); op = t.op; pipeline = []; }
+  }
+  if (cmd.argv.length || pipeline.length) { endCmd(); list.push({op, pipeline}); }
+  return list;
+}
+
+// ---------- shell builtins ----------
+// Each returns {out, err, code}. ctx.tty tells whether stdout is the terminal.
+const ok = (out = '') => ({out, err: '', code: 0});
+const fail = (err, code = 1) => ({out: '', err: err.endsWith('\n') ? err : err + '\n', code});
+const lines = s => { const l = s.split('\n'); if (l[l.length - 1] === '') l.pop(); return l; };
+function filesFrom(args, stdin, name, fn) {
+  if (!args.length) return ok(fn(stdin));
+  let out = '', err = '', code = 0;
+  for (const a of args) {
+    const f = readFile(a);
+    if (f.err) { err += `${name}: ${f.err}\n`; code = 1; } else out += fn(f.content, a);
+  }
+  return {out, err, code};
+}
+function countFlag(args, def) {
+  let n = def; const rest = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-n') n = parseInt(args[++i], 10);
+    else if (/^-\d+$/.test(args[i])) n = parseInt(args[i].slice(1), 10);
+    else rest.push(args[i]);
+  }
+  return {n: isNaN(n) ? def : n, rest};
+}
+const builtins = {
+  help: () => ok(`Shell commands (pretend filesystem, in your browser):
+  pwd cd ls cat echo mkdir touch rm mv cp tree
+  grep head tail wc sort uniq jq env export history clear date whoami
+
+Shell syntax: | > >> 2> 2>&1 && || ; quotes, $VARS, ~
+
+The CLI:
+  notte                      overview of every command
+  notte <command> --help     help for one command
+
+notte runs the real CLI (live server) or replays recordings of it (static export).
+Run "reset" to wipe the playground and start over.
+`),
+  pwd: () => ok(state.cwd + '\n'),
+  cd: args => {
+    const target = resolve(args[0] || HOME);
+    const node = lookup(target);
+    if (!node) return fail(`cd: ${args[0]}: No such file or directory`);
+    if (node.type !== 'dir') return fail(`cd: ${args[0]}: Not a directory`);
+    state.cwd = target; return ok();
+  },
+  ls: args => {
+    const long = args.some(a => /^-[a-zA-Z]*l/.test(a)), all = args.some(a => /^-[a-zA-Z]*a/.test(a));
+    const paths = args.filter(a => !a.startsWith('-'));
+    let out = '', err = '', code = 0;
+    const list = (p, header) => {
+      const node = lookup(resolve(p));
+      if (!node) { err += `ls: ${p}: No such file or directory\n`; code = 1; return; }
+      if (header) out += `${p}:\n`;
+      if (node.type === 'file') { out += p + '\n'; return; }
+      const names = Object.keys(node.children).sort();
+      if (all) names.unshift('.', '..');
+      const label = n => node.children[n]?.type === 'dir' ? `\x1b[1;34m${n}\x1b[0m` : n;
+      if (long) for (const n of names) {
+        const c = node.children[n] || {type: 'dir'};
+        out += `${c.type === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--'}  1 user  staff  ${String(c.type === 'dir' ? 64 : c.content.length).padStart(6)} ${label(n)}\n`;
+      } else if (names.length) out += names.map(label).join('  ') + '\n';
+    };
+    if (!paths.length) list('.');
+    paths.forEach(p => list(p, paths.length > 1));
+    return {out, err, code};
+  },
+  cat: (args, stdin) => filesFrom(args.filter(a => a !== '-'), stdin, 'cat', c => c),
+  echo: args => {
+    let newline = true;
+    if (args[0] === '-n') { newline = false; args = args.slice(1); }
+    return ok(args.join(' ') + (newline ? '\n' : ''));
+  },
+  mkdir: args => {
+    const parents = args.includes('-p');
+    for (const a of args.filter(a => !a.startsWith('-'))) {
+      const abs = resolve(a);
+      if (parents) {
+        let node = state.fs;
+        for (const part of abs.split('/').filter(Boolean)) {
+          node.children[part] ||= {type: 'dir', children: {}};
+          node = node.children[part];
+          if (node.type !== 'dir') return fail(`mkdir: ${a}: Not a directory`);
+        }
+        continue;
+      }
+      const {dir, name} = parentOf(abs);
+      if (!dir) return fail(`mkdir: ${a}: No such file or directory`);
+      if (dir.type !== 'dir') return fail(`mkdir: ${a}: Not a directory`);
+      if (dir.children[name]) return fail(`mkdir: ${a}: File exists`);
+      dir.children[name] = {type: 'dir', children: {}};
+    }
+    return ok();
+  },
+  touch: args => {
+    for (const a of args) {
+      if (lookup(resolve(a))) continue;
+      const e = writeFile(a, '');
+      if (e) return fail('touch: ' + e);
+    }
+    return ok();
+  },
+  rm: args => {
+    const recursive = args.some(a => /^-[a-zA-Z]*[rR]/.test(a)), force = args.some(a => /^-[a-zA-Z]*f/.test(a));
+    let err = '', code = 0;
+    for (const a of args.filter(a => !a.startsWith('-'))) {
+      const abs = resolve(a);
+      const {dir, name} = parentOf(abs);
+      const node = dir && dir.children[name];
+      if (!node) { if (!force) { err += `rm: ${a}: No such file or directory\n`; code = 1; } continue; }
+      if (node.type === 'dir' && !recursive) { err += `rm: ${a}: is a directory\n`; code = 1; continue; }
+      delete dir.children[name];
+      if (state.cwd === abs || state.cwd.startsWith(abs + '/')) state.cwd = HOME;
+    }
+    return {out: '', err, code};
+  },
+  mv: args => copy(args, true, 'mv'),
+  cp: args => copy(args.filter(a => !a.startsWith('-')), false, 'cp'),
+  tree: args => {
+    const root = args[0] || '.';
+    const node = lookup(resolve(root));
+    if (!node) return fail(`tree: ${root}: No such file or directory`);
+    let out = root + '\n';
+    const walk = (n, prefix) => {
+      const names = Object.keys(n.children || {}).sort();
+      names.forEach((name, i) => {
+        const last = i === names.length - 1, child = n.children[name];
+        out += prefix + (last ? '└── ' : '├── ') + (child.type === 'dir' ? `\x1b[1;34m${name}\x1b[0m` : name) + '\n';
+        if (child.type === 'dir') walk(child, prefix + (last ? '    ' : '│   '));
+      });
+    };
+    walk(node, '');
+    return ok(out);
+  },
+  grep: (args, stdin) => {
+    let invert = false, ignore = false, count = false, pattern = null; const files = [];
+    for (const a of args) {
+      if (/^-[a-zA-Z]+$/.test(a) && pattern === null) { invert ||= a.includes('v'); ignore ||= a.includes('i'); count ||= a.includes('c'); }
+      else if (pattern === null) pattern = a; else files.push(a);
+    }
+    if (pattern === null) return fail('usage: grep [-icv] pattern [file ...]', 2);
+    let re;
+    try { re = new RegExp(pattern, ignore ? 'i' : ''); } catch { return fail(`grep: invalid pattern: ${pattern}`, 2); }
+    let matched = 0;
+    const res = filesFrom(files, stdin, 'grep', c => {
+      const hits = lines(strip(c)).filter(l => re.test(l) !== invert);
+      matched += hits.length;
+      return count ? hits.length + '\n' : hits.map(l => l + '\n').join('');
+    });
+    if (!res.code && !matched) res.code = 1;
+    return res;
+  },
+  head: (args, stdin) => { const {n, rest} = countFlag(args, 10); return filesFrom(rest, stdin, 'head', c => lines(c).slice(0, n).map(l => l + '\n').join('')); },
+  tail: (args, stdin) => { const {n, rest} = countFlag(args, 10); return filesFrom(rest, stdin, 'tail', c => lines(c).slice(-n).map(l => l + '\n').join('')); },
+  wc: (args, stdin) => {
+    const flag = args.find(a => a.startsWith('-')), files = args.filter(a => !a.startsWith('-'));
+    return filesFrom(files, stdin, 'wc', (c, name) => {
+      const counts = {l: lines(c).length, w: c.split(/\s+/).filter(Boolean).length, c: c.length};
+      const picked = flag ? [...flag.slice(1)].map(k => counts[k]) : [counts.l, counts.w, counts.c];
+      return picked.map(v => String(v).padStart(8)).join('') + (name ? ' ' + name : '') + '\n';
+    });
+  },
+  sort: (args, stdin) => { const rev = args.includes('-r'); return filesFrom(args.filter(a => !a.startsWith('-')), stdin, 'sort', c => { const l = lines(c).sort(); if (rev) l.reverse(); return l.map(x => x + '\n').join(''); }); },
+  uniq: (args, stdin) => filesFrom(args, stdin, 'uniq', c => lines(c).filter((l, i, a) => l !== a[i - 1]).map(l => l + '\n').join('')),
+  jq: (args, stdin) => jq(args, stdin),
+  env: () => ok(Object.entries(state.env).map(([k, v]) => `${k}=${v}\n`).join('')),
+  export: args => {
+    for (const a of args) { const i = a.indexOf('='); if (i > 0) state.env[a.slice(0, i)] = a.slice(i + 1); }
+    return ok();
+  },
+  unset: args => { for (const a of args) delete state.env[a]; return ok(); },
+  history: () => ok(state.history.map((h, i) => `${String(i + 1).padStart(5)}  ${h}\n`).join('')),
+  date: () => ok(new Date().toString() + '\n'),
+  whoami: () => ok('user\n'),
+  hostname: () => ok('notte-playground\n'),
+  uname: () => ok('Playground\n'),
+  true: () => ok(),
+  false: () => ({out: '', err: '', code: 1}),
+  sleep: () => ok(),
+  which: args => {
+    let out = '', code = 0;
+    for (const a of args) {
+      if (a === 'notte') out += '/usr/local/bin/notte\n';
+      else if (builtins[a]) out += `/bin/${a}\n`; else code = 1;
+    }
+    return {out, err: '', code};
+  },
+  exit: () => ok('There is nowhere to exit to. This tab is the whole computer.\n'),
+  reset: () => { state.reset = true; return ok(); },
+  open: args => {
+    if (/^https?:\/\//.test(args[0] || '')) { window.open(args[0], '_blank', 'noopener'); return ok(); }
+    const node = args[0] && lookup(resolve(args[0]));
+    if (!node || node.type !== 'file') return fail(`open: ${args[0] || ''}: No such file`);
+    const bytes = node.binary ? Uint8Array.from(atob(node.base64 || ''), c => c.charCodeAt(0)) : new TextEncoder().encode(node.content);
+    const ext = args[0].split('.').pop().toLowerCase();
+    const type = {png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', pdf: 'application/pdf', mp4: 'video/mp4', webm: 'video/webm', json: 'application/json', html: 'text/plain'}[ext] || 'text/plain';
+    window.open(URL.createObjectURL(new Blob([bytes], {type})), '_blank', 'noopener');
+    return ok();
+  },
+};
+builtins.ll = (args) => builtins.ls(['-l', ...args]);
+function copy(args, move, name) {
+  if (args.length < 2) return fail(`usage: ${name} source target`);
+  const target = args[args.length - 1];
+  for (const source of args.slice(0, -1)) {
+    const abs = resolve(source);
+    const {dir, name: base} = parentOf(abs);
+    const node = dir && dir.children[base];
+    if (!node) return fail(`${name}: ${source}: No such file or directory`);
+    let dest = resolve(target);
+    if (lookup(dest)?.type === 'dir') dest += '/' + base;
+    if (dest === abs) return fail(`${name}: ${source} and ${target} are the same file`);
+    if (node.type === 'dir' && dest.startsWith(abs + '/')) return fail(`${name}: cannot ${move ? 'move' : 'copy'} ${source} into itself`);
+    const to = parentOf(dest);
+    if (!to.dir || to.dir.type !== 'dir') return fail(`${name}: ${target}: No such file or directory`);
+    to.dir.children[to.name] = move ? node : JSON.parse(JSON.stringify(node));
+    if (move) delete dir.children[base];
+  }
+  return ok();
+}
+
+// ---------- jq (common subset) ----------
+function jq(args, stdin) {
+  const raw = args.some(a => /^-[a-zA-Z]*r/.test(a)), compact = args.some(a => /^-[a-zA-Z]*c/.test(a));
+  const rest = args.filter(a => !a.startsWith('-'));
+  const filter = rest[0] || '.';
+  let text = stdin;
+  if (rest[1]) { const f = readFile(rest[1]); if (f.err) return fail('jq: error: Could not open ' + f.err); text = f.content; }
+  let data;
+  try { data = JSON.parse(strip(text)); } catch { return fail('jq: error (at <stdin>): input is not valid JSON', 2); }
+  let results;
+  try { results = filter.split('|').reduce((vals, part) => vals.flatMap(v => jqStep(part.trim(), v)), [data]); }
+  catch (e) { return fail('jq: error: ' + e.message, 5); }
+  return ok(results.map(v => (raw && typeof v === 'string') ? v : JSON.stringify(v, null, compact ? 0 : 2)).join('\n') + '\n');
+}
+function jqStep(expr, value) {
+  if (expr === '.' || expr === '') return [value];
+  if (expr === 'length') return [Array.isArray(value) || typeof value === 'string' ? value.length : value && typeof value === 'object' ? Object.keys(value).length : 0];
+  if (expr === 'keys') return [Object.keys(value || {}).sort()];
+  if (!expr.startsWith('.')) throw new Error(`${expr} is not supported in the playground (try .field, .[0], .[], length, keys)`);
+  let vals = [value];
+  const re = /\.?([A-Za-z_][A-Za-z0-9_]*)|\[(-?\d*)\]|\["([^"]+)"\]/g;
+  let m, last = 0;
+  while ((m = re.exec(expr))) {
+    if (m.index !== last && !(m.index === last + 1 && expr[last] === '.')) throw new Error(`syntax error in ${expr}`);
+    last = re.lastIndex;
+    vals = vals.flatMap(v => {
+      if (m[1] !== undefined || m[3] !== undefined) return [v == null ? null : v[m[1] ?? m[3]] ?? null];
+      if (m[2] === '') return Array.isArray(v) ? v : v && typeof v === 'object' ? Object.values(v) : [];
+      if (!Array.isArray(v)) return [null];
+      const i = parseInt(m[2], 10);
+      return [v[i < 0 ? v.length + i : i] ?? null];
+    });
+  }
+  if (last !== expr.length && expr !== '.') throw new Error(`syntax error in ${expr}`);
+  return vals;
+}
+
+// ---------- notte emulation ----------
+// The command tree and every command's flags come from the recorded --help
+// pages, so they always match the CLI the recording was made from.
+function helpPage(path) { return preview?.help?.[path.join(' ')]; }
+// child returns the canonical name of the subcommand word names under path,
+// following aliases listed in each help page ("browsers" for "sessions").
+const aliasCache = new Map();
+function child(path, word) {
+  if (helpPage([...path, word])) return word;
+  const key = path.join(' ');
+  if (!aliasCache.has(key)) {
+    const aliases = {};
+    for (const name of childrenOf(path)) {
+      const lines = strip(helpPage([...path, name])?.stdout).split('\n');
+      const at = lines.findIndex(l => l.trim() === 'Aliases:');
+      if (at >= 0) for (const alias of lines[at + 1].split(',').map(a => a.trim())) aliases[alias] = name;
+    }
+    aliasCache.set(key, aliases);
+  }
+  return aliasCache.get(key)[word] || null;
+}
+function childrenOf(path) {
+  const prefix = path.length ? path.join(' ') + ' ' : '';
+  return Object.keys(preview?.help || {}).filter(k => k.startsWith(prefix) && k !== path.join(' ') && !k.slice(prefix.length).includes(' ')).map(k => k.slice(prefix.length));
+}
+const flagCache = new Map();
+function flagsOf(path) {
+  const key = path.join(' ');
+  if (flagCache.has(key)) return flagCache.get(key);
+  const flags = [];
+  let section = false;
+  for (const line of strip(helpPage(path)?.stdout).split('\n')) {
+    if (/^(Global )?Flags:$/.test(line.trim())) { section = true; continue; }
+    if (!line.trim()) { section = false; continue; }
+    const m = section && line.match(/^\s+(?:-([A-Za-z0-9]), )?--([A-Za-z0-9][\w-]*)(?: (\w+))?/);
+    if (m) flags.push({short: m[1], long: m[2], value: !!m[3] && m[3] !== 'bool'});
+  }
+  flagCache.set(key, flags);
+  return flags;
+}
+function notte(argv, ctx) {
+  if (!preview?.help) return fail('notte: the playground is still loading recordings');
+  let path = [];
+  const positional = [], flags = {};
+  let help = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--') { positional.push(...argv.slice(i + 1)); break; }
+    if (a.startsWith('-') && a !== '-') {
+      const known = flagsOf(path);
+      let name, value;
+      if (a.startsWith('--')) {
+        [name, value] = a.slice(2).split(/=(.*)/s);
+        const f = known.find(f => f.long === name);
+        if (!f) return fail(`Error: unknown flag: --${name}`);
+        if (f.value && value === undefined) { if (i + 1 >= argv.length) return fail(`Error: flag needs an argument: --${name}`); value = argv[++i]; }
+      } else {
+        const f = known.find(f => f.short === a[1]);
+        if (!f) return fail(`Error: unknown shorthand flag: '${a[1]}' in ${a}`);
+        name = f.long;
+        if (f.value) { value = a.length > 2 ? a.slice(2) : argv[++i]; if (value === undefined) return fail(`Error: flag needs an argument: '${a[1]}' in ${a}`); }
+      }
+      if (name === 'help') help = true; else flags[name] = value ?? true;
+      continue;
+    }
+    if (!positional.length && child(path, a)) { path.push(child(path, a)); continue; }
+    if (!positional.length && !path.length && a === 'help') { help = true; continue; }
+    positional.push(a);
+  }
+  if (help && !path.length && positional.length) {
+    let p = [];
+    for (const word of positional) { if (child(p, word)) p.push(child(p, word)); else break; }
+    path = p; positional.length = 0;
+  }
+  const page = helpPage(path);
+  // A command with subcommands prints its help, unless it also runs by
+  // itself ("notte usage"): its help then lists a "[flags]" usage line.
+  const runnable = path.length > 0 && strip(page?.stdout).includes(`notte ${path.join(' ')} [flags]`);
+  const isGroup = childrenOf(path).length > 0 && !runnable;
+  if (help || (isGroup && !positional.length)) return {out: ctx.tty && !flags['no-color'] ? page.stdout : strip(page.stdout), err: '', code: 0};
+  if (isGroup) {
+    if (!path.length) return fail(`Error: unknown command "${positional[0]}" for "notte"`);
+    return {out: ctx.tty ? page.stdout : strip(page.stdout), err: '', code: 0};
+  }
+  return replay(path, positional, flags, ctx);
+}
+function scenarioPath(args) {
+  const path = [];
+  for (const a of args) { if (a.startsWith('-')) break; if (child(path, a)) path.push(child(path, a)); else break; }
+  return path.join(' ');
+}
+function scenarioFlags(args) {
+  const flags = {};
+  for (let i = 0; i < args.length; i++) {
+    if (!args[i].startsWith('--')) continue;
+    const [name, value] = args[i].slice(2).split(/=(.*)/s);
+    flags[name] = value ?? (args[i + 1] && !args[i + 1].startsWith('-') ? args[++i] : true);
+  }
+  return flags;
+}
+const IGNORED = new Set(['output', 'no-color', 'yes', 'timeout', 'verbose']);
+function replay(path, positional, flags, ctx) {
+  const key = path.join(' ');
+  // Recordings carry how they were signed in. "none" ones are what a signed
+  // out user sees; the others need a key (NOTTE_API_KEY or a saved one).
+  const signedIn = state.auth !== 'none' || !!state.env.NOTTE_API_KEY;
+  const all = (preview.scenarios || []).filter(s => scenarioPath(s.args) === key);
+  const signedOutOnes = all.filter(s => s.auth === 'none');
+  const candidates = signedIn ? all.filter(s => s.auth !== 'none') : signedOutOnes.length ? signedOutOnes : all;
+  const sessionID = flags['session-id'] || state.env.NOTTE_SESSION_ID || state.session;
+  // --all acts on every session, so no current one is needed.
+  const needsSession = !flags.all && candidates.some(s => scenarioFlags(s.args)['session-id']);
+  let chosen;
+  // Without a current session the CLI fails before calling the API. Every
+  // session command shares that error, so any recorded one will do.
+  if (needsSession && !sessionID) chosen = candidates.find(s => s.id.endsWith('-no-session')) || preview.scenarios.find(s => s.id.endsWith('-no-session'));
+  // Every API command fails the same way without a key; reuse that recording.
+  if (!chosen && !signedIn && !signedOutOnes.length && candidates.some(s => s.responses?.length)) chosen = preview.scenarios.find(s => s.id === 'logged-out');
+  if (!chosen) {
+    let best = -Infinity;
+    for (const s of candidates) {
+      if (s.id.endsWith('-no-session')) continue;
+      const sf = scenarioFlags(s.args);
+      let score = 0;
+      for (const [name, value] of Object.entries(flags)) {
+        if (IGNORED.has(name)) continue;
+        if (name in sf) score += sf[name] === value ? 3 : 2; else score -= 1;
+      }
+      for (const name of Object.keys(sf)) if (!IGNORED.has(name) && name !== 'session-id' && !(name in flags)) score -= 1;
+      if (s.expectedExit !== 0) score -= 0.5;
+      if (s.id.includes('empty') || s.id.includes('long')) score -= 0.5;
+      if (score > best) { best = score; chosen = s; }
+    }
+  }
+  if (!chosen) {
+    const label = 'notte ' + key;
+    return {out: '', err: `\x1b[2mplayground: there is no recorded example for "${label}" yet.\nAdd one to playground/scenarios.json.\x1b[0m\n`, code: 0, note: true};
+  }
+  const effects = () => {
+    if (key === 'auth logout') state.auth = 'none';
+    if (key === 'sessions start') state.session = chosen.responses?.[0]?.body?.session_id || 'demo-session-001';
+    else if (key === 'sessions stop') state.session = '';
+  };
+  // The current build runs against this fixture's fake API.
+  return {out: '', err: '', code: 0, fixture: {id: chosen.id, effects}};
+}
+
+// ---------- execution ----------
+// The development server runs the real CLI (playground/live.go); a
+// static export has no server and replays recordings instead.
+const LIVE = !STATIC;
+// Live API runs commands against the real API with the playground's login.
+// Fixtures runs them against the fake API answers in scenarios.json:
+// stable, free, offline, with edge cases, and re-run on every rebuild.
+let mode = localStorage.getItem(STORAGE + '-mode') === 'fixtures' ? 'fixtures' : 'live';
+let lastRunLine = '', lastRunSafe = false, refreshEntry = () => {};
+// Commands that only read. Against the real API only these re-run on save;
+// re-running one that starts, changes or deletes something would repeat it.
+const READ_ONLY = new Set([
+  'files list', 'functions list', 'functions show', 'functions runs', 'functions run-metadata', 'functions schedules list',
+  'health', 'page observe', 'payment status', 'personas list', 'personas show', 'personas emails', 'personas sms',
+  'profiles list', 'profiles show', 'profiles cookies', 'sessions list', 'sessions status', 'sessions steps', 'sessions code',
+  'sessions function-code', 'sessions workflow-code', 'sessions cookies', 'sessions network', 'sessions offset',
+  'tunnel list', 'usage', 'usage logs', 'vaults list', 'vaults credentials list', 'version', 'whoami',
+]);
+function readOnlyLine(line) {
+  let list;
+  try { list = parse(line); } catch { return false; }
+  for (const {pipeline} of list) for (const cmd of pipeline) {
+    if (cmd.argv[0] !== 'notte') continue;
+    const args = cmd.argv.slice(1);
+    if (args.includes('--help') || args.includes('-h')) continue;
+    const path = [];
+    for (const a of args) { if (!a.startsWith('-') && child(path, a)) path.push(child(path, a)); }
+    if (!path.length || childrenOf(path).length) continue; // help pages
+    if (path.join(' ') === 'auth status') continue;
+    if (!READ_ONLY.has(path.join(' '))) return false;
+  }
+  return true;
+}
+let running = null;
+// The files of the current directory, for the command to read: text as is,
+// anything else as base64.
+function workspaceFiles() {
+  const files = {}, binary = {};
+  let total = 0;
+  const walk = (node, prefix, depth) => {
+    for (const [name, child] of Object.entries(node.children)) {
+      if (child.type === 'dir') { if (depth < 4) walk(child, prefix + name + '/', depth + 1); continue; }
+      const data = child.binary ? child.base64 || '' : child.content;
+      if (total + data.length >= 5e6) continue;
+      (child.binary ? binary : files)[prefix + name] = data; total += data.length;
+    }
+  };
+  walk(lookup(state.cwd), '', 0);
+  return {files, binary};
+}
+function saveReturnedFile(file) {
+  const parts = file.name.split('/');
+  let dir = state.cwd;
+  for (const part of parts.slice(0, -1)) { dir += '/' + part; if (!lookup(dir)) builtins.mkdir(['-p', dir]); }
+  const {dir: parent, name} = parentOf(resolve(file.name));
+  if (!parent || parent.type !== 'dir') return;
+  parent.children[name] = file.text !== undefined
+    ? {type: 'file', content: file.text}
+    : {type: 'file', content: '', binary: true, base64: file.base64 || '', size: file.size};
+}
+async function liveNotte(args, stdin, tty, emit, scenario) {
+  const controller = new AbortController();
+  let out = '', err = '', code = 1, id = '';
+  const send = (data, eof) => fetch('/api/input', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, data, eof})});
+  running = {abort: () => controller.abort(), input: send};
+  try {
+    const response = await fetch('/api/run', {
+      method: 'POST', signal: controller.signal, headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({args, env: scenario ? {NOTTE_SESSION_ID: state.env.NOTTE_SESSION_ID || ''} : state.env, pinned: scenario ? state.session : '', ...workspaceFiles(), stdin, tty, scenario}),
+    });
+    if (!response.ok) return fail('playground: ' + (await response.text()).trim());
+    const reader = response.body.getReader(), decoder = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream: true});
+      let newline;
+      while ((newline = buffer.indexOf('\n')) >= 0) {
+        const event = JSON.parse(buffer.slice(0, newline));
+        buffer = buffer.slice(newline + 1);
+        if (event.type === 'start') id = event.id;
+        else if (event.type === 'out') { if (emit) emit(event.data); else out += event.data; }
+        else if (event.type === 'err') { if (emit) emit(event.data); else err += event.data; }
+        else if (event.type === 'exit') {
+          code = event.code; (event.files || []).forEach(saveReturnedFile);
+          if (typeof event.pinned === 'string') state.session = event.pinned;
+        }
+      }
+    }
+  } catch (e) {
+    if (controller.signal.aborted) { if (emit) emit('^C\n'); else err += '^C\n'; return {out, err, code: 130}; }
+    return fail('playground: lost the connection to the dev server: ' + e.message);
+  } finally { running = null; }
+  return {out, err, code};
+}
+// ---------- the real CLI in the browser ----------
+// A static export ships the CLI compiled to WebAssembly (notte.wasm, built
+// from the same source as the released binaries) and runs it in this tab:
+// nothing is executed on a server. The Go runtime reaches the outside through
+// three things this page provides: a filesystem (the pretend one, so a saved
+// key or a downloaded file is a file "ls" shows), standard input and output
+// (the terminal), and fetch. The API does not answer cross-origin requests
+// from browsers, so the page's host forwards API_PROXY to it unchanged.
+const API = 'https://api.notte.cc/', API_PROXY = '/notte-api/';
+let cliModule = null, cliRun = null;
+const pageFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = (url, options) => {
+  if (typeof url === 'string' && url.startsWith(API)) url = API_PROXY + url.slice(API.length);
+  // Ctrl+C also cancels the requests of the command it stops.
+  if (cliRun && options?.signal) options = {...options, signal: AbortSignal.any([options.signal, cliRun.cancel.signal])};
+  return pageFetch(url, options);
+};
+function loadCLI() {
+  if (!cliModule) {
+    cliModule = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = './wasm_exec.js';
+      script.onload = resolve; script.onerror = () => reject(new Error('wasm_exec.js is missing'));
+      document.head.appendChild(script);
+    }).then(() => WebAssembly.compileStreaming(pageFetch('./notte.wasm')));
+    cliModule.catch(() => { cliModule = null; });
+  }
+  return cliModule;
+}
+const fsError = code => Object.assign(new Error(code), {code});
+const toBase64 = bytes => { let text = ''; for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(text); };
+// The filesystem and process the Go runtime sees for one command, in the
+// shape of Node's fs module, which is what Go's js/wasm port calls.
+function cliSystem(run) {
+  const encoder = new TextEncoder(), bytes = new Map(), fds = new Map();
+  let nextFD = 3;
+  const DEV_NULL = {type: 'file', content: ''};
+  const find = path => { const abs = resolve(path); return abs === '/dev/null' ? DEV_NULL : lookup(abs); };
+  // Files keep text as text, so shell commands can read them; anything else
+  // is stored as base64. While a command runs, its files live as bytes.
+  const bytesOf = node => {
+    if (!bytes.has(node)) bytes.set(node, node.binary ? Uint8Array.from(atob(node.base64 || ''), c => c.charCodeAt(0)) : encoder.encode(node.content));
+    return bytes.get(node);
+  };
+  const store = (node, data) => {
+    if (node === DEV_NULL) return;
+    bytes.set(node, data);
+    try { node.content = new TextDecoder('utf-8', {fatal: true}).decode(data); delete node.binary; delete node.base64; delete node.size; }
+    catch { Object.assign(node, {content: '', binary: true, base64: toBase64(data), size: data.length}); }
+    node.mtime = Date.now();
+  };
+  const stat = (node, mode) => {
+    const size = node.type === 'file' ? bytesOf(node).length : 0;
+    const time = node.mtime || 0;
+    return {dev: 0, ino: 0, nlink: 1, uid: 1000, gid: 1000, rdev: 0, size, blksize: 4096, blocks: Math.ceil(size / 512),
+      mode: mode ?? (node.type === 'dir' ? 0o40755 : 0o100644), atimeMs: time, mtimeMs: time, ctimeMs: time, isDirectory: () => node.type === 'dir'};
+  };
+  // A terminal is a character device and a pipe is a FIFO: the CLI reads
+  // that to tell typed input from piped input.
+  const streamStat = fd => stat({type: 'stream'}, fd === 0 && !run.interactive ? 0o10600 : 0o20620);
+  const decoders = {1: new TextDecoder(), 2: new TextDecoder()};
+  // Like Node, answer after the call has returned: Go is not prepared for a
+  // callback that runs before the call that registered it is over.
+  const reply = (callback, error, value) => queueMicrotask(() => callback(error, value));
+  const answer = (callback, fn) => { let value; try { value = fn(); } catch (e) { reply(callback, e.code ? e : fsError('EIO')); return; } reply(callback, null, value); };
+  const existing = path => { const node = find(path); if (!node) throw fsError('ENOENT'); return node; };
+  const entry = path => {
+    const {dir, name} = parentOf(resolve(path));
+    if (!dir) throw fsError('ENOENT');
+    if (dir.type !== 'dir') throw fsError('ENOTDIR');
+    return {dir, name};
+  };
+  const open = fd => { const file = fds.get(fd); if (!file) throw fsError('EBADF'); return file; };
+  const fs = {
+    constants: {O_WRONLY: 1, O_RDWR: 2, O_CREAT: 64, O_EXCL: 128, O_TRUNC: 512, O_APPEND: 1024, O_DIRECTORY: 65536},
+    open(path, flags, mode, callback) {
+      answer(callback, () => {
+        let node = find(path);
+        if (node && (flags & 64) && (flags & 128)) throw fsError('EEXIST');
+        if (!node) {
+          if (!(flags & 64)) throw fsError('ENOENT');
+          const {dir, name} = entry(path);
+          node = dir.children[name] = {type: 'file', content: '', mtime: Date.now()};
+        }
+        if (node.type === 'dir' && (flags & 3)) throw fsError('EISDIR');
+        if (node.type !== 'dir' && (flags & 65536)) throw fsError('ENOTDIR');
+        if (node.type === 'file' && (flags & 512)) store(node, new Uint8Array(0));
+        fds.set(nextFD, {node, position: 0, append: !!(flags & 1024)});
+        return nextFD++;
+      });
+    },
+    close(fd, callback) { fds.delete(fd); reply(callback, null); },
+    read(fd, buffer, offset, length, position, callback) {
+      if (fd === 0) { run.read(buffer, offset, length, callback); return; }
+      answer(callback, () => {
+        const file = open(fd);
+        if (file.node.type === 'dir') throw fsError('EISDIR');
+        const data = bytesOf(file.node), from = position ?? file.position;
+        const count = Math.max(0, Math.min(length, data.length - from));
+        buffer.set(data.subarray(from, from + count), offset);
+        if (position === null || position === undefined) file.position = from + count;
+        return count;
+      });
+    },
+    write(fd, buffer, offset, length, position, callback) {
+      if (fd === 1 || fd === 2) { run.write(fd, decoders[fd].decode(buffer.subarray(offset, offset + length), {stream: true})); reply(callback, null, length); return; }
+      answer(callback, () => {
+        const file = open(fd), old = bytesOf(file.node);
+        const from = file.append ? old.length : position ?? file.position;
+        const data = new Uint8Array(Math.max(old.length, from + length));
+        data.set(old); data.set(buffer.subarray(offset, offset + length), from);
+        store(file.node, data);
+        if (position === null || position === undefined) file.position = from + length;
+        return length;
+      });
+    },
+    writeSync(fd, buffer) { run.write(fd === 2 ? 2 : 1, decoders[fd === 2 ? 2 : 1].decode(buffer, {stream: true})); return buffer.length; },
+    fstat(fd, callback) { answer(callback, () => fd < 3 ? streamStat(fd) : stat(open(fd).node)); },
+    stat(path, callback) { answer(callback, () => stat(existing(path))); },
+    lstat(path, callback) { answer(callback, () => stat(existing(path))); },
+    mkdir(path, mode, callback) {
+      answer(callback, () => {
+        if (find(path)) throw fsError('EEXIST');
+        const {dir, name} = entry(path);
+        dir.children[name] = {type: 'dir', children: {}};
+      });
+    },
+    readdir(path, callback) { answer(callback, () => { const node = existing(path); if (node.type !== 'dir') throw fsError('ENOTDIR'); return Object.keys(node.children); }); },
+    unlink(path, callback) { answer(callback, () => { if (existing(path).type === 'dir') throw fsError('EISDIR'); const {dir, name} = entry(path); delete dir.children[name]; }); },
+    rmdir(path, callback) {
+      answer(callback, () => {
+        const node = existing(path);
+        if (node.type !== 'dir') throw fsError('ENOTDIR');
+        if (Object.keys(node.children).length) throw fsError('ENOTEMPTY');
+        const {dir, name} = entry(path); delete dir.children[name];
+      });
+    },
+    rename(from, to, callback) {
+      answer(callback, () => {
+        const node = existing(from), source = entry(from), target = entry(to);
+        if (target.dir.children[target.name]?.type === 'dir') throw fsError('EISDIR');
+        delete source.dir.children[source.name];
+        target.dir.children[target.name] = node;
+      });
+    },
+    truncate(path, length, callback) { answer(callback, () => { const node = existing(path), data = new Uint8Array(length); data.set(bytesOf(node).subarray(0, length)); store(node, data); }); },
+    ftruncate(fd, length, callback) { answer(callback, () => { const node = open(fd).node, data = new Uint8Array(length); data.set(bytesOf(node).subarray(0, length)); store(node, data); }); },
+    fsync(fd, callback) { reply(callback, null); },
+    // The pretend filesystem has no owners, permissions or links.
+    chmod(path, mode, callback) { answer(callback, () => { existing(path); }); },
+    fchmod(fd, mode, callback) { reply(callback, null); },
+    chown(path, uid, gid, callback) { answer(callback, () => { existing(path); }); },
+    fchown(fd, uid, gid, callback) { reply(callback, null); },
+    lchown(path, uid, gid, callback) { answer(callback, () => { existing(path); }); },
+    utimes(path, atime, mtime, callback) { answer(callback, () => { existing(path).mtime = mtime * 1000; }); },
+    readlink(path, callback) { reply(callback, fsError('EINVAL')); },
+    link(path, link, callback) { reply(callback, fsError('ENOSYS')); },
+    symlink(path, link, callback) { reply(callback, fsError('ENOSYS')); },
+  };
+  const process = {getuid: () => 1000, getgid: () => 1000, geteuid: () => 1000, getegid: () => 1000, getgroups: () => [1000],
+    pid: 1, ppid: 0, umask: () => 0o22, cwd: () => state.cwd, chdir() { throw fsError('ENOSYS'); }};
+  return {fs, process, path: {resolve: (...parts) => parts.reduce((base, part) => part.startsWith('/') ? resolve(part) : resolve(base + '/' + part), state.cwd)}};
+}
+async function wasmNotte(args, stdin, tty, emit) {
+  let module;
+  try {
+    if (!globalThis.Go) setNotice('Loading the notte CLI…');
+    module = await loadCLI();
+  } catch (e) { return fail('playground: could not load the notte CLI: ' + e.message); }
+  finally { if ($('notice').textContent.startsWith('Loading')) setNotice(''); }
+  let out = '', err = '', code = 0, stopped = false, reader = null, ended = stdin !== '' || !tty;
+  const pending = stdin ? [new TextEncoder().encode(stdin)] : [];
+  const deliver = () => {
+    if (!reader || (!pending.length && !ended)) return;
+    const {buffer, offset, length, callback} = reader;
+    reader = null;
+    let count = 0;
+    if (pending.length) {
+      count = Math.min(length, pending[0].length);
+      buffer.set(pending[0].subarray(0, count), offset);
+      if (count < pending[0].length) pending[0] = pending[0].subarray(count); else pending.shift();
+    }
+    queueMicrotask(() => callback(null, count));
+  };
+  let stop;
+  const stoppedRun = new Promise(done => { stop = done; });
+  const run = cliRun = {
+    interactive: !ended, cancel: new AbortController(),
+    read(buffer, offset, length, callback) { reader = {buffer, offset, length, callback}; deliver(); },
+    write(fd, text) { if (stopped || !text) return; if (emit) emit(text); else if (fd === 1) out += text; else err += text; },
+  };
+  running = {
+    abort() { stopped = true; run.cancel.abort(); stop(); },
+    input(data, eof) { if (data) pending.push(new TextEncoder().encode(data)); if (eof) ended = true; deliver(); },
+  };
+  Object.assign(globalThis, cliSystem(run));
+  const go = new Go();
+  go.argv = ['notte', ...args];
+  go.env = {
+    // The API records calls from the playground apart from the installed CLI.
+    NOTTE_REQUEST_ORIGIN: 'cli-playground',
+    ...Object.fromEntries(Object.entries(state.env).filter(([name]) => name.startsWith('NOTTE_'))),
+    HOME, USER: 'user', TERM: 'xterm-256color', NOTTE_NO_UPDATE_CHECK: '1',
+    ...(tty ? {CLICOLOR_FORCE: '1', FORCE_HYPERLINK: '1'} : {NO_COLOR: '1'}),
+    // The page sends each key press of interactive menus right away.
+    ...(run.interactive ? {NOTTE_FORCE_INTERACTIVE: '1'} : {}),
+  };
+  go.exit = status => { code = status; };
+  try {
+    const instance = await WebAssembly.instantiate(module, go.importObject);
+    await Promise.race([go.run(instance), stoppedRun]);
+  } catch (e) { err += 'playground: the notte CLI crashed: ' + e.message + '\n'; code = 1; }
+  running = null; cliRun = null;
+  if (stopped) {
+    // Nothing can stop a WebAssembly program from outside; refusing its
+    // timers and callbacks keeps it from ever running again.
+    for (const timer of go._scheduledTimeouts.values()) clearTimeout(timer);
+    go.exited = true;
+  }
+  if (stopped) { if (emit) emit('^C\n'); else err += '^C\n'; return {out, err, code: 130}; }
+  return {out, err, code};
+}
+async function runCommand(cmd, stdin, tty, emit) {
+  const [name, ...args] = cmd.argv;
+  if (cmd.in) { const f = readFile(cmd.in); if (f.err) return fail(`bash: ${f.err}`); stdin = f.content; }
+  if (name === 'notte' && STATIC) return wasmNotte(args, stdin, tty, emit);
+  if (name === 'notte' && LIVE && mode === 'live') return liveNotte(args, stdin, tty, emit);
+  if (name === 'notte' && LIVE) {
+    const res = notte(args, {tty});
+    if (!res.fixture) return res;
+    const result = await liveNotte(args, stdin, tty, emit, res.fixture.id);
+    if (result.code === 0) res.fixture.effects();
+    return result;
+  }
+  const fn = name === 'notte' ? (a, s, c) => notte(a, c) : builtins[name];
+  if (!fn) {
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(name)) { builtins.export([name]); return ok(); }
+    return fail(`bash: ${name}: command not found`, 127);
+  }
+  const res = fn(args, stdin, {tty});
+  if (!tty && !res.note) res.out = strip(res.out);
+  return res;
+}
+async function execute(line, show) {
+  let list;
+  try { list = parse(line); } catch (e) { show(`bash: ${e.message}\n`); return; }
+  let code = 0;
+  for (const {op, pipeline} of list) {
+    if ((op === '&&' && code !== 0) || (op === '||' && code === 0)) continue;
+    let stdin = '';
+    for (let i = 0; i < pipeline.length; i++) {
+      const cmd = pipeline[i];
+      const last = i === pipeline.length - 1;
+      const tty = last && !cmd.out;
+      // Output of the last command goes straight to the screen as it arrives.
+      const streaming = tty && !cmd.err && !cmd.errToOut;
+      const res = await runCommand(cmd, stdin, tty, streaming ? show : null);
+      let out = res.out, err = res.err;
+      if (cmd.errToOut) { out += err; err = ''; }
+      if (cmd.err) { const e = writeFile(cmd.err.path, strip(err), cmd.err.append); err = e ? `bash: ${e}\n` : ''; }
+      if (cmd.out) { const e = writeFile(cmd.out.path, strip(out), cmd.out.append); if (e) err += `bash: ${e}\n`; out = ''; }
+      if (last) { if (out) show(out); } else stdin = out;
+      if (err) show(err);
+      code = res.code;
+      if (code === 130) break;
+    }
+    state.lastCode = code;
+    if (code === 130) break;
+  }
+}
+
+// ---------- terminal UI ----------
+function promptText() { return pretty(state.cwd); }
+function promptNode(cwd) {
+  const p = document.createElement('span'); p.className = 'prompt'; p.textContent = `[${cwd}]`;
+  const d = document.createElement('b'); d.textContent = '$'; p.appendChild(d); return p;
+}
+// Interactive menus redraw themselves in place: they move the cursor up
+// (ESC[nA), clear lines (ESC[2K, ESC[J) and hide the cursor (ESC[?25l). This
+// applies those moves to the output so the page shows what a terminal would.
+function applyCursorMoves(text) {
+  if (!/\x1b\[(?:\d*A|2K|0?J|\?25[lh])|\r(?!\n)/.test(text)) return text;
+  const lines = [''];
+  let row = 0, last = 0, m;
+  const re = /\x1b\[(\d*)A|\x1b\[2K|\x1b\[0?J|\x1b\[\?25[lh]|\r?\n|\r/g;
+  while ((m = re.exec(text))) {
+    lines[row] += text.slice(last, m.index);
+    last = re.lastIndex;
+    const token = m[0];
+    if (token.endsWith('\n')) { row++; if (row === lines.length) lines.push(''); }
+    else if (token === '\r' || token === '\x1b[2K') lines[row] = '';
+    else if (token.endsWith('A')) row = Math.max(0, row - parseInt(m[1] || '1', 10));
+    else if (token.endsWith('J')) { lines.length = row + 1; lines[row] = ''; }
+  }
+  lines[row] += text.slice(last);
+  return lines.join('\n');
+}
+// A command that hides the cursor is drawing an interactive menu: send it
+// each key press as it happens instead of whole lines.
+function wantsKeys() {
+  if (!running) return false;
+  const text = (state.entries[state.entries.length - 1]?.output || []).map(chunk => chunk.text).join('');
+  return text.lastIndexOf('\x1b[?25l') > text.lastIndexOf('\x1b[?25h');
+}
+const KEYS = {ArrowUp: '\x1b[A', ArrowDown: '\x1b[B', ArrowRight: '\x1b[C', ArrowLeft: '\x1b[D', Enter: '\r', Escape: '\x1b', Tab: '\t', Backspace: '\x7f'};
+function sendKey(data) { running.input(data); }
+function renderEntry(entry) {
+  const section = document.createElement('section');
+  if (entry.stale) section.className = 'stale';
+  if (entry.line !== undefined) {
+    const row = document.createElement('div'); row.className = 'line';
+    const cmd = document.createElement('pre'); cmd.className = 'command'; cmd.textContent = entry.line;
+    row.append(promptNode(entry.cwd), cmd); section.appendChild(row);
+  }
+  const text = applyCursorMoves((entry.output || []).map(chunk => chunk.text).join(''));
+  if (text) { const out = document.createElement('pre'); out.className = 'output'; renderANSI(out, text.replace(/\n$/, '')); section.appendChild(out); }
+  return section;
+}
+function renderAll() {
+  const t = $('transcript'); t.replaceChildren(...state.entries.map(renderEntry));
+  $('prompt').replaceChildren(...promptNode(promptText()).childNodes);
+  scrollDown();
+}
+function scrollDown() { const s = $('screen'); s.scrollTop = s.scrollHeight; updateCaret(); }
+function updateCaret() {
+  const caret = $('caret');
+  caret.hidden = document.activeElement !== input || input.selectionStart !== input.selectionEnd;
+  caret.style.left = `calc(${input.selectionStart || 0}ch - ${input.scrollLeft}px)`;
+  caret.textContent = input.value[input.selectionStart || 0] || ' ';
+}
+async function submit(line, rerun) {
+  if (busy) return;
+  if ($('notice').textContent.startsWith('Rebuilt.')) setNotice('');
+  if (line.trim() && !rerun) { state.history.push(line); state.history = state.history.slice(-200); }
+  if (LIVE && /(^|[|;&]\s*)notte\b/.test(line)) { lastRunLine = line; lastRunSafe = mode === 'fixtures' || readOnlyLine(line); }
+  historyIndex = state.history.length; draft = '';
+  const trimmed = line.trim();
+  if (trimmed === 'clear' || trimmed === 'cls') { state.entries = []; save(); renderAll(); return; }
+  const entry = {line, cwd: promptText(), output: rerun ? [{text: '\x1b[2m↻ rebuilt, re-running\x1b[0m\n'}] : []};
+  state.entries.push(entry); state.entries = state.entries.slice(-80);
+  let node = renderEntry(entry);
+  $('transcript').appendChild(node);
+  scrollDown();
+  // Chunks append to the entry as they arrive; adjacent ones merge so a
+  // line split across chunks renders as one.
+  // Redraw the entry in place. Typed answers to prompts use it too, so the
+  // node being replaced is always the one on screen.
+  refreshEntry = () => { const fresh = renderEntry(entry); node.replaceWith(fresh); node = fresh; scrollDown(); };
+  const show = text => {
+    const lastChunk = entry.output[entry.output.length - 1];
+    if (lastChunk && !lastChunk.text.endsWith('\n')) lastChunk.text += text; else entry.output.push({text});
+    refreshEntry();
+  };
+  busy = true; $('prompt').hidden = true;
+  try { await execute(trimmed ? line : '', show); }
+  catch (e) { show(`playground: ${e.message}\n`); }
+  finally { busy = false; $('prompt').hidden = false; }
+  if (state.reset) { localStorage.removeItem(STORAGE); location.reload(); return; }
+  $('prompt').replaceChildren(...promptNode(promptText()).childNodes);
+  save(); scrollDown();
+}
+
+let busy = false;
+function complete() {
+  const before = input.value.slice(0, input.selectionStart);
+  const words = before.split(/\s+/);
+  const word = words[words.length - 1];
+  let options = [];
+  if (words.length === 1) options = [...Object.keys(builtins), 'notte', 'clear'];
+  else if (words[0] === 'notte') {
+    const path = [];
+    for (const w of words.slice(1, -1)) { if (child(path, w)) path.push(child(path, w)); }
+    options = word.startsWith('-') ? flagsOf(path).map(f => '--' + f.long) : childrenOf(path);
+  }
+  if (!word.startsWith('-') && (words.length > 1 && (words[0] !== 'notte' || !options.length))) {
+    const slash = word.lastIndexOf('/');
+    const dirPart = slash >= 0 ? word.slice(0, slash + 1) : '';
+    const node = lookup(resolve(dirPart || '.'));
+    if (node?.type === 'dir') options = Object.entries(node.children).map(([n, c]) => dirPart + n + (c.type === 'dir' ? '/' : ''));
+  }
+  const matches = [...new Set(options)].filter(o => o.startsWith(word)).sort();
+  if (!matches.length) return;
+  let prefix = matches[0];
+  for (const m of matches) while (!m.startsWith(prefix)) prefix = prefix.slice(0, -1);
+  if (matches.length > 1 && prefix === word) {
+    const entry = {line: input.value, cwd: promptText(), output: [{text: matches.join('  ') + '\n'}]};
+    state.entries.push(entry); $('transcript').appendChild(renderEntry(entry)); scrollDown(); return;
+  }
+  const done = matches.length === 1 && !prefix.endsWith('/') ? prefix + ' ' : prefix;
+  input.value = before.slice(0, before.length - word.length) + done + input.value.slice(input.selectionStart);
+  const pos = before.length - word.length + done.length;
+  input.setSelectionRange(pos, pos); updateCaret();
+}
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  if (document.body.classList.contains('building') && !running) return;
+  const line = input.value; input.value = '';
+  if (running) {
+    const entry = state.entries[state.entries.length - 1];
+    // Echo the answer where the terminal would: right after the prompt.
+    const lastChunk = entry.output[entry.output.length - 1];
+    if (lastChunk && !lastChunk.text.endsWith('\n')) lastChunk.text += line + '\n'; else entry.output.push({text: line + '\n'});
+    refreshEntry();
+    running.input(line + '\n');
+    return;
+  }
+  submit(line);
+});
+input.addEventListener('keydown', e => {
+  if (wantsKeys() && !(e.ctrlKey && e.key.toLowerCase() === 'c')) {
+    const data = KEYS[e.key] || (e.key.length === 1 && !e.ctrlKey && !e.metaKey ? e.key : '');
+    if (data) { e.preventDefault(); sendKey(data); }
+    return;
+  }
+  const key = e.key.toLowerCase();
+  if (e.ctrlKey && key === 'l') { e.preventDefault(); state.entries = []; save(); renderAll(); }
+  else if (e.ctrlKey && key === 'c' && running && !window.getSelection()?.toString()) { e.preventDefault(); input.value = ''; running.abort(); }
+  else if (e.ctrlKey && key === 'd' && running) { e.preventDefault(); running.input('', true); }
+  else if (e.ctrlKey && key === 'c' && !window.getSelection()?.toString()) {
+    e.preventDefault();
+    const entry = {line: input.value + '^C', cwd: promptText(), output: []};
+    state.entries.push(entry); $('transcript').appendChild(renderEntry(entry)); input.value = ''; scrollDown();
+  }
+  else if (e.ctrlKey && key === 'u') { e.preventDefault(); input.value = input.value.slice(input.selectionStart); input.setSelectionRange(0, 0); }
+  else if (e.ctrlKey && key === 'a') { e.preventDefault(); input.setSelectionRange(0, 0); }
+  else if (e.ctrlKey && key === 'e') { e.preventDefault(); input.setSelectionRange(input.value.length, input.value.length); }
+  else if (e.key === 'Tab') { e.preventDefault(); complete(); }
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (historyIndex === state.history.length) draft = input.value;
+    historyIndex = Math.max(0, Math.min(state.history.length, historyIndex + (e.key === 'ArrowUp' ? -1 : 1)));
+    input.value = historyIndex === state.history.length ? draft : state.history[historyIndex];
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+  requestAnimationFrame(updateCaret);
+});
+for (const ev of ['input', 'keyup', 'click', 'focus', 'blur', 'select']) input.addEventListener(ev, () => requestAnimationFrame(updateCaret));
+$('screen').addEventListener('click', () => { if (!window.getSelection()?.toString()) input.focus({preventScroll: true}); });
+
+// ---------- command sidebar ----------
+// The same command tree as docs.notte.cc/cli-reference, read from the CLI's
+// own help pages: groups with subcommands, then the remaining commands.
+let openGroup = '';
+const SIDEBAR_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M6 2.5v11"/></svg>';
+// Collapsing the sidebar centers the terminal; the choice is remembered.
+function setSidebar(open) {
+  document.body.classList.toggle('collapsed', !open);
+  try { localStorage.setItem(STORAGE + '-sidebar', open ? 'open' : 'closed'); } catch { /* not remembered */ }
+  input.focus({preventScroll: true});
+}
+// Restore the saved state without animating it on page load.
+document.body.classList.add('preload');
+document.body.classList.toggle('collapsed', localStorage.getItem(STORAGE + '-sidebar') === 'closed');
+requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('preload')));
+$('open-sidebar').onclick = () => setSidebar(true);
+function describe(path) {
+  const out = {};
+  let listing = false;
+  for (const line of strip(helpPage(path)?.stdout).split('\n')) {
+    if (/Commands:$/.test(line.trim())) { listing = true; continue; }
+    if (!line.trim()) { listing = false; continue; }
+    const m = listing && line.match(/^\s+(\S+)\s+(.*)$/);
+    if (m) out[m[1]] = m[2];
+  }
+  return out;
+}
+function useCommand(words) {
+  input.value = 'notte ' + words.join(' ') + ' ';
+  input.focus({preventScroll: true});
+  input.setSelectionRange(input.value.length, input.value.length);
+  requestAnimationFrame(updateCaret);
+}
+function navButton(label, title, onClick, active) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = label; b.title = title || ''; b.onclick = onClick;
+  if (active) b.className = 'active';
+  return b;
+}
+function renderSidebar() {
+  const top = describe([]);
+  const names = Object.keys(top).filter(n => n !== 'help' && n !== 'completion');
+  const groups = names.filter(n => childrenOf([n]).length), others = names.filter(n => !childrenOf([n]).length);
+  const nav = $('sidebar');
+  const heading = text => { const h = document.createElement('h2'); h.textContent = text; return h; };
+  const list = document.createElement('ul'); list.className = 'nav';
+  for (const name of groups) {
+    const li = document.createElement('li');
+    li.appendChild(navButton(name[0].toUpperCase() + name.slice(1), top[name], () => { openGroup = openGroup === name ? '' : name; renderSidebar(); }, openGroup === name));
+    if (openGroup === name) {
+      const sub = document.createElement('ul'); sub.className = 'sub';
+      const subs = describe([name]);
+      for (const child of Object.keys(subs).filter(n => n !== 'help')) {
+        const item = document.createElement('li');
+        item.appendChild(navButton(child, subs[child], () => useCommand([name, child])));
+        sub.appendChild(item);
+      }
+      li.appendChild(sub);
+    }
+    list.appendChild(li);
+  }
+  const rest = document.createElement('ul'); rest.className = 'nav';
+  for (const name of others) {
+    const li = document.createElement('li');
+    li.appendChild(navButton(name, top[name], () => useCommand([name])));
+    rest.appendChild(li);
+  }
+  const other = document.createElement('h3'); other.textContent = 'Other commands';
+  const head = document.createElement('div'); head.className = 'sidebar-head';
+  const hide = document.createElement('button');
+  hide.type = 'button'; hide.className = 'toggle'; hide.title = 'Hide commands'; hide.setAttribute('aria-label', 'Hide commands');
+  hide.innerHTML = SIDEBAR_ICON; hide.onclick = () => setSidebar(false);
+  head.append(heading('Commands'), hide);
+  nav.replaceChildren(head, list, other, rest);
+}
+
+// ---------- recordings ----------
+function setNotice(text, failed) { $('notice').textContent = text; $('notice').hidden = !text; $('notice').className = 'notice' + (failed ? ' failed' : ''); }
+// After a rebuild or a fixture edit, re-run the last command in fixtures mode
+// and dim its previous output above the new one.
+function rerunLast() {
+  for (const entry of state.entries) entry.stale = true;
+  renderAll();
+  submit(lastRunLine, true);
+}
+function setMode(next) {
+  // A command tried against fixtures must not re-run against the real API.
+  if (next !== mode) { lastRunLine = ''; lastRunSafe = false; }
+  mode = next;
+  try { localStorage.setItem(STORAGE + '-mode', mode); } catch { /* not remembered */ }
+  for (const b of $('mode').querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === mode);
+  input.focus({preventScroll: true});
+}
+if (LIVE) {
+  $('mode').hidden = false;
+  for (const b of $('mode').querySelectorAll('button')) b.onclick = () => setMode(b.dataset.mode);
+  setMode(mode);
+}
+// While the CLI rebuilds, the terminal takes no commands: a command typed
+// now would run the old build or wait for the new one.
+function setBuilding(on) {
+  $('build-badge').hidden = !on;
+  document.body.classList.toggle('building', on);
+  input.readOnly = on;
+}
+async function loadPreview() {
+  try {
+    const res = await fetch(STATIC ? './preview.json' : '/api/preview', {cache: 'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) setNotice('CLI build failed. Showing the last good recordings.\n' + data.error, true);
+    else setNotice('');
+    setBuilding(!!data.building);
+    const changed = preview && !data.building && !data.error && (data.revision !== preview.revision || data.fixtures !== preview.fixtures);
+    if (data.help && Object.keys(data.help).length) { preview = data; flagCache.clear(); aliasCache.clear(); renderSidebar(); }
+    if (changed && lastRunLine && !busy) {
+      if (lastRunSafe) rerunLast();
+      else setNotice(`Rebuilt. Press ↑ Enter to run "${lastRunLine}" again; it changes something, so it does not re-run by itself.`);
+    }
+    $('version').textContent = preview?.version && preview.version !== 'dev' ? preview.version : '';
+  } catch (e) { setNotice('Could not load the CLI recordings: ' + e.message, true); }
+}
+restore();
+// Earlier versions seeded README.txt, and test runs left s.json behind.
+for (const name of ['README.txt', 's.json']) delete lookup(HOME)?.children?.[name];
+if (!state.entries.length) state.entries.push({output: [{text: welcome}]});
+// The welcome banner is the only entry without a command; keep it current.
+for (const entry of state.entries) if (entry.line === undefined) entry.output = [{text: welcome}];
+renderAll();
+input.focus({preventScroll: true});
+loadPreview();
+if (!STATIC) {
+  // Live mode: the dev server re-records the CLI whenever Go source changes.
+  const events = new EventSource('/events');
+  let last = '';
+  events.onmessage = e => { const s = JSON.parse(e.data); const sig = s.revision + s.building + s.error + s.fixtures; if (sig !== last) { last = sig; loadPreview(); } };
+}
+  </script>
+</body>
+</html>

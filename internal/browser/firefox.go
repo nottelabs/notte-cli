@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	_ "modernc.org/sqlite" // pure-Go SQLite driver, no cgo
 )
 
 // firefoxLinuxRoot returns the Firefox root directory, probing the native,

@@ -1,0 +1,793 @@
+{
+  "auth-logout": [
+    "authenticated",
+    "message",
+    "revoked"
+  ],
+  "auth-logout-logged-out": [
+    "authenticated",
+    "message",
+    "revoked"
+  ],
+  "auth-status": [
+    "API Key",
+    "Authenticated",
+    "Environment",
+    "Source",
+    "api_key",
+    "authenticated",
+    "environment",
+    "source"
+  ],
+  "auth-status-logged-out": [
+    "code",
+    "error"
+  ],
+  "clear": [
+    "cleared",
+    "message",
+    "success"
+  ],
+  "files-download": [
+    "id",
+    "message",
+    "path",
+    "success"
+  ],
+  "files-empty": [
+    "[]"
+  ],
+  "files-list": [
+    "[].checksum",
+    "[].created_at",
+    "[].expires_at",
+    "[].filename",
+    "[].id",
+    "[].mime_type",
+    "[].session_id",
+    "[].size",
+    "[].source"
+  ],
+  "files-upload": [
+    "file",
+    "message"
+  ],
+  "functions-configure": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "schedule_cron",
+    "schedule_state",
+    "self_healing",
+    "status",
+    "updated_at",
+    "variables",
+    "versions"
+  ],
+  "functions-create": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "status",
+    "updated_at",
+    "variables",
+    "versions"
+  ],
+  "functions-delete": [
+    "id",
+    "message",
+    "status"
+  ],
+  "functions-empty": [
+    "[]"
+  ],
+  "functions-fork": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "status",
+    "updated_at",
+    "variables",
+    "versions"
+  ],
+  "functions-health": [
+    "latency_ms",
+    "packages",
+    "python_version",
+    "reachable",
+    "reserved_env_names",
+    "status",
+    "stdlib_modules"
+  ],
+  "functions-list": [
+    "[].created_at",
+    "[].default_runtime",
+    "[].description",
+    "[].function_id",
+    "[].latest_version",
+    "[].name",
+    "[].shared",
+    "[].status",
+    "[].updated_at",
+    "[].versions"
+  ],
+  "functions-rollback": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "schedule_cron",
+    "schedule_state",
+    "status",
+    "updated_at",
+    "variables",
+    "versions"
+  ],
+  "functions-run-failed": [
+    "created_at",
+    "function_id",
+    "function_run_id",
+    "function_version",
+    "logs",
+    "result",
+    "session_id",
+    "status",
+    "updated_at",
+    "variables"
+  ],
+  "functions-run-metadata": [
+    "created_at",
+    "function_id",
+    "function_run_id",
+    "function_version",
+    "logs",
+    "result",
+    "session_id",
+    "status",
+    "updated_at",
+    "variables"
+  ],
+  "functions-run-stop": [
+    "function_id",
+    "function_run_id",
+    "status",
+    "updated_at"
+  ],
+  "functions-run-wait": [
+    "created_at",
+    "function_id",
+    "function_run_id",
+    "function_version",
+    "logs",
+    "result",
+    "session_id",
+    "status",
+    "updated_at",
+    "variables"
+  ],
+  "functions-run-wait-failed": [
+    "created_at",
+    "function_id",
+    "function_run_id",
+    "function_version",
+    "logs",
+    "result",
+    "session_id",
+    "status",
+    "updated_at",
+    "variables"
+  ],
+  "functions-runs": [
+    "[].created_at",
+    "[].function_id",
+    "[].function_run_id",
+    "[].session_id",
+    "[].status",
+    "[].updated_at"
+  ],
+  "functions-schedule": [
+    "cron",
+    "id",
+    "message"
+  ],
+  "functions-schedules-add": [
+    "created_at",
+    "cron",
+    "schedule_id",
+    "variables"
+  ],
+  "functions-schedules-list": [
+    "schedules",
+    "state"
+  ],
+  "functions-schedules-remove": [
+    "id",
+    "message",
+    "schedule_id",
+    "status"
+  ],
+  "functions-schedules-resume": [
+    "schedules",
+    "state"
+  ],
+  "functions-schedules-update": [
+    "created_at",
+    "cron",
+    "schedule_id",
+    "variables"
+  ],
+  "functions-secrets-delete": [
+    "id",
+    "message",
+    "status"
+  ],
+  "functions-secrets-get": [
+    "value"
+  ],
+  "functions-secrets-list": [
+    "[].created_at",
+    "[].id",
+    "[].key_hint",
+    "[].last_used_at",
+    "[].name",
+    "[].namespace"
+  ],
+  "functions-secrets-set": [
+    "created_at",
+    "id",
+    "key_hint",
+    "name",
+    "namespace"
+  ],
+  "functions-show": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "schedule_cron",
+    "schedule_state",
+    "status",
+    "updated_at",
+    "url",
+    "variables",
+    "versions"
+  ],
+  "functions-unschedule": [
+    "id",
+    "message",
+    "status"
+  ],
+  "functions-update": [
+    "created_at",
+    "default_runtime",
+    "description",
+    "function_id",
+    "latest_version",
+    "name",
+    "schedule_cron",
+    "schedule_state",
+    "status",
+    "updated_at",
+    "variables",
+    "versions"
+  ],
+  "health": [
+    "description",
+    "status",
+    "version"
+  ],
+  "logged-out": [
+    "code",
+    "error"
+  ],
+  "page-back": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-captcha-solve": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-check": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-click": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-close-tab": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-complete": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-download": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-eval-js": [
+    "action",
+    "data",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-fill": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-form-fill": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-forward": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-goto": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-new-tab": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-observe": [
+    "ended_at",
+    "metadata",
+    "space",
+    "started_at"
+  ],
+  "page-press": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-reload": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-scrape": [
+    "markdown"
+  ],
+  "page-scrape-structured": [
+    "currency",
+    "products",
+    "shop"
+  ],
+  "page-screenshot": [
+    "message",
+    "path",
+    "session",
+    "success"
+  ],
+  "page-scroll-down": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-scroll-up": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-select": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-switch-tab": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-upload": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "page-wait": [
+    "action",
+    "ended_at",
+    "message",
+    "started_at",
+    "success"
+  ],
+  "payment-connect": [
+    "connection_phrase",
+    "connection_url",
+    "expires_at",
+    "id",
+    "mode",
+    "status"
+  ],
+  "payment-disconnect": [
+    "mode",
+    "status"
+  ],
+  "payment-ready": [
+    "amount",
+    "currency",
+    "expires_at",
+    "id",
+    "merchant_name",
+    "merchant_url",
+    "mode",
+    "purchase_status",
+    "session_id",
+    "status",
+    "vault_id"
+  ],
+  "payment-status": [
+    "amount",
+    "approval_url",
+    "currency",
+    "expires_at",
+    "id",
+    "merchant_name",
+    "merchant_url",
+    "mode",
+    "purchase_status",
+    "session_id",
+    "status"
+  ],
+  "personas-create": [
+    "created_at",
+    "email",
+    "email_provider",
+    "first_name",
+    "internal_email",
+    "last_name",
+    "name",
+    "persona_id",
+    "status",
+    "vault_id"
+  ],
+  "personas-delete": [
+    "id",
+    "message",
+    "status"
+  ],
+  "personas-emails": [
+    "[].created_at",
+    "[].email_id",
+    "[].read",
+    "[].sender_email",
+    "[].sender_name",
+    "[].subject",
+    "[].text_content"
+  ],
+  "personas-list": [
+    "[].created_at",
+    "[].email",
+    "[].email_provider",
+    "[].first_name",
+    "[].internal_email",
+    "[].last_name",
+    "[].name",
+    "[].persona_id",
+    "[].status",
+    "[].vault_id"
+  ],
+  "personas-show": [
+    "created_at",
+    "email",
+    "email_provider",
+    "first_name",
+    "internal_email",
+    "last_name",
+    "name",
+    "persona_id",
+    "status",
+    "vault_id"
+  ],
+  "personas-sms": [
+    "[].body",
+    "[].created_at",
+    "[].read",
+    "[].sender",
+    "[].sms_id"
+  ],
+  "personas-update": [
+    "created_at",
+    "email",
+    "email_provider",
+    "first_name",
+    "internal_email",
+    "last_name",
+    "name",
+    "persona_id",
+    "status",
+    "vault_id"
+  ],
+  "profiles-cookies": [
+    "cookies"
+  ],
+  "profiles-cookies-set": [
+    "cookies_count",
+    "message",
+    "mode",
+    "success"
+  ],
+  "profiles-create": [
+    "created_at",
+    "name",
+    "persisted_domains",
+    "profile_id",
+    "updated_at"
+  ],
+  "profiles-delete": [
+    "id",
+    "message",
+    "status"
+  ],
+  "profiles-list": [
+    "[].created_at",
+    "[].name",
+    "[].persisted_domains",
+    "[].profile_id",
+    "[].updated_at"
+  ],
+  "profiles-show": [
+    "created_at",
+    "name",
+    "persisted_domains",
+    "profile_id",
+    "updated_at"
+  ],
+  "search": [
+    "results"
+  ],
+  "sessions-code": [
+    "json_actions",
+    "python_script"
+  ],
+  "sessions-cookies": [
+    "cookies"
+  ],
+  "sessions-cookies-set": [
+    "message",
+    "success"
+  ],
+  "sessions-empty": [
+    "[]"
+  ],
+  "sessions-error": [
+    "code",
+    "error",
+    "status_code"
+  ],
+  "sessions-function-code": [
+    "json_actions",
+    "python_script"
+  ],
+  "sessions-list": [
+    "[].browser_type",
+    "[].created_at",
+    "[].idle_timeout_minutes",
+    "[].last_accessed_at",
+    "[].session_id",
+    "[].status",
+    "[].timeout_minutes",
+    "[].viewer_url"
+  ],
+  "sessions-long-values": [
+    "[].browser_type",
+    "[].cdp_url",
+    "[].created_at",
+    "[].idle_timeout_minutes",
+    "[].last_accessed_at",
+    "[].session_id",
+    "[].status",
+    "[].timeout_minutes",
+    "[].user_agent",
+    "[].viewer_url"
+  ],
+  "sessions-network": [
+    "batches",
+    "format",
+    "session_id",
+    "total_batch_count"
+  ],
+  "sessions-network-empty": [
+    "count",
+    "message",
+    "path",
+    "session_id"
+  ],
+  "sessions-offset": [
+    "offset"
+  ],
+  "sessions-pin": [
+    "message",
+    "pinned",
+    "session_id"
+  ],
+  "sessions-save-profile": [
+    "created_at",
+    "name",
+    "persisted_domains",
+    "profile_id",
+    "updated_at"
+  ],
+  "sessions-start": [
+    "browser_type",
+    "cdp_url",
+    "created_at",
+    "idle_timeout_minutes",
+    "last_accessed_at",
+    "max_duration_minutes",
+    "session_id",
+    "status",
+    "timeout_minutes",
+    "viewer_url",
+    "viewport_height",
+    "viewport_width"
+  ],
+  "sessions-status": [
+    "browser_type",
+    "created_at",
+    "duration",
+    "idle_timeout_minutes",
+    "last_accessed_at",
+    "max_duration_minutes",
+    "network_request_bytes",
+    "network_response_bytes",
+    "session_id",
+    "status",
+    "steps",
+    "timeout_minutes",
+    "viewer_url",
+    "viewport_height",
+    "viewport_width"
+  ],
+  "sessions-status-no-session": [
+    "code",
+    "error"
+  ],
+  "sessions-stop": [
+    "id",
+    "message",
+    "status"
+  ],
+  "sessions-stop-all": [
+    "message",
+    "stopped"
+  ],
+  "tunnel-list-empty": [
+    "[]"
+  ],
+  "usage": [
+    "balance_amount",
+    "browser_usage_cost",
+    "function_count",
+    "function_usage_cost",
+    "is_usage_limit_exceeded",
+    "llm_usage_cost",
+    "period",
+    "plan_type",
+    "proxy_usage_cost",
+    "session_count",
+    "subscription_balance_amount",
+    "subscription_limit_amount",
+    "topup_balance_amount",
+    "topup_limit_amount",
+    "total_cost"
+  ],
+  "usage-logs": [
+    "[].created_at",
+    "[].duration_ms",
+    "[].endpoint"
+  ],
+  "vaults-create": [
+    "created_at",
+    "for_persona",
+    "name",
+    "vault_id"
+  ],
+  "vaults-credentials-add": [
+    "status"
+  ],
+  "vaults-credentials-delete": [
+    "id",
+    "message",
+    "url"
+  ],
+  "vaults-credentials-get": [
+    "credentials"
+  ],
+  "vaults-credentials-list": [
+    "[].email",
+    "[].url",
+    "[].username"
+  ],
+  "vaults-delete": [
+    "id",
+    "message",
+    "status"
+  ],
+  "vaults-list": [
+    "[].created_at",
+    "[].for_persona",
+    "[].name",
+    "[].vault_id"
+  ],
+  "vaults-update": [
+    "created_at",
+    "for_persona",
+    "name",
+    "vault_id"
+  ],
+  "version": [
+    "message",
+    "version"
+  ]
+}

@@ -676,6 +676,10 @@ make setup
 
 This installs [lefthook](https://github.com/evilmartians/lefthook) pre-commit and pre-push hooks for linting and testing.
 
+### Playground
+
+Run `make playground` and open <http://127.0.0.1:4173> for a terminal in the browser that runs the CLI built from your checkout and rebuilds it on every save. `make playground-export` builds a static site that runs the CLI in the visitor's browser, compiled to WebAssembly. See [playground/README.md](playground/README.md).
+
 ### Releasing
 
 Releases follow the Notte API's production deployments in two steps:

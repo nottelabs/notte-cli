@@ -1,0 +1,3148 @@
+[
+  {
+    "id": "help",
+    "group": "Help",
+    "title": "CLI help",
+    "description": "Run notte with no arguments to see its actual help output.",
+    "args": [],
+    "source": "internal/cmd/root.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "sessions-help",
+    "group": "Help",
+    "title": "Sessions help",
+    "description": "Discover available session commands and flags.",
+    "args": ["sessions"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "page-help",
+    "group": "Help",
+    "title": "Page help",
+    "description": "Discover page actions and their arguments.",
+    "args": ["page"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "version",
+    "group": "General",
+    "title": "CLI version",
+    "description": "The locally built CLI version in text and JSON.",
+    "args": ["version"],
+    "source": "internal/cmd/root.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "sessions-start",
+    "group": "Sessions",
+    "title": "Start a session",
+    "description": "A new session with browser settings and connection links.",
+    "args": ["sessions", "start", "--browser-type", "chromium", "--idle-timeout-minutes", "5"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/start",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "active",
+          "browser_type": "chromium",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:00:00Z",
+          "idle_timeout_minutes": 5,
+          "max_duration_minutes": 15,
+          "viewport_width": 1280,
+          "viewport_height": 720,
+          "viewer_url": "https://example.com/sessions/demo-session-001",
+          "cdp_url": "wss://example.com/cdp/demo-session-001"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-status",
+    "group": "Sessions",
+    "title": "Session details and steps",
+    "description": "Details with populated optional fields and a short action history.",
+    "args": ["sessions", "status", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "active",
+          "browser_type": "chromium",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:02:30Z",
+          "idle_timeout_minutes": 5,
+          "max_duration_minutes": 15,
+          "duration": "0:02:30",
+          "viewport_width": 1280,
+          "viewport_height": 720,
+          "viewer_url": "https://example.com/sessions/demo-session-001",
+          "network_request_bytes": 12048,
+          "network_response_bytes": 245760,
+          "steps": [
+            {
+              "type": "execution_result",
+              "value": {
+                "action": {
+                  "type": "goto",
+                  "url": "https://example.com"
+                }
+              }
+            },
+            {
+              "type": "observation",
+              "value": {}
+            },
+            {
+              "type": "execution_result",
+              "value": {
+                "action": {
+                  "type": "click",
+                  "id": "B1"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-list",
+    "group": "Sessions",
+    "title": "Multiple sessions",
+    "description": "Two sessions with different browser settings and optional fields.",
+    "args": ["sessions", "list"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-001",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:02:30Z",
+              "idle_timeout_minutes": 5,
+              "viewer_url": "https://example.com/sessions/demo-session-001"
+            },
+            {
+              "session_id": "demo-session-002",
+              "status": "active",
+              "browser_type": "firefox",
+              "created_at": "2026-01-15T10:01:00Z",
+              "last_accessed_at": "2026-01-15T10:02:00Z",
+              "idle_timeout_minutes": 3,
+              "viewer_url": "https://example.com/sessions/demo-session-002"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-empty",
+    "group": "Sessions",
+    "title": "No active sessions",
+    "description": "The empty state in text mode and its machine-readable JSON equivalent.",
+    "args": ["sessions", "list"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-long-values",
+    "group": "Sessions",
+    "title": "Long values and wrapping",
+    "description": "Long connection links and a user agent reveal how output fits narrow terminals.",
+    "args": ["sessions", "list"],
+    "source": "internal/output/text.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-with-a-deliberately-long-identifier-001",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:02:30Z",
+              "idle_timeout_minutes": 5,
+              "viewer_url": "https://example.com/preview/sessions/demo-session-with-a-deliberately-long-identifier-001/viewer?display=full&tab=product-catalog",
+              "cdp_url": "wss://example.com/preview/sessions/demo-session-with-a-deliberately-long-identifier-001/browser/debugging",
+              "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-error",
+    "group": "Sessions",
+    "title": "Session not found",
+    "description": "A failed API request with its error message and nonzero exit code.",
+    "args": ["sessions", "status", "--session-id", "demo-session-missing"],
+    "source": "internal/output/text.go",
+    "expectedExit": 4,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-missing",
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "SESSION_NOT_FOUND",
+            "message": "Session demo-session-missing was not found. Start a new session with 'notte sessions start'."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-stop",
+    "group": "Sessions",
+    "title": "Stop confirmation",
+    "description": "A completed stop command, with confirmation supplied by --yes.",
+    "args": ["sessions", "stop", "--session-id", "demo-session-001", "--yes"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/stop",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "closed",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:02:30Z",
+          "closed_at": "2026-01-15T10:03:00Z",
+          "idle_timeout_minutes": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-stop-all",
+    "group": "Sessions",
+    "title": "Stop every session",
+    "description": "Stops all active sessions at once after one confirmation.",
+    "args": ["sessions", "stop", "--all", "--yes"],
+    "source": "internal/cmd/sessions_stop_all.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-001",
+              "status": "active",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:00:00Z",
+              "idle_timeout_minutes": 5
+            },
+            {
+              "session_id": "demo-session-002",
+              "status": "active",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:00:00Z",
+              "idle_timeout_minutes": 5
+            },
+            {
+              "session_id": "demo-session-003",
+              "status": "active",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:00:00Z",
+              "idle_timeout_minutes": 5
+            }
+          ],
+          "has_next": false
+        }
+      },
+      {
+        "path": "/sessions/demo-session-001/stop",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "status": "closed",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:05:00Z",
+          "idle_timeout_minutes": 5
+        }
+      },
+      {
+        "path": "/sessions/demo-session-002/stop",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-002",
+          "status": "closed",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:05:00Z",
+          "idle_timeout_minutes": 5
+        }
+      },
+      {
+        "path": "/sessions/demo-session-003/stop",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-003",
+          "status": "closed",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_accessed_at": "2026-01-15T10:05:00Z",
+          "idle_timeout_minutes": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-pin",
+    "group": "Sessions",
+    "title": "Pin a session",
+    "description": "Pick which session commands use by default. In a terminal, an arrow-key menu.",
+    "args": ["sessions", "pin", "demo-session-002"],
+    "source": "internal/cmd/sessions_pin.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "session_id": "demo-session-001",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:00:00Z",
+              "last_accessed_at": "2026-01-15T10:00:00Z",
+              "idle_timeout_minutes": 5
+            },
+            {
+              "session_id": "demo-session-002",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:01:00Z",
+              "last_accessed_at": "2026-01-15T10:01:00Z",
+              "idle_timeout_minutes": 5
+            },
+            {
+              "session_id": "demo-session-003",
+              "status": "active",
+              "browser_type": "chromium",
+              "created_at": "2026-01-15T10:02:00Z",
+              "last_accessed_at": "2026-01-15T10:02:00Z",
+              "idle_timeout_minutes": 5
+            }
+          ],
+          "has_next": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-observe",
+    "group": "Page",
+    "title": "Observe a page",
+    "description": "A page description, action references, and page metadata.",
+    "args": ["page", "observe", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/observe",
+        "status": 200,
+        "body": {
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z",
+          "metadata": {
+            "title": "Example Shop",
+            "url": "https://example.com/shop",
+            "tabs": [
+              {
+                "tab_id": 1,
+                "title": "Example Shop",
+                "url": "https://example.com/shop"
+              }
+            ],
+            "viewport": {
+              "scroll_x": 0,
+              "scroll_y": 0,
+              "total_height": 1600,
+              "total_width": 1280,
+              "viewport_height": 720,
+              "viewport_width": 1280
+            }
+          },
+          "screenshot": {
+            "raw": ""
+          },
+          "space": {
+            "category": "page",
+            "description": "# Example Shop\n\nBrowse the latest products.\n\n[I1] Search products\n[B1] Search\n[L1] View ceramic mug\n[L2] View cotton tote\n[B2] Open basket (0 items)",
+            "interaction_actions": []
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scrape",
+    "group": "Page",
+    "title": "Scrape markdown",
+    "description": "Multiline content with headings, links, prices, and Unicode text.",
+    "args": ["page", "scrape", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/scrape",
+        "status": 200,
+        "body": {
+          "markdown": "# Example Shop\n\nSimple objects for everyday use.\n\n## Ceramic mug\n\nHandmade in Lisbon. Available in café white and midnight blue.\n\n**Price:** $18.00\n\n[View product](https://example.com/products/ceramic-mug)\n\n## Cotton tote\n\nA reusable bag with enough room for a laptop and groceries.\n\n**Price:** $12.00\n\n[View product](https://example.com/products/cotton-tote)"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scrape-structured",
+    "group": "Page",
+    "title": "Scrape structured data",
+    "description": "Nested objects and arrays extracted with instructions.",
+    "args": ["page", "scrape", "--session-id", "demo-session-001", "--instructions", "Extract product names, prices, and availability"],
+    "source": "internal/cmd/output_helpers.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/scrape",
+        "status": 200,
+        "body": {
+          "markdown": "# Example Shop\n\nCeramic mug: $18.00\nCotton tote: $12.00",
+          "structured": {
+            "success": true,
+            "data": {
+              "shop": "Example Shop",
+              "currency": "USD",
+              "products": [
+                {
+                  "name": "Ceramic mug",
+                  "price": 18,
+                  "available": true,
+                  "variants": [
+                    "Café white",
+                    "Midnight blue"
+                  ]
+                },
+                {
+                  "name": "Cotton tote",
+                  "price": 12,
+                  "available": false,
+                  "variants": []
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "auth-status",
+    "group": "Account",
+    "title": "Authentication status",
+    "description": "Where the API key comes from, masked, and which environment it targets.",
+    "args": ["auth", "status"],
+    "source": "internal/cmd/auth.go",
+    "expectedExit": 0,
+    "responses": [],
+    "auth": "saved"
+  },
+  {
+    "id": "auth-status-logged-out",
+    "title": "Signed out status",
+    "description": "auth status after notte auth logout.",
+    "args": ["auth", "status"],
+    "expectedExit": 3,
+    "auth": "none",
+    "group": "Account",
+    "source": "internal/cmd/auth.go",
+    "responses": []
+  },
+  {
+    "id": "auth-logout",
+    "title": "Log out",
+    "description": "Removes the saved API key and revokes it on the server.",
+    "args": ["auth", "logout"],
+    "expectedExit": 0,
+    "auth": "saved",
+    "group": "Account",
+    "source": "internal/cmd/auth.go",
+    "responses": [
+      {"path": "/auth/device/revoke", "status": 200, "body": {"revoked": true}}
+    ]
+  },
+  {
+    "id": "auth-logout-logged-out",
+    "title": "Log out when signed out",
+    "description": "Logging out when no key is saved. The CLI currently reports this as an error.",
+    "args": ["auth", "logout"],
+    "expectedExit": 0,
+    "auth": "none",
+    "group": "Account",
+    "source": "internal/cmd/auth.go",
+    "responses": []
+  },
+  {
+    "id": "logged-out",
+    "title": "Signed out",
+    "description": "Any API command without an API key. The playground shows this for every API command after notte auth logout.",
+    "args": ["sessions", "list"],
+    "expectedExit": 3,
+    "auth": "none",
+    "group": "Account",
+    "source": "internal/auth/auth.go",
+    "responses": []
+  },
+  {
+    "id": "health",
+    "group": "Account",
+    "title": "API health",
+    "description": "A healthy API with its version.",
+    "args": ["health"],
+    "source": "internal/cmd/utility.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/health",
+        "status": 200,
+        "body": {
+          "status": "healthy",
+          "version": "1.42.0",
+          "description": "Notte API is up and running"
+        }
+      }
+    ]
+  },
+  {
+    "id": "usage",
+    "group": "Account",
+    "title": "Usage summary",
+    "description": "Monthly costs, balances, and counts for the current period.",
+    "args": ["usage"],
+    "source": "internal/cmd/usage.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/usage",
+        "status": 200,
+        "body": {
+          "period": "January 2026",
+          "plan_type": "pro",
+          "session_count": 128,
+          "function_count": 6,
+          "browser_usage_cost": 4.82,
+          "llm_usage_cost": 2.15,
+          "proxy_usage_cost": 0.64,
+          "function_usage_cost": 1.2,
+          "total_cost": 8.81,
+          "balance_amount": 41.19,
+          "subscription_balance_amount": 31.19,
+          "subscription_limit_amount": 40,
+          "topup_balance_amount": 10,
+          "topup_limit_amount": 10,
+          "is_usage_limit_exceeded": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "usage-logs",
+    "group": "Account",
+    "title": "API request logs",
+    "description": "Recent API requests, newest first, with their durations.",
+    "args": ["usage", "logs"],
+    "source": "internal/cmd/usage.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/usage/logs",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "endpoint": "/sessions/demo-session-001/page/scrape",
+              "created_at": "2026-01-15T10:03:12Z",
+              "duration_ms": 842
+            },
+            {
+              "endpoint": "/sessions/demo-session-001/page/execute",
+              "created_at": "2026-01-15T10:02:31Z",
+              "duration_ms": 615
+            },
+            {
+              "endpoint": "/sessions/start",
+              "created_at": "2026-01-15T10:00:00Z",
+              "duration_ms": 1934
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "search",
+    "group": "Search",
+    "title": "Web search",
+    "description": "Ranked results with titles, links, and snippets for a query.",
+    "args": ["search", "handmade ceramic mugs"],
+    "source": "internal/cmd/search.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/search",
+        "status": 200,
+        "body": {
+          "results": [
+            {
+              "name": "Handmade ceramic mugs - Example Shop",
+              "url": "https://example.com/shop/mugs",
+              "content": "Small-batch stoneware mugs, glazed by hand and fired twice for durability.",
+              "type": "text"
+            },
+            {
+              "name": "How to care for ceramic mugs",
+              "url": "https://example.com/guides/ceramic-care",
+              "content": "Wash by hand, avoid sudden temperature changes, and dry upside down.",
+              "type": "text"
+            },
+            {
+              "name": "Ceramic studio open days",
+              "url": "https://example.com/events/open-days",
+              "content": "Visit the studio on the first Saturday of each month to see mugs being thrown.",
+              "type": "text"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-list",
+    "group": "Functions",
+    "title": "List functions",
+    "description": "Deployed functions with their status and latest version.",
+    "args": ["functions", "list"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "function_id": "demo-function-001",
+              "name": "Product price tracker",
+              "description": "Extract the price and availability of a product page.",
+              "status": "active",
+              "latest_version": "3",
+              "versions": [
+                "1",
+                "2",
+                "3"
+              ],
+              "created_at": "2026-01-12T09:00:00Z",
+              "updated_at": "2026-01-15T10:00:00Z",
+              "default_runtime": "kubernetes",
+              "shared": false
+            },
+            {
+              "function_id": "demo-function-002",
+              "name": "Newsletter signup",
+              "description": "Subscribe an address to the example.com newsletter.",
+              "status": "active",
+              "latest_version": "1",
+              "versions": [
+                "1"
+              ],
+              "created_at": "2026-01-14T15:30:00Z",
+              "updated_at": "2026-01-14T15:30:00Z",
+              "default_runtime": "kubernetes",
+              "shared": true
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-show",
+    "group": "Functions",
+    "title": "Function details",
+    "description": "One function with its variables and a download link for its source.",
+    "args": ["functions", "show", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "name": "Product price tracker",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "3",
+          "versions": [
+            "1",
+            "2",
+            "3"
+          ],
+          "created_at": "2026-01-12T09:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ],
+          "schedule_cron": "0 9 * * *",
+          "schedule_state": "enabled",
+          "url": "https://example.com/downloads/functions/demo-function-001/v3/function.py"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-runs",
+    "group": "Functions",
+    "title": "Function run history",
+    "description": "Recent runs of one function, including a failure.",
+    "args": ["functions", "runs", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "function_run_id": "demo-run-003",
+              "function_id": "demo-function-001",
+              "status": "active",
+              "session_id": "demo-session-003",
+              "created_at": "2026-01-15T10:05:00Z",
+              "updated_at": "2026-01-15T10:05:10Z"
+            },
+            {
+              "function_run_id": "demo-run-002",
+              "function_id": "demo-function-001",
+              "status": "closed",
+              "session_id": "demo-session-002",
+              "created_at": "2026-01-15T09:00:00Z",
+              "updated_at": "2026-01-15T09:00:42Z"
+            },
+            {
+              "function_run_id": "demo-run-001",
+              "function_id": "demo-function-001",
+              "status": "failed",
+              "session_id": "demo-session-001",
+              "created_at": "2026-01-14T09:00:00Z",
+              "updated_at": "2026-01-14T09:01:05Z"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-run-metadata",
+    "group": "Functions",
+    "title": "A finished function run",
+    "description": "One run: how it went, what it returned.",
+    "args": ["functions", "run-metadata", "--function-id", "demo-function-001", "--run-id", "demo-run-002"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs/demo-run-002",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "function_run_id": "demo-run-002",
+          "status": "closed",
+          "function_version": "3",
+          "session_id": "demo-session-002",
+          "variables": {
+            "url": "https://example.com/products/ceramic-mug"
+          },
+          "created_at": "2026-01-15T09:00:00Z",
+          "updated_at": "2026-01-15T09:00:42Z",
+          "logs": [
+            "Opening https://example.com/products/ceramic-mug",
+            "Found price $18.00"
+          ],
+          "result": "{\"name\": \"Ceramic mug\", \"price\": 18.0, \"currency\": \"USD\", \"available\": true}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-run-failed",
+    "group": "Functions",
+    "title": "A failed function run",
+    "description": "What a run that raised an error looks like.",
+    "args": ["functions", "run-metadata", "--function-id", "demo-function-001", "--run-id", "demo-run-001"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs/demo-run-001",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "function_run_id": "demo-run-001",
+          "status": "failed",
+          "function_version": "2",
+          "session_id": "demo-session-001",
+          "variables": {
+            "url": "https://example.com/products/retired"
+          },
+          "created_at": "2026-01-14T09:00:00Z",
+          "updated_at": "2026-01-14T09:01:05Z",
+          "logs": [
+            "Opening https://example.com/products/retired",
+            "Page returned 404"
+          ],
+          "result": "ValueError: no price found on the page"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-health",
+    "group": "Functions",
+    "title": "Function runtime health",
+    "description": "The runtime functions execute in: reachable, Python version, installed packages.",
+    "args": ["functions", "health"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/health",
+        "status": 200,
+        "body": {
+          "status": "healthy",
+          "reachable": true,
+          "latency_ms": 84,
+          "python_version": "3.12.7",
+          "packages": [
+            {
+              "import_name": "notte_sdk",
+              "package": "notte-sdk",
+              "version": "1.10.8",
+              "installed": true
+            },
+            {
+              "import_name": "pydantic",
+              "package": "pydantic",
+              "version": "2.9.2",
+              "installed": true
+            },
+            {
+              "import_name": "httpx",
+              "package": "httpx",
+              "version": "0.27.2",
+              "installed": true
+            }
+          ],
+          "stdlib_modules": [
+            "json",
+            "re",
+            "datetime"
+          ],
+          "reserved_env_names": [
+            "NOTTE_API_KEY"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-schedules-list",
+    "group": "Functions",
+    "title": "Function schedules",
+    "description": "When a function runs by itself, and with which variables.",
+    "args": ["functions", "schedules", "list", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedules",
+        "status": 200,
+        "body": {
+          "state": "enabled",
+          "schedules": [
+            {
+              "schedule_id": "demo-schedule-001",
+              "cron": "0 9 * * *",
+              "variables": {
+                "url": "https://example.com/products/ceramic-mug"
+              },
+              "created_at": "2026-01-12T09:05:00Z"
+            },
+            {
+              "schedule_id": "demo-schedule-002",
+              "cron": "0 18 * * 1-5",
+              "variables": {
+                "url": "https://example.com/products/cotton-tote"
+              },
+              "created_at": "2026-01-14T11:00:00Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-secrets-list",
+    "group": "Functions",
+    "title": "Function secrets",
+    "description": "Secrets functions can read, by name. Values are never listed.",
+    "args": ["functions", "secrets", "list"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/secrets",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "id": "demo-secret-001",
+              "name": "SHOP_API_TOKEN",
+              "key_hint": "••••9f2c",
+              "namespace": "function_env",
+              "created_at": "2026-01-10T09:00:00Z",
+              "last_used_at": "2026-01-15T09:00:40Z"
+            },
+            {
+              "id": "demo-secret-002",
+              "name": "SLACK_WEBHOOK_URL",
+              "key_hint": "••••a71d",
+              "namespace": "function_env",
+              "created_at": "2026-01-12T14:30:00Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-list",
+    "group": "Profiles",
+    "title": "List profiles",
+    "description": "Saved browser profiles and the domains they keep signed in.",
+    "args": ["profiles", "list"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "profile_id": "demo-profile-001",
+              "name": "Shop account",
+              "persisted_domains": [
+                "example.com"
+              ],
+              "created_at": "2026-01-10T12:00:00Z",
+              "updated_at": "2026-01-15T10:00:00Z"
+            },
+            {
+              "profile_id": "demo-profile-002",
+              "name": "Research",
+              "persisted_domains": [
+                "example.com",
+                "example.org"
+              ],
+              "created_at": "2026-01-11T08:30:00Z",
+              "updated_at": "2026-01-14T17:45:00Z"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-show",
+    "group": "Profiles",
+    "title": "Profile details",
+    "description": "One saved profile and its persisted domains.",
+    "args": ["profiles", "show", "--profile-id", "demo-profile-001"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles/demo-profile-001",
+        "status": 200,
+        "body": {
+          "profile_id": "demo-profile-001",
+          "name": "Shop account",
+          "persisted_domains": [
+            "example.com"
+          ],
+          "created_at": "2026-01-10T12:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-list",
+    "group": "Vaults",
+    "title": "List vaults",
+    "description": "Credential vaults, including one that belongs to a persona.",
+    "args": ["vaults", "list"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "vault_id": "demo-vault-001",
+              "name": "Team logins",
+              "created_at": "2026-01-09T10:00:00Z",
+              "for_persona": false
+            },
+            {
+              "vault_id": "demo-vault-002",
+              "name": "Demo persona",
+              "created_at": "2026-01-13T14:20:00Z",
+              "for_persona": true
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-credentials-list",
+    "group": "Vaults",
+    "title": "List vault credentials",
+    "description": "Sites stored in a vault, without their passwords.",
+    "args": ["vaults", "credentials", "list", "--vault-id", "demo-vault-001"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001",
+        "status": 200,
+        "body": {
+          "credentials": [
+            {
+              "url": "https://example.com/login",
+              "username": "demo-user",
+              "email": "demo@example.com"
+            },
+            {
+              "url": "https://shop.example.com/account",
+              "email": "orders@example.com"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-list",
+    "group": "Personas",
+    "title": "List personas",
+    "description": "Synthetic identities with their email addresses and status.",
+    "args": ["personas", "list"],
+    "source": "internal/cmd/personas.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas",
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "persona_id": "demo-persona-001",
+              "name": "Demo shopper",
+              "first_name": "Alex",
+              "last_name": "Example",
+              "email": "alex.example@example.com",
+              "internal_email": "demo-persona-001@example.com",
+              "email_provider": "notte",
+              "status": "active",
+              "vault_id": "demo-vault-002",
+              "created_at": "2026-01-13T14:20:00Z"
+            },
+            {
+              "persona_id": "demo-persona-002",
+              "name": "Demo tester",
+              "first_name": "Sam",
+              "last_name": "Sample",
+              "email": "sam.sample@example.com",
+              "internal_email": "demo-persona-002@example.com",
+              "email_provider": "notte",
+              "status": "active",
+              "phone_number": "+15555550100",
+              "created_at": "2026-01-14T09:10:00Z"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-show",
+    "group": "Personas",
+    "title": "Persona details",
+    "description": "One persona with its contact details and linked vault.",
+    "args": ["personas", "show", "--persona-id", "demo-persona-001"],
+    "source": "internal/cmd/personas.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/demo-persona-001",
+        "status": 200,
+        "body": {
+          "persona_id": "demo-persona-001",
+          "name": "Demo shopper",
+          "first_name": "Alex",
+          "last_name": "Example",
+          "email": "alex.example@example.com",
+          "internal_email": "demo-persona-001@example.com",
+          "email_provider": "notte",
+          "status": "active",
+          "vault_id": "demo-vault-002",
+          "created_at": "2026-01-13T14:20:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-emails",
+    "group": "Personas",
+    "title": "Persona inbox",
+    "description": "Emails a persona received, printed whole so a code or link can be read.",
+    "args": ["personas", "emails", "--persona-id", "demo-persona-001"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/demo-persona-001/emails",
+        "status": 200,
+        "body": [
+          {
+            "email_id": "demo-email-002",
+            "subject": "Confirm your email address",
+            "sender_name": "Example Shop",
+            "sender_email": "no-reply@example.com",
+            "created_at": "2026-01-15T10:03:00Z",
+            "text_content": "Hi Alex,\n\nYour verification code is 204 815.\nOr confirm with this link: https://example.com/confirm?token=demo-token\n\nThe Example Shop team"
+          },
+          {
+            "email_id": "demo-email-001",
+            "subject": "Your receipt",
+            "sender_name": "Example Shop",
+            "sender_email": "orders@example.com",
+            "created_at": "2026-01-14T16:20:00Z",
+            "text_content": "Thanks for your order. Your receipt is attached.",
+            "attachments": [
+              {
+                "filename": "receipt-1042.pdf",
+                "content_type": "application/pdf",
+                "size_bytes": 48213,
+                "download_url": "https://example.com/downloads/receipt-1042.pdf"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "personas-sms",
+    "group": "Personas",
+    "title": "Persona text messages",
+    "description": "Text messages a persona received, such as a verification code.",
+    "args": ["personas", "sms", "--persona-id", "demo-persona-002"],
+    "source": "internal/cmd/views.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/demo-persona-002/sms",
+        "status": 200,
+        "body": [
+          {
+            "sms_id": "demo-sms-002",
+            "sender": "+15555550199",
+            "body": "Your Example Shop code is 481 920. It expires in 10 minutes.",
+            "created_at": "2026-01-15T10:04:10Z"
+          },
+          {
+            "sms_id": "demo-sms-001",
+            "sender": "+15555550142",
+            "body": "Welcome to Example Shop! Reply STOP to unsubscribe.",
+            "created_at": "2026-01-14T09:12:00Z"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "files-list",
+    "group": "Files",
+    "title": "List session files",
+    "description": "Files a session downloaded, with sizes and expiry times.",
+    "args": ["files", "list", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/files.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/files",
+        "status": 200,
+        "body": {
+          "files": [
+            {
+              "id": "demo-file-001",
+              "session_id": "demo-session-001",
+              "filename": "invoice-2026-01.pdf",
+              "mime_type": "application/pdf",
+              "size": 48213,
+              "checksum": "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+              "created_at": "2026-01-15T10:04:00Z",
+              "expires_at": "2026-01-22T10:04:00Z",
+              "source": "session_download"
+            },
+            {
+              "id": "demo-file-002",
+              "session_id": "demo-session-001",
+              "filename": "price-list.csv",
+              "mime_type": "text/csv",
+              "size": 1832,
+              "checksum": "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+              "created_at": "2026-01-15T10:04:30Z",
+              "expires_at": "2026-01-22T10:04:30Z",
+              "source": "session_download"
+            }
+          ],
+          "total": 2,
+          "limit": 1000,
+          "offset": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-cookies",
+    "group": "Sessions",
+    "title": "Session cookies",
+    "description": "Cookies currently set in the session's browser.",
+    "args": ["sessions", "cookies", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/cookies",
+        "status": 200,
+        "body": {
+          "cookies": [
+            {
+              "name": "session_token",
+              "value": "demo-token-value",
+              "domain": "example.com",
+              "path": "/",
+              "httpOnly": true,
+              "secure": true,
+              "sameSite": "Lax",
+              "expires": 1768816800
+            },
+            {
+              "name": "cart_id",
+              "value": "demo-cart-001",
+              "domain": "shop.example.com",
+              "path": "/",
+              "httpOnly": false,
+              "secure": true,
+              "sameSite": "Lax",
+              "session": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-network",
+    "group": "Sessions",
+    "title": "Network log links",
+    "description": "Download links for a session's network log batches, without downloading them.",
+    "args": ["sessions", "network", "--session-id", "demo-session-001", "--urls-only"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/network/logs",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "format": "jsonl",
+          "total_batch_count": 2,
+          "batches": [
+            {
+              "key": "network/demo-session-001/batch-0001.jsonl",
+              "size": 18432,
+              "download_url": "https://example.com/downloads/network/demo-session-001/batch-0001.jsonl",
+              "download_url_expires_in_seconds": 3600
+            },
+            {
+              "key": "network/demo-session-001/batch-0002.jsonl",
+              "size": 9216,
+              "download_url": "https://example.com/downloads/network/demo-session-001/batch-0002.jsonl",
+              "download_url_expires_in_seconds": 3600
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-code",
+    "group": "Sessions",
+    "title": "Session as Python",
+    "description": "A Python script that replays the session's steps.",
+    "args": ["sessions", "code", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/workflow/code",
+        "status": 200,
+        "body": {
+          "python_script": "from notte_sdk import NotteClient\n\nclient = NotteClient()\n\nwith client.Session() as session:\n    session.execute(type=\"goto\", url=\"https://example.com/shop\")\n    session.execute(type=\"fill\", id=\"I1\", value=\"ceramic mug\")\n    session.execute(type=\"click\", id=\"B1\")\n    print(session.scrape())",
+          "json_actions": [
+            {
+              "type": "goto",
+              "url": "https://example.com/shop"
+            },
+            {
+              "type": "fill",
+              "id": "I1",
+              "value": "ceramic mug"
+            },
+            {
+              "type": "click",
+              "id": "B1"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-goto",
+    "group": "Page",
+    "title": "Navigate to a URL",
+    "description": "Open a page in the session's current tab.",
+    "args": ["page", "goto", "https://example.com/shop", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "goto",
+            "url": "https://example.com/shop"
+          },
+          "success": true,
+          "message": "Navigated to https://example.com/shop",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-click",
+    "group": "Page",
+    "title": "Click an element",
+    "description": "Click an element by the ID from page observe.",
+    "args": ["page", "click", "B1", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "click",
+            "id": "B1"
+          },
+          "success": true,
+          "message": "Clicked on the element with text label: Search",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-fill",
+    "group": "Page",
+    "title": "Fill an input",
+    "description": "Type a value into an input field.",
+    "args": ["page", "fill", "I1", "ceramic mug", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "fill",
+            "id": "I1",
+            "value": "ceramic mug"
+          },
+          "success": true,
+          "message": "Filled the input field 'Search products' with the value: 'ceramic mug'",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-screenshot",
+    "group": "Page",
+    "title": "Save a screenshot",
+    "description": "Save the current page as an image in the working directory.",
+    "args": ["page", "screenshot", "screenshot.jpg", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/screenshot",
+        "status": 200,
+        "body": "synthetic image bytes"
+      }
+    ]
+  },
+  {
+    "id": "page-eval-js",
+    "group": "Page",
+    "title": "Evaluate JavaScript",
+    "description": "Print a JavaScript value from the page, ready to pipe into other tools.",
+    "args": ["page", "eval-js", "document.title", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "evaluate_js",
+            "code": "document.title"
+          },
+          "success": true,
+          "message": "JavaScript evaluated successfully",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z",
+          "data": {
+            "markdown": "Example Shop"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-wait",
+    "group": "Page",
+    "title": "Wait",
+    "description": "Pause the session for a fixed number of milliseconds.",
+    "args": ["page", "wait", "1000", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "wait",
+            "time_ms": 1000
+          },
+          "success": true,
+          "message": "Waited for 1000 milliseconds",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-back",
+    "group": "Page",
+    "title": "Go back",
+    "description": "Return to the previous page in the tab's history.",
+    "args": ["page", "back", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "go_back"
+          },
+          "success": true,
+          "message": "Navigated back to https://example.com/shop",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-status-no-session",
+    "group": "Sessions",
+    "title": "No current session",
+    "description": "A session command run before any session was started or selected.",
+    "args": ["sessions", "status"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 2,
+    "responses": []
+  },
+  {
+    "id": "functions-create",
+    "group": "Functions",
+    "title": "Create a function",
+    "description": "Upload a Python file as a new function.",
+    "args": ["functions", "create", "--file", "price_tracker.py", "--name", "Product price tracker"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-003",
+          "name": "Product price tracker",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "1",
+          "versions": [
+            "1"
+          ],
+          "created_at": "2026-01-15T10:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ]
+        }
+      }
+    ],
+    "files": {
+      "price_tracker.py": "from notte_sdk import NotteClient\n\n\ndef run(url: str) -> dict:\n    client = NotteClient()\n    with client.Session() as session:\n        session.execute(type=\"goto\", url=url)\n        return session.scrape(instructions=\"price and availability\")\n"
+    }
+  },
+  {
+    "id": "functions-update",
+    "group": "Functions",
+    "title": "Upload a new version",
+    "description": "Replace a function's code; the version goes up.",
+    "args": ["functions", "update", "--function-id", "demo-function-001", "--file", "price_tracker.py"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "name": "Product price tracker",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "4",
+          "versions": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "created_at": "2026-01-12T09:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ],
+          "schedule_cron": "0 9 * * *",
+          "schedule_state": "enabled"
+        }
+      },
+      {
+        "path": "/functions/demo-function-001/schedules",
+        "status": 200,
+        "body": {
+          "state": "enabled",
+          "schedules": [
+            {
+              "schedule_id": "demo-schedule-001",
+              "cron": "0 9 * * *",
+              "variables": {
+                "url": "https://example.com/products/ceramic-mug"
+              },
+              "created_at": "2026-01-12T09:05:00Z"
+            },
+            {
+              "schedule_id": "demo-schedule-002",
+              "cron": "0 18 * * 1-5",
+              "variables": {
+                "url": "https://example.com/products/cotton-tote"
+              },
+              "created_at": "2026-01-14T11:00:00Z"
+            }
+          ]
+        }
+      }
+    ],
+    "files": {
+      "price_tracker.py": "from notte_sdk import NotteClient\n\n\ndef run(url: str) -> dict:\n    client = NotteClient()\n    with client.Session() as session:\n        session.execute(type=\"goto\", url=url)\n        return session.scrape(instructions=\"price and availability\")\n"
+    }
+  },
+  {
+    "id": "functions-configure",
+    "group": "Functions",
+    "title": "Change a function's settings",
+    "description": "Rename a function and turn on self-healing.",
+    "args": ["functions", "configure", "--function-id", "demo-function-001", "--name", "Price tracker", "--self-healing"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "name": "Price tracker",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "3",
+          "versions": [
+            "1",
+            "2",
+            "3"
+          ],
+          "created_at": "2026-01-12T09:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ],
+          "schedule_cron": "0 9 * * *",
+          "schedule_state": "enabled",
+          "self_healing": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-rollback",
+    "group": "Functions",
+    "title": "Roll back to a version",
+    "description": "Make an earlier version the current one.",
+    "args": ["functions", "rollback", "--function-id", "demo-function-001", "--version", "2"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/rollback",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "name": "Product price tracker",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "2",
+          "versions": [
+            "1",
+            "2",
+            "3"
+          ],
+          "created_at": "2026-01-12T09:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ],
+          "schedule_cron": "0 9 * * *",
+          "schedule_state": "enabled"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-fork",
+    "group": "Functions",
+    "title": "Fork a function",
+    "description": "Copy a shared function into your workspace.",
+    "args": ["functions", "fork", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/fork",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-004",
+          "name": "Product price tracker (fork)",
+          "description": "Extract the price and availability of a product page.",
+          "status": "active",
+          "latest_version": "1",
+          "versions": [
+            "1"
+          ],
+          "created_at": "2026-01-15T10:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z",
+          "default_runtime": "kubernetes",
+          "variables": [
+            {
+              "name": "url",
+              "type": "str",
+              "default": "https://example.com/products/ceramic-mug"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-delete",
+    "group": "Functions",
+    "title": "Delete a function",
+    "description": "Deleting asks first; --yes skips the question.",
+    "args": ["functions", "delete", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001",
+        "status": 200,
+        "body": {
+          "status": "deleted",
+          "message": "Function deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-empty",
+    "group": "Functions",
+    "title": "No functions yet",
+    "description": "An empty list says so and points to the next command.",
+    "args": ["functions", "list"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions",
+        "status": 200,
+        "body": {
+          "items": [],
+          "page": 1,
+          "page_size": 20,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-run-wait",
+    "group": "Functions",
+    "title": "Wait for a run",
+    "description": "Follow a run until it finishes: logs on stderr, then the result.",
+    "args": ["functions", "run-metadata", "--wait", "--function-id", "demo-function-001", "--run-id", "demo-run-002"],
+    "source": "internal/cmd/function_run.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs/demo-run-002",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "function_run_id": "demo-run-002",
+          "status": "closed",
+          "function_version": "3",
+          "session_id": "demo-session-002",
+          "variables": {
+            "url": "https://example.com/products/ceramic-mug"
+          },
+          "created_at": "2026-01-15T09:00:00Z",
+          "updated_at": "2026-01-15T09:00:42Z",
+          "logs": [
+            "Opening https://example.com/products/ceramic-mug",
+            "Found price $18.00"
+          ],
+          "result": "{\"name\": \"Ceramic mug\", \"price\": 18.0, \"currency\": \"USD\", \"available\": true}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-run-wait-failed",
+    "group": "Functions",
+    "title": "Wait for a run that fails",
+    "description": "The failed run is printed, then the command exits with code 7.",
+    "args": ["functions", "run-metadata", "--wait", "--function-id", "demo-function-001", "--run-id", "demo-run-001"],
+    "source": "internal/cmd/function_run.go",
+    "expectedExit": 7,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs/demo-run-001",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "function_run_id": "demo-run-001",
+          "status": "failed",
+          "function_version": "2",
+          "session_id": "demo-session-001",
+          "variables": {
+            "url": "https://example.com/products/retired"
+          },
+          "created_at": "2026-01-14T09:00:00Z",
+          "updated_at": "2026-01-14T09:01:05Z",
+          "logs": [
+            "Opening https://example.com/products/retired",
+            "Page returned 404"
+          ],
+          "result": "ValueError: no price found on the page"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-run-stop",
+    "group": "Functions",
+    "title": "Stop a run",
+    "description": "Stop a run that is still executing.",
+    "args": ["functions", "run-stop", "--function-id", "demo-function-001", "--run-id", "demo-run-003"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/runs/demo-run-003",
+        "status": 200,
+        "body": {
+          "function_id": "demo-function-001",
+          "function_run_id": "demo-run-003",
+          "status": "closed",
+          "updated_at": "2026-01-15T10:03:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-schedules-add",
+    "group": "Functions",
+    "title": "Add a schedule",
+    "description": "Run a function on a cron schedule with its own inputs.",
+    "args": ["functions", "schedules", "add", "--function-id", "demo-function-001", "--cron", "0 12 * * *", "--var", "url=https://example.com/products/linen-apron"],
+    "source": "internal/cmd/function_schedules.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedules",
+        "status": 200,
+        "body": {
+          "schedule_id": "demo-schedule-003",
+          "cron": "0 12 * * *",
+          "variables": {
+            "url": "https://example.com/products/linen-apron"
+          },
+          "created_at": "2026-01-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-schedules-update",
+    "group": "Functions",
+    "title": "Change a schedule",
+    "description": "Change when a schedule runs; its inputs are kept.",
+    "args": ["functions", "schedules", "update", "demo-schedule-001", "--function-id", "demo-function-001", "--cron", "30 9 * * *"],
+    "source": "internal/cmd/function_schedules.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedules",
+        "status": 200,
+        "body": {
+          "state": "enabled",
+          "schedules": [
+            {
+              "schedule_id": "demo-schedule-001",
+              "cron": "0 9 * * *",
+              "variables": {
+                "url": "https://example.com/products/ceramic-mug"
+              },
+              "created_at": "2026-01-12T09:05:00Z"
+            },
+            {
+              "schedule_id": "demo-schedule-002",
+              "cron": "0 18 * * 1-5",
+              "variables": {
+                "url": "https://example.com/products/cotton-tote"
+              },
+              "created_at": "2026-01-14T11:00:00Z"
+            }
+          ]
+        }
+      },
+      {
+        "path": "/functions/demo-function-001/schedules/demo-schedule-001",
+        "status": 200,
+        "body": {
+          "schedule_id": "demo-schedule-001",
+          "cron": "30 9 * * *",
+          "variables": {
+            "url": "https://example.com/products/ceramic-mug"
+          },
+          "created_at": "2026-01-12T09:05:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-schedules-remove",
+    "group": "Functions",
+    "title": "Remove a schedule",
+    "description": "Remove one schedule of a function.",
+    "args": ["functions", "schedules", "remove", "demo-schedule-002", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/function_schedules.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedules/demo-schedule-002",
+        "status": 200,
+        "body": {
+          "status": "removed"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-schedules-resume",
+    "group": "Functions",
+    "title": "Resume paused schedules",
+    "description": "Turn a function's schedules back on after they were paused.",
+    "args": ["functions", "schedules", "resume", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/function_schedules.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedules/resume",
+        "status": 200,
+        "body": {
+          "state": "enabled",
+          "schedules": [
+            {
+              "schedule_id": "demo-schedule-001",
+              "cron": "0 9 * * *",
+              "variables": {
+                "url": "https://example.com/products/ceramic-mug"
+              },
+              "created_at": "2026-01-12T09:05:00Z"
+            },
+            {
+              "schedule_id": "demo-schedule-002",
+              "cron": "0 18 * * 1-5",
+              "variables": {
+                "url": "https://example.com/products/cotton-tote"
+              },
+              "created_at": "2026-01-14T11:00:00Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-secrets-set",
+    "group": "Functions",
+    "title": "Save a secret",
+    "description": "Store a value that functions read from their environment.",
+    "args": ["functions", "secrets", "set", "SHOP_API_TOKEN", "demo-secret-value"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/secrets",
+        "status": 201,
+        "body": {
+          "id": "demo-secret-001",
+          "name": "SHOP_API_TOKEN",
+          "key_hint": "••••9f2c",
+          "namespace": "function_env",
+          "created_at": "2026-01-15T10:00:00Z",
+          "last_used_at": null
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-secrets-get",
+    "group": "Functions",
+    "title": "Read a secret",
+    "description": "Prints the value alone, ready to pipe.",
+    "args": ["functions", "secrets", "get", "SHOP_API_TOKEN"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/secrets/SHOP_API_TOKEN",
+        "status": 200,
+        "body": {
+          "value": "demo-secret-value"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-secrets-delete",
+    "group": "Functions",
+    "title": "Delete a secret",
+    "description": "Remove a stored secret.",
+    "args": ["functions", "secrets", "delete", "demo-secret-002"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/secrets/demo-secret-002",
+        "status": 200,
+        "body": {
+          "status": "deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-create",
+    "group": "Personas",
+    "title": "Create a persona",
+    "description": "A new identity with its own inbox and vault.",
+    "args": ["personas", "create", "--name", "Demo shopper", "--create-vault"],
+    "source": "internal/cmd/personas.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/create",
+        "status": 200,
+        "body": {
+          "persona_id": "demo-persona-001",
+          "name": "Demo shopper",
+          "first_name": "Alex",
+          "last_name": "Example",
+          "email": "alex.example@example.com",
+          "internal_email": "demo-persona-001@example.com",
+          "email_provider": "notte",
+          "status": "active",
+          "vault_id": "demo-vault-002",
+          "created_at": "2026-01-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-update",
+    "group": "Personas",
+    "title": "Rename a persona",
+    "description": "Change a persona's name.",
+    "args": ["personas", "update", "--persona-id", "demo-persona-001", "--name", "Returning shopper"],
+    "source": "internal/cmd/personas.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/demo-persona-001",
+        "status": 200,
+        "body": {
+          "persona_id": "demo-persona-001",
+          "name": "Returning shopper",
+          "first_name": "Alex",
+          "last_name": "Example",
+          "email": "alex.example@example.com",
+          "internal_email": "demo-persona-001@example.com",
+          "email_provider": "notte",
+          "status": "active",
+          "vault_id": "demo-vault-002",
+          "created_at": "2026-01-13T14:20:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "personas-delete",
+    "group": "Personas",
+    "title": "Delete a persona",
+    "description": "Deleting asks first; --yes skips the question.",
+    "args": ["personas", "delete", "--persona-id", "demo-persona-001"],
+    "source": "internal/cmd/personas.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/personas/demo-persona-001",
+        "status": 200,
+        "body": {
+          "status": "deleted",
+          "message": "Persona deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-create",
+    "group": "Profiles",
+    "title": "Create a profile",
+    "description": "An empty profile that sessions can save their logins into.",
+    "args": ["profiles", "create", "--name", "Shop account"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles/create",
+        "status": 200,
+        "body": {
+          "profile_id": "demo-profile-001",
+          "name": "Shop account",
+          "persisted_domains": [],
+          "created_at": "2026-01-15T10:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-delete",
+    "group": "Profiles",
+    "title": "Delete a profile",
+    "description": "Deleting asks first; --yes skips the question.",
+    "args": ["profiles", "delete", "--profile-id", "demo-profile-001"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles/demo-profile-001",
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Profile deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-cookies",
+    "group": "Profiles",
+    "title": "Cookies saved in a profile",
+    "description": "The cookies a session starts with when it uses the profile.",
+    "args": ["profiles", "cookies", "--profile-id", "demo-profile-001"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles/demo-profile-001/cookies",
+        "status": 200,
+        "body": {
+          "cookies": [
+            {
+              "name": "session_token",
+              "value": "demo-token-value",
+              "domain": "example.com",
+              "path": "/",
+              "httpOnly": true,
+              "secure": true,
+              "sameSite": "Lax",
+              "expires": 1768816800
+            },
+            {
+              "name": "cart_id",
+              "value": "demo-cart-001",
+              "domain": "shop.example.com",
+              "path": "/",
+              "httpOnly": false,
+              "secure": true,
+              "sameSite": "Lax",
+              "session": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "profiles-cookies-set",
+    "group": "Profiles",
+    "title": "Load cookies into a profile",
+    "description": "Import a cookies file exported from a browser.",
+    "args": ["profiles", "cookies-set", "--profile-id", "demo-profile-001", "--file", "cookies.json"],
+    "source": "internal/cmd/profiles.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/profiles/demo-profile-001/cookies",
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Cookies imported",
+          "cookies_count": 1,
+          "mode": "replace"
+        }
+      }
+    ],
+    "files": {
+      "cookies.json": "[\n  {\n    \"name\": \"session_token\",\n    \"value\": \"demo-token-value\",\n    \"domain\": \"example.com\",\n    \"path\": \"/\",\n    \"httpOnly\": true,\n    \"secure\": true,\n    \"sameSite\": \"Lax\",\n    \"expires\": 1768816800\n  }\n]"
+    }
+  },
+  {
+    "id": "vaults-create",
+    "group": "Vaults",
+    "title": "Create a vault",
+    "description": "A vault holds the logins sessions may use.",
+    "args": ["vaults", "create", "--name", "Team logins"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/create",
+        "status": 200,
+        "body": {
+          "vault_id": "demo-vault-001",
+          "name": "Team logins",
+          "created_at": "2026-01-15T10:00:00Z",
+          "for_persona": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-update",
+    "group": "Vaults",
+    "title": "Rename a vault",
+    "description": "Change a vault's name.",
+    "args": ["vaults", "update", "--vault-id", "demo-vault-001", "--name", "Shared logins"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001",
+        "status": 200,
+        "body": {
+          "vault_id": "demo-vault-001",
+          "name": "Shared logins",
+          "created_at": "2026-01-09T10:00:00Z",
+          "for_persona": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-delete",
+    "group": "Vaults",
+    "title": "Delete a vault",
+    "description": "Deleting asks first; --yes skips the question.",
+    "args": ["vaults", "delete", "--vault-id", "demo-vault-001"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001",
+        "status": 200,
+        "body": {
+          "status": "deleted",
+          "message": "Vault deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-credentials-add",
+    "group": "Vaults",
+    "title": "Save a login",
+    "description": "Store a site's username and password in a vault.",
+    "args": ["vaults", "credentials", "add", "--vault-id", "demo-vault-001", "--url", "https://example.com", "--username", "alex", "--password", "demo-password"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001/credentials",
+        "status": 200,
+        "body": {
+          "status": "success"
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-credentials-get",
+    "group": "Vaults",
+    "title": "Read a login",
+    "description": "Show the login saved for one site, password included.",
+    "args": ["vaults", "credentials", "get", "--vault-id", "demo-vault-001", "--url", "https://example.com"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001/credentials",
+        "status": 200,
+        "body": {
+          "credentials": {
+            "username": "alex",
+            "email": "alex.example@example.com",
+            "password": "demo-password"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "vaults-credentials-delete",
+    "group": "Vaults",
+    "title": "Delete a login",
+    "description": "Remove the login saved for one site.",
+    "args": ["vaults", "credentials", "delete", "--vault-id", "demo-vault-001", "--url", "https://example.com"],
+    "source": "internal/cmd/vaults.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/vaults/demo-vault-001/credentials",
+        "status": 200,
+        "body": {
+          "status": "deleted",
+          "message": "Credentials deleted"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-cookies-set",
+    "group": "Sessions",
+    "title": "Load cookies into a session",
+    "description": "Set cookies from a file in a running session.",
+    "args": ["sessions", "cookies-set", "--session-id", "demo-session-001", "--file", "cookies.json"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/cookies",
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Cookies set successfully"
+        }
+      }
+    ],
+    "files": {
+      "cookies.json": "{\n  \"cookies\": [\n    {\n      \"name\": \"session_token\",\n      \"value\": \"demo-token-value\",\n      \"domain\": \"example.com\",\n      \"path\": \"/\",\n      \"httpOnly\": true,\n      \"secure\": true,\n      \"sameSite\": \"Lax\",\n      \"expires\": 1768816800\n    }\n  ]\n}"
+    }
+  },
+  {
+    "id": "sessions-offset",
+    "group": "Sessions",
+    "title": "How many steps a session has taken",
+    "description": "The position in the session's history, used to export code from a point on.",
+    "args": ["sessions", "offset", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/offset",
+        "status": 200,
+        "body": {
+          "offset": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-save-profile",
+    "group": "Sessions",
+    "title": "Save a session's logins to a profile",
+    "description": "Keep the cookies and storage of a running session for later ones.",
+    "args": ["sessions", "save-profile", "--session-id", "demo-session-001", "--name", "Shop account"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/profile/save",
+        "status": 200,
+        "body": {
+          "profile_id": "demo-profile-001",
+          "name": "Shop account",
+          "persisted_domains": [
+            "example.com"
+          ],
+          "created_at": "2026-01-10T12:00:00Z",
+          "updated_at": "2026-01-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-function-code",
+    "group": "Sessions",
+    "title": "Export a session as a function",
+    "description": "The steps of a session as a function file.",
+    "args": ["sessions", "function-code", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/workflow/code",
+        "status": 200,
+        "body": {
+          "python_script": "from notte_sdk import NotteClient\n\nclient = NotteClient()\n\nwith client.Session() as session:\n    session.execute(type=\"goto\", url=\"https://example.com/shop\")\n    session.execute(type=\"fill\", id=\"I1\", value=\"ceramic mug\")\n    session.execute(type=\"click\", id=\"B1\")\n    print(session.scrape())",
+          "json_actions": [
+            {
+              "type": "goto",
+              "url": "https://example.com/shop"
+            },
+            {
+              "type": "fill",
+              "id": "I1",
+              "value": "ceramic mug"
+            },
+            {
+              "type": "click",
+              "id": "B1"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "sessions-network-empty",
+    "group": "Sessions",
+    "title": "No network logs",
+    "description": "A session that recorded no network traffic.",
+    "args": ["sessions", "network", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/sessions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/network/logs",
+        "status": 200,
+        "body": {
+          "session_id": "demo-session-001",
+          "batches": [],
+          "total_batch_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "files-upload",
+    "group": "Files",
+    "title": "Upload a file",
+    "description": "Make a local file available to a session's upload fields.",
+    "args": ["files", "upload", "products.csv", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/files.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/files",
+        "status": 200,
+        "body": {
+          "id": "demo-file-003",
+          "session_id": "demo-session-001",
+          "filename": "products.csv",
+          "mime_type": "text/csv",
+          "size": 58,
+          "checksum": "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          "created_at": "2026-01-15T10:04:30Z",
+          "expires_at": "2026-01-22T10:04:30Z",
+          "source": "user_upload"
+        }
+      }
+    ],
+    "files": {
+      "products.csv": "name,price\nCeramic mug,18.00\nCotton tote,12.00\nLinen apron,34.00\n"
+    }
+  },
+  {
+    "id": "files-download",
+    "group": "Files",
+    "title": "Download a file",
+    "description": "Save a file a session downloaded to this machine.",
+    "args": ["files", "download", "demo-file-002", "--session-id", "demo-session-001", "--path", "price-list.json"],
+    "source": "internal/cmd/files.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/files/demo-file-002",
+        "status": 200,
+        "body": {
+          "products": [
+            {
+              "name": "Ceramic mug",
+              "price": 18.0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "files-empty",
+    "group": "Files",
+    "title": "No files yet",
+    "description": "A session without files.",
+    "args": ["files", "list", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/files.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/files",
+        "status": 200,
+        "body": {
+          "files": [],
+          "total": 0,
+          "limit": 1000,
+          "offset": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-check",
+    "group": "Page",
+    "title": "Tick a checkbox",
+    "description": "Check a checkbox by its ID.",
+    "args": ["page", "check", "C1", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "check",
+            "id": "C1",
+            "value": true
+          },
+          "success": true,
+          "message": "Checked the checkbox with text label: In stock only",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-select",
+    "group": "Page",
+    "title": "Choose from a dropdown",
+    "description": "Pick an option of a select element.",
+    "args": ["page", "select", "S1", "Price: low to high", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "select_dropdown_option",
+            "id": "S1",
+            "value": "Price: low to high"
+          },
+          "success": true,
+          "message": "Selected the option \"Price: low to high\"",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-press",
+    "group": "Page",
+    "title": "Press a key",
+    "description": "Send a key to the page.",
+    "args": ["page", "press", "Enter", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "press_key",
+            "key": "Enter"
+          },
+          "success": true,
+          "message": "Pressed the keyboard key: Enter",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scroll-down",
+    "group": "Page",
+    "title": "Scroll down",
+    "description": "Scroll the page down.",
+    "args": ["page", "scroll-down", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "scroll_down"
+          },
+          "success": true,
+          "message": "Scrolled down by one page",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-scroll-up",
+    "group": "Page",
+    "title": "Scroll up",
+    "description": "Scroll the page up.",
+    "args": ["page", "scroll-up", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "scroll_up"
+          },
+          "success": true,
+          "message": "Scrolled up by one page",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-reload",
+    "group": "Page",
+    "title": "Reload the page",
+    "description": "Reload the current page.",
+    "args": ["page", "reload", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "reload"
+          },
+          "success": true,
+          "message": "Reloaded the current page",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-forward",
+    "group": "Page",
+    "title": "Go forward",
+    "description": "Go forward in the tab's history.",
+    "args": ["page", "forward", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "go_forward"
+          },
+          "success": true,
+          "message": "Navigated forward to the next page",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-new-tab",
+    "group": "Page",
+    "title": "Open a tab",
+    "description": "Open a URL in a new tab.",
+    "args": ["page", "new-tab", "https://example.com/cart", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "goto_new_tab",
+            "url": "https://example.com/cart"
+          },
+          "success": true,
+          "message": "Navigated to \"https://example.com/cart\" in a new tab",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-switch-tab",
+    "group": "Page",
+    "title": "Switch tabs",
+    "description": "Make another tab the current one.",
+    "args": ["page", "switch-tab", "0", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "switch_tab",
+            "tab_index": 0
+          },
+          "success": true,
+          "message": "Switched to tab 0",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-close-tab",
+    "group": "Page",
+    "title": "Close the tab",
+    "description": "Close the current tab.",
+    "args": ["page", "close-tab", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "close_tab"
+          },
+          "success": true,
+          "message": "Closed the current tab and switched to the last tab",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-form-fill",
+    "group": "Page",
+    "title": "Fill a whole form",
+    "description": "Fill several fields of a form at once.",
+    "args": ["page", "form-fill", "--data", "{\"email\": \"alex.example@example.com\", \"first_name\": \"Alex\"}", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "form_fill",
+            "value": {
+              "email": "alex.example@example.com",
+              "first_name": "Alex"
+            }
+          },
+          "success": true,
+          "message": "Filled the form with 2 values",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-captcha-solve",
+    "group": "Page",
+    "title": "Solve a captcha",
+    "description": "Ask the session to solve the captcha on the page.",
+    "args": ["page", "captcha-solve", "recaptcha", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "captcha_solve",
+            "captcha_type": "recaptcha"
+          },
+          "success": true,
+          "message": "Solved the recaptcha captcha",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-complete",
+    "group": "Page",
+    "title": "Mark a task as done",
+    "description": "End an agent task with its answer.",
+    "args": ["page", "complete", "The ceramic mug costs $18.00", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "completion",
+            "success": true,
+            "answer": "The ceramic mug costs $18.00"
+          },
+          "success": true,
+          "message": "Task completed",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-download",
+    "group": "Page",
+    "title": "Download from the page",
+    "description": "Click a link that downloads a file into the session.",
+    "args": ["page", "download", "L3", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "download_file",
+            "id": "L3"
+          },
+          "success": true,
+          "message": "Downloaded the file invoice-2026-01.pdf",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "page-upload",
+    "group": "Page",
+    "title": "Upload to the page",
+    "description": "Put a local file in a file input of the page.",
+    "args": ["page", "upload", "U1", "--file", "products.csv", "--session-id", "demo-session-001"],
+    "source": "internal/cmd/page.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/sessions/demo-session-001/page/execute",
+        "status": 200,
+        "body": {
+          "action": {
+            "type": "upload_file",
+            "id": "U1",
+            "file_path": "products.csv"
+          },
+          "success": true,
+          "message": "Uploaded the file products.csv",
+          "started_at": "2026-01-15T10:02:30Z",
+          "ended_at": "2026-01-15T10:02:31Z"
+        }
+      }
+    ],
+    "files": {
+      "products.csv": "name,price\nCeramic mug,18.00\n"
+    }
+  },
+  {
+    "id": "clear",
+    "group": "General",
+    "title": "Forget the pinned session",
+    "description": "Remove the session and function this machine remembers.",
+    "args": ["clear"],
+    "source": "internal/cmd/clear.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "tunnel-list-empty",
+    "group": "General",
+    "title": "No tunnels yet",
+    "description": "Tunnels are saved on this machine; none are set up here.",
+    "args": ["tunnel", "list"],
+    "source": "internal/cmd/tunnel.go",
+    "expectedExit": 0,
+    "responses": []
+  },
+  {
+    "id": "functions-schedule",
+    "group": "Functions",
+    "title": "Set the single schedule",
+    "description": "The older one-schedule command; schedules add replaces it.",
+    "args": ["functions", "schedule", "--function-id", "demo-function-001", "--cron", "0 9 * * *"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedule",
+        "status": 200,
+        "body": {
+          "status": "scheduled"
+        }
+      }
+    ]
+  },
+  {
+    "id": "functions-unschedule",
+    "group": "Functions",
+    "title": "Remove the single schedule",
+    "description": "Remove the schedule set with functions schedule.",
+    "args": ["functions", "unschedule", "--function-id", "demo-function-001"],
+    "source": "internal/cmd/functions.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/functions/demo-function-001/schedule",
+        "status": 200,
+        "body": {
+          "status": "removed"
+        }
+      }
+    ]
+  },
+  {
+    "id": "payment-connect",
+    "group": "Payments",
+    "title": "Connect a wallet",
+    "description": "Get the link that authorizes Notte to request spending.",
+    "args": ["payment", "connect", "--mode", "test"],
+    "source": "internal/cmd/payments.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/payments/connect",
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "mode": "test",
+          "status": "pending",
+          "connection_url": "https://example.com/wallet/connect/demo",
+          "connection_phrase": "amber-harbor-42",
+          "expires_at": "2026-01-15T10:30:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "payment-status",
+    "group": "Payments",
+    "title": "Payment status",
+    "description": "Where a payment stands and what it waits for.",
+    "args": ["payment", "status", "00000000-0000-4000-8000-000000000001"],
+    "source": "internal/cmd/payments.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/payments/00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "session_id": "demo-session-001",
+          "status": "awaiting_approval",
+          "mode": "test",
+          "amount": "18.00",
+          "currency": "usd",
+          "merchant_name": "Example Shop",
+          "merchant_url": "https://example.com/shop",
+          "approval_url": "https://example.com/wallet/approve/demo",
+          "expires_at": "2026-01-15T10:30:00Z",
+          "purchase_status": "pending"
+        }
+      }
+    ]
+  },
+  {
+    "id": "payment-ready",
+    "group": "Payments",
+    "title": "Wait for the card",
+    "description": "Wait until the temporary card is in the session's vault.",
+    "args": ["payment", "wait", "00000000-0000-4000-8000-000000000001"],
+    "source": "internal/cmd/payments.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/payments/00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "session_id": "demo-session-001",
+          "status": "ready",
+          "mode": "test",
+          "amount": "18.00",
+          "currency": "usd",
+          "merchant_name": "Example Shop",
+          "merchant_url": "https://example.com/shop",
+          "approval_url": null,
+          "expires_at": "2026-01-15T10:30:00Z",
+          "purchase_status": "pending",
+          "vault_id": "demo-vault-003"
+        }
+      }
+    ]
+  },
+  {
+    "id": "payment-disconnect",
+    "group": "Payments",
+    "title": "Disconnect a wallet",
+    "description": "Revoke the wallet connection of one mode.",
+    "args": ["payment", "disconnect", "--mode", "test"],
+    "source": "internal/cmd/payments.go",
+    "expectedExit": 0,
+    "responses": [
+      {
+        "path": "/payments/disconnect",
+        "status": 200,
+        "body": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "mode": "test",
+          "status": "disconnected"
+        }
+      }
+    ]
+  }
+]
