@@ -3053,7 +3053,11 @@ type FunctionListItemResponse struct {
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
+	// ReferenceFunctionId The ID of the function this one was copied from, such as a fork's source, or null
+	ReferenceFunctionId *string `json:"reference_function_id,omitempty"`
+
+	// ReferenceWorkflowId Deprecated: use reference_function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ReferenceWorkflowId *string                                `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string                              `json:"required_secrets,omitempty"`
 	SdkGeneration       *FunctionListItemResponseSdkGeneration `json:"sdk_generation,omitempty"`
@@ -3078,8 +3082,11 @@ type FunctionListItemResponse struct {
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the function
-	Versions   []string `json:"versions"`
-	WorkflowId *string  `json:"workflow_id,omitempty"`
+	Versions []string `json:"versions"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
 }
 
 // FunctionListItemResponseDefaultRuntime defines model for FunctionListItemResponse.DefaultRuntime.
@@ -3141,7 +3148,11 @@ type FunctionResponse struct {
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
+	// ReferenceFunctionId The ID of the function this one was copied from, such as a fork's source, or null
+	ReferenceFunctionId *string `json:"reference_function_id,omitempty"`
+
+	// ReferenceWorkflowId Deprecated: use reference_function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
@@ -3178,8 +3189,11 @@ type FunctionResponse struct {
 	Variables *[]ParameterInfo `json:"variables,omitempty"`
 
 	// Versions The versions of the function
-	Versions   []string `json:"versions"`
-	WorkflowId *string  `json:"workflow_id,omitempty"`
+	Versions []string `json:"versions"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
 }
 
 // FunctionResponseDefaultRuntime defines model for FunctionResponse.DefaultRuntime.
@@ -3243,8 +3257,14 @@ type FunctionRunListItemResponse struct {
 	SessionId     *string                           `json:"session_id,omitempty"`
 	Status        FunctionRunListItemResponseStatus `json:"status"`
 	UpdatedAt     FlexibleTime                      `json:"updated_at"`
-	WorkflowId    *string                           `json:"workflow_id,omitempty"`
-	WorkflowRunId *string                           `json:"workflow_run_id,omitempty"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
+
+	// WorkflowRunId Deprecated: use function_run_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowRunId *string `json:"workflow_run_id,omitempty"`
 }
 
 // FunctionRunListItemResponseStatus defines model for FunctionRunListItemResponse.Status.
@@ -3254,25 +3274,25 @@ type FunctionRunListItemResponseStatus string
 type FunctionRunUpdateRequest struct {
 	Error *FunctionRunError `json:"error,omitempty"`
 
-	// Logs The logs of the workflow run
+	// Logs The logs of the function run
 	Logs     *[]string                       `json:"logs,omitempty"`
 	Payloads *map[string]RunPayloadReference `json:"payloads,omitempty"`
 
-	// Result The result of the workflow run
+	// Result The result of the function run
 	Result        interface{} `json:"result"`
 	ResultPreview *string     `json:"result_preview,omitempty"`
 
 	// SessionId The ID of the session
 	SessionId *string `json:"session_id,omitempty"`
 
-	// Status The status of the workflow run
+	// Status The status of the function run
 	Status FunctionRunUpdateRequestStatus `json:"status"`
 
-	// Variables The variables of the workflow run
+	// Variables The variables of the function run
 	Variables *map[string]interface{} `json:"variables,omitempty"`
 }
 
-// FunctionRunUpdateRequestStatus The status of the workflow run
+// FunctionRunUpdateRequestStatus The status of the function run
 type FunctionRunUpdateRequestStatus string
 
 // FunctionRuntimeHealthResponse defines model for FunctionRuntimeHealthResponse.
@@ -3396,7 +3416,11 @@ type FunctionWithLinkResponse struct {
 	Name      *string `json:"name,omitempty"`
 	Published *bool   `json:"published,omitempty"`
 
-	// ReferenceWorkflowId The ID of the reference function (i.e whether the function was forked from another function or not)
+	// ReferenceFunctionId The ID of the function this one was copied from, such as a fork's source, or null
+	ReferenceFunctionId *string `json:"reference_function_id,omitempty"`
+
+	// ReferenceWorkflowId Deprecated: use reference_function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ReferenceWorkflowId *string   `json:"reference_workflow_id,omitempty"`
 	RequiredSecrets     *[]string `json:"required_secrets,omitempty"`
 
@@ -3439,8 +3463,11 @@ type FunctionWithLinkResponse struct {
 	VersionOrigins *[]FunctionVersionOriginInfo `json:"version_origins,omitempty"`
 
 	// Versions The versions of the function
-	Versions   []string `json:"versions"`
-	WorkflowId *string  `json:"workflow_id,omitempty"`
+	Versions []string `json:"versions"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
 }
 
 // FunctionWithLinkResponseDefaultRuntime defines model for FunctionWithLinkResponse.DefaultRuntime.
@@ -3496,9 +3523,15 @@ type GetFunctionRunResponse struct {
 	UpdatedAt FlexibleTime                 `json:"updated_at"`
 
 	// Variables The variables of the function run
-	Variables     *map[string]interface{} `json:"variables,omitempty"`
-	WorkflowId    *string                 `json:"workflow_id,omitempty"`
-	WorkflowRunId *string                 `json:"workflow_run_id,omitempty"`
+	Variables *map[string]interface{} `json:"variables,omitempty"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
+
+	// WorkflowRunId Deprecated: use function_run_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowRunId *string `json:"workflow_run_id,omitempty"`
 }
 
 // GetFunctionRunResponseStatus defines model for GetFunctionRunResponse.Status.
@@ -5786,8 +5819,14 @@ type UpdateFunctionRunResponse struct {
 	FunctionRunId string                           `json:"function_run_id"`
 	Status        *UpdateFunctionRunResponseStatus `json:"status,omitempty"`
 	UpdatedAt     FlexibleTime                     `json:"updated_at"`
-	WorkflowId    *string                          `json:"workflow_id,omitempty"`
-	WorkflowRunId *string                          `json:"workflow_run_id,omitempty"`
+
+	// WorkflowId Deprecated: use function_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowId *string `json:"workflow_id,omitempty"`
+
+	// WorkflowRunId Deprecated: use function_run_id. Removed on 2026-12-28.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	WorkflowRunId *string `json:"workflow_run_id,omitempty"`
 }
 
 // UpdateFunctionRunResponseStatus defines model for UpdateFunctionRunResponse.Status.
