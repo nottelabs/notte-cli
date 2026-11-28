@@ -3069,6 +3069,9 @@ type FunctionListItemResponse struct {
 	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
 
+	// Slug The function's short name, unique across all functions: it runs at https://functions.notte.cc/<slug>. Assigned at creation and renamable. Null for a function that has none.
+	Slug *string `json:"slug,omitempty"`
+
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`
 
@@ -3116,6 +3119,9 @@ type FunctionMetadataUpdateRequest struct {
 
 	// Shared Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
 	Shared *bool `json:"shared,omitempty"`
+
+	// Slug Rename the function's short name in https://functions.notte.cc/<slug>: 3 to 48 lowercase letters, digits and inner hyphens, unique across all functions (409 when another function has it). Omit or send null to leave it unchanged.
+	Slug *string `json:"slug,omitempty"`
 }
 
 // FunctionResponse defines model for FunctionResponse.
@@ -3175,6 +3181,9 @@ type FunctionResponse struct {
 
 	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
+
+	// Slug The function's short name, unique across all functions: it runs at https://functions.notte.cc/<slug>. Assigned at creation and renamable. Null for a function that has none.
+	Slug *string `json:"slug,omitempty"`
 
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`
@@ -3443,6 +3452,9 @@ type FunctionWithLinkResponse struct {
 
 	// Shared Whether the function is public and can beshared with other users
 	Shared *bool `json:"shared,omitempty"`
+
+	// Slug The function's short name, unique across all functions: it runs at https://functions.notte.cc/<slug>. Assigned at creation and renamable. Null for a function that has none.
+	Slug *string `json:"slug,omitempty"`
 
 	// Source Where the function was created from, stamped at creation. Read-only.
 	Source *string `json:"source,omitempty"`

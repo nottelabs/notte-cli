@@ -39,6 +39,9 @@ var (
 
 	// Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.
 	FunctionConfigureShared bool
+
+	// Rename the function's short name in https://functions.notte.cc/<slug>: 3 to 48 lowercase letters, digits and inner hyphens, unique across all functions (409 when another function has it). Omit or send null to leave it unchanged.
+	FunctionConfigureSlug string
 )
 
 // RegisterFunctionConfigureFlags registers all flags for FunctionConfigure command
@@ -53,6 +56,7 @@ func RegisterFunctionConfigureFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FunctionConfigureResponseFormat, "response-format", "", "JSON Schema of run()'s return value, computed by the caller from its pydantic model, as inline JSON, @file, or - for stdin")
 	cmd.Flags().BoolVar(&FunctionConfigureSelfHealing, "self-healing", false, "Let an agent repair the function when a run fails")
 	cmd.Flags().BoolVar(&FunctionConfigureShared, "shared", false, "Enable or disable public code sharing and forking for this function. Source code, including embedded credentials, becomes public. Runs, results and stored runtime secrets remain private. This does not enable public execution. Omit or send null to leave sharing unchanged.")
+	cmd.Flags().StringVar(&FunctionConfigureSlug, "slug", "", "Rename the function's short name in https://functions.notte.cc/<slug>: 3 to 48 lowercase letters, digits and inner hyphens, unique across all functions (409 when another function has it). Omit or send null to leave it unchanged.")
 }
 
 // BuildFunctionConfigureRequest builds the API request from CLI flags
@@ -108,6 +112,10 @@ func BuildFunctionConfigureRequest(cmd *cobra.Command) (*api.FunctionMetadataUpd
 
 	if cmd.Flags().Changed("shared") {
 		body.Shared = &FunctionConfigureShared
+	}
+
+	if FunctionConfigureSlug != "" {
+		body.Slug = &FunctionConfigureSlug
 	}
 
 	return body, nil
